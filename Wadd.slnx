@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Wadd.Android/Wadd.Android.csproj" />
+    <Project Path="src/Wadd.Core/Wadd.Core.csproj" />
+    <Project Path="src/Wadd.Desktop/Wadd.Desktop.csproj" />
+    <Project Path="src/Wadd.Services/Wadd.Services.csproj" />
+    <Project Path="src/Wadd.UI/Wadd.UI.csproj" />
+  </Folder>
+</Solution>

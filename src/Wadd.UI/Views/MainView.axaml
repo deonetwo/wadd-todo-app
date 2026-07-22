@@ -1,0 +1,373 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Wadd.UI.ViewModels;assembly=Wadd.UI"
+             xmlns:models="clr-namespace:Wadd.Core.Models;assembly=Wadd.Core"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="600"
+             x:Class="Wadd.UI.Views.MainView"
+             x:DataType="vm:MainViewModel"
+             Background="{DynamicResource AppBackgroundBrush}">
+  
+  <Design.DataContext>
+    <vm:MainViewModel />
+  </Design.DataContext>
+
+  <UserControl.Resources>
+    <!-- Vector PathIcon geometries -->
+    <Geometry x:Key="MenuIconData">M3 5h18a1 1 0 0 1 0 2H3a1 1 0 0 1 0-2zm0 6h18a1 1 0 0 1 0 2H3a1 1 0 0 1 0-2zm0 6h18a1 1 0 0 1 0 2H3a1 1 0 0 1 0-2z</Geometry>
+    <Geometry x:Key="CloseIconData">M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z</Geometry>
+
+    <Geometry x:Key="SunIconData">M12 3v2m0 14v2m9-9h-2M5 12H3m15.364-6.364l-1.414 1.414M7.05 16.95l-1.414 1.414M18.364 18.364l-1.414-1.414M7.05 7.05L5.636 5.636M12 8a4 4 0 100 8 4 4 0 000-8z</Geometry>
+    <Geometry x:Key="MoonIconData">M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z</Geometry>
+    <Geometry x:Key="MonitorIconData">M4 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM8 20h8M12 16v4</Geometry>
+    <Geometry x:Key="CheckListIconData">M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4</Geometry>
+    <Geometry x:Key="SyncIconData">M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15</Geometry>
+    <Geometry x:Key="SettingsIconData">M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z</Geometry>
+  </UserControl.Resources>
+
+  <Grid RowDefinitions="Auto,*,Auto">
+    <!-- Header / Top Bar -->
+    <Border Grid.Row="0"
+            Background="{DynamicResource AppSurfaceBrush}"
+            BorderBrush="{DynamicResource AppBorderBrush}"
+            BorderThickness="0,0,0,1"
+            Padding="14,10">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <!-- Wide Mode Title & Icon -->
+        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+          <Button Classes="secondary"
+                  Command="{Binding ToggleSideMenuCommand}"
+                  IsVisible="{Binding IsCompact}"
+                  Padding="8,6"
+                  Margin="0,0,6,0"
+                  ToolTip.Tip="Open Menu">
+            <PathIcon Data="{StaticResource MenuIconData}" Width="18" Height="18" Foreground="{DynamicResource AppTextPrimaryBrush}" />
+          </Button>
+
+          <Border Background="{DynamicResource AppMenuSelectedBrush}" CornerRadius="8" Padding="6" VerticalAlignment="Center">
+            <PathIcon Data="{StaticResource CheckListIconData}" Width="18" Height="18" Foreground="{DynamicResource AppPrimaryBrush}" />
+          </Border>
+          <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+            <TextBlock Text="Wadd" Classes="brand-accent" VerticalAlignment="Center"/>
+            <TextBlock Text="ToDo" Classes="brand-title" VerticalAlignment="Center"/>
+            <Border Background="{DynamicResource AppPrimaryBrush}" CornerRadius="4" Padding="5,1,5,2" Margin="2,0,0,0" VerticalAlignment="Center">
+              <TextBlock Text="APP" FontSize="9" FontWeight="Black" Foreground="#FFFFFF" LetterSpacing="1"/>
+            </Border>
+          </StackPanel>
+        </StackPanel>
+
+        <!-- Mode Indicator Badge -->
+        <Border Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                Background="{DynamicResource AppMenuSelectedBrush}" CornerRadius="12" Padding="10,4">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <Ellipse Width="6" Height="6" Fill="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+            <TextBlock Text="Wide View (SQLite Local Storage)"
+                       IsVisible="{Binding !IsCompact}"
+                       Classes="caption" FontWeight="SemiBold" VerticalAlignment="Center"/>
+            <TextBlock Text="Portrait Mini View"
+                       IsVisible="{Binding IsCompact}"
+                       Classes="caption" FontWeight="SemiBold" VerticalAlignment="Center"/>
+          </StackPanel>
+        </Border>
+
+        <!-- Theme Controls (Wide vs Compact) -->
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+          <!-- Wide Mode Full Action Bar -->
+          <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding !IsCompact}">
+            <Button Classes="secondary" Command="{Binding SetThemeModeCommand}" CommandParameter="System">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <PathIcon Data="{StaticResource MonitorIconData}" Width="14" Height="14" Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                <TextBlock Text="System" Classes="caption"/>
+              </StackPanel>
+            </Button>
+            <Button Classes="secondary" Command="{Binding SetThemeModeCommand}" CommandParameter="Light">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <PathIcon Data="{StaticResource SunIconData}" Width="14" Height="14" Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                <TextBlock Text="Light" Classes="caption"/>
+              </StackPanel>
+            </Button>
+            <Button Classes="secondary" Command="{Binding SetThemeModeCommand}" CommandParameter="Dark">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <PathIcon Data="{StaticResource MoonIconData}" Width="14" Height="14" Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                <TextBlock Text="Dark" Classes="caption"/>
+              </StackPanel>
+            </Button>
+          </StackPanel>
+
+          <!-- Compact / Mini Mode Single Cycle Button -->
+          <Button Classes="secondary"
+                  Command="{Binding ToggleThemeCommand}"
+                  IsVisible="{Binding IsCompact}"
+                  Padding="8,6"
+                  ToolTip.Tip="Cycle Theme Mode">
+            <PathIcon Data="{StaticResource SunIconData}" Width="18" Height="18" Foreground="{DynamicResource AppTextPrimaryBrush}" />
+          </Button>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <!-- Main Content Body (Grid Layout) -->
+    <Grid Grid.Row="1">
+      <!-- Wide View Layout (Left Sidebar + Content) -->
+      <Grid IsVisible="{Binding !IsCompact}" ColumnDefinitions="240,*">
+        <!-- Left Sidebar Navigation -->
+        <Border Grid.Column="0"
+                Background="{DynamicResource AppSurfaceBrush}"
+                BorderBrush="{DynamicResource AppBorderBrush}"
+                BorderThickness="0,0,1,0"
+                Padding="12,16">
+          <StackPanel Spacing="6">
+            <TextBlock Text="NAVIGATION" Classes="caption" Margin="12,4,0,8" />
+            <ListBox Background="Transparent" SelectedIndex="{Binding SelectedNavIndex}">
+              <ListBoxItem Classes="side-menu-item">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <PathIcon Data="{StaticResource CheckListIconData}" Width="18" Height="18" />
+                  <TextBlock Text="Tasks" Classes="body" VerticalAlignment="Center"/>
+                </StackPanel>
+              </ListBoxItem>
+              <ListBoxItem Classes="side-menu-item">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <PathIcon Data="{StaticResource SyncIconData}" Width="18" Height="18" />
+                  <TextBlock Text="Sync Engine" Classes="body" VerticalAlignment="Center"/>
+                </StackPanel>
+              </ListBoxItem>
+              <ListBoxItem Classes="side-menu-item">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <PathIcon Data="{StaticResource SettingsIconData}" Width="18" Height="18" />
+                  <TextBlock Text="Settings" Classes="body" VerticalAlignment="Center"/>
+                </StackPanel>
+              </ListBoxItem>
+            </ListBox>
+          </StackPanel>
+        </Border>
+
+        <!-- Wide Main Content Area -->
+        <ScrollViewer Grid.Column="1" Padding="24">
+          <StackPanel Spacing="20" HorizontalAlignment="Stretch">
+            <!-- Task Entry Card -->
+            <Border Classes="card" HorizontalAlignment="Stretch">
+              <StackPanel Spacing="16">
+                <TextBlock Text="Task Management (SQLite Local Database)" Classes="header" TextWrapping="Wrap" />
+                <Grid ColumnDefinitions="*,12,Auto">
+                  <TextBox Grid.Column="0"
+                           Classes="styled"
+                           Watermark="Type a new task title..."
+                           Text="{Binding NewTaskTitle, Mode=TwoWay}"
+                           HorizontalAlignment="Stretch" />
+                  <Button Grid.Column="2"
+                          Classes="primary"
+                          Command="{Binding AddTaskCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <PathIcon Data="{StaticResource CheckListIconData}" Width="16" Height="16" Foreground="#FFFFFF" />
+                      <TextBlock Text="Add Task" VerticalAlignment="Center" />
+                    </StackPanel>
+                  </Button>
+                </Grid>
+                <TextBlock Text="{Binding StatusMessage}" Classes="caption" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+
+            <!-- Tasks List Card -->
+            <Border Classes="card" HorizontalAlignment="Stretch">
+              <StackPanel Spacing="14">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Grid.Column="0" Text="Stored Todo Items" Classes="header" VerticalAlignment="Center" />
+                  <Button Grid.Column="1" Classes="secondary" Command="{Binding RefreshCommand}" Padding="8,4">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <PathIcon Data="{StaticResource SyncIconData}" Width="14" Height="14" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                      <TextBlock Text="Reload" Classes="caption" VerticalAlignment="Center"/>
+                    </StackPanel>
+                  </Button>
+                </Grid>
+
+                <Separator Background="{DynamicResource AppBorderBrush}"/>
+
+                <ItemsControl ItemsSource="{Binding TodoItems}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="models:TodoItem" x:CompileBindings="False">
+                      <Border Background="{DynamicResource AppBackgroundBrush}"
+                              BorderBrush="{DynamicResource AppBorderBrush}"
+                              BorderThickness="1"
+                              CornerRadius="8"
+                              Padding="12,10"
+                              Margin="0,0,0,8">
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                          <CheckBox Grid.Column="0"
+                                    IsChecked="{Binding IsCompleted}"
+                                    Command="{Binding $parent[UserControl].DataContext.ToggleTodoCommand}"
+                                    CommandParameter="{Binding}"
+                                    Margin="0,0,10,0"/>
+
+                          <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Title}"
+                                       Classes="body"
+                                       FontWeight="SemiBold"
+                                       TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding CreatedAt, StringFormat='Created: {0:g}'}"
+                                       Classes="caption"
+                                       Margin="0,2,0,0"/>
+                          </StackPanel>
+
+                          <Button Grid.Column="2"
+                                  Classes="secondary"
+                                  Command="{Binding $parent[UserControl].DataContext.DeleteTodoCommand}"
+                                  CommandParameter="{Binding}"
+                                  Padding="6"
+                                  ToolTip.Tip="Delete Task">
+                            <PathIcon Data="{StaticResource CloseIconData}" Width="14" Height="14" Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                          </Button>
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </Grid>
+
+      <!-- Portrait / Mini View Layout (Single Stack) -->
+      <ScrollViewer IsVisible="{Binding IsCompact}" Padding="14">
+        <StackPanel Spacing="14">
+          <Border Classes="card" Padding="14">
+            <StackPanel Spacing="8">
+              <TextBlock Text="Portrait Mini View (SQLite)" Classes="header" />
+              <TextBlock Text="Compact view with SQLite persistence." Classes="body" />
+            </StackPanel>
+          </Border>
+
+          <!-- Compact Input Card -->
+          <Border Classes="card" Padding="14">
+            <StackPanel Spacing="12">
+              <TextBlock Text="Add Task" Classes="body" FontWeight="SemiBold" />
+              <TextBox Classes="styled" Watermark="New task title..." Text="{Binding NewTaskTitle, Mode=TwoWay}" />
+              <Button Classes="primary" Command="{Binding AddTaskCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+                <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                  <PathIcon Data="{StaticResource CheckListIconData}" Width="14" Height="14" Foreground="#FFFFFF" />
+                  <TextBlock Text="Save Task" VerticalAlignment="Center"/>
+                </StackPanel>
+              </Button>
+              <TextBlock Text="{Binding StatusMessage}" Classes="caption" />
+            </StackPanel>
+          </Border>
+
+          <!-- Compact Todo List -->
+          <Border Classes="card" Padding="14">
+            <StackPanel Spacing="10">
+              <TextBlock Text="Todo Tasks" Classes="header" />
+              <ItemsControl ItemsSource="{Binding TodoItems}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="models:TodoItem" x:CompileBindings="False">
+                    <Border Background="{DynamicResource AppBackgroundBrush}"
+                            BorderBrush="{DynamicResource AppBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="10,8"
+                            Margin="0,0,0,6">
+                      <Grid ColumnDefinitions="Auto,*,Auto">
+                        <CheckBox Grid.Column="0"
+                                  IsChecked="{Binding IsCompleted}"
+                                  Command="{Binding $parent[UserControl].DataContext.ToggleTodoCommand}"
+                                  CommandParameter="{Binding}"
+                                  Margin="0,0,8,0"/>
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding Title}"
+                                   Classes="body"
+                                   VerticalAlignment="Center"
+                                   TextWrapping="Wrap"/>
+                        <Button Grid.Column="2"
+                                Classes="secondary"
+                                Command="{Binding $parent[UserControl].DataContext.DeleteTodoCommand}"
+                                CommandParameter="{Binding}"
+                                Padding="4">
+                          <PathIcon Data="{StaticResource CloseIconData}" Width="12" Height="12" Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                        </Button>
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </ScrollViewer>
+
+      <!-- Mini View Side Drawer Overlay -->
+      <Grid IsVisible="{Binding IsSideMenuOpen}" Background="#80000000">
+        <Border HorizontalAlignment="Left"
+                Width="260"
+                Background="{DynamicResource AppSurfaceBrush}"
+                BorderBrush="{DynamicResource AppBorderBrush}"
+                BorderThickness="0,0,1,0"
+                Padding="16">
+          <StackPanel Spacing="14">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Grid.Column="0" Text="Menu" Classes="header" VerticalAlignment="Center"/>
+              <Button Grid.Column="1"
+                      Classes="secondary"
+                      Command="{Binding CloseSideMenuCommand}"
+                      Padding="6"
+                      ToolTip.Tip="Close Menu">
+                <PathIcon Data="{StaticResource CloseIconData}" Width="16" Height="16" Foreground="{DynamicResource AppTextPrimaryBrush}" />
+              </Button>
+            </Grid>
+
+            <Separator Background="{DynamicResource AppBorderBrush}"/>
+
+            <ListBox Background="Transparent" SelectedIndex="{Binding SelectedNavIndex}">
+              <ListBoxItem Classes="side-menu-item">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <PathIcon Data="{StaticResource CheckListIconData}" Width="18" Height="18" />
+                  <TextBlock Text="Tasks" Classes="body" VerticalAlignment="Center"/>
+                </StackPanel>
+              </ListBoxItem>
+              <ListBoxItem Classes="side-menu-item">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <PathIcon Data="{StaticResource SyncIconData}" Width="18" Height="18" />
+                  <TextBlock Text="Sync Engine" Classes="body" VerticalAlignment="Center"/>
+                </StackPanel>
+              </ListBoxItem>
+              <ListBoxItem Classes="side-menu-item">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <PathIcon Data="{StaticResource SettingsIconData}" Width="18" Height="18" />
+                  <TextBlock Text="Settings" Classes="body" VerticalAlignment="Center"/>
+                </StackPanel>
+              </ListBoxItem>
+            </ListBox>
+          </StackPanel>
+        </Border>
+      </Grid>
+    </Grid>
+
+    <!-- Bottom Navigation Bar (Mini View Only) -->
+    <Border Grid.Row="2"
+            IsVisible="{Binding IsCompact}"
+            Background="{DynamicResource AppSurfaceBrush}"
+            BorderBrush="{DynamicResource AppBorderBrush}"
+            BorderThickness="0,1,0,0"
+            Padding="10,6">
+      <Grid ColumnDefinitions="*,*,*">
+        <Button Grid.Column="0" Classes="secondary" HorizontalAlignment="Center" BorderThickness="0">
+          <StackPanel Spacing="2" HorizontalAlignment="Center">
+            <PathIcon Data="{StaticResource CheckListIconData}" Width="18" Height="18" HorizontalAlignment="Center"/>
+            <TextBlock Text="Tasks" Classes="caption" HorizontalAlignment="Center"/>
+          </StackPanel>
+        </Button>
+        <Button Grid.Column="1" Classes="secondary" HorizontalAlignment="Center" BorderThickness="0">
+          <StackPanel Spacing="2" HorizontalAlignment="Center">
+            <PathIcon Data="{StaticResource SyncIconData}" Width="18" Height="18" HorizontalAlignment="Center"/>
+            <TextBlock Text="Sync" Classes="caption" HorizontalAlignment="Center"/>
+          </StackPanel>
+        </Button>
+        <Button Grid.Column="2" Classes="secondary" HorizontalAlignment="Center" BorderThickness="0">
+          <StackPanel Spacing="2" HorizontalAlignment="Center">
+            <PathIcon Data="{StaticResource SettingsIconData}" Width="18" Height="18" HorizontalAlignment="Center"/>
+            <TextBlock Text="Settings" Classes="caption" HorizontalAlignment="Center"/>
+          </StackPanel>
+        </Button>
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>

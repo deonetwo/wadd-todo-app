@@ -1,0 +1,46 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ResourceDictionary.ThemeDictionaries>
+    <!-- Light Mode Theme Dictionary -->
+    <ResourceDictionary x:Key="Light">
+      <Color x:Key="AppBackgroundColor">#F8F9FA</Color>
+      <Color x:Key="AppSurfaceColor">#FFFFFF</Color>
+      <Color x:Key="AppPrimaryColor">#2563EB</Color>
+      <Color x:Key="AppPrimaryHoverColor">#1D4ED8</Color>
+      <Color x:Key="AppTextPrimaryColor">#1E293B</Color>
+      <Color x:Key="AppTextSecondaryColor">#64748B</Color>
+      <Color x:Key="AppBorderColor">#E2E8F0</Color>
+      <Color x:Key="AppMenuSelectedColor">#EFF6FF</Color>
+
+      <SolidColorBrush x:Key="AppBackgroundBrush" Color="{StaticResource AppBackgroundColor}"/>
+      <SolidColorBrush x:Key="AppSurfaceBrush" Color="{StaticResource AppSurfaceColor}"/>
+      <SolidColorBrush x:Key="AppPrimaryBrush" Color="{StaticResource AppPrimaryColor}"/>
+      <SolidColorBrush x:Key="AppPrimaryHoverBrush" Color="{StaticResource AppPrimaryHoverColor}"/>
+      <SolidColorBrush x:Key="AppTextPrimaryBrush" Color="{StaticResource AppTextPrimaryColor}"/>
+      <SolidColorBrush x:Key="AppTextSecondaryBrush" Color="{StaticResource AppTextSecondaryColor}"/>
+      <SolidColorBrush x:Key="AppBorderBrush" Color="{StaticResource AppBorderColor}"/>
+      <SolidColorBrush x:Key="AppMenuSelectedBrush" Color="{StaticResource AppMenuSelectedColor}"/>
+    </ResourceDictionary>
+
+    <!-- Dark Mode Theme Dictionary -->
+    <ResourceDictionary x:Key="Dark">
+      <Color x:Key="AppBackgroundColor">#0F172A</Color>
+      <Color x:Key="AppSurfaceColor">#1E293B</Color>
+      <Color x:Key="AppPrimaryColor">#3B82F6</Color>
+      <Color x:Key="AppPrimaryHoverColor">#60A5FA</Color>
+      <Color x:Key="AppTextPrimaryColor">#F8FAFC</Color>
+      <Color x:Key="AppTextSecondaryColor">#94A3B8</Color>
+      <Color x:Key="AppBorderColor">#334155</Color>
+      <Color x:Key="AppMenuSelectedColor">#334155</Color>
+
+      <SolidColorBrush x:Key="AppBackgroundBrush" Color="{StaticResource AppBackgroundColor}"/>
+      <SolidColorBrush x:Key="AppSurfaceBrush" Color="{StaticResource AppSurfaceColor}"/>
+      <SolidColorBrush x:Key="AppPrimaryBrush" Color="{StaticResource AppPrimaryColor}"/>
+      <SolidColorBrush x:Key="AppPrimaryHoverBrush" Color="{StaticResource AppPrimaryHoverColor}"/>
+      <SolidColorBrush x:Key="AppTextPrimaryBrush" Color="{StaticResource AppTextPrimaryColor}"/>
+      <SolidColorBrush x:Key="AppTextSecondaryBrush" Color="{StaticResource AppTextSecondaryColor}"/>
+      <SolidColorBrush x:Key="AppBorderBrush" Color="{StaticResource AppBorderColor}"/>
+      <SolidColorBrush x:Key="AppMenuSelectedBrush" Color="{StaticResource AppMenuSelectedColor}"/>
+    </ResourceDictionary>
+  </ResourceDictionary.ThemeDictionaries>
+</ResourceDictionary>
