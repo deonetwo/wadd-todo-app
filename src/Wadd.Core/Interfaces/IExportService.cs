@@ -8,5 +8,6 @@ namespace Wadd.Core.Interfaces;
 public interface IExportService
 {
     Task<byte[]> ExportToExcelAsync(IEnumerable<TodoItem> items, CancellationToken cancellationToken = default);
+    Task ExportToExcelAsync(IEnumerable<TodoItem> items, string filePath, CancellationToken cancellationToken = default);
     Task ExportToExcelFileAsync(string filePath, IEnumerable<TodoItem> items, CancellationToken cancellationToken = default);
 }

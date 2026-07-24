@@ -57,9 +57,140 @@ Services and ViewModels are registered using `Microsoft.Extensions.DependencyInj
 services.AddSingleton<ITodoService, SQLiteTodoService>();
 services.AddSingleton<IThemeService, ThemeService>();
 services.AddSingleton<ISyncService, SyncService>();
-services.AddSingleton<IExportService, ExportService>();
+services.AddSingleton<IExportService, ExcelExportService>();
 services.AddSingleton<ITracingService, TracingService>();
 ```
+
+---
+
+## 📊 Export Functionality
+
+Wadd provides local data export capabilities using `ExcelExportService` (implementing `IExportService` in `Wadd.Services`) powered by [MiniExcel](https://github.com/mini-excel/MiniExcel).
+
+### 1. How Excel Exports Work
+- **Service API**: `IExportService.ExportToExcelAsync(IEnumerable<TodoItem> items, string filePath, CancellationToken cancellationToken = default)`
+- **Column Mapping**: Formats exported items into 5 standardized columns:
+  - `ID`: Unique task identifier (`Guid`)
+  - `Title`: Task title
+  - `Description`: Task description
+  - `Status`: Task completion status (`Completed` or `Pending`)
+  - `Created Date`: Creation UTC timestamp formatted as `yyyy-MM-dd HH:mm:ss`
+- **Platform-Safe Access & Streaming**: Streams data directly to `.xlsx` files with a minimal memory footprint. Missing target directories are automatically created (`Directory.CreateDirectory`) prior to file writing, ensuring safe operation on all target OS platforms.
+
+### 2. Local Storage Output Paths
+
+Export files are saved locally to platform-safe directory locations:
+
+- **Windows Target**:
+  - Path: `Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Wadd", "Exports", "todo_export.xlsx")`
+  - Resolved Location: `%LOCALAPPDATA%\Wadd\Exports\todo_export.xlsx`
+- **Android Target**:
+  - Path: `Path.Combine(FileSystem.AppDataDirectory, "Wadd", "Exports", "todo_export.xlsx")`
+  - Resolved Location: `/data/user/0/com.wadd.todoapp/files/Wadd/Exports/todo_export.xlsx`
+
+---
+
+## 🔄 Synchronization & Backup
+
+Wadd features manual synchronization capabilities powered by `GoogleDriveSyncService` (implementing `ISyncService` in `Wadd.Services`) using a **Google Apps Script Web App Endpoint** in Google Drive.
+
+### 1. Architectural Workflow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant App as Wadd App (Avalonia UI)
+    participant Service as GoogleDriveSyncService
+    participant SQLite as Local SQLite DB (wadd.db)
+    participant GAS as Google Apps Script (code.gs)
+    participant Drive as Google Drive / Properties
+
+    App->>Service: SyncCommand triggered ("Sync Now 🔄")
+    Service->>SQLite: GetTodosAsync()
+    SQLite-->>Service: Return local TodoItem collection
+    Service->>GAS: HTTP POST (Serialize TodoItem JSON payload)
+    GAS->>Drive: Save / Merge items into Drive storage
+    GAS-->>Service: HTTP 200 OK (Post Success)
+    Service->>GAS: HTTP GET (Request remote TodoItem JSON)
+    GAS->>Drive: Read stored JSON state
+    GAS-->>Service: HTTP 200 OK (Returns remote JSON array)
+    Service->>SQLite: 2-Way State Merge (by Id & UpdatedAt timestamp)
+    Service-->>App: Sync Completed (Refresh UI List)
+```
+
+### 2. Setup Steps for Deploying `code.gs` in Google Drive
+
+1. Open [Google Apps Script](https://script.google.com/) or open [Google Drive](https://drive.google.com/), click **New** > **More** > **Google Apps Script**.
+2. Rename the project to `Wadd Sync Endpoint`.
+3. Replace the contents of `Code.gs` with the following JavaScript script:
+
+```javascript
+// code.gs - Google Apps Script Web App Endpoint for Wadd
+var FILE_NAME = "wadd_sync_data.json";
+
+function doPost(e) {
+  try {
+    var contents = e.postData.contents;
+    var items = JSON.parse(contents);
+    
+    // Save payload to Google Drive
+    var files = DriveApp.getFilesByName(FILE_NAME);
+    var file;
+    if (files.hasNext()) {
+      file = files.next();
+      file.setContent(JSON.stringify(items));
+    } else {
+      file = DriveApp.createFile(FILE_NAME, JSON.stringify(items), MimeType.PLAIN_TEXT);
+    }
+    
+    return ContentService.createTextOutput(JSON.stringify({ status: "success", count: items.length }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doGet(e) {
+  try {
+    var files = DriveApp.getFilesByName(FILE_NAME);
+    if (files.hasNext()) {
+      var file = files.next();
+      var content = file.getContentAsString();
+      return ContentService.createTextOutput(content)
+        .setMimeType(ContentService.MimeType.JSON);
+    } else {
+      return ContentService.createTextOutput(JSON.stringify([]))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify([]))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+```
+
+4. Click **Deploy** > **New deployment**.
+5. Select type: **Web app**.
+6. Configuration:
+   - **Description**: `Wadd Todo Sync Web App`
+   - **Execute as**: `Me (<your-email>)`
+   - **Who has access**: `Anyone`
+7. Click **Deploy**, authorize permissions when prompted, and copy the resulting **Web App URL** (e.g. `https://script.google.com/macros/s/.../exec`).
+
+### 3. App Settings Instructions for Endpoint Configuration
+
+To configure Wadd to connect to your deployed Google Apps Script endpoint:
+
+- **Environment Variable**: Set the environment variable `WADD_SYNC_URL`:
+  ```bash
+  # Windows PowerShell
+  $env:WADD_SYNC_URL="https://script.google.com/macros/s/<DEPLOYMENT_ID>/exec"
+
+  # Linux / macOS
+  export WADD_SYNC_URL="https://script.google.com/macros/s/<DEPLOYMENT_ID>/exec"
+  ```
+- **Service Property**: Alternatively, set `GoogleDriveSyncService.WebAppUrl` directly via Dependency Injection in `ServiceCollectionExtensions.cs`.
 
 ---
 
@@ -76,8 +207,31 @@ Wadd features an adaptive user interface designed to render smoothly across desk
 
 | View Mode | Breakpoint | Navigation Layout | Content Layout |
 | :--- | :--- | :--- | :--- |
-| **Wide Desktop View** | Width >= `720px` | Fixed 240px Left Navigation Bar | Multi-Column Card Grid with expanded top bar |
+| **Wide Desktop View** | Width >= `720px` | Fixed 250px Left Navigation Bar | Multi-Column Card Grid with expanded top bar |
 | **Portrait Mini View** | Width < `720px` | Bottom Navigation Bar + Collapsible Overlay Drawer | Single-Column Stacked Cards with compact header |
+
+### UI Shell Wireframe Layout Overview
+
+```text
++-----------------------------------------------------------------------------------+
+|  [Logo] Wadd ToDo [APP]   |  🟢 Local Mode (SQLite Storage)  [Sync Now 🔄]  | ☀️ 🌙 🖥️|
++-----------------------------------------------------------------------------------+
+| NAVIGATION        | MAIN CONTENT PANEL                                            |
+|                   | +-----------------------------------------------------------+ |
+| 📋 Tasks          | | Task Management (SQLite Local Database)                  | |
+| 📊 Calendar (PH)  | | [ Title TextBox                        ]  [ Add Task ]    | |
+| 🔍 Tracing (PH)   | +-----------------------------------------------------------+ |
+|                   | +-----------------------------------------------------------+ |
+|                   | | Stored Todo Items                            [ Reload 🔄 ]| |
+|                   | | [x] Buy Groceries                             [ Delete 🗑️ ]| |
+|                   | | [ ] Finish Report                             [ Delete 🗑️ ]| |
+|                   | +-----------------------------------------------------------+ |
+| ----------------- | +-----------------------------------------------------------+ |
+| DATA ACTIONS      | | 🔍 Tracing Area Placeholder (Wireframe Control Box)       | |
+| [ 📥 Export Excel]| | [ Trace Logs: Active ]  [ Latency: 0.2ms ]  [ Memory: Safe ]| |
+|                   | +-----------------------------------------------------------+ |
++-----------------------------------------------------------------------------------+
+```
 
 ---
 
@@ -103,8 +257,9 @@ Wadd/
     ├── Wadd.Services/                 # Class Library (Infrastructure Layer)
     │   ├── SQLiteTodoService.cs       # Async SQLite database service implementation
     │   ├── InMemoryTodoService.cs     # Fallback in-memory service
-    │   ├── SyncService.cs             # Remote sync engine service
-    │   ├── ExportService.cs           # Excel export service implementation
+    │   ├── GoogleDriveSyncService.cs  # Google Apps Script HTTP sync engine implementation
+    │   ├── SyncService.cs             # Sync engine service alias
+    │   ├── ExcelExportService.cs      # MiniExcel local data export implementation
     │   ├── TracingService.cs          # Diagnostics & tracing service
     │   ├── ThemeService.cs            # Dynamic theme switching implementation
     │   └── ServiceCollectionExtensions.cs # Dependency Injection extensions
@@ -112,6 +267,7 @@ Wadd/
     ├── Wadd.UI/                       # Class Library (Presentation / Shared UI)
     │   ├── ViewModels/                # MVVM ViewModels (CommunityToolkit.Mvvm)
     │   │   ├── ViewModelBase.cs
+    │   │   ├── TodoItemViewModel.cs   # Observable wrapper for TodoItem domain models
     │   │   └── MainViewModel.cs
     │   ├── Views/                     # Shared Avalonia Views & Controls
     │   │   ├── MainView.axaml         # Dual-view responsive layout with live tasks
@@ -170,35 +326,71 @@ Brushes adapt automatically when `RequestedThemeVariant` switches between `Light
 
 ### Prerequisites
 - [.NET 10.0 SDK](https://dotnet.microsoft.com/download) or higher installed.
-- (Optional for Android) .NET Android Workload: Run `dotnet workload install android`.
+- (Optional for Android) .NET Android Workload: Run `dotnet workload restore` or `dotnet workload install android`.
 
-### Restore and Build
+---
 
-#### Build Desktop (Windows)
+### Running `Wadd.Desktop` (Windows Target)
+
+#### 1. Command Line Interface (CLI)
 ```bash
+# Restore & Build Desktop Executable
 dotnet build src/Wadd.Desktop/Wadd.Desktop.csproj
-```
 
-#### Run Desktop Application
-```bash
+# Run Desktop Application Shell
 dotnet run --project src/Wadd.Desktop/Wadd.Desktop.csproj
 ```
 
-#### Build Core Libraries & Services
+#### 2. IDE (Visual Studio / VS Code / JetBrains Rider)
+- **Visual Studio**:
+  1. Open `Wadd.sln`.
+  2. Set `Wadd.Desktop` as the Startup Project in Solution Explorer.
+  3. Press `F5` (Start Debugging) or `Ctrl + F5` (Start Without Debugging).
+- **VS Code**:
+  1. Open workspace folder.
+  2. Use C# Dev Kit or press `F5` with .NET Core launch configuration targeting `src/Wadd.Desktop/bin/Debug/net10.0/Wadd.Desktop.dll`.
+- **Rider**:
+  1. Select `Wadd.Desktop` run configuration.
+  2. Click **Run** (`Shift + F10`) or **Debug** (`Shift + F9`).
+
+---
+
+### Running `Wadd.Android` (Mobile Target)
+
+#### 1. Prerequisites Setup
 ```bash
+# Restore required Android workloads
+dotnet workload restore
+```
+
+#### 2. Command Line Interface (CLI)
+```bash
+# Build Android APK / Package
+dotnet build src/Wadd.Android/Wadd.Android.csproj
+
+# Run / Deploy to connected Android Emulator or Physical Device
+dotnet run --project src/Wadd.Android/Wadd.Android.csproj -f net10.0-android
+```
+
+#### 3. IDE (Visual Studio / Rider)
+- **Visual Studio**:
+  1. Set `Wadd.Android` as Startup Project.
+  2. Select active Android Emulator or connected physical device from target dropdown.
+  3. Press `F5`.
+- **Rider**:
+  1. Select `Wadd.Android` run configuration and choose target Android device/emulator.
+  2. Click **Run** (`Shift + F10`).
+
+---
+
+### Building Solution & Core Libraries
+
+```bash
+# Build Core & Service Libraries
 dotnet build src/Wadd.Core/Wadd.Core.csproj
 dotnet build src/Wadd.Services/Wadd.Services.csproj
 dotnet build src/Wadd.UI/Wadd.UI.csproj
-```
 
-#### Build Android Application
-First ensure Android workloads are restored:
-```bash
-dotnet workload restore
-dotnet build src/Wadd.Android/Wadd.Android.csproj
-```
-
-#### Build Entire Solution
-```bash
+# Build Entire Solution
 dotnet build Wadd.sln
 ```

@@ -2,11 +2,15 @@ using Wadd.Core.Interfaces;
 
 namespace Wadd.Services;
 
-public class SyncService : ISyncService
+public class SyncService : GoogleDriveSyncService
 {
-    public Task<bool> SyncAsync(CancellationToken cancellationToken = default)
+    public SyncService(ITodoService todoService, HttpClient? httpClient = null, string? webAppUrl = null)
+        : base(todoService, httpClient, webAppUrl)
     {
-        // Placeholder for remote synchronization engine logic
-        return Task.FromResult(true);
+    }
+
+    public SyncService()
+        : base(new SQLiteTodoService(), new HttpClient(), null)
+    {
     }
 }

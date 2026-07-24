@@ -81,6 +81,23 @@
     <Setter Property="FontWeight" Value="SemiBold" />
   </Style>
 
+  <!-- Side Menu Action Button Style (Matches ListBoxItem.side-menu-item) -->
+  <Style Selector="Button.side-menu-button">
+    <Setter Property="Padding" Value="12,10" />
+    <Setter Property="Margin" Value="0,2" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+  </Style>
+
+  <Style Selector="Button.side-menu-button:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AppMenuSelectedBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
+  </Style>
+
   <!-- Surface Card Container -->
   <Style Selector="Border.card">
     <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
