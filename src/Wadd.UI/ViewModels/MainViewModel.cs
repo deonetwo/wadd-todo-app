@@ -20,7 +20,62 @@ public partial class MainViewModel : ViewModelBase
     private string _title = "Wadd - ToDo Application";
 
     [ObservableProperty]
+    private string _currentDateFormatted = DateTime.Now.ToString("dddd, MMMM d").ToUpperInvariant();
+
+    [ObservableProperty]
+    private string _currentDateFull = DateTime.Now.ToString("dddd, MMMM d, yyyy");
+
+    private CancellationTokenSource? _statusTimerCts;
+
+    [ObservableProperty]
     private string _statusMessage = "Ready (Local Mode)";
+
+    [ObservableProperty]
+    private double _statusOpacity = 1.0;
+
+    [ObservableProperty]
+    private bool _isStatusVisible = true;
+
+    partial void OnStatusMessageChanged(string value)
+    {
+        _statusTimerCts?.Cancel();
+        _statusTimerCts = new CancellationTokenSource();
+        var token = _statusTimerCts.Token;
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            StatusOpacity = 0.0;
+            IsStatusVisible = false;
+            return;
+        }
+
+        StatusOpacity = 1.0;
+        IsStatusVisible = true;
+
+        Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(3500, token);
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    StatusOpacity = 0.0;
+                });
+                await Task.Delay(450, token);
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    if (!token.IsCancellationRequested && StatusOpacity == 0.0)
+                    {
+                        IsStatusVisible = false;
+                    }
+                });
+            }
+            catch (OperationCanceledException)
+            {
+                // Canceled due to a new status message arriving
+            }
+        });
+    }
 
     [ObservableProperty]
     private ThemeMode _currentThemeMode = ThemeMode.System;

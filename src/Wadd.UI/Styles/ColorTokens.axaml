@@ -1,46 +1,98 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- ═══════════════════════════════════════════════════════════════
+       OCEAN TEAL & EMERALD DESIGN SYSTEM · Wadd 2026
+       Primary: Ocean Teal #0D9488 (light) / #14B8A6 (dark)
+       Accent: Emerald Green #16A34A (light) / #22C55E (dark)
+       Surfaces: Fresh porcelain / Deep obsidian teal
+  ═══════════════════════════════════════════════════════════════ -->
   <ResourceDictionary.ThemeDictionaries>
-    <!-- Light Mode Theme Dictionary -->
+
+    <!-- ───── LIGHT THEME ───── -->
     <ResourceDictionary x:Key="Light">
-      <Color x:Key="AppBackgroundColor">#F8F9FA</Color>
+      <!-- Surfaces -->
+      <Color x:Key="AppBackgroundColor">#F3F8F8</Color>
       <Color x:Key="AppSurfaceColor">#FFFFFF</Color>
-      <Color x:Key="AppPrimaryColor">#2563EB</Color>
-      <Color x:Key="AppPrimaryHoverColor">#1D4ED8</Color>
-      <Color x:Key="AppTextPrimaryColor">#1E293B</Color>
-      <Color x:Key="AppTextSecondaryColor">#64748B</Color>
-      <Color x:Key="AppBorderColor">#E2E8F0</Color>
-      <Color x:Key="AppMenuSelectedColor">#EFF6FF</Color>
+      <Color x:Key="AppSurfaceElevatedColor">#E7F1F2</Color>
+      <Color x:Key="AppSurfaceSubtleColor">#DDECEE</Color>
+      <!-- Primary brand: rich ocean teal -->
+      <Color x:Key="AppPrimaryColor">#0D9488</Color>
+      <Color x:Key="AppPrimaryHoverColor">#0F766E</Color>
+      <!-- Typography -->
+      <Color x:Key="AppTextPrimaryColor">#0F172A</Color>
+      <Color x:Key="AppTextSecondaryColor">#526E74</Color>
+      <!-- Structure -->
+      <Color x:Key="AppBorderColor">#CFE3E5</Color>
+      <!-- States -->
+      <Color x:Key="AppMenuSelectedColor">#E6F4F4</Color>
+      <Color x:Key="AppAccentTintColor">#E6F4F4</Color>
+      <!-- Semantic -->
+      <Color x:Key="AppAccentSuccessColor">#16A34A</Color>
+      <Color x:Key="AppAccentWarningColor">#D97706</Color>
+      <Color x:Key="AppAccentDangerColor">#E11D48</Color>
+      <!-- NavRail selected strip -->
+      <Color x:Key="AppNavStripColor">#0D9488</Color>
 
-      <SolidColorBrush x:Key="AppBackgroundBrush" Color="{StaticResource AppBackgroundColor}"/>
-      <SolidColorBrush x:Key="AppSurfaceBrush" Color="{StaticResource AppSurfaceColor}"/>
-      <SolidColorBrush x:Key="AppPrimaryBrush" Color="{StaticResource AppPrimaryColor}"/>
-      <SolidColorBrush x:Key="AppPrimaryHoverBrush" Color="{StaticResource AppPrimaryHoverColor}"/>
-      <SolidColorBrush x:Key="AppTextPrimaryBrush" Color="{StaticResource AppTextPrimaryColor}"/>
-      <SolidColorBrush x:Key="AppTextSecondaryBrush" Color="{StaticResource AppTextSecondaryColor}"/>
-      <SolidColorBrush x:Key="AppBorderBrush" Color="{StaticResource AppBorderColor}"/>
-      <SolidColorBrush x:Key="AppMenuSelectedBrush" Color="{StaticResource AppMenuSelectedColor}"/>
+      <!-- Brushes -->
+      <SolidColorBrush x:Key="AppBackgroundBrush"     Color="{StaticResource AppBackgroundColor}"/>
+      <SolidColorBrush x:Key="AppSurfaceBrush"         Color="{StaticResource AppSurfaceColor}"/>
+      <SolidColorBrush x:Key="AppSurfaceElevatedBrush" Color="{StaticResource AppSurfaceElevatedColor}"/>
+      <SolidColorBrush x:Key="AppSurfaceSubtleBrush"   Color="{StaticResource AppSurfaceSubtleColor}"/>
+      <SolidColorBrush x:Key="AppPrimaryBrush"         Color="{StaticResource AppPrimaryColor}"/>
+      <SolidColorBrush x:Key="AppPrimaryHoverBrush"    Color="{StaticResource AppPrimaryHoverColor}"/>
+      <SolidColorBrush x:Key="AppTextPrimaryBrush"     Color="{StaticResource AppTextPrimaryColor}"/>
+      <SolidColorBrush x:Key="AppTextSecondaryBrush"   Color="{StaticResource AppTextSecondaryColor}"/>
+      <SolidColorBrush x:Key="AppBorderBrush"          Color="{StaticResource AppBorderColor}"/>
+      <SolidColorBrush x:Key="AppMenuSelectedBrush"    Color="{StaticResource AppMenuSelectedColor}"/>
+      <SolidColorBrush x:Key="AppAccentTintBrush"      Color="{StaticResource AppAccentTintColor}"/>
+      <SolidColorBrush x:Key="AppAccentSuccessBrush"   Color="{StaticResource AppAccentSuccessColor}"/>
+      <SolidColorBrush x:Key="AppAccentWarningBrush"   Color="{StaticResource AppAccentWarningColor}"/>
+      <SolidColorBrush x:Key="AppAccentDangerBrush"    Color="{StaticResource AppAccentDangerColor}"/>
+      <SolidColorBrush x:Key="AppNavStripBrush"        Color="{StaticResource AppNavStripColor}"/>
     </ResourceDictionary>
 
-    <!-- Dark Mode Theme Dictionary -->
+    <!-- ───── DARK THEME ───── -->
     <ResourceDictionary x:Key="Dark">
-      <Color x:Key="AppBackgroundColor">#0F172A</Color>
-      <Color x:Key="AppSurfaceColor">#1E293B</Color>
-      <Color x:Key="AppPrimaryColor">#3B82F6</Color>
-      <Color x:Key="AppPrimaryHoverColor">#60A5FA</Color>
-      <Color x:Key="AppTextPrimaryColor">#F8FAFC</Color>
-      <Color x:Key="AppTextSecondaryColor">#94A3B8</Color>
-      <Color x:Key="AppBorderColor">#334155</Color>
-      <Color x:Key="AppMenuSelectedColor">#334155</Color>
+      <!-- Surfaces: deep obsidian teal -->
+      <Color x:Key="AppBackgroundColor">#0B1315</Color>
+      <Color x:Key="AppSurfaceColor">#111C1F</Color>
+      <Color x:Key="AppSurfaceElevatedColor">#17262A</Color>
+      <Color x:Key="AppSurfaceSubtleColor">#1E3136</Color>
+      <!-- Primary brand: glowing cyan teal -->
+      <Color x:Key="AppPrimaryColor">#14B8A6</Color>
+      <Color x:Key="AppPrimaryHoverColor">#2DD4BF</Color>
+      <!-- Typography -->
+      <Color x:Key="AppTextPrimaryColor">#F0FDF4</Color>
+      <Color x:Key="AppTextSecondaryColor">#6B8B90</Color>
+      <!-- Structure -->
+      <Color x:Key="AppBorderColor">#1E343A</Color>
+      <!-- States -->
+      <Color x:Key="AppMenuSelectedColor">#163A3E</Color>
+      <Color x:Key="AppAccentTintColor">#143438</Color>
+      <!-- Semantic -->
+      <Color x:Key="AppAccentSuccessColor">#22C55E</Color>
+      <Color x:Key="AppAccentWarningColor">#F59E0B</Color>
+      <Color x:Key="AppAccentDangerColor">#F43F5E</Color>
+      <!-- NavRail selected strip -->
+      <Color x:Key="AppNavStripColor">#14B8A6</Color>
 
-      <SolidColorBrush x:Key="AppBackgroundBrush" Color="{StaticResource AppBackgroundColor}"/>
-      <SolidColorBrush x:Key="AppSurfaceBrush" Color="{StaticResource AppSurfaceColor}"/>
-      <SolidColorBrush x:Key="AppPrimaryBrush" Color="{StaticResource AppPrimaryColor}"/>
-      <SolidColorBrush x:Key="AppPrimaryHoverBrush" Color="{StaticResource AppPrimaryHoverColor}"/>
-      <SolidColorBrush x:Key="AppTextPrimaryBrush" Color="{StaticResource AppTextPrimaryColor}"/>
-      <SolidColorBrush x:Key="AppTextSecondaryBrush" Color="{StaticResource AppTextSecondaryColor}"/>
-      <SolidColorBrush x:Key="AppBorderBrush" Color="{StaticResource AppBorderColor}"/>
-      <SolidColorBrush x:Key="AppMenuSelectedBrush" Color="{StaticResource AppMenuSelectedColor}"/>
+      <!-- Brushes -->
+      <SolidColorBrush x:Key="AppBackgroundBrush"     Color="{StaticResource AppBackgroundColor}"/>
+      <SolidColorBrush x:Key="AppSurfaceBrush"         Color="{StaticResource AppSurfaceColor}"/>
+      <SolidColorBrush x:Key="AppSurfaceElevatedBrush" Color="{StaticResource AppSurfaceElevatedColor}"/>
+      <SolidColorBrush x:Key="AppSurfaceSubtleBrush"   Color="{StaticResource AppSurfaceSubtleColor}"/>
+      <SolidColorBrush x:Key="AppPrimaryBrush"         Color="{StaticResource AppPrimaryColor}"/>
+      <SolidColorBrush x:Key="AppPrimaryHoverBrush"    Color="{StaticResource AppPrimaryHoverColor}"/>
+      <SolidColorBrush x:Key="AppTextPrimaryBrush"     Color="{StaticResource AppTextPrimaryColor}"/>
+      <SolidColorBrush x:Key="AppTextSecondaryBrush"   Color="{StaticResource AppTextSecondaryColor}"/>
+      <SolidColorBrush x:Key="AppBorderBrush"          Color="{StaticResource AppBorderColor}"/>
+      <SolidColorBrush x:Key="AppMenuSelectedBrush"    Color="{StaticResource AppMenuSelectedColor}"/>
+      <SolidColorBrush x:Key="AppAccentTintBrush"      Color="{StaticResource AppAccentTintColor}"/>
+      <SolidColorBrush x:Key="AppAccentSuccessBrush"   Color="{StaticResource AppAccentSuccessColor}"/>
+      <SolidColorBrush x:Key="AppAccentWarningBrush"   Color="{StaticResource AppAccentWarningColor}"/>
+      <SolidColorBrush x:Key="AppAccentDangerBrush"    Color="{StaticResource AppAccentDangerColor}"/>
+      <SolidColorBrush x:Key="AppNavStripBrush"        Color="{StaticResource AppNavStripColor}"/>
     </ResourceDictionary>
+
   </ResourceDictionary.ThemeDictionaries>
 </ResourceDictionary>

@@ -1,111 +1,318 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- ═══════════════════════════════════════════════════════════════
+       EMBER DESIGN SYSTEM · Component Styles
+       Philosophy: Space over borders. Color over shadows. Motion for life.
+  ═══════════════════════════════════════════════════════════════ -->
 
-  <!-- Primary Button Custom Style -->
+  <!-- ══════════════ BUTTONS ══════════════ -->
+
+  <!-- Primary: terracotta fill, white text -->
   <Style Selector="Button.primary">
-    <Setter Property="Background" Value="{DynamicResource AppPrimaryBrush}" />
-    <Setter Property="Foreground" Value="#FFFFFF" />
-    <Setter Property="CornerRadius" Value="8" />
-    <Setter Property="Padding" Value="16,10" />
-    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Background"              Value="{DynamicResource AppPrimaryBrush}"/>
+    <Setter Property="Foreground"              Value="#FFFFFF"/>
+    <Setter Property="BorderThickness"         Value="0"/>
+    <Setter Property="CornerRadius"            Value="8"/>
+    <Setter Property="Padding"                 Value="16,9"/>
+    <Setter Property="FontSize"                Value="13"/>
+    <Setter Property="FontWeight"              Value="SemiBold"/>
+    <Setter Property="Cursor"                  Value="Hand"/>
     <Setter Property="Transitions">
       <Transitions>
-        <BrushTransition Property="Background" Duration="0:0:0.15" />
+        <BrushTransition Property="Background" Duration="0:0:0.15"/>
+        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.08"/>
       </Transitions>
     </Setter>
   </Style>
-
-  <Style Selector="Button.primary:pointerover">
-    <Setter Property="Background" Value="{DynamicResource AppPrimaryHoverBrush}" />
-    <Setter Property="Foreground" Value="#FFFFFF" />
+  <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AppPrimaryHoverBrush}"/>
+    <Setter Property="Foreground"  Value="#FFFFFF"/>
   </Style>
-
   <Style Selector="Button.primary:pressed">
-    <Setter Property="Opacity" Value="0.85" />
+    <Setter Property="RenderTransform" Value="scale(0.96)"/>
+    <Setter Property="Opacity"         Value="0.88"/>
   </Style>
 
-  <!-- Secondary / Outline Button Custom Style -->
+  <!-- Secondary: subtle fill with border (compat) -->
   <Style Selector="Button.secondary">
-    <Setter Property="Background" Value="Transparent" />
-    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
-    <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="CornerRadius" Value="8" />
-    <Setter Property="Padding" Value="16,10" />
-    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="Background"      Value="{DynamicResource AppSurfaceSubtleBrush}"/>
+    <Setter Property="Foreground"      Value="{DynamicResource AppTextPrimaryBrush}"/>
+    <Setter Property="BorderBrush"     Value="{DynamicResource AppBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius"    Value="8"/>
+    <Setter Property="Padding"         Value="12,7"/>
+    <Setter Property="FontSize"        Value="13"/>
+    <Setter Property="FontWeight"      Value="Medium"/>
+    <Setter Property="Cursor"          Value="Hand"/>
+  </Style>
+  <Style Selector="Button.secondary:pointerover /template/ ContentPresenter">
+    <Setter Property="Background"  Value="{DynamicResource AppMenuSelectedBrush}"/>
+    <Setter Property="Foreground"  Value="{DynamicResource AppPrimaryBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryBrush}"/>
   </Style>
 
-  <Style Selector="Button.secondary:pointerover">
-    <Setter Property="Background" Value="{DynamicResource AppMenuSelectedBrush}" />
+  <!-- Outline: transparent with thin border -->
+  <Style Selector="Button.outline">
+    <Setter Property="Background"      Value="Transparent"/>
+    <Setter Property="Foreground"      Value="{DynamicResource AppTextPrimaryBrush}"/>
+    <Setter Property="BorderBrush"     Value="{DynamicResource AppBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius"    Value="8"/>
+    <Setter Property="Padding"         Value="12,7"/>
+    <Setter Property="FontSize"        Value="13"/>
+    <Setter Property="FontWeight"      Value="Medium"/>
+    <Setter Property="Cursor"          Value="Hand"/>
+  </Style>
+  <Style Selector="Button.outline:pointerover /template/ ContentPresenter">
+    <Setter Property="Background"  Value="{DynamicResource AppAccentTintBrush}"/>
+    <Setter Property="Foreground"  Value="{DynamicResource AppPrimaryBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryBrush}"/>
+  </Style>
+  <Style Selector="Button.outline:pressed">
+    <Setter Property="Opacity" Value="0.8"/>
   </Style>
 
-  <Style Selector="Button.secondary:pressed">
-    <Setter Property="Opacity" Value="0.7" />
+  <!-- Ghost: invisible background, shows on hover -->
+  <Style Selector="Button.ghost">
+    <Setter Property="Background"      Value="Transparent"/>
+    <Setter Property="Foreground"      Value="{DynamicResource AppTextSecondaryBrush}"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="CornerRadius"    Value="7"/>
+    <Setter Property="Padding"         Value="9,6"/>
+    <Setter Property="FontSize"        Value="13"/>
+    <Setter Property="Cursor"          Value="Hand"/>
+  </Style>
+  <Style Selector="Button.ghost:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtleBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
   </Style>
 
-  <!-- Custom Styled TextBox -->
-  <Style Selector="TextBox.styled">
-    <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
-    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
-    <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="CornerRadius" Value="8" />
-    <Setter Property="Padding" Value="12,8" />
+  <!-- Icon button: square, no border, subtle hover -->
+  <Style Selector="Button.icon-btn">
+    <Setter Property="Background"      Value="Transparent"/>
+    <Setter Property="Foreground"      Value="{DynamicResource AppTextSecondaryBrush}"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="CornerRadius"    Value="8"/>
+    <Setter Property="Padding"         Value="7"/>
+    <Setter Property="Cursor"          Value="Hand"/>
+  </Style>
+  <Style Selector="Button.icon-btn:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtleBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
   </Style>
 
-  <Style Selector="TextBox.styled:pointerover /template/ Border#PART_BorderElement">
-    <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryBrush}" />
+  <!-- Danger icon: subtle red tint on hover -->
+  <Style Selector="Button.danger">
+    <Setter Property="Background"      Value="Transparent"/>
+    <Setter Property="Foreground"      Value="{DynamicResource AppTextSecondaryBrush}"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="CornerRadius"    Value="6"/>
+    <Setter Property="Padding"         Value="6"/>
+    <Setter Property="Cursor"          Value="Hand"/>
+    <Setter Property="Opacity"         Value="0.4"/>
+  </Style>
+  <Style Selector="Button.danger:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="#20C84848"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppAccentDangerBrush}"/>
   </Style>
 
-  <Style Selector="TextBox.styled:focus /template/ Border#PART_BorderElement">
-    <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryBrush}" />
-    <Setter Property="BorderThickness" Value="2" />
-  </Style>
-
-  <!-- Side Menu Container Styles -->
-  <Style Selector="ListBoxItem.side-menu-item">
-    <Setter Property="Padding" Value="12,10" />
-    <Setter Property="Margin" Value="0,2" />
-    <Setter Property="CornerRadius" Value="6" />
-    <Setter Property="Background" Value="Transparent" />
-    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
-  </Style>
-
-  <Style Selector="ListBoxItem.side-menu-item:pointerover">
-    <Setter Property="Background" Value="{DynamicResource AppMenuSelectedBrush}" />
-  </Style>
-
-  <Style Selector="ListBoxItem.side-menu-item:selected">
-    <Setter Property="Background" Value="{DynamicResource AppMenuSelectedBrush}" />
-    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryBrush}" />
-    <Setter Property="FontWeight" Value="SemiBold" />
-  </Style>
-
-  <!-- Side Menu Action Button Style (Matches ListBoxItem.side-menu-item) -->
+  <!-- Side menu button (compact drawer compat) -->
   <Style Selector="Button.side-menu-button">
-    <Setter Property="Padding" Value="12,10" />
-    <Setter Property="Margin" Value="0,2" />
-    <Setter Property="CornerRadius" Value="6" />
-    <Setter Property="Background" Value="Transparent" />
-    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
-    <Setter Property="BorderThickness" Value="0" />
-    <Setter Property="HorizontalAlignment" Value="Stretch" />
-    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="Padding"                 Value="12,9"/>
+    <Setter Property="Margin"                  Value="0,2"/>
+    <Setter Property="CornerRadius"            Value="8"/>
+    <Setter Property="Background"              Value="Transparent"/>
+    <Setter Property="Foreground"              Value="{DynamicResource AppTextSecondaryBrush}"/>
+    <Setter Property="BorderThickness"         Value="0"/>
+    <Setter Property="HorizontalAlignment"     Value="Stretch"/>
+    <Setter Property="HorizontalContentAlignment" Value="Left"/>
+    <Setter Property="Cursor"                  Value="Hand"/>
   </Style>
-
   <Style Selector="Button.side-menu-button:pointerover /template/ ContentPresenter">
-    <Setter Property="Background" Value="{DynamicResource AppMenuSelectedBrush}" />
-    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
+    <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtleBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
   </Style>
 
-  <!-- Surface Card Container -->
+  <!-- ══════════════ TEXT INPUTS ══════════════ -->
+
+  <!-- Composer input: editorial underline only, large -->
+  <Style Selector="TextBox.composer">
+    <Setter Property="Background"      Value="Transparent"/>
+    <Setter Property="Foreground"      Value="{DynamicResource AppTextPrimaryBrush}"/>
+    <Setter Property="BorderBrush"     Value="{DynamicResource AppBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="0,0,0,1.5"/>
+    <Setter Property="CornerRadius"    Value="0"/>
+    <Setter Property="Padding"         Value="0,8"/>
+    <Setter Property="FontSize"        Value="16"/>
+    <Setter Property="FontWeight"      Value="Normal"/>
+    <Setter Property="SelectionBrush"  Value="{DynamicResource AppPrimaryBrush}"/>
+  </Style>
+  <Style Selector="TextBox.composer /template/ Border#PART_BorderElement">
+    <Setter Property="Background" Value="Transparent"/>
+  </Style>
+  <Style Selector="TextBox.composer:focus /template/ Border#PART_BorderElement">
+    <Setter Property="BorderBrush"     Value="{DynamicResource AppPrimaryBrush}"/>
+    <Setter Property="BorderThickness" Value="0,0,0,1.5"/>
+    <Setter Property="Background"      Value="Transparent"/>
+  </Style>
+  <Style Selector="TextBox.composer:pointerover /template/ Border#PART_BorderElement">
+    <Setter Property="BorderBrush" Value="{DynamicResource AppTextSecondaryBrush}"/>
+    <Setter Property="Background"  Value="Transparent"/>
+  </Style>
+
+  <!-- Standard styled input: for settings, URL fields -->
+  <Style Selector="TextBox.styled">
+    <Setter Property="Background"      Value="{DynamicResource AppSurfaceElevatedBrush}"/>
+    <Setter Property="Foreground"      Value="{DynamicResource AppTextPrimaryBrush}"/>
+    <Setter Property="BorderBrush"     Value="{DynamicResource AppBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius"    Value="8"/>
+    <Setter Property="Padding"         Value="13,10"/>
+    <Setter Property="FontSize"        Value="13"/>
+    <Setter Property="SelectionBrush"  Value="{DynamicResource AppPrimaryBrush}"/>
+  </Style>
+  <Style Selector="TextBox.styled:pointerover /template/ Border#PART_BorderElement">
+    <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryBrush}"/>
+  </Style>
+  <Style Selector="TextBox.styled:focus /template/ Border#PART_BorderElement">
+    <Setter Property="BorderBrush"     Value="{DynamicResource AppPrimaryBrush}"/>
+    <Setter Property="BorderThickness" Value="1.5"/>
+    <Setter Property="Background"      Value="{DynamicResource AppSurfaceBrush}"/>
+  </Style>
+
+  <!-- ══════════════ NAV RAIL ITEMS ══════════════ -->
+
+  <!-- Icon-only nav rail item: 44×44, centered icon -->
+  <Style Selector="ListBoxItem.nav-rail-item">
+    <Setter Property="Padding"                 Value="0"/>
+    <Setter Property="Margin"                  Value="10,3"/>
+    <Setter Property="CornerRadius"            Value="10"/>
+    <Setter Property="Background"              Value="Transparent"/>
+    <Setter Property="Foreground"              Value="{DynamicResource AppTextSecondaryBrush}"/>
+    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    <Setter Property="VerticalContentAlignment"   Value="Center"/>
+    <Setter Property="Width"                   Value="44"/>
+    <Setter Property="Height"                  Value="44"/>
+    <Setter Property="Cursor"                  Value="Hand"/>
+  </Style>
+  <Style Selector="ListBoxItem.nav-rail-item:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtleBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
+  </Style>
+  <Style Selector="ListBoxItem.nav-rail-item:selected /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AppAccentTintBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryBrush}"/>
+  </Style>
+
+  <!-- Side menu item (compact drawer compat) -->
+  <Style Selector="ListBoxItem.side-menu-item">
+    <Setter Property="Padding"    Value="12,10"/>
+    <Setter Property="Margin"     Value="0,2"/>
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppTextSecondaryBrush}"/>
+    <Setter Property="Cursor"     Value="Hand"/>
+  </Style>
+  <Style Selector="ListBoxItem.side-menu-item:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtleBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
+  </Style>
+  <Style Selector="ListBoxItem.side-menu-item:selected /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AppMenuSelectedBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryBrush}"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+  </Style>
+
+  <!-- Bottom tab bar item (compact mode) -->
+  <Style Selector="ListBoxItem.tab-item">
+    <Setter Property="Padding"                 Value="0"/>
+    <Setter Property="Margin"                  Value="0"/>
+    <Setter Property="Background"              Value="Transparent"/>
+    <Setter Property="Foreground"              Value="{DynamicResource AppTextSecondaryBrush}"/>
+    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    <Setter Property="VerticalContentAlignment"   Value="Center"/>
+    <Setter Property="Height"                  Value="56"/>
+    <Setter Property="Cursor"                  Value="Hand"/>
+  </Style>
+  <Style Selector="ListBoxItem.tab-item:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtleBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
+  </Style>
+  <Style Selector="ListBoxItem.tab-item:selected /template/ ContentPresenter">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryBrush}"/>
+  </Style>
+
+  <!-- ══════════════ TASK ROW ══════════════ -->
+
+  <!-- Minimal task row — separator on bottom, hover tint -->
+  <Style Selector="Border.task-row">
+    <Setter Property="Background"      Value="Transparent"/>
+    <Setter Property="Padding"         Value="4,14"/>
+    <Setter Property="Margin"          Value="0"/>
+    <Setter Property="BorderBrush"     Value="{DynamicResource AppBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="0,0,0,1"/>
+    <Setter Property="CornerRadius"    Value="0"/>
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.1"/>
+      </Transitions>
+    </Setter>
+  </Style>
+  <Style Selector="Border.task-row:pointerover">
+    <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtleBrush}"/>
+  </Style>
+
+  <!-- task-card compat alias — uses task-row visuals -->
+  <Style Selector="Border.task-card">
+    <Setter Property="Background"      Value="Transparent"/>
+    <Setter Property="Padding"         Value="4,14"/>
+    <Setter Property="BorderBrush"     Value="{DynamicResource AppBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="0,0,0,1"/>
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.1"/>
+      </Transitions>
+    </Setter>
+  </Style>
+  <Style Selector="Border.task-card:pointerover">
+    <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtleBrush}"/>
+  </Style>
+
+  <!-- ══════════════ CONTENT SURFACES ══════════════ -->
+
+  <!-- Content block: settings/info card -->
+  <Style Selector="Border.content-block">
+    <Setter Property="Background"      Value="{DynamicResource AppSurfaceBrush}"/>
+    <Setter Property="BorderBrush"     Value="{DynamicResource AppBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius"    Value="12"/>
+    <Setter Property="Padding"         Value="24"/>
+  </Style>
+
+  <!-- Card (compat) -->
   <Style Selector="Border.card">
-    <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
-    <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="CornerRadius" Value="12" />
-    <Setter Property="Padding" Value="20" />
-    <Setter Property="BoxShadow" Value="0 4 12 0 #0D000000" />
+    <Setter Property="Background"      Value="{DynamicResource AppSurfaceBrush}"/>
+    <Setter Property="BorderBrush"     Value="{DynamicResource AppBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius"    Value="12"/>
+    <Setter Property="Padding"         Value="22"/>
+  </Style>
+
+  <!-- Card subtle (compat) -->
+  <Style Selector="Border.card-subtle">
+    <Setter Property="Background"      Value="{DynamicResource AppSurfaceElevatedBrush}"/>
+    <Setter Property="BorderBrush"     Value="{DynamicResource AppBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius"    Value="10"/>
+    <Setter Property="Padding"         Value="16"/>
+  </Style>
+
+  <!-- Divider line -->
+  <Style Selector="Separator.divider">
+    <Setter Property="Background" Value="{DynamicResource AppBorderBrush}"/>
+    <Setter Property="Height"     Value="1"/>
+    <Setter Property="Margin"     Value="0"/>
   </Style>
 
 </Styles>

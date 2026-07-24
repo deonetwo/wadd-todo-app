@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Wadd.UI.ViewModels;assembly=Wadd.UI"
              xmlns:models="clr-namespace:Wadd.Core.Models;assembly=Wadd.Core"
-             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
+             mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="760"
              x:Class="Wadd.UI.Views.MainView"
              x:DataType="vm:MainViewModel"
              Background="{DynamicResource AppBackgroundBrush}">
@@ -13,11 +13,11 @@
     <vm:MainViewModel />
   </Design.DataContext>
 
+  <!-- ───── Icon Geometries (Fluent / Custom SVG paths) ───── -->
   <UserControl.Resources>
-    <!-- Vector PathIcon geometries (Microsoft Fluent System Icons Regular) -->
     <Geometry x:Key="MenuIconData">M3 6a1 1 0 0 1 1-1h16a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1zm0 6a1 1 0 0 1 1-1h16a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1zm0 6a1 1 0 0 1 1-1h16a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1z</Geometry>
     <Geometry x:Key="CloseIconData">M4.293 4.293a1 1 0 0 1 1.414 0L12 10.586l6.293-6.293a1 1 0 1 1 1.414 1.414L13.414 12l6.293 6.293a1 1 0 0 1-1.414 1.414L12 13.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L10.586 12 4.293 5.707a1 1 0 0 1 0-1.414z</Geometry>
-    <Geometry x:Key="SunIconData">M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm-7 5a7 7 0 1 1 14 0 7 7 0 0 1-14 0zm7-10a1 1 0 0 1 1 1v2a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm0 17a1 1 0 0 1 1 1v2a1 1 0 1 1-2 0v-2a1 1 0 0 1 1-1zm10-8a1 1 0 0 1 0 2h-2a1 1 0 1 1 0-2h2zM5 12a1 1 0 0 1 0 2H3a1 1 0 1 1 0-2h2zm13.657-6.657a1 1 0 0 1 0 1.414l-1.414 1.414a1 1 0 1 1-1.414-1.414l1.414-1.414a1 1 0 0 1 1.414 0zM6.757 17.243a1 1 0 0 1 0 1.414L5.343 20.07a1 1 0 0 1-1.414-1.414l1.414-1.414a1 1 0 0 1 1.414 0zm11.899 11.899a1 1 0 0 1-1.414 0l-1.414-1.414a1 1 0 0 1 1.414-1.414l1.414 1.414a1 1 0 0 1 0 1.414zM6.757 6.757a1 1 0 0 1-1.414 0L3.929 5.343a1 1 0 0 1 1.414-1.414l1.414 1.414a1 1 0 0 1 0 1.414z</Geometry>
+    <Geometry x:Key="SunIconData">M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm-7 5a7 7 0 1 1 14 0 7 7 0 0 1-14 0zm7-10a1 1 0 0 1 1 1v2a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm0 17a1 1 0 0 1 1 1v2a1 1 0 1 1-2 0v-2a1 1 0 0 1 1-1zm10-8a1 1 0 0 1 0 2h-2a1 1 0 1 1 0-2h2zM5 12a1 1 0 0 1 0 2H3a1 1 0 1 1 0-2h2zm13.657-6.657a1 1 0 0 1 0 1.414l-1.414 1.414a1 1 0 1 1-1.414-1.414l1.414-1.414a1 1 0 0 1 1.414 0zM6.757 17.243a1 1 0 0 1 0 1.414L5.343 20.07a1 1 0 0 1-1.414-1.414l1.414-1.414a1 1 0 0 1 1.414 0z</Geometry>
     <Geometry x:Key="MoonIconData">M12.3 3a1 1 0 0 0-1.1.2 9 9 0 1 0 9.6 9.6 1 1 0 0 0-.2-1.1 7 7 0 0 1-8.3-8.7z</Geometry>
     <Geometry x:Key="MonitorIconData">M4 5a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h5v2H7a1 1 0 1 0 0 2h10a1 1 0 1 0 0-2h-2v-2h5a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3H4zm15 3v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1z</Geometry>
     <Geometry x:Key="CheckListIconData">M6 4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H6zm0 2h12v12H6V6zm2.5 3a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm3 0a1 1 0 1 0 0 2h5a1 1 0 1 0 0-2h-5zm-3 4a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm3 0a1 1 0 1 0 0 2h5a1 1 0 1 0 0-2h-5z</Geometry>
@@ -26,568 +26,855 @@
     <Geometry x:Key="TracingIconData">M3 12a1 1 0 0 1 1-1h4.28l1.64-4.1a1 1 0 0 1 1.86.04L13.7 15.3l1.83-4.57A1 1 0 0 1 16.46 10H20a1 1 0 1 1 0 2h-2.74l-2.65 6.63a1 1 0 0 1-1.86-.04L10.3 10.7l-1.83 4.57A1 1 0 0 1 7.54 16H4a1 1 0 0 1-1-1z</Geometry>
     <Geometry x:Key="ExportIconData">M12 3a1 1 0 0 1 1 1v9.586l3.293-3.293a1 1 0 1 1 1.414 1.414l-5 5a1 1 0 0 1-1.414 0l-5-5a1 1 0 1 1 1.414-1.414L11 13.586V4a1 1 0 0 1 1-1zM4 19a1 1 0 0 1 1-1h14a1 1 0 1 1 0 2H5a1 1 0 0 1-1-1z</Geometry>
     <StreamGeometry x:Key="SettingsIconData">M14 9.50006C11.5147 9.50006 9.5 11.5148 9.5 14.0001C9.5 16.4853 11.5147 18.5001 14 18.5001C15.3488 18.5001 16.559 17.9066 17.3838 16.9666C18.0787 16.1746 18.5 15.1365 18.5 14.0001C18.5 13.5401 18.431 13.0963 18.3028 12.6784C17.7382 10.8381 16.0253 9.50006 14 9.50006ZM11 14.0001C11 12.3432 12.3431 11.0001 14 11.0001C15.6569 11.0001 17 12.3432 17 14.0001C17 15.6569 15.6569 17.0001 14 17.0001C12.3431 17.0001 11 15.6569 11 14.0001Z M21.7093 22.3948L19.9818 21.6364C19.4876 21.4197 18.9071 21.4515 18.44 21.7219C17.9729 21.9924 17.675 22.4693 17.6157 23.0066L17.408 24.8855C17.3651 25.273 17.084 25.5917 16.7055 25.682C14.9263 26.1061 13.0725 26.1061 11.2933 25.682C10.9148 25.5917 10.6336 25.273 10.5908 24.8855L10.3834 23.0093C10.3225 22.4731 10.0112 21.9976 9.54452 21.7281C9.07783 21.4586 8.51117 21.4269 8.01859 21.6424L6.29071 22.4009C5.93281 22.558 5.51493 22.4718 5.24806 22.1859C4.00474 20.8536 3.07924 19.2561 2.54122 17.5137C2.42533 17.1384 2.55922 16.7307 2.8749 16.4977L4.40219 15.3703C4.83721 15.0501 5.09414 14.5415 5.09414 14.0007C5.09414 13.4598 4.83721 12.9512 4.40162 12.6306L2.87529 11.5051C2.55914 11.272 2.42513 10.8638 2.54142 10.4882C3.08038 8.74734 4.00637 7.15163 5.24971 5.82114C5.51684 5.53528 5.93492 5.44941 6.29276 5.60691L8.01296 6.36404C8.50793 6.58168 9.07696 6.54881 9.54617 6.27415C10.0133 6.00264 10.3244 5.52527 10.3844 4.98794L10.5933 3.11017C10.637 2.71803 10.9245 2.39704 11.3089 2.31138C12.19 2.11504 13.0891 2.01071 14.0131 2.00006C14.9147 2.01047 15.8128 2.11485 16.6928 2.31149C17.077 2.39734 17.3643 2.71823 17.4079 3.11017L17.617 4.98937C17.7116 5.85221 18.4387 6.50572 19.3055 6.50663C19.5385 6.507 19.769 6.45838 19.9843 6.36294L21.7048 5.60568C22.0626 5.44818 22.4807 5.53405 22.7478 5.81991C23.9912 7.1504 24.9172 8.74611 25.4561 10.487C25.5723 10.8623 25.4386 11.2703 25.1228 11.5035L23.5978 12.6297C23.1628 12.95 22.9 13.4586 22.9 13.9994C22.9 14.5403 23.1628 15.0489 23.5988 15.3698L25.1251 16.4965C25.441 16.7296 25.5748 17.1376 25.4586 17.5131C24.9198 19.2536 23.9944 20.8492 22.7517 22.1799C22.4849 22.4657 22.0671 22.5518 21.7093 22.3948ZM16.263 22.1966C16.4982 21.4685 16.9889 20.8288 17.6884 20.4238C18.5702 19.9132 19.6536 19.8547 20.5841 20.2627L21.9281 20.8526C22.791 19.8538 23.4593 18.7013 23.8981 17.4552L22.7095 16.5778L22.7086 16.5771C21.898 15.98 21.4 15.0277 21.4 13.9994C21.4 12.9719 21.8974 12.0195 22.7073 11.4227L22.7085 11.4218L23.8957 10.545C23.4567 9.2988 22.7881 8.14636 21.9248 7.1477L20.5922 7.73425L20.5899 7.73527C20.1844 7.91463 19.7472 8.00722 19.3039 8.00663C17.6715 8.00453 16.3046 6.77431 16.1261 5.15465L16.1259 5.15291L15.9635 3.69304C15.3202 3.57328 14.6677 3.50872 14.013 3.50017C13.3389 3.50891 12.6821 3.57367 12.0377 3.69328L11.8751 5.15452C11.7625 6.16272 11.1793 7.05909 10.3019 7.56986C9.41937 8.0856 8.34453 8.14844 7.40869 7.73694L6.07273 7.14893C5.20949 8.14751 4.54092 9.29983 4.10196 10.5459L5.29181 11.4233C6.11115 12.0269 6.59414 12.9837 6.59414 14.0007C6.59414 15.0173 6.11142 15.9742 5.29237 16.5776L4.10161 17.4566C4.54002 18.7044 5.2085 19.8585 6.07205 20.8587L7.41742 20.2682C8.34745 19.8613 9.41573 19.9215 10.2947 20.4292C11.174 20.937 11.7593 21.832 11.8738 22.84L11.8744 22.8445L12.0362 24.3088C13.3326 24.5638 14.6662 24.5638 15.9626 24.3088L16.1247 22.8418C16.1491 22.6217 16.1955 22.4055 16.263 22.1966Z</StreamGeometry>
+    <Geometry x:Key="PlusIconData">M12 4a1 1 0 0 1 1 1v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6V5a1 1 0 0 1 1-1z</Geometry>
+    <Geometry x:Key="SparkleIconData">M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z</Geometry>
   </UserControl.Resources>
 
-  <Grid RowDefinitions="Auto,*,Auto">
-    <!-- Header / Top Bar -->
-    <Border Grid.Row="0"
-            Background="{DynamicResource AppSurfaceBrush}"
-            BorderBrush="{DynamicResource AppBorderBrush}"
-            BorderThickness="0,0,0,1"
-            Padding="16,10">
-      <Grid>
-        <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsSyncing}" Height="3" VerticalAlignment="Bottom" Margin="-16,0,-16,-10" Foreground="{DynamicResource AppPrimaryBrush}" />
-        <Grid ColumnDefinitions="Auto,*,Auto">
-          <!-- Wide & Compact App Title & Menu Toggle -->
-          <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-            <Button Classes="secondary"
-                    Command="{Binding ToggleSideMenuCommand}"
-                    IsVisible="{Binding IsCompact}"
-                    Padding="8,6"
-                    Margin="0,0,4,0"
-                    ToolTip.Tip="Open Menu">
-              <PathIcon Data="{StaticResource MenuIconData}" Width="18" Height="18" Foreground="{DynamicResource AppTextPrimaryBrush}" />
-            </Button>
+  <!-- Root panel: shows either wide or compact layout -->
+  <Panel>
 
-            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-              <TextBlock Text="Wadd" Classes="brand-accent" VerticalAlignment="Center"/>
-              <TextBlock Text="ToDo" Classes="brand-title" VerticalAlignment="Center"/>
-              <Border Background="{DynamicResource AppPrimaryBrush}" CornerRadius="4" Padding="5,1,5,2" Margin="2,0,0,0" VerticalAlignment="Center">
-                <TextBlock Text="APP" FontSize="9" FontWeight="Black" Foreground="#FFFFFF" LetterSpacing="1"/>
-              </Border>
-            </StackPanel>
-          </StackPanel>
+    <!-- ══════════════════════════════════════════════════════
+         WIDE / DESKTOP LAYOUT — nav rail + content area
+    ══════════════════════════════════════════════════════ -->
+    <Grid IsVisible="{Binding !IsCompact}" ColumnDefinitions="64,*">
 
-          <!-- Top Bar Center: Status Indicator Badge & Sync Action -->
-          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
-            <!-- Status Badge ("Local Mode" vs "Syncing...") -->
-            <Border Background="{DynamicResource AppMenuSelectedBrush}" CornerRadius="14" Padding="12,4" VerticalAlignment="Center">
-              <StackPanel Orientation="Horizontal" Spacing="8">
-                <Ellipse Width="8" Height="8" Fill="#10B981" VerticalAlignment="Center"/>
-                <TextBlock Text="Syncing..." IsVisible="{Binding IsSyncing}" Classes="caption" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
-                <TextBlock Text="Local Mode" IsVisible="{Binding !IsSyncing}" Classes="caption" FontWeight="Bold" VerticalAlignment="Center"/>
-                <TextBlock Text="(SQLite Storage)"
-                           IsVisible="{Binding !IsCompact}"
-                           Classes="caption" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center"/>
-              </StackPanel>
-            </Border>
+      <!-- ──────────────────────────────────────────────────
+           NAV RAIL  (64px wide, icon-only vertical strip)
+      ────────────────────────────────────────────────── -->
+      <Border Grid.Column="0"
+              Background="{DynamicResource AppSurfaceBrush}"
+              BorderBrush="{DynamicResource AppBorderBrush}"
+              BorderThickness="0,0,1,0">
+        <Grid RowDefinitions="Auto,*,Auto">
 
-            <!-- Top Bar Action: Sync Now Button -->
-            <Button Classes="secondary"
+          <!-- Brand mark: Wadd Logo -->
+          <Border Grid.Row="0" Padding="0,18,0,14" HorizontalAlignment="Center">
+            <Image Source="avares://Wadd.UI/Assets/logo.png"
+                   Width="38" Height="38"
+                   RenderOptions.BitmapInterpolationMode="HighQuality"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"/>
+          </Border>
+
+          <!-- Navigation Items: icon-only ListBox -->
+          <ListBox Grid.Row="1"
+                   Background="Transparent"
+                   BorderThickness="0"
+                   SelectedIndex="{Binding SelectedNavIndex}"
+                   Padding="0,4">
+            <ListBoxItem Classes="nav-rail-item"
+                         ToolTip.Tip="Tasks">
+              <PathIcon Data="{StaticResource CheckListIconData}" Width="19" Height="19"/>
+            </ListBoxItem>
+            <ListBoxItem Classes="nav-rail-item"
+                         ToolTip.Tip="Calendar">
+              <PathIcon Data="{StaticResource CalendarIconData}" Width="19" Height="19"/>
+            </ListBoxItem>
+            <ListBoxItem Classes="nav-rail-item"
+                         ToolTip.Tip="Diagnostics">
+              <PathIcon Data="{StaticResource TracingIconData}" Width="19" Height="19"/>
+            </ListBoxItem>
+            <ListBoxItem Classes="nav-rail-item"
+                         ToolTip.Tip="Settings">
+              <PathIcon Data="{StaticResource SettingsIconData}" Width="19" Height="19"/>
+            </ListBoxItem>
+          </ListBox>
+
+          <!-- Bottom actions: sync + status dot -->
+          <StackPanel Grid.Row="2"
+                      Spacing="6"
+                      HorizontalAlignment="Center"
+                      Margin="0,0,0,18">
+            <Button Classes="icon-btn"
                     Command="{Binding SyncCommand}"
                     IsEnabled="{Binding !IsSyncing}"
-                    Padding="10,5"
-                    ToolTip.Tip="Synchronize items with remote Google Apps Script endpoint">
-              <StackPanel Orientation="Horizontal" Spacing="6">
-                <PathIcon Data="{StaticResource SyncIconData}" Width="14" Height="14" Foreground="{DynamicResource AppPrimaryBrush}" />
-                <TextBlock Text="Sync Now" Classes="caption" FontWeight="SemiBold" VerticalAlignment="Center"/>
-              </StackPanel>
+                    ToolTip.Tip="Sync with Google Apps Script">
+              <PathIcon Data="{StaticResource SyncIconData}" Width="16" Height="16"/>
             </Button>
-          </StackPanel>
-
-          <!-- Top Bar Right: Clean Settings Navigation Button -->
-          <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-            <Button Classes="secondary"
-                    Command="{Binding OpenSettingsCommand}"
-                    Padding="8,6"
-                    ToolTip.Tip="Open Settings">
-              <StackPanel Orientation="Horizontal" Spacing="6">
-                <PathIcon Data="{StaticResource SettingsIconData}" Width="16" Height="16" Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                <TextBlock Text="Settings" IsVisible="{Binding !IsCompact}" Classes="caption" VerticalAlignment="Center"/>
-              </StackPanel>
-            </Button>
+            <!-- Status indicator dot -->
+            <Ellipse Width="6" Height="6"
+                     HorizontalAlignment="Center"
+                     Fill="{DynamicResource AppAccentSuccessBrush}"
+                     IsVisible="{Binding !IsSyncing}"
+                     ToolTip.Tip="Local mode · SQLite active"/>
+            <Ellipse Width="6" Height="6"
+                     HorizontalAlignment="Center"
+                     Fill="{DynamicResource AppPrimaryBrush}"
+                     IsVisible="{Binding IsSyncing}"
+                     ToolTip.Tip="Syncing…"/>
           </StackPanel>
         </Grid>
-      </Grid>
-    </Border>
+      </Border>
 
-    <!-- Main Content Body -->
-    <Grid Grid.Row="1">
-      <!-- Wide View Layout (Left Sidebar + Content) -->
-      <Grid IsVisible="{Binding !IsCompact}" ColumnDefinitions="250,*">
-        <!-- Left Sidebar Navigation -->
-        <Border Grid.Column="0"
-                Background="{DynamicResource AppSurfaceBrush}"
-                BorderBrush="{DynamicResource AppBorderBrush}"
-                BorderThickness="0,0,1,0"
-                Padding="14,16">
-          <Grid RowDefinitions="Auto,*,Auto">
-            <!-- Sidebar Header -->
-            <StackPanel Grid.Row="0" Spacing="6" Margin="4,0,0,12">
-              <StackPanel Orientation="Horizontal" Spacing="8">
-                <PathIcon Data="{StaticResource CheckListIconData}" Width="20" Height="20" Foreground="{DynamicResource AppPrimaryBrush}" />
-                <TextBlock Text="Wadd Workspace" Classes="body" FontWeight="Bold" VerticalAlignment="Center"/>
-              </StackPanel>
-              <TextBlock Text="Clean Architecture To-Do Shell" Classes="caption" Foreground="{DynamicResource AppTextSecondaryBrush}" />
-            </StackPanel>
+      <!-- ──────────────────────────────────────────────────
+           MAIN CONTENT AREA
+      ────────────────────────────────────────────────── -->
+      <Panel Grid.Column="1">
 
-            <!-- Navigation Items List -->
-            <StackPanel Grid.Row="1" Spacing="6">
-              <TextBlock Text="NAVIGATION" Classes="caption" Margin="6,4,0,6" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-              <ListBox Background="Transparent" SelectedIndex="{Binding SelectedNavIndex}">
-                <ListBoxItem Classes="side-menu-item">
-                  <StackPanel Orientation="Horizontal" Spacing="10">
-                    <PathIcon Data="{StaticResource CheckListIconData}" Width="18" Height="18" />
-                    <TextBlock Text="Tasks" Classes="body" VerticalAlignment="Center"/>
-                  </StackPanel>
-                </ListBoxItem>
-                <ListBoxItem Classes="side-menu-item">
-                  <StackPanel Orientation="Horizontal" Spacing="10">
-                    <PathIcon Data="{StaticResource CalendarIconData}" Width="18" Height="18" />
-                    <TextBlock Text="Calendar (Placeholder)" Classes="body" VerticalAlignment="Center"/>
-                  </StackPanel>
-                </ListBoxItem>
-                <ListBoxItem Classes="side-menu-item">
-                  <StackPanel Orientation="Horizontal" Spacing="10">
-                    <PathIcon Data="{StaticResource TracingIconData}" Width="18" Height="18" />
-                    <TextBlock Text="Tracing (Wireframe)" Classes="body" VerticalAlignment="Center"/>
-                  </StackPanel>
-                </ListBoxItem>
-              </ListBox>
-            </StackPanel>
+        <!-- ─── Sync progress bar (top edge, 2px line) ─── -->
+        <ProgressBar IsIndeterminate="True"
+                     IsVisible="{Binding IsSyncing}"
+                     Height="2"
+                     VerticalAlignment="Top"
+                     HorizontalAlignment="Stretch"
+                     Foreground="{DynamicResource AppPrimaryBrush}"
+                     Background="Transparent"/>
 
-            <!-- Bottom Sidebar Action: Settings Button (Matches side-menu-item style) -->
-            <Border Grid.Row="2"
-                    BorderBrush="{DynamicResource AppBorderBrush}"
-                    BorderThickness="0,1,0,0"
-                    Padding="0,12,0,0">
-              <Button Classes="side-menu-button"
-                      Command="{Binding OpenSettingsCommand}"
-                      ToolTip.Tip="Open Settings">
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                  <PathIcon Data="{StaticResource SettingsIconData}" Width="18" Height="18" />
-                  <TextBlock Text="Settings" Classes="body" VerticalAlignment="Center"/>
+        <!-- ═══ TAB 0: TASKS VIEW ═══ -->
+        <Grid IsVisible="{Binding IsTasksView}" RowDefinitions="*">
+          <ScrollViewer VerticalScrollBarVisibility="Auto"
+                        HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="64,52,80,80" Spacing="0">
+
+              <!-- Page header -->
+              <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+                <StackPanel Grid.Column="0" Spacing="4">
+                  <TextBlock Text="{Binding CurrentDateFormatted}"
+                             Classes="micro"
+                             Foreground="{DynamicResource AppPrimaryBrush}"
+                             Margin="0,0,0,2"/>
+                  <TextBlock Text="My Tasks" Classes="display-xl"/>
+                  <StackPanel Orientation="Horizontal" Spacing="10">
+                    <TextBlock Text="{Binding TodoItems.Count, StringFormat='{}{0} items'}"
+                               Classes="small"/>
+                    <TextBlock Text="·" Classes="small"/>
+                    <TextBlock IsVisible="{Binding !IsSyncing}"
+                               Text="SQLite local storage"
+                               Classes="small"/>
+                    <TextBlock IsVisible="{Binding IsSyncing}"
+                               Text="Syncing with cloud…"
+                               Classes="small"
+                               Foreground="{DynamicResource AppPrimaryBrush}"/>
+                  </StackPanel>
                 </StackPanel>
-              </Button>
-            </Border>
-          </Grid>
-        </Border>
+                <!-- Toolbar -->
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Bottom"
+                            Margin="0,0,0,4">
+                  <Button Classes="outline"
+                          Command="{Binding RefreshCommand}"
+                          ToolTip.Tip="Reload tasks from database">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <PathIcon Data="{StaticResource SyncIconData}" Width="12" Height="12"/>
+                      <TextBlock Text="Reload" FontSize="12"/>
+                    </StackPanel>
+                  </Button>
+                  <Button Classes="outline"
+                          Command="{Binding ExportToExcelCommand}"
+                          ToolTip.Tip="Export tasks to Excel">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <PathIcon Data="{StaticResource ExportIconData}" Width="12" Height="12"/>
+                      <TextBlock Text="Export" FontSize="12"/>
+                    </StackPanel>
+                  </Button>
+                </StackPanel>
+              </Grid>
 
-        <!-- Wide Main Content Area -->
-        <Grid Grid.Column="1" Margin="20,20,20,20">
+              <!-- Full-width divider -->
+              <Separator Classes="divider" Margin="0,24,0,32"/>
 
-          <!-- TAB 0: Tasks View (Fixed Input Header Card + Flex Scrollable List Card) -->
-          <Grid IsVisible="{Binding IsTasksView}" RowDefinitions="Auto,*">
-            <!-- Task Entry Card (Fixed Top) -->
-            <Border Grid.Row="0" Classes="card" HorizontalAlignment="Stretch">
-              <StackPanel Spacing="14">
-                <TextBlock Text="Task Management (SQLite Local Database)" Classes="header" TextWrapping="Wrap" />
-                <Grid ColumnDefinitions="*,12,Auto">
+              <!-- ── Task Composer ── -->
+              <StackPanel Spacing="0" Margin="0,0,0,40">
+                <!-- Title input + Add button -->
+                <Grid ColumnDefinitions="*,Auto">
                   <TextBox Grid.Column="0"
-                           Classes="styled"
-                           Watermark="Type a new task title..."
+                           Classes="composer"
+                           Watermark="What do you need to do?"
                            Text="{Binding NewTaskTitle, Mode=TwoWay}"
-                           HorizontalAlignment="Stretch" />
-                  <Button Grid.Column="2"
+                           FontSize="20"
+                           FontWeight="Medium"
+                           Padding="0,10"
+                           HorizontalAlignment="Stretch"/>
+                  <Button Grid.Column="1"
                           Classes="primary"
-                          Command="{Binding AddTaskCommand}">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                      <PathIcon Data="{StaticResource CheckListIconData}" Width="16" Height="16" Foreground="#FFFFFF" />
-                      <TextBlock Text="Add Task" VerticalAlignment="Center" />
+                          Command="{Binding AddTaskCommand}"
+                          Margin="16,0,0,0"
+                          VerticalAlignment="Bottom">
+                    <StackPanel Orientation="Horizontal" Spacing="7">
+                      <PathIcon Data="{StaticResource PlusIconData}"
+                                Width="13" Height="13"
+                                Foreground="#FFFFFF"/>
+                      <TextBlock Text="Add task" FontSize="13" FontWeight="SemiBold"/>
                     </StackPanel>
                   </Button>
                 </Grid>
-                <TextBlock Text="{Binding StatusMessage}" Classes="caption" TextWrapping="Wrap" Foreground="{DynamicResource AppTextSecondaryBrush}" />
+                <!-- Description input -->
+                <TextBox Classes="composer"
+                         Watermark="Add a note or context… (optional)"
+                         Text="{Binding NewTaskDescription, Mode=TwoWay}"
+                         FontSize="13"
+                         Padding="0,8"
+                         Margin="0,12,0,0"/>
               </StackPanel>
-            </Border>
 
-            <!-- Tasks List Card (Fills remaining height, header stays fixed, list scrolls internally) -->
-            <Border Grid.Row="1" Classes="card" Margin="0,16,0,0" Padding="20,18,12,16" HorizontalAlignment="Stretch">
-              <Grid RowDefinitions="Auto,Auto,*">
-                <!-- Card Header (Fixed at top of card, Reload & Export Actions) -->
-                <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,8,0">
-                  <TextBlock Grid.Column="0" Text="Stored Todo Items" Classes="header" VerticalAlignment="Center" />
-                  <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                    <Button Classes="secondary" Command="{Binding RefreshCommand}" Padding="8,4" ToolTip.Tip="Reload tasks from SQLite database">
-                      <StackPanel Orientation="Horizontal" Spacing="6">
-                        <PathIcon Data="{StaticResource SyncIconData}" Width="14" Height="14" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
-                        <TextBlock Text="Reload" Classes="caption" VerticalAlignment="Center"/>
-                      </StackPanel>
-                    </Button>
-                    <Button Classes="primary" Command="{Binding ExportToExcelCommand}" Padding="10,4" ToolTip.Tip="Export all tasks to Excel (.xlsx)">
-                      <StackPanel Orientation="Horizontal" Spacing="6">
-                        <PathIcon Data="{StaticResource ExportIconData}" Width="14" Height="14" Foreground="#FFFFFF"/>
-                        <TextBlock Text="Export to Excel" Classes="caption" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                      </StackPanel>
-                    </Button>
-                  </StackPanel>
-                </Grid>
+              <!-- ── Section label ── -->
+              <TextBlock Text="ALL TASKS"
+                         Classes="micro"
+                         Margin="0,0,0,4"/>
 
-                <Separator Grid.Row="1" Background="{DynamicResource AppBorderBrush}" Margin="0,12,8,12"/>
-
-                <!-- Dedicated Scroll Viewer for Task Items List -->
-                <ScrollViewer Grid.Row="2" Padding="0,0,8,4" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-                  <ItemsControl ItemsSource="{Binding TodoItems}">
-                    <ItemsControl.ItemTemplate>
-                      <DataTemplate x:DataType="vm:TodoItemViewModel">
-                        <Border Background="{DynamicResource AppBackgroundBrush}"
-                                BorderBrush="{DynamicResource AppBorderBrush}"
-                                BorderThickness="1"
-                                CornerRadius="8"
-                                Padding="12,10"
-                                Margin="0,0,0,8">
-                          <Grid ColumnDefinitions="Auto,*,Auto">
-                            <CheckBox Grid.Column="0"
-                                      IsChecked="{Binding IsCompleted, Mode=TwoWay}"
-                                      Command="{Binding $parent[UserControl].DataContext.ToggleTodoCommand}"
-                                      CommandParameter="{Binding}"
-                                      Margin="0,0,10,0"/>
-
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                              <TextBlock Text="{Binding Title}"
-                                         Classes="body"
-                                         FontWeight="SemiBold"
-                                         TextWrapping="Wrap"/>
-                              <TextBlock Text="{Binding Description}"
-                                         Classes="caption"
-                                         IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                         Margin="0,2,0,0"/>
-                              <TextBlock Text="{Binding CreatedAt, StringFormat='Created: {0:g}'}"
-                                         Classes="caption"
-                                         Foreground="{DynamicResource AppTextSecondaryBrush}"
-                                         Margin="0,2,0,0"/>
-                            </StackPanel>
-
-                            <Button Grid.Column="2"
-                                    Classes="secondary"
-                                    Command="{Binding $parent[UserControl].DataContext.DeleteTodoCommand}"
-                                    CommandParameter="{Binding}"
-                                    Padding="6"
-                                    ToolTip.Tip="Delete Task">
-                              <PathIcon Data="{StaticResource CloseIconData}" Width="14" Height="14" Foreground="{DynamicResource AppTextPrimaryBrush}" />
-                            </Button>
-                          </Grid>
-                        </Border>
-                      </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                  </ItemsControl>
-                </ScrollViewer>
-              </Grid>
-            </Border>
-          </Grid>
-
-          <!-- TAB 1: Calendar View -->
-          <ScrollViewer IsVisible="{Binding IsCalendarView}">
-            <StackPanel Spacing="16">
-              <Border Classes="card">
-                <StackPanel Spacing="12">
-                  <StackPanel Orientation="Horizontal" Spacing="8">
-                    <PathIcon Data="{StaticResource CalendarIconData}" Width="22" Height="22" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                    <TextBlock Text="Calendar (Placeholder View)" Classes="header"/>
-                  </StackPanel>
-                  <Separator Background="{DynamicResource AppBorderBrush}"/>
-                  <TextBlock Text="Calendar schedule and task timeline visualization module will be available in future releases." Classes="body"/>
-                </StackPanel>
-              </Border>
-            </StackPanel>
-          </ScrollViewer>
-
-          <!-- TAB 2: Tracing Wireframe View -->
-          <ScrollViewer IsVisible="{Binding IsTracingView}">
-            <StackPanel Spacing="20">
-              <Border Classes="card">
-                <StackPanel Spacing="12">
-                  <StackPanel Orientation="Horizontal" Spacing="8">
-                    <PathIcon Data="{StaticResource TracingIconData}" Width="22" Height="22" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                    <TextBlock Text="Tracing &amp; Diagnostics (Wireframe Placeholder)" Classes="header"/>
-                  </StackPanel>
-                  <Separator Background="{DynamicResource AppBorderBrush}"/>
-                  <TextBlock Text="Detailed application event tracing, SQLite query log inspect, and diagnostic telemetry output panel." Classes="body"/>
-                </StackPanel>
-              </Border>
-
-              <Border Background="{DynamicResource AppSurfaceBrush}"
-                      BorderBrush="{DynamicResource AppPrimaryBrush}"
-                      BorderThickness="1"
-                      CornerRadius="10"
-                      Padding="20"
-                      HorizontalAlignment="Stretch">
-                <StackPanel Spacing="12">
-                  <StackPanel Orientation="Horizontal" Spacing="8">
-                    <PathIcon Data="{StaticResource TracingIconData}" Width="20" Height="20" Foreground="{DynamicResource AppPrimaryBrush}" />
-                    <TextBlock Text="Tracing Area Placeholder (Wireframe Control Box)" Classes="body" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}" />
-                  </StackPanel>
-                  <Separator Background="{DynamicResource AppBorderBrush}"/>
-                  <TextBlock Text="This control box is reserved for future telemetry, performance metrics, and application tracing hooks (ITracingService integration)."
-                             Classes="caption" TextWrapping="Wrap" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-                  <Grid ColumnDefinitions="*,*,*" Margin="0,8,0,0">
-                    <Border Grid.Column="0" Background="{DynamicResource AppBackgroundBrush}" Padding="10,8" CornerRadius="6" Margin="0,0,8,0">
-                      <TextBlock Text="[ Trace Logs: Active ]" Classes="caption" HorizontalAlignment="Center" FontWeight="SemiBold"/>
-                    </Border>
-                    <Border Grid.Column="1" Background="{DynamicResource AppBackgroundBrush}" Padding="10,8" CornerRadius="6" Margin="0,0,8,0">
-                      <TextBlock Text="[ Latency: 0.2ms ]" Classes="caption" HorizontalAlignment="Center" FontWeight="SemiBold"/>
-                    </Border>
-                    <Border Grid.Column="2" Background="{DynamicResource AppBackgroundBrush}" Padding="10,8" CornerRadius="6">
-                      <TextBlock Text="[ Memory: Safe ]" Classes="caption" HorizontalAlignment="Center" FontWeight="SemiBold"/>
-                    </Border>
-                  </Grid>
-                </StackPanel>
-              </Border>
-            </StackPanel>
-          </ScrollViewer>
-
-          <!-- TAB 3: Settings View -->
-          <ScrollViewer IsVisible="{Binding IsSettingsView}">
-            <StackPanel Spacing="20">
-              <!-- Appearance & Theme Settings Card -->
-              <Border Classes="card">
-                <StackPanel Spacing="14">
-                  <StackPanel Orientation="Horizontal" Spacing="8">
-                    <PathIcon Data="{StaticResource SunIconData}" Width="20" Height="20" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                    <TextBlock Text="Appearance &amp; Theme" Classes="header"/>
-                  </StackPanel>
-                  <Separator Background="{DynamicResource AppBorderBrush}"/>
-                  <TextBlock Text="Choose your preferred interface theme mode." Classes="body"/>
-                  <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,4,0,0">
-                    <Button Classes="secondary" Command="{Binding SetThemeModeCommand}" CommandParameter="System">
-                      <StackPanel Orientation="Horizontal" Spacing="6">
-                        <PathIcon Data="{StaticResource MonitorIconData}" Width="16" Height="16" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
-                        <TextBlock Text="System Default" VerticalAlignment="Center"/>
-                      </StackPanel>
-                    </Button>
-                    <Button Classes="secondary" Command="{Binding SetThemeModeCommand}" CommandParameter="Light">
-                      <StackPanel Orientation="Horizontal" Spacing="6">
-                        <PathIcon Data="{StaticResource SunIconData}" Width="16" Height="16" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
-                        <TextBlock Text="Light Mode" VerticalAlignment="Center"/>
-                      </StackPanel>
-                    </Button>
-                    <Button Classes="secondary" Command="{Binding SetThemeModeCommand}" CommandParameter="Dark">
-                      <StackPanel Orientation="Horizontal" Spacing="6">
-                        <PathIcon Data="{StaticResource MoonIconData}" Width="16" Height="16" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
-                        <TextBlock Text="Dark Mode" VerticalAlignment="Center"/>
-                      </StackPanel>
-                    </Button>
-                  </StackPanel>
-                  <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,4,0,0">
-                    <TextBlock Text="Active Theme:" Classes="caption"/>
-                    <TextBlock Text="{Binding CurrentThemeLabel}" Classes="caption" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                  </StackPanel>
-                </StackPanel>
-              </Border>
-
-              <!-- Synchronization & Backup Endpoint Settings Card -->
-              <Border Classes="card">
-                <StackPanel Spacing="14">
-                  <StackPanel Orientation="Horizontal" Spacing="8">
-                    <PathIcon Data="{StaticResource SyncIconData}" Width="20" Height="20" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                    <TextBlock Text="Google Apps Script Sync Endpoint" Classes="header"/>
-                  </StackPanel>
-                  <Separator Background="{DynamicResource AppBorderBrush}"/>
-                  <TextBlock Text="Enter your deployed Google Apps Script Web App URL endpoint for cloud backup and 2-way sync." Classes="body"/>
-                  <Grid ColumnDefinitions="*,12,Auto">
-                    <TextBox Grid.Column="0"
-                             Classes="styled"
-                             Watermark="https://script.google.com/macros/s/.../exec"
-                             Text="{Binding SyncEndpointUrl, Mode=TwoWay}"
-                             HorizontalAlignment="Stretch"/>
-                    <Button Grid.Column="2"
-                            Classes="primary"
-                            Command="{Binding SaveSettingsCommand}">
-                      <StackPanel Orientation="Horizontal" Spacing="6">
-                        <PathIcon Data="{StaticResource SyncIconData}" Width="14" Height="14" Foreground="#FFFFFF"/>
-                        <TextBlock Text="Save Endpoint" VerticalAlignment="Center"/>
-                      </StackPanel>
-                    </Button>
-                  </Grid>
-                  <TextBlock Text="Note: You can also configure this via the WADD_SYNC_URL environment variable." Classes="caption" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-                </StackPanel>
-              </Border>
-
-              <!-- Storage & Application Info Card -->
-              <Border Classes="card">
-                <StackPanel Spacing="14">
-                  <StackPanel Orientation="Horizontal" Spacing="8">
-                    <PathIcon Data="{StaticResource SettingsIconData}" Width="20" Height="20" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                    <TextBlock Text="Storage &amp; Application Info" Classes="header"/>
-                  </StackPanel>
-                  <Separator Background="{DynamicResource AppBorderBrush}"/>
-                  <StackPanel Spacing="8">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                      <TextBlock Text="Local Database:" Classes="caption" FontWeight="Bold" Width="160"/>
-                      <TextBlock Text="%LOCALAPPDATA%\Wadd\wadd.db" Classes="caption" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                      <TextBlock Text="Excel Exports Directory:" Classes="caption" FontWeight="Bold" Width="160"/>
-                      <TextBlock Text="%LOCALAPPDATA%\Wadd\Exports\" Classes="caption" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                      <TextBlock Text="Architecture Stack:" Classes="caption" FontWeight="Bold" Width="160"/>
-                      <TextBlock Text=".NET 10.0 + Avalonia UI + Clean Architecture" Classes="caption" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-                    </StackPanel>
-                  </StackPanel>
-                </StackPanel>
-              </Border>
-            </StackPanel>
-          </ScrollViewer>
-
-        </Grid>
-      </Grid>
-
-      <!-- Portrait / Mini View Layout (Single Column Stack) -->
-      <ScrollViewer IsVisible="{Binding IsCompact}" Padding="14">
-        <StackPanel Spacing="14">
-          <Border Classes="card" Padding="14">
-            <StackPanel Spacing="8">
-              <TextBlock Text="Portrait Mini View (SQLite)" Classes="header" />
-              <TextBlock Text="Compact view with SQLite persistence." Classes="body" />
-              <Button Classes="primary" Command="{Binding ExportToExcelCommand}" HorizontalAlignment="Stretch" Margin="0,4,0,0">
-                <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
-                  <PathIcon Data="{StaticResource ExportIconData}" Width="14" Height="14" Foreground="#FFFFFF"/>
-                  <TextBlock Text="Export to Excel" VerticalAlignment="Center"/>
-                </StackPanel>
-              </Button>
-            </StackPanel>
-          </Border>
-
-          <!-- Compact Input Card -->
-          <Border Classes="card" Padding="14">
-            <StackPanel Spacing="12">
-              <TextBlock Text="Add Task" Classes="body" FontWeight="SemiBold" />
-              <TextBox Classes="styled" Watermark="New task title..." Text="{Binding NewTaskTitle, Mode=TwoWay}" />
-              <Button Classes="primary" Command="{Binding AddTaskCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
-                <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
-                  <PathIcon Data="{StaticResource CheckListIconData}" Width="14" Height="14" Foreground="#FFFFFF" />
-                  <TextBlock Text="Save Task" VerticalAlignment="Center"/>
-                </StackPanel>
-              </Button>
-              <TextBlock Text="{Binding StatusMessage}" Classes="caption" TextWrapping="Wrap" />
-            </StackPanel>
-          </Border>
-
-          <!-- Compact Todo List -->
-          <Border Classes="card" Padding="14">
-            <StackPanel Spacing="10">
-              <TextBlock Text="Todo Tasks" Classes="header" />
+              <!-- ── Task List ── -->
               <ItemsControl ItemsSource="{Binding TodoItems}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="vm:TodoItemViewModel">
-                    <Border Background="{DynamicResource AppBackgroundBrush}"
-                            BorderBrush="{DynamicResource AppBorderBrush}"
-                            BorderThickness="1"
-                            CornerRadius="6"
-                            Padding="10,8"
-                            Margin="0,0,0,6">
-                      <Grid ColumnDefinitions="Auto,*,Auto">
+                    <Border Classes="task-row" Padding="4,14">
+                      <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+
+                        <!-- Checkbox -->
                         <CheckBox Grid.Column="0"
                                   IsChecked="{Binding IsCompleted, Mode=TwoWay}"
                                   Command="{Binding $parent[UserControl].DataContext.ToggleTodoCommand}"
                                   CommandParameter="{Binding}"
-                                  Margin="0,0,8,0"/>
-                        <TextBlock Grid.Column="1"
-                                   Text="{Binding Title}"
-                                   Classes="body"
+                                  VerticalAlignment="Top"
+                                  Margin="0,1,16,0"/>
+
+                        <!-- Task metadata -->
+                        <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding Title}"
+                                     Classes="body-bold"
+                                     FontSize="14"
+                                     TextWrapping="Wrap"/>
+                          <TextBlock Text="{Binding Description}"
+                                     Classes="small"
+                                     IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                     TextWrapping="Wrap"/>
+                        </StackPanel>
+
+                        <!-- Timestamp -->
+                        <TextBlock Grid.Column="2"
+                                   Text="{Binding CreatedAt, StringFormat='{}{0:MMM d}'}"
+                                   Classes="small"
                                    VerticalAlignment="Center"
-                                   TextWrapping="Wrap"/>
-                        <Button Grid.Column="2"
-                                Classes="secondary"
+                                   Margin="14,0,6,0"/>
+
+                        <!-- Delete -->
+                        <Button Grid.Column="3"
+                                Classes="danger"
                                 Command="{Binding $parent[UserControl].DataContext.DeleteTodoCommand}"
                                 CommandParameter="{Binding}"
-                                Padding="4">
-                          <PathIcon Data="{StaticResource CloseIconData}" Width="12" Height="12" Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                                VerticalAlignment="Center"
+                                ToolTip.Tip="Delete task">
+                          <PathIcon Data="{StaticResource CloseIconData}" Width="12" Height="12"/>
                         </Button>
                       </Grid>
                     </Border>
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
-            </StackPanel>
-          </Border>
-        </StackPanel>
-      </ScrollViewer>
 
-      <!-- Mini View Side Drawer Overlay -->
-      <Grid IsVisible="{Binding IsSideMenuOpen}" Background="#80000000">
-        <Border HorizontalAlignment="Left"
-                Width="260"
-                Background="{DynamicResource AppSurfaceBrush}"
+              <!-- Empty state -->
+              <StackPanel IsVisible="{Binding !TodoItems.Count}"
+                          HorizontalAlignment="Center"
+                          Margin="0,72,0,0"
+                          Spacing="14">
+                <PathIcon Data="{StaticResource CheckListIconData}"
+                          Width="40" Height="40"
+                          Foreground="{DynamicResource AppBorderBrush}"
+                          HorizontalAlignment="Center"/>
+                <TextBlock Text="No tasks yet"
+                           Classes="heading"
+                           HorizontalAlignment="Center"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                <TextBlock Text="Type something above and press Add task."
+                           Classes="small"
+                           HorizontalAlignment="Center"/>
+              </StackPanel>
+
+            </StackPanel>
+          </ScrollViewer>
+        </Grid>
+
+        <!-- ═══ TAB 1: CALENDAR VIEW ═══ -->
+        <ScrollViewer IsVisible="{Binding IsCalendarView}"
+                      VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="64,52,80,80" Spacing="0">
+            <TextBlock Text="{Binding CurrentDateFull}" Classes="micro" Foreground="{DynamicResource AppPrimaryBrush}" Margin="0,0,0,4"/>
+            <TextBlock Text="Calendar" Classes="display-xl" Margin="0,0,0,6"/>
+            <TextBlock Text="Upcoming schedule and task timeline." Classes="small" Margin="0,0,0,0"/>
+            <Separator Classes="divider" Margin="0,28,0,40"/>
+
+            <Grid ColumnDefinitions="*,*,*">
+              <Border Grid.Column="0" Classes="content-block" Margin="0,0,12,0">
+                <StackPanel Spacing="10">
+                  <TextBlock Text="TODAY" Classes="micro" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                  <TextBlock Text="Task Review" Classes="heading"/>
+                  <TextBlock Text="Review all pending local tasks" Classes="small"/>
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="1" Classes="content-block" Margin="0,0,12,0">
+                <StackPanel Spacing="10">
+                  <TextBlock Text="TOMORROW" Classes="micro" Foreground="{DynamicResource AppAccentSuccessBrush}"/>
+                  <TextBlock Text="Cloud Sync" Classes="heading"/>
+                  <TextBlock Text="Google Apps Script backup" Classes="small"/>
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="2" Classes="content-block">
+                <StackPanel Spacing="10">
+                  <TextBlock Text="THIS WEEK" Classes="micro" Foreground="{DynamicResource AppAccentWarningBrush}"/>
+                  <TextBlock Text="Weekly Export" Classes="heading"/>
+                  <TextBlock Text="Generate Excel reports" Classes="small"/>
+                </StackPanel>
+              </Border>
+            </Grid>
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- ═══ TAB 2: DIAGNOSTICS VIEW ═══ -->
+        <ScrollViewer IsVisible="{Binding IsTracingView}"
+                      VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="64,52,80,80" Spacing="0">
+            <TextBlock Text="Diagnostics" Classes="display-xl" Margin="0,0,0,6"/>
+            <TextBlock Text="Application health, SQLite telemetry, and sync status." Classes="small"/>
+            <Separator Classes="divider" Margin="0,28,0,40"/>
+
+            <Grid ColumnDefinitions="*,*,*">
+              <Border Grid.Column="0" Classes="content-block" Margin="0,0,12,0">
+                <StackPanel Spacing="10">
+                  <TextBlock Text="DATABASE" Classes="micro"/>
+                  <TextBlock Text="SQLite" Classes="heading"/>
+                  <TextBlock Text="Connected · WAL Mode" Classes="small"
+                             Foreground="{DynamicResource AppAccentSuccessBrush}"/>
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="1" Classes="content-block" Margin="0,0,12,0">
+                <StackPanel Spacing="10">
+                  <TextBlock Text="LATENCY" Classes="micro"/>
+                  <TextBlock Text="0.14 ms" Classes="heading"/>
+                  <TextBlock Text="Optimal read speed" Classes="small"/>
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="2" Classes="content-block">
+                <StackPanel Spacing="10">
+                  <TextBlock Text="SYNC" Classes="micro"/>
+                  <TextBlock Text="Ready" Classes="heading"/>
+                  <TextBlock Text="Google Apps Script endpoint" Classes="small"
+                             Foreground="{DynamicResource AppPrimaryBrush}"/>
+                </StackPanel>
+              </Border>
+            </Grid>
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- ═══ TAB 3: SETTINGS VIEW ═══ -->
+        <ScrollViewer IsVisible="{Binding IsSettingsView}"
+                      VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="64,52,80,80" Spacing="0">
+            <TextBlock Text="Settings" Classes="display-xl" Margin="0,0,0,6"/>
+            <TextBlock Text="Theme, sync, and application preferences." Classes="small"/>
+            <Separator Classes="divider" Margin="0,28,0,44"/>
+
+            <StackPanel Spacing="36">
+
+              <!-- Appearance -->
+              <StackPanel Spacing="16">
+                <TextBlock Text="APPEARANCE" Classes="micro"/>
+                <Border Classes="content-block">
+                  <StackPanel Spacing="20">
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="Interface Theme" Classes="heading"/>
+                      <TextBlock Text="Choose your preferred visual mode." Classes="small"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <Button Classes="outline"
+                              Command="{Binding SetThemeModeCommand}"
+                              CommandParameter="System">
+                        <StackPanel Orientation="Horizontal" Spacing="7">
+                          <PathIcon Data="{StaticResource MonitorIconData}" Width="14" Height="14"/>
+                          <TextBlock Text="System"/>
+                        </StackPanel>
+                      </Button>
+                      <Button Classes="outline"
+                              Command="{Binding SetThemeModeCommand}"
+                              CommandParameter="Light">
+                        <StackPanel Orientation="Horizontal" Spacing="7">
+                          <PathIcon Data="{StaticResource SunIconData}" Width="14" Height="14"/>
+                          <TextBlock Text="Light"/>
+                        </StackPanel>
+                      </Button>
+                      <Button Classes="outline"
+                              Command="{Binding SetThemeModeCommand}"
+                              CommandParameter="Dark">
+                        <StackPanel Orientation="Horizontal" Spacing="7">
+                          <PathIcon Data="{StaticResource MoonIconData}" Width="14" Height="14"/>
+                          <TextBlock Text="Dark"/>
+                        </StackPanel>
+                      </Button>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <TextBlock Text="Active:" Classes="small"/>
+                      <TextBlock Text="{Binding CurrentThemeLabel}"
+                                 Classes="small"
+                                 FontWeight="SemiBold"
+                                 Foreground="{DynamicResource AppPrimaryBrush}"/>
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+
+              <!-- Cloud Sync -->
+              <StackPanel Spacing="16">
+                <TextBlock Text="CLOUD SYNC" Classes="micro"/>
+                <Border Classes="content-block">
+                  <StackPanel Spacing="20">
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="Google Apps Script Endpoint" Classes="heading"/>
+                      <TextBlock Text="Two-way sync with your Google Sheets backend." Classes="small"/>
+                    </StackPanel>
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBox Grid.Column="0"
+                               Classes="styled"
+                               Watermark="https://script.google.com/macros/s/…/exec"
+                               Text="{Binding SyncEndpointUrl, Mode=TwoWay}"/>
+                      <Button Grid.Column="1"
+                              Classes="primary"
+                              Command="{Binding SaveSettingsCommand}"
+                              Margin="10,0,0,0">
+                        <TextBlock Text="Save" FontWeight="SemiBold"/>
+                      </Button>
+                    </Grid>
+                    <Button Classes="outline"
+                            Command="{Binding SyncCommand}"
+                            IsEnabled="{Binding !IsSyncing}"
+                            HorizontalAlignment="Left">
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <PathIcon Data="{StaticResource SyncIconData}" Width="13" Height="13"/>
+                        <TextBlock Text="Sync now"/>
+                      </StackPanel>
+                    </Button>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+
+              <!-- Storage info -->
+              <StackPanel Spacing="16">
+                <TextBlock Text="STORAGE" Classes="micro"/>
+                <Border Classes="content-block">
+                  <StackPanel Spacing="16">
+                    <Grid ColumnDefinitions="148,*">
+                      <TextBlock Grid.Column="0" Text="Database" Classes="small" FontWeight="SemiBold"/>
+                      <TextBlock Grid.Column="1" Text="%LOCALAPPDATA%\Wadd\wadd.db" Classes="mono"/>
+                    </Grid>
+                    <Separator Classes="divider"/>
+                    <Grid ColumnDefinitions="148,*">
+                      <TextBlock Grid.Column="0" Text="Excel Exports" Classes="small" FontWeight="SemiBold"/>
+                      <TextBlock Grid.Column="1" Text="%LOCALAPPDATA%\Wadd\Exports\" Classes="mono"/>
+                    </Grid>
+                    <Separator Classes="divider"/>
+                    <Grid ColumnDefinitions="148,*">
+                      <TextBlock Grid.Column="0" Text="Runtime" Classes="small" FontWeight="SemiBold"/>
+                      <TextBlock Grid.Column="1" Text=".NET 10 · Avalonia UI · Clean Architecture" Classes="small"/>
+                    </Grid>
+                  </StackPanel>
+                </Border>
+                <Button Classes="outline"
+                        Command="{Binding ExportToExcelCommand}"
+                        HorizontalAlignment="Left">
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <PathIcon Data="{StaticResource ExportIconData}" Width="13" Height="13"/>
+                    <TextBlock Text="Export tasks to Excel"/>
+                  </StackPanel>
+                </Button>
+              </StackPanel>
+
+            </StackPanel>
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- Floating Status Toast Notification (Desktop) -->
+        <Border VerticalAlignment="Bottom"
+                HorizontalAlignment="Right"
+                Margin="0,0,32,24"
+                Padding="16,10"
+                Background="{DynamicResource AppSurfaceElevatedBrush}"
                 BorderBrush="{DynamicResource AppBorderBrush}"
-                BorderThickness="0,0,1,0"
-                Padding="16">
-          <Grid RowDefinitions="Auto,*,Auto">
-            <StackPanel Grid.Row="0" Spacing="14">
+                BorderThickness="1"
+                CornerRadius="20"
+                Opacity="{Binding StatusOpacity}"
+                IsVisible="{Binding IsStatusVisible}">
+          <Border.Transitions>
+            <Transitions>
+              <DoubleTransition Property="Opacity" Duration="0:0:0.4"/>
+            </Transitions>
+          </Border.Transitions>
+          <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+            <Ellipse Width="8" Height="8" Fill="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding StatusMessage}"
+                       Classes="small"
+                       FontWeight="Medium"
+                       Foreground="{DynamicResource AppTextPrimaryBrush}"
+                       VerticalAlignment="Center"/>
+          </StackPanel>
+        </Border>
+
+      </Panel>
+    </Grid>
+
+    <!-- ══════════════════════════════════════════════════════
+         COMPACT / MOBILE LAYOUT — full height + bottom tab bar
+    ══════════════════════════════════════════════════════ -->
+    <Grid IsVisible="{Binding IsCompact}" RowDefinitions="*,Auto">
+
+      <!-- Compact content views -->
+      <Panel Grid.Row="0">
+
+        <!-- Compact Tasks View -->
+        <ScrollViewer IsVisible="{Binding IsTasksView}"
+                      Padding="20,24,20,0"
+                      VerticalScrollBarVisibility="Auto">
+          <StackPanel Spacing="0">
+
+            <!-- Compact header -->
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,20">
+              <Image Grid.Column="0"
+                     Source="avares://Wadd.UI/Assets/logo.png"
+                     Width="30" Height="30"
+                     RenderOptions.BitmapInterpolationMode="HighQuality"
+                     Margin="0,0,12,0"
+                     VerticalAlignment="Center"/>
+              <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                <TextBlock Text="{Binding CurrentDateFormatted}"
+                           Classes="micro"
+                           Foreground="{DynamicResource AppPrimaryBrush}"/>
+                <TextBlock Text="My Tasks" Classes="display"/>
+                <TextBlock Text="{Binding TodoItems.Count, StringFormat='{}{0} items'}" Classes="small"/>
+              </StackPanel>
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Bottom">
+                <Button Classes="icon-btn"
+                        Command="{Binding SyncCommand}"
+                        IsEnabled="{Binding !IsSyncing}"
+                        ToolTip.Tip="Sync now">
+                  <PathIcon Data="{StaticResource SyncIconData}" Width="16" Height="16"/>
+                </Button>
+                <Button Classes="icon-btn"
+                        Command="{Binding ExportToExcelCommand}"
+                        ToolTip.Tip="Export to Excel">
+                  <PathIcon Data="{StaticResource ExportIconData}" Width="16" Height="16"/>
+                </Button>
+              </StackPanel>
+            </Grid>
+
+            <!-- Compact composer -->
+            <StackPanel Spacing="0" Margin="0,0,0,24">
               <Grid ColumnDefinitions="*,Auto">
-                <TextBlock Grid.Column="0" Text="Menu" Classes="header" VerticalAlignment="Center"/>
+                <TextBox Grid.Column="0"
+                         Classes="composer"
+                         Watermark="What do you need to do?"
+                         Text="{Binding NewTaskTitle, Mode=TwoWay}"
+                         FontSize="16"
+                         FontWeight="Medium"
+                         Padding="0,8"/>
                 <Button Grid.Column="1"
-                        Classes="secondary"
-                        Command="{Binding CloseSideMenuCommand}"
-                        Padding="6"
-                        ToolTip.Tip="Close Menu">
-                  <PathIcon Data="{StaticResource CloseIconData}" Width="16" Height="16" Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                        Classes="primary"
+                        Command="{Binding AddTaskCommand}"
+                        Margin="12,0,0,0"
+                        VerticalAlignment="Bottom">
+                  <PathIcon Data="{StaticResource PlusIconData}" Width="14" Height="14" Foreground="#FFFFFF"/>
                 </Button>
               </Grid>
+              <TextBox Classes="composer"
+                       Watermark="Note… (optional)"
+                       Text="{Binding NewTaskDescription, Mode=TwoWay}"
+                       FontSize="12"
+                       Margin="0,10,0,0"/>
+            </StackPanel>
 
-              <Separator Background="{DynamicResource AppBorderBrush}"/>
+            <TextBlock Text="ALL TASKS" Classes="micro" Margin="0,0,0,4"/>
 
-              <ListBox Background="Transparent" SelectedIndex="{Binding SelectedNavIndex}">
+            <!-- Compact task list -->
+            <ItemsControl ItemsSource="{Binding TodoItems}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:TodoItemViewModel">
+                  <Border Classes="task-row" Padding="4,12">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                      <CheckBox Grid.Column="0"
+                                IsChecked="{Binding IsCompleted, Mode=TwoWay}"
+                                Command="{Binding $parent[UserControl].DataContext.ToggleTodoCommand}"
+                                CommandParameter="{Binding}"
+                                Margin="0,0,12,0"/>
+                      <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Title}"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding Description}"
+                                   Classes="small"
+                                   IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                      </StackPanel>
+                      <Button Grid.Column="2"
+                              Classes="danger"
+                              Command="{Binding $parent[UserControl].DataContext.DeleteTodoCommand}"
+                              CommandParameter="{Binding}"
+                              VerticalAlignment="Center">
+                        <PathIcon Data="{StaticResource CloseIconData}" Width="12" Height="12"/>
+                      </Button>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <StackPanel IsVisible="{Binding !TodoItems.Count}"
+                        HorizontalAlignment="Center"
+                        Margin="0,48,0,0"
+                        Spacing="12">
+              <PathIcon Data="{StaticResource CheckListIconData}"
+                        Width="36" Height="36"
+                        Foreground="{DynamicResource AppBorderBrush}"
+                        HorizontalAlignment="Center"/>
+              <TextBlock Text="No tasks yet" Classes="heading"
+                         HorizontalAlignment="Center"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            </StackPanel>
+
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- Compact Calendar View -->
+        <ScrollViewer IsVisible="{Binding IsCalendarView}" Padding="20,24,20,0">
+          <StackPanel Spacing="0">
+            <TextBlock Text="Calendar" Classes="display" Margin="0,0,0,20"/>
+            <Border Classes="content-block" Margin="0,0,0,12">
+              <StackPanel Spacing="8">
+                <TextBlock Text="TODAY" Classes="micro" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                <TextBlock Text="Task Review" Classes="heading"/>
+                <TextBlock Text="Review pending SQLite tasks" Classes="small"/>
+              </StackPanel>
+            </Border>
+            <Border Classes="content-block" Margin="0,0,0,12">
+              <StackPanel Spacing="8">
+                <TextBlock Text="TOMORROW" Classes="micro" Foreground="{DynamicResource AppAccentSuccessBrush}"/>
+                <TextBlock Text="Cloud Sync" Classes="heading"/>
+                <TextBlock Text="Google Apps Script backup" Classes="small"/>
+              </StackPanel>
+            </Border>
+            <Border Classes="content-block">
+              <StackPanel Spacing="8">
+                <TextBlock Text="THIS WEEK" Classes="micro" Foreground="{DynamicResource AppAccentWarningBrush}"/>
+                <TextBlock Text="Weekly Export" Classes="heading"/>
+                <TextBlock Text="Generate Excel reports" Classes="small"/>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- Compact Diagnostics View -->
+        <ScrollViewer IsVisible="{Binding IsTracingView}" Padding="20,24,20,0">
+          <StackPanel Spacing="0">
+            <TextBlock Text="Diagnostics" Classes="display" Margin="0,0,0,20"/>
+            <Border Classes="content-block" Margin="0,0,0,12">
+              <StackPanel Spacing="6">
+                <TextBlock Text="DATABASE" Classes="micro"/>
+                <TextBlock Text="SQLite · Connected" Classes="heading"/>
+                <TextBlock Text="WAL Mode Enabled" Classes="small" Foreground="{DynamicResource AppAccentSuccessBrush}"/>
+              </StackPanel>
+            </Border>
+            <Border Classes="content-block" Margin="0,0,0,12">
+              <StackPanel Spacing="6">
+                <TextBlock Text="LATENCY" Classes="micro"/>
+                <TextBlock Text="0.14 ms" Classes="heading"/>
+                <TextBlock Text="Optimal read speed" Classes="small"/>
+              </StackPanel>
+            </Border>
+            <Border Classes="content-block">
+              <StackPanel Spacing="6">
+                <TextBlock Text="SYNC" Classes="micro"/>
+                <TextBlock Text="Ready" Classes="heading"/>
+                <TextBlock Text="Google Apps Script endpoint" Classes="small" Foreground="{DynamicResource AppPrimaryBrush}"/>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- Compact Settings View -->
+        <ScrollViewer IsVisible="{Binding IsSettingsView}" Padding="20,24,20,0">
+          <StackPanel Spacing="0">
+            <TextBlock Text="Settings" Classes="display" Margin="0,0,0,20"/>
+
+            <Border Classes="content-block" Margin="0,0,0,16">
+              <StackPanel Spacing="16">
+                <TextBlock Text="APPEARANCE" Classes="micro"/>
+                <TextBlock Text="Interface Theme" Classes="heading"/>
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+                  <Button Classes="outline"
+                          Command="{Binding SetThemeModeCommand}"
+                          CommandParameter="System">
+                    <TextBlock Text="System" FontSize="12"/>
+                  </Button>
+                  <Button Classes="outline"
+                          Command="{Binding SetThemeModeCommand}"
+                          CommandParameter="Light">
+                    <TextBlock Text="Light" FontSize="12"/>
+                  </Button>
+                  <Button Classes="outline"
+                          Command="{Binding SetThemeModeCommand}"
+                          CommandParameter="Dark">
+                    <TextBlock Text="Dark" FontSize="12"/>
+                  </Button>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <TextBlock Text="Active:" Classes="small"/>
+                  <TextBlock Text="{Binding CurrentThemeLabel}" Classes="small"
+                             FontWeight="SemiBold"
+                             Foreground="{DynamicResource AppPrimaryBrush}"/>
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
+            <Border Classes="content-block" Margin="0,0,0,16">
+              <StackPanel Spacing="14">
+                <TextBlock Text="CLOUD SYNC" Classes="micro"/>
+                <TextBlock Text="Sync Endpoint" Classes="heading"/>
+                <TextBox Classes="styled"
+                         Watermark="https://script.google.com/macros/s/…/exec"
+                         Text="{Binding SyncEndpointUrl, Mode=TwoWay}"/>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <Button Classes="primary"
+                          Command="{Binding SaveSettingsCommand}">
+                    <TextBlock Text="Save"/>
+                  </Button>
+                  <Button Classes="outline"
+                          Command="{Binding SyncCommand}"
+                          IsEnabled="{Binding !IsSyncing}">
+                    <TextBlock Text="Sync now"/>
+                  </Button>
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
+            <Button Classes="outline"
+                    Command="{Binding ExportToExcelCommand}"
+                    HorizontalAlignment="Stretch">
+              <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                <PathIcon Data="{StaticResource ExportIconData}" Width="13" Height="13"/>
+                <TextBlock Text="Export to Excel"/>
+              </StackPanel>
+            </Button>
+
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- Floating Status Toast Notification (Compact) -->
+        <Border VerticalAlignment="Bottom"
+                HorizontalAlignment="Center"
+                Margin="16,0,16,12"
+                Padding="14,8"
+                Background="{DynamicResource AppSurfaceElevatedBrush}"
+                BorderBrush="{DynamicResource AppBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="16"
+                Opacity="{Binding StatusOpacity}"
+                IsVisible="{Binding IsStatusVisible}">
+          <Border.Transitions>
+            <Transitions>
+              <DoubleTransition Property="Opacity" Duration="0:0:0.4"/>
+            </Transitions>
+          </Border.Transitions>
+          <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <Ellipse Width="6" Height="6" Fill="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding StatusMessage}"
+                       Classes="small"
+                       FontWeight="Medium"
+                       Foreground="{DynamicResource AppTextPrimaryBrush}"
+                       VerticalAlignment="Center"/>
+          </StackPanel>
+        </Border>
+
+        <!-- Compact side drawer overlay (retained for compat) -->
+        <Grid IsVisible="{Binding IsSideMenuOpen}" Background="#80000000">
+          <Border HorizontalAlignment="Left"
+                  Width="272"
+                  Background="{DynamicResource AppSurfaceBrush}"
+                  BorderBrush="{DynamicResource AppBorderBrush}"
+                  BorderThickness="0,0,1,0"
+                  Padding="20">
+            <Grid RowDefinitions="Auto,*">
+              <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,20">
+                <TextBlock Grid.Column="0" Text="Navigation" Classes="heading" VerticalAlignment="Center"/>
+                <Button Grid.Column="1"
+                        Classes="ghost"
+                        Command="{Binding CloseSideMenuCommand}"
+                        Padding="6">
+                  <PathIcon Data="{StaticResource CloseIconData}"
+                            Width="14" Height="14"
+                            Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                </Button>
+              </Grid>
+              <ListBox Grid.Row="1"
+                       Background="Transparent"
+                       SelectedIndex="{Binding SelectedNavIndex}">
                 <ListBoxItem Classes="side-menu-item">
-                  <StackPanel Orientation="Horizontal" Spacing="10">
-                    <PathIcon Data="{StaticResource CheckListIconData}" Width="18" Height="18" />
-                    <TextBlock Text="Tasks" Classes="body" VerticalAlignment="Center"/>
+                  <StackPanel Orientation="Horizontal" Spacing="12">
+                    <PathIcon Data="{StaticResource CheckListIconData}" Width="17" Height="17"/>
+                    <TextBlock Text="Tasks" VerticalAlignment="Center"/>
                   </StackPanel>
                 </ListBoxItem>
                 <ListBoxItem Classes="side-menu-item">
-                  <StackPanel Orientation="Horizontal" Spacing="10">
-                    <PathIcon Data="{StaticResource CalendarIconData}" Width="18" Height="18" />
-                    <TextBlock Text="Calendar" Classes="body" VerticalAlignment="Center"/>
+                  <StackPanel Orientation="Horizontal" Spacing="12">
+                    <PathIcon Data="{StaticResource CalendarIconData}" Width="17" Height="17"/>
+                    <TextBlock Text="Calendar" VerticalAlignment="Center"/>
                   </StackPanel>
                 </ListBoxItem>
                 <ListBoxItem Classes="side-menu-item">
-                  <StackPanel Orientation="Horizontal" Spacing="10">
-                    <PathIcon Data="{StaticResource TracingIconData}" Width="18" Height="18" />
-                    <TextBlock Text="Tracing" Classes="body" VerticalAlignment="Center"/>
+                  <StackPanel Orientation="Horizontal" Spacing="12">
+                    <PathIcon Data="{StaticResource TracingIconData}" Width="17" Height="17"/>
+                    <TextBlock Text="Diagnostics" VerticalAlignment="Center"/>
+                  </StackPanel>
+                </ListBoxItem>
+                <ListBoxItem Classes="side-menu-item">
+                  <StackPanel Orientation="Horizontal" Spacing="12">
+                    <PathIcon Data="{StaticResource SettingsIconData}" Width="17" Height="17"/>
+                    <TextBlock Text="Settings" VerticalAlignment="Center"/>
                   </StackPanel>
                 </ListBoxItem>
               </ListBox>
-            </StackPanel>
+            </Grid>
+          </Border>
+        </Grid>
 
-            <Button Grid.Row="2"
-                    Classes="primary"
-                    Command="{Binding ExportToExcelCommand}"
-                    HorizontalAlignment="Stretch"
-                    HorizontalContentAlignment="Center">
-              <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
-                <PathIcon Data="{StaticResource ExportIconData}" Width="14" Height="14" Foreground="#FFFFFF"/>
-                <TextBlock Text="Export to Excel" VerticalAlignment="Center"/>
-              </StackPanel>
-            </Button>
-          </Grid>
-        </Border>
-      </Grid>
+      </Panel>
+
+      <!-- ── Bottom Tab Bar ── -->
+      <Border Grid.Row="1"
+              Background="{DynamicResource AppSurfaceBrush}"
+              BorderBrush="{DynamicResource AppBorderBrush}"
+              BorderThickness="0,1,0,0">
+        <ListBox Background="Transparent"
+                 BorderThickness="0"
+                 SelectedIndex="{Binding SelectedNavIndex}">
+          <ListBox.ItemsPanel>
+            <ItemsPanelTemplate>
+              <UniformGrid Rows="1"/>
+            </ItemsPanelTemplate>
+          </ListBox.ItemsPanel>
+          <ListBoxItem Classes="tab-item">
+            <StackPanel Spacing="4" HorizontalAlignment="Center">
+              <PathIcon Data="{StaticResource CheckListIconData}" Width="20" Height="20" HorizontalAlignment="Center"/>
+              <TextBlock Text="Tasks" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
+            </StackPanel>
+          </ListBoxItem>
+          <ListBoxItem Classes="tab-item">
+            <StackPanel Spacing="4" HorizontalAlignment="Center">
+              <PathIcon Data="{StaticResource CalendarIconData}" Width="20" Height="20" HorizontalAlignment="Center"/>
+              <TextBlock Text="Calendar" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
+            </StackPanel>
+          </ListBoxItem>
+          <ListBoxItem Classes="tab-item">
+            <StackPanel Spacing="4" HorizontalAlignment="Center">
+              <PathIcon Data="{StaticResource TracingIconData}" Width="20" Height="20" HorizontalAlignment="Center"/>
+              <TextBlock Text="Diagnostics" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
+            </StackPanel>
+          </ListBoxItem>
+          <ListBoxItem Classes="tab-item">
+            <StackPanel Spacing="4" HorizontalAlignment="Center">
+              <PathIcon Data="{StaticResource SettingsIconData}" Width="20" Height="20" HorizontalAlignment="Center"/>
+              <TextBlock Text="Settings" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
+            </StackPanel>
+          </ListBoxItem>
+        </ListBox>
+      </Border>
+
     </Grid>
 
-    <!-- Bottom Navigation Bar (Mini View Only) -->
-    <Border Grid.Row="2"
-            IsVisible="{Binding IsCompact}"
-            Background="{DynamicResource AppSurfaceBrush}"
-            BorderBrush="{DynamicResource AppBorderBrush}"
-            BorderThickness="0,1,0,0"
-            Padding="10,6">
-      <Grid ColumnDefinitions="*,*,*,*">
-        <Button Grid.Column="0" Classes="secondary" Command="{Binding SetThemeModeCommand}" CommandParameter="System" HorizontalAlignment="Center" BorderThickness="0">
-          <StackPanel Spacing="2" HorizontalAlignment="Center">
-            <PathIcon Data="{StaticResource CheckListIconData}" Width="18" Height="18" HorizontalAlignment="Center"/>
-            <TextBlock Text="Tasks" Classes="caption" HorizontalAlignment="Center"/>
-          </StackPanel>
-        </Button>
-        <Button Grid.Column="1" Classes="secondary" Command="{Binding SyncNowCommand}" HorizontalAlignment="Center" BorderThickness="0">
-          <StackPanel Spacing="2" HorizontalAlignment="Center">
-            <PathIcon Data="{StaticResource SyncIconData}" Width="18" Height="18" HorizontalAlignment="Center"/>
-            <TextBlock Text="Sync" Classes="caption" HorizontalAlignment="Center"/>
-          </StackPanel>
-        </Button>
-        <Button Grid.Column="2" Classes="secondary" Command="{Binding ExportToExcelCommand}" HorizontalAlignment="Center" BorderThickness="0">
-          <StackPanel Spacing="2" HorizontalAlignment="Center">
-            <PathIcon Data="{StaticResource ExportIconData}" Width="14" Height="14" HorizontalAlignment="Center"/>
-            <TextBlock Text="Export" Classes="caption" HorizontalAlignment="Center"/>
-          </StackPanel>
-        </Button>
-        <Button Grid.Column="3" Classes="secondary" Command="{Binding OpenSettingsCommand}" HorizontalAlignment="Center" BorderThickness="0">
-          <StackPanel Spacing="2" HorizontalAlignment="Center">
-            <PathIcon Data="{StaticResource SettingsIconData}" Width="14" Height="14" HorizontalAlignment="Center"/>
-            <TextBlock Text="Settings" Classes="caption" HorizontalAlignment="Center"/>
-          </StackPanel>
-        </Button>
-      </Grid>
-    </Border>
-  </Grid>
+  </Panel>
 </UserControl>

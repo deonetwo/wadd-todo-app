@@ -1,64 +1,137 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- ═══════════════════════════════════════════════════════════════
+       EMBER DESIGN SYSTEM · Typography
+       Stack: Space Grotesk → Outfit → Plus Jakarta Sans → Inter → Segoe UI Variable Display → Segoe UI
+  ═══════════════════════════════════════════════════════════════ -->
   <Styles.Resources>
-    <FontFamily x:Key="AppFontFamily">Plus Jakarta Sans, Outfit, Poppins, Montserrat, Segoe UI Variable Display, Segoe UI, sans-serif</FontFamily>
-    <FontFamily x:Key="BrandFontFamily">Outfit, Plus Jakarta Sans, Poppins, Montserrat, Segoe UI Variable Display, sans-serif</FontFamily>
+    <FontFamily x:Key="AppFontFamily">Space Grotesk, Outfit, Plus Jakarta Sans, Inter, Segoe UI Variable Display, Segoe UI, sans-serif</FontFamily>
+    <FontFamily x:Key="DisplayFontFamily">Space Grotesk, Outfit, Plus Jakarta Sans, Inter, Segoe UI Variable Display, sans-serif</FontFamily>
+    <FontFamily x:Key="MonoFontFamily">JetBrains Mono, Cascadia Code, Consolas, monospace</FontFamily>
   </Styles.Resources>
 
+  <!-- Base: apply warm font to all text blocks -->
   <Style Selector="TextBlock">
-    <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
-    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
-    <Setter Property="TextWrapping" Value="Wrap" />
+    <Setter Property="FontFamily"    Value="{StaticResource AppFontFamily}"/>
+    <Setter Property="Foreground"    Value="{DynamicResource AppTextPrimaryBrush}"/>
+    <Setter Property="TextWrapping"  Value="Wrap"/>
   </Style>
 
-  <!-- Brand Title Styles -->
-  <Style Selector="TextBlock.brand-title">
-    <Setter Property="FontFamily" Value="{StaticResource BrandFontFamily}" />
-    <Setter Property="FontSize" Value="22" />
-    <Setter Property="FontWeight" Value="ExtraBold" />
-    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
-    <Setter Property="LetterSpacing" Value="0.5" />
+  <!-- ── Display XL · 38sp ExtraBold — hero page headings ── -->
+  <Style Selector="TextBlock.display-xl">
+    <Setter Property="FontFamily"    Value="{StaticResource DisplayFontFamily}"/>
+    <Setter Property="FontSize"      Value="38"/>
+    <Setter Property="FontWeight"    Value="ExtraBold"/>
+    <Setter Property="LetterSpacing" Value="-1.2"/>
   </Style>
 
-  <Style Selector="TextBlock.brand-accent">
-    <Setter Property="FontFamily" Value="{StaticResource BrandFontFamily}" />
-    <Setter Property="FontSize" Value="22" />
-    <Setter Property="FontWeight" Value="Black" />
-    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryBrush}" />
-    <Setter Property="LetterSpacing" Value="0.5" />
+  <!-- ── Display · 26sp Bold — section hero ── -->
+  <Style Selector="TextBlock.display">
+    <Setter Property="FontFamily"    Value="{StaticResource DisplayFontFamily}"/>
+    <Setter Property="FontSize"      Value="26"/>
+    <Setter Property="FontWeight"    Value="Bold"/>
+    <Setter Property="LetterSpacing" Value="-0.7"/>
   </Style>
 
-  <!-- Title Style: 24sp Bold -->
+  <!-- ── Heading · 19sp SemiBold ── -->
+  <Style Selector="TextBlock.heading">
+    <Setter Property="FontFamily"    Value="{StaticResource DisplayFontFamily}"/>
+    <Setter Property="FontSize"      Value="19"/>
+    <Setter Property="FontWeight"    Value="SemiBold"/>
+    <Setter Property="LetterSpacing" Value="-0.35"/>
+  </Style>
+
+  <!-- ── Title · 15sp Medium ── -->
   <Style Selector="TextBlock.title">
-    <Setter Property="FontFamily" Value="{StaticResource BrandFontFamily}" />
-    <Setter Property="FontSize" Value="24" />
-    <Setter Property="FontWeight" Value="Bold" />
-    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
-    <Setter Property="TextWrapping" Value="Wrap" />
+    <Setter Property="FontFamily"    Value="{StaticResource DisplayFontFamily}"/>
+    <Setter Property="FontSize"      Value="15"/>
+    <Setter Property="FontWeight"    Value="Medium"/>
+    <Setter Property="LetterSpacing" Value="-0.2"/>
+    <Setter Property="TextWrapping"  Value="Wrap"/>
   </Style>
 
-  <!-- Header Style: 18sp SemiBold -->
+  <!-- ── Header · 16sp SemiBold (compat alias) ── -->
   <Style Selector="TextBlock.header">
-    <Setter Property="FontFamily" Value="{StaticResource BrandFontFamily}" />
-    <Setter Property="FontSize" Value="18" />
-    <Setter Property="FontWeight" Value="SemiBold" />
-    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
-    <Setter Property="TextWrapping" Value="Wrap" />
+    <Setter Property="FontFamily"    Value="{StaticResource DisplayFontFamily}"/>
+    <Setter Property="FontSize"      Value="16"/>
+    <Setter Property="FontWeight"    Value="SemiBold"/>
+    <Setter Property="LetterSpacing" Value="-0.2"/>
+    <Setter Property="TextWrapping"  Value="Wrap"/>
   </Style>
 
-  <!-- Body Style: 14sp Regular -->
+  <!-- ── Body · 14sp Regular ── -->
   <Style Selector="TextBlock.body">
-    <Setter Property="FontSize" Value="14" />
-    <Setter Property="FontWeight" Value="Normal" />
-    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
-    <Setter Property="TextWrapping" Value="Wrap" />
+    <Setter Property="FontSize"     Value="14"/>
+    <Setter Property="FontWeight"   Value="Normal"/>
+    <Setter Property="TextWrapping" Value="Wrap"/>
   </Style>
 
-  <!-- Caption Style: 12sp Muted -->
-  <Style Selector="TextBlock.caption">
-    <Setter Property="FontSize" Value="12" />
-    <Setter Property="FontWeight" Value="Normal" />
-    <Setter Property="Foreground" Value="{DynamicResource AppTextSecondaryBrush}" />
-    <Setter Property="TextWrapping" Value="Wrap" />
+  <!-- ── Body Bold · 14sp SemiBold ── -->
+  <Style Selector="TextBlock.body-bold">
+    <Setter Property="FontSize"      Value="14"/>
+    <Setter Property="FontWeight"    Value="SemiBold"/>
+    <Setter Property="LetterSpacing" Value="-0.1"/>
   </Style>
+
+  <!-- ── Subtitle · 13sp Regular Muted ── -->
+  <Style Selector="TextBlock.subtitle">
+    <Setter Property="FontSize"     Value="13"/>
+    <Setter Property="FontWeight"   Value="Normal"/>
+    <Setter Property="Foreground"   Value="{DynamicResource AppTextSecondaryBrush}"/>
+    <Setter Property="TextWrapping" Value="Wrap"/>
+  </Style>
+
+  <!-- ── Caption / Small · 12sp Muted ── -->
+  <Style Selector="TextBlock.caption">
+    <Setter Property="FontSize"     Value="12"/>
+    <Setter Property="FontWeight"   Value="Normal"/>
+    <Setter Property="Foreground"   Value="{DynamicResource AppTextSecondaryBrush}"/>
+    <Setter Property="TextWrapping" Value="Wrap"/>
+  </Style>
+
+  <Style Selector="TextBlock.small">
+    <Setter Property="FontSize"   Value="12"/>
+    <Setter Property="FontWeight" Value="Normal"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppTextSecondaryBrush}"/>
+  </Style>
+
+  <!-- ── Micro · 10sp Bold UPPERCASE label ── -->
+  <Style Selector="TextBlock.micro">
+    <Setter Property="FontSize"      Value="10"/>
+    <Setter Property="FontWeight"    Value="Bold"/>
+    <Setter Property="LetterSpacing" Value="1.0"/>
+    <Setter Property="Foreground"    Value="{DynamicResource AppTextSecondaryBrush}"/>
+  </Style>
+
+  <!-- ── Badge text (compat) ── -->
+  <Style Selector="TextBlock.badge-text">
+    <Setter Property="FontSize"      Value="10"/>
+    <Setter Property="FontWeight"    Value="Bold"/>
+    <Setter Property="LetterSpacing" Value="0.6"/>
+  </Style>
+
+  <!-- ── Mono · code / path text ── -->
+  <Style Selector="TextBlock.mono">
+    <Setter Property="FontFamily" Value="{StaticResource MonoFontFamily}"/>
+    <Setter Property="FontSize"   Value="11.5"/>
+    <Setter Property="FontWeight" Value="Normal"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppTextSecondaryBrush}"/>
+  </Style>
+
+  <!-- ── Brand marks ── -->
+  <Style Selector="TextBlock.brand-accent">
+    <Setter Property="FontFamily"    Value="{StaticResource DisplayFontFamily}"/>
+    <Setter Property="FontSize"      Value="20"/>
+    <Setter Property="FontWeight"    Value="ExtraBold"/>
+    <Setter Property="Foreground"    Value="{DynamicResource AppPrimaryBrush}"/>
+    <Setter Property="LetterSpacing" Value="-0.4"/>
+  </Style>
+
+  <Style Selector="TextBlock.brand-title">
+    <Setter Property="FontFamily"    Value="{StaticResource DisplayFontFamily}"/>
+    <Setter Property="FontSize"      Value="20"/>
+    <Setter Property="FontWeight"    Value="Medium"/>
+    <Setter Property="LetterSpacing" Value="-0.3"/>
+  </Style>
+
 </Styles>
