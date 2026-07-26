@@ -90,6 +90,27 @@ public partial class MainViewModel : ViewModelBase
     private string _newTaskDescription = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasNewTaskDueDate))]
+    [NotifyPropertyChangedFor(nameof(NewTaskDueDateFormatted))]
+    private DateTime? _newTaskDueDate;
+
+    public bool HasNewTaskDueDate => NewTaskDueDate.HasValue;
+
+    public string NewTaskDueDateFormatted
+    {
+        get
+        {
+            if (!NewTaskDueDate.HasValue) return string.Empty;
+            var date = NewTaskDueDate.Value.Date;
+            var today = DateTime.Today;
+            if (date == today) return "Today";
+            if (date == today.AddDays(1)) return "Tomorrow";
+            if (date == today.AddDays(7)) return $"Next Week ({NewTaskDueDate.Value:MMM d})";
+            return NewTaskDueDate.Value.ToString("MMM d, yyyy");
+        }
+    }
+
+    [ObservableProperty]
     private bool _isCompact;
 
     [ObservableProperty]
@@ -100,6 +121,23 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty]
     private string _syncEndpointUrl = string.Empty;
+
+    [ObservableProperty]
+    private bool _isGoogleSignedIn;
+
+    [ObservableProperty]
+    private string _googleUserEmail = string.Empty;
+
+    [ObservableProperty]
+    private string _googleUserName = string.Empty;
+
+    [ObservableProperty]
+    private string _googleClientId = string.Empty;
+
+    partial void OnGoogleClientIdChanged(string value)
+    {
+        _syncService.GoogleClientId = value;
+    }
 
     [ObservableProperty]
     private int _selectedNavIndex = 0;
@@ -144,7 +182,16 @@ public partial class MainViewModel : ViewModelBase
             UpdateThemeLabel();
         };
 
+        UpdateGoogleAuthState();
         _ = LoadTodoItemsAsync();
+    }
+
+    private void UpdateGoogleAuthState()
+    {
+        IsGoogleSignedIn = _syncService.IsSignedIn;
+        GoogleUserEmail = _syncService.UserEmail ?? string.Empty;
+        GoogleUserName = _syncService.UserName ?? "Google Account User";
+        GoogleClientId = _syncService.GoogleClientId ?? string.Empty;
     }
 
     [RelayCommand]
@@ -173,6 +220,30 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void SetDueDateLaterToday()
+    {
+        NewTaskDueDate = DateTime.Today;
+    }
+
+    [RelayCommand]
+    private void SetDueDateTomorrow()
+    {
+        NewTaskDueDate = DateTime.Today.AddDays(1);
+    }
+
+    [RelayCommand]
+    private void SetDueDateNextWeek()
+    {
+        NewTaskDueDate = DateTime.Today.AddDays(7);
+    }
+
+    [RelayCommand]
+    private void ClearDueDate()
+    {
+        NewTaskDueDate = null;
+    }
+
+    [RelayCommand]
     private async Task AddTaskAsync()
     {
         if (string.IsNullOrWhiteSpace(NewTaskTitle)) return;
@@ -185,7 +256,8 @@ public partial class MainViewModel : ViewModelBase
                 Description = NewTaskDescription.Trim(),
                 IsCompleted = false,
                 Priority = TodoPriority.Medium,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                DueDate = NewTaskDueDate
             };
 
             await _todoService.AddTodoAsync(newItem);
@@ -194,6 +266,7 @@ public partial class MainViewModel : ViewModelBase
             {
                 NewTaskTitle = string.Empty;
                 NewTaskDescription = string.Empty;
+                NewTaskDueDate = null;
             });
 
             await LoadTodoItemsAsync();
@@ -262,6 +335,40 @@ public partial class MainViewModel : ViewModelBase
         catch (Exception ex)
         {
             StatusMessage = $"Export failed: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task SignInWithGoogleAsync()
+    {
+        try
+        {
+            StatusMessage = "Signing in with Google Account...";
+            var success = await _syncService.SignInAsync();
+            UpdateGoogleAuthState();
+            if (success)
+            {
+                StatusMessage = $"Signed in as {GoogleUserEmail}. Connected to private Google Drive.";
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Sign-in failed: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task SignOutGoogleAsync()
+    {
+        try
+        {
+            await _syncService.SignOutAsync();
+            UpdateGoogleAuthState();
+            StatusMessage = "Signed out of Google. Cloud sync disabled.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Sign-out failed: {ex.Message}";
         }
     }
 

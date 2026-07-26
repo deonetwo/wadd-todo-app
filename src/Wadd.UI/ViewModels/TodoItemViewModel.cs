@@ -59,6 +59,21 @@ public partial class TodoItemViewModel : ViewModelBase
 
     public DateTime? DueDate => Model.DueDate;
 
+    public bool HasDueDate => Model.DueDate.HasValue;
+
+    public string DueDateFormatted
+    {
+        get
+        {
+            if (!Model.DueDate.HasValue) return string.Empty;
+            var date = Model.DueDate.Value.Date;
+            var today = DateTime.Today;
+            if (date == today) return "Today";
+            if (date == today.AddDays(1)) return "Tomorrow";
+            return Model.DueDate.Value.ToString("MMM d");
+        }
+    }
+
     public TodoItemViewModel(TodoItem model)
     {
         _model = model ?? throw new ArgumentNullException(nameof(model));

@@ -33,6 +33,57 @@
     <Setter Property="Opacity"         Value="0.88"/>
   </Style>
 
+  <!-- Modern Non-Mainstream Composer Add Button: Pill shape, gradient, glow shadow, lift transition -->
+  <Style Selector="Button.composer-add">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="#0D9488" Offset="0.0"/>
+        <GradientStop Color="#10B981" Offset="1.0"/>
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="Foreground"              Value="#FFFFFF"/>
+    <Setter Property="BorderThickness"         Value="0"/>
+    <Setter Property="CornerRadius"            Value="20"/>
+    <Setter Property="Padding"                 Value="18,10"/>
+    <Setter Property="FontSize"                Value="13"/>
+    <Setter Property="FontWeight"              Value="SemiBold"/>
+    <Setter Property="Cursor"                  Value="Hand"/>
+    <Setter Property="RenderTransform"         Value="scale(1.0)"/>
+    <Setter Property="Transitions">
+      <Transitions>
+        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="CubicEaseOut"/>
+      </Transitions>
+    </Setter>
+  </Style>
+  <Style Selector="Button.composer-add /template/ ContentPresenter">
+    <Setter Property="CornerRadius" Value="20"/>
+    <Setter Property="BoxShadow"    Value="0 4 14 0 #330D9488"/>
+    <Setter Property="Transitions">
+      <Transitions>
+        <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.15"/>
+      </Transitions>
+    </Setter>
+  </Style>
+  <Style Selector="Button.composer-add:pointerover">
+    <Setter Property="RenderTransform" Value="scale(1.04) translateY(-1px)"/>
+  </Style>
+  <Style Selector="Button.composer-add:pointerover /template/ ContentPresenter">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="#0F766E" Offset="0.0"/>
+        <GradientStop Color="#059669" Offset="1.0"/>
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="Foreground" Value="#FFFFFF"/>
+    <Setter Property="BoxShadow"  Value="0 6 18 0 #5010B981"/>
+  </Style>
+  <Style Selector="Button.composer-add:pressed">
+    <Setter Property="RenderTransform" Value="scale(0.96) translateY(0px)"/>
+  </Style>
+  <Style Selector="Button.composer-add:pressed /template/ ContentPresenter">
+    <Setter Property="BoxShadow" Value="0 2 8 0 #300D9488"/>
+  </Style>
+
   <!-- Secondary: subtle fill with border (compat) -->
   <Style Selector="Button.secondary">
     <Setter Property="Background"      Value="{DynamicResource AppSurfaceSubtleBrush}"/>
@@ -158,6 +209,15 @@
   <Style Selector="TextBox.composer:pointerover /template/ Border#PART_BorderElement">
     <Setter Property="BorderBrush" Value="{DynamicResource AppTextSecondaryBrush}"/>
     <Setter Property="Background"  Value="Transparent"/>
+  </Style>
+  <Style Selector="TextBox.composer /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent"/>
+  </Style>
+  <Style Selector="TextBox.composer:focus /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent"/>
+  </Style>
+  <Style Selector="TextBox.composer:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent"/>
   </Style>
 
   <!-- Standard styled input: for settings, URL fields -->

@@ -90,93 +90,73 @@ Export files are saved locally to platform-safe directory locations:
 
 ---
 
-## 🔄 Synchronization & Backup
+## 🔄 Synchronization & Backup (Private Google Drive)
 
-Wadd features manual synchronization capabilities powered by `GoogleDriveSyncService` (implementing `ISyncService` in `Wadd.Services`) using a **Google Apps Script Web App Endpoint** in Google Drive.
+Wadd features **Private Google Drive Synchronization** powered by `GoogleDriveSyncService` (implementing `ISyncService` in `Wadd.Services`) using direct **Google OAuth 2.0 Browser Sign-In**.
 
 ### 1. Architectural Workflow
 
 ```mermaid
 sequenceDiagram
     autonumber
+    participant User as App User
+    participant Browser as System Web Browser
     participant App as Wadd App (Avalonia UI)
     participant Service as GoogleDriveSyncService
+    participant Google as Google OAuth & Drive REST API
     participant SQLite as Local SQLite DB (wadd.db)
-    participant GAS as Google Apps Script (code.gs)
-    participant Drive as Google Drive / Properties
 
-    App->>Service: SyncCommand triggered ("Sync Now 🔄")
-    Service->>SQLite: GetTodosAsync()
-    SQLite-->>Service: Return local TodoItem collection
-    Service->>GAS: HTTP POST (Serialize TodoItem JSON payload)
-    GAS->>Drive: Save / Merge items into Drive storage
-    GAS-->>Service: HTTP 200 OK (Post Success)
-    Service->>GAS: HTTP GET (Request remote TodoItem JSON)
-    GAS->>Drive: Read stored JSON state
-    GAS-->>Service: HTTP 200 OK (Returns remote JSON array)
+    User->>App: Click "Sign in with Google"
+    App->>Browser: Open Google OAuth URL (https://accounts.google.com/...)
+    Browser->>Google: Authenticate user & grant Drive scope
+    Google-->>App: Redirect authorization code to http://localhost:5001/
+    App->>Google: Exchange code for OAuth Access Token & User Info
+    Google-->>App: Return user email, display name & Bearer Token
+    App->>User: Display signed-in account badge in Settings
+
+    User->>App: Click "Sync now"
+    Service->>SQLite: Fetch local TodoItem collection
+    Service->>Google: Upload wadd_sync_data.json to user's private Google Drive
+    Service->>Google: Fetch remote wadd_sync_data.json from user's Google Drive
     Service->>SQLite: 2-Way State Merge (by Id & UpdatedAt timestamp)
     Service-->>App: Sync Completed (Refresh UI List)
 ```
 
-### 2. Setup Steps for Deploying `code.gs` in Google Drive
+---
 
-1. Open [Google Apps Script](https://script.google.com/) or open [Google Drive](https://drive.google.com/), click **New** > **More** > **Google Apps Script**.
-2. Rename the project to `Wadd Sync Endpoint`.
-3. Replace the contents of `Code.gs` with the following JavaScript script:
+### 2. Setting Up Google OAuth 2.0 Client ID
 
-```javascript
-// code.gs - Google Apps Script Web App Endpoint for Wadd
-var FILE_NAME = "wadd_sync_data.json";
+To connect Wadd to your own Google Cloud project:
 
-function doPost(e) {
-  try {
-    var contents = e.postData.contents;
-    var items = JSON.parse(contents);
-    
-    // Save payload to Google Drive
-    var files = DriveApp.getFilesByName(FILE_NAME);
-    var file;
-    if (files.hasNext()) {
-      file = files.next();
-      file.setContent(JSON.stringify(items));
-    } else {
-      file = DriveApp.createFile(FILE_NAME, JSON.stringify(items), MimeType.PLAIN_TEXT);
-    }
-    
-    return ContentService.createTextOutput(JSON.stringify({ status: "success", count: items.length }))
-      .setMimeType(ContentService.MimeType.JSON);
-  } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}
+1. Open **[Google Cloud Console Credentials](https://console.cloud.google.com/apis/credentials)**.
+2. Click **+ CREATE CREDENTIALS** > **OAuth client ID**.
+3. Select Application type: **Desktop app** (or **Web application** with Redirect URI `http://localhost:5001/`).
+4. Copy your generated **Client ID** (e.g. `1234567890-xyz.apps.googleusercontent.com`).
 
-function doGet(e) {
-  try {
-    var files = DriveApp.getFilesByName(FILE_NAME);
-    if (files.hasNext()) {
-      var file = files.next();
-      var content = file.getContentAsString();
-      return ContentService.createTextOutput(content)
-        .setMimeType(ContentService.MimeType.JSON);
-    } else {
-      return ContentService.createTextOutput(JSON.stringify([]))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-  } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify([]))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}
+---
+
+### 3. Configuring `GOOGLE_CLIENT_ID` Environment Variable
+
+You can set the `GOOGLE_CLIENT_ID` environment variable so Wadd loads it automatically without requiring input in the Settings UI:
+
+#### Windows (PowerShell)
+```powershell
+[System.Environment]::SetEnvironmentVariable("GOOGLE_CLIENT_ID", "YOUR_CLIENT_ID.apps.googleusercontent.com", "User")
 ```
 
-4. Click **Deploy** > **New deployment**.
-5. Select type: **Web app**.
-6. Configuration:
-   - **Description**: `Wadd Todo Sync Web App`
-   - **Execute as**: `Me (<your-email>)`
-   - **Who has access**: `Anyone`
-7. Click **Deploy**, authorize permissions when prompted, and copy the resulting **Web App URL** (e.g. `https://script.google.com/macros/s/.../exec`).
+#### Windows (Command Prompt)
+```cmd
+setx GOOGLE_CLIENT_ID "YOUR_CLIENT_ID.apps.googleusercontent.com"
+```
+
+#### Linux / macOS (`~/.bashrc` or `~/.zshrc`)
+```bash
+export GOOGLE_CLIENT_ID="YOUR_CLIENT_ID.apps.googleusercontent.com"
+```
+
+> [!TIP]
+> **In-App Settings UI**:
+> Alternatively, you can paste your Client ID directly into Wadd's **Settings** > **CLOUD SYNC** tab. The Client ID will be saved locally in `%LOCALAPPDATA%\Wadd\google_user_auth.json`.
 
 ### 3. App Settings Instructions for Endpoint Configuration
 
