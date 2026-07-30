@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Net;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Wadd.Core.Interfaces;
@@ -174,10 +175,13 @@ public class GoogleDriveSyncService : ISyncService
         }
 
         var redirectUri = "http://localhost:5001/";
+        var state = Guid.NewGuid().ToString("N");
+        var (codeVerifier, codeChallenge) = GeneratePkce();
+
         var loginHint = !string.IsNullOrWhiteSpace(UserEmail) && UserEmail != "Connected Account" 
             ? $"&login_hint={Uri.EscapeDataString(UserEmail)}" 
             : string.Empty;
-        var authUrl = $"https://accounts.google.com/o/oauth2/v2/auth?client_id={clientId}&redirect_uri={Uri.EscapeDataString(redirectUri)}&response_type=code&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdrive.file%20email%20profile&prompt=select_account{loginHint}";
+        var authUrl = $"https://accounts.google.com/o/oauth2/v2/auth?client_id={clientId}&redirect_uri={Uri.EscapeDataString(redirectUri)}&response_type=code&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdrive.file%20email%20profile&access_type=offline&prompt=consent&state={state}&code_challenge={codeChallenge}&code_challenge_method=S256{loginHint}";
 
         using var listener = new HttpListener();
         try
@@ -203,6 +207,7 @@ public class GoogleDriveSyncService : ISyncService
             if (completedTask == contextTask)
             {
                 var context = await contextTask;
+                var returnedState = context.Request.QueryString["state"];
                 var code = context.Request.QueryString["code"];
 
                 var htmlResponse = "<!DOCTYPE html><html><head><meta charset='utf-8'/></head><body style='font-family:sans-serif;text-align:center;padding-top:60px;background:#0F172A;color:#F8FAFC;'><h2>✅ Wadd Google Drive Connected!</h2><p>You may now close this browser tab and return to Wadd.</p></body></html>";
@@ -212,10 +217,15 @@ public class GoogleDriveSyncService : ISyncService
                 await context.Response.OutputStream.WriteAsync(buffer, cancellationToken);
                 context.Response.OutputStream.Close();
 
+                if (returnedState != state)
+                {
+                    throw new InvalidOperationException("OAuth authorization state mismatch (CSRF protection trigger).");
+                }
+
                 if (!string.IsNullOrWhiteSpace(code))
                 {
-                    // Exchange authorization code for token and fetch authentic user profile info
-                    var (accessToken, email, name) = await ExchangeCodeForTokenAsync(code, clientId, redirectUri, cancellationToken);
+                    // Exchange authorization code for token with PKCE verifier
+                    var (accessToken, refreshToken, email, name) = await ExchangeCodeForTokenAsync(code, codeVerifier, clientId, redirectUri, cancellationToken);
 
                     _authRecord = new UserAuthRecord
                     {
@@ -223,6 +233,7 @@ public class GoogleDriveSyncService : ISyncService
                         UserEmail = email,
                         UserName = name,
                         AccessToken = accessToken,
+                        RefreshToken = refreshToken,
                         AuthenticatedAt = DateTime.UtcNow
                     };
 
@@ -243,7 +254,73 @@ public class GoogleDriveSyncService : ISyncService
         throw new InvalidOperationException("Google sign-in timed out or was cancelled by user. Please try signing in again.");
     }
 
-    private async Task<(string accessToken, string email, string name)> ExchangeCodeForTokenAsync(string code, string clientId, string redirectUri, CancellationToken cancellationToken)
+    private static (string verifier, string challenge) GeneratePkce()
+    {
+        var bytes = new byte[32];
+        RandomNumberGenerator.Fill(bytes);
+        var verifier = Convert.ToBase64String(bytes).Replace("+", "-").Replace("/", "_").Replace("=", "");
+
+        var challengeBytes = SHA256.HashData(Encoding.UTF8.GetBytes(verifier));
+        var challenge = Convert.ToBase64String(challengeBytes).Replace("+", "-").Replace("/", "_").Replace("=", "");
+
+        return (verifier, challenge);
+    }
+
+    private async Task<bool> TryRefreshTokenAsync(CancellationToken cancellationToken)
+    {
+        if (_authRecord == null || string.IsNullOrWhiteSpace(_authRecord.RefreshToken))
+        {
+            return false;
+        }
+
+        var clientId = string.IsNullOrWhiteSpace(GoogleClientId)
+            ? (Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") ?? string.Empty)
+            : GoogleClientId;
+
+        var clientSecret = string.IsNullOrWhiteSpace(GoogleClientSecret)
+            ? (Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET") ?? string.Empty)
+            : GoogleClientSecret;
+
+        if (string.IsNullOrWhiteSpace(clientId)) return false;
+
+        try
+        {
+            var tokenParams = new List<KeyValuePair<string, string>>
+            {
+                new("client_id", clientId),
+                new("refresh_token", _authRecord.RefreshToken),
+                new("grant_type", "refresh_token")
+            };
+
+            if (!string.IsNullOrWhiteSpace(clientSecret))
+            {
+                tokenParams.Add(new("client_secret", clientSecret));
+            }
+
+            var content = new FormUrlEncodedContent(tokenParams);
+            var response = await _httpClient.PostAsync("https://oauth2.googleapis.com/token", content, cancellationToken);
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync(cancellationToken);
+                using var doc = JsonDocument.Parse(json);
+                if (doc.RootElement.TryGetProperty("access_token", out var tokenProp))
+                {
+                    _authRecord.AccessToken = tokenProp.GetString() ?? _authRecord.AccessToken;
+                    _authRecord.AuthenticatedAt = DateTime.UtcNow;
+                    SaveAuthRecord();
+                    return true;
+                }
+            }
+        }
+        catch
+        {
+            // Token refresh failure handling
+        }
+
+        return false;
+    }
+
+    private async Task<(string accessToken, string refreshToken, string email, string name)> ExchangeCodeForTokenAsync(string code, string codeVerifier, string clientId, string redirectUri, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(code))
         {
@@ -258,6 +335,7 @@ public class GoogleDriveSyncService : ISyncService
         {
             new("client_id", clientId),
             new("code", code),
+            new("code_verifier", codeVerifier),
             new("grant_type", "authorization_code"),
             new("redirect_uri", redirectUri)
         };
@@ -279,6 +357,10 @@ public class GoogleDriveSyncService : ISyncService
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
         var accessToken = root.TryGetProperty("access_token", out var tokenProp) ? tokenProp.GetString() : code;
+        var refreshToken = root.TryGetProperty("refresh_token", out var refreshProp) ? refreshProp.GetString() : string.Empty;
+
+        var email = string.Empty;
+        var name = string.Empty;
 
         // 1. Instantly extract user email & name from Google ID Token JWT payload
         if (root.TryGetProperty("id_token", out var idTokenProp))
@@ -287,24 +369,25 @@ public class GoogleDriveSyncService : ISyncService
             if (!string.IsNullOrWhiteSpace(idToken))
             {
                 var jwtProfile = ParseIdTokenPayload(idToken);
-                if (!string.IsNullOrWhiteSpace(jwtProfile.email))
-                {
-                    return (accessToken ?? code, jwtProfile.email, jwtProfile.name);
-                }
+                email = jwtProfile.email;
+                name = jwtProfile.name;
             }
         }
 
         // 2. Query Google UserInfo API as secondary fallback
-        if (!string.IsNullOrWhiteSpace(accessToken))
+        if (string.IsNullOrWhiteSpace(email) && !string.IsNullOrWhiteSpace(accessToken))
         {
             var userInfo = await FetchGoogleUserInfoAsync(accessToken, cancellationToken);
-            if (!string.IsNullOrWhiteSpace(userInfo.email))
-            {
-                return (accessToken, userInfo.email, userInfo.name);
-            }
+            email = userInfo.email;
+            name = userInfo.name;
         }
 
-        throw new InvalidOperationException("Failed to retrieve authenticated user email from Google OAuth profile.");
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            throw new InvalidOperationException("Failed to retrieve authenticated user email from Google OAuth profile.");
+        }
+
+        return (accessToken ?? code, refreshToken ?? string.Empty, email, name);
     }
 
     private static (string email, string name) ParseIdTokenPayload(string idToken)
@@ -557,15 +640,30 @@ public class GoogleDriveSyncService : ISyncService
         await EnsureDriveSuccessAsync(response, "Upload");
     }
 
-    private static async Task EnsureDriveSuccessAsync(HttpResponseMessage response, string actionName)
+    private async Task EnsureDriveSuccessAsync(HttpResponseMessage response, string actionName)
     {
         if (!response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadAsStringAsync();
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized || content.Contains("Invalid Credentials") || content.Contains("invalid_token") || content.Contains("authError"))
+            {
+                // Attempt automatic token renewal using refresh_token
+                if (await TryRefreshTokenAsync(CancellationToken.None))
+                {
+                    return;
+                }
+
+                // If refresh failed or credentials revoked, sign out cleanly
+                await SignOutAsync();
+                throw new InvalidOperationException("Google session expired or credentials revoked. Please sign in with Google again in Settings.");
+            }
+
             if (response.StatusCode == System.Net.HttpStatusCode.Forbidden || content.Contains("drive.googleapis.com") || content.Contains("API has not been used"))
             {
                 throw new InvalidOperationException("Google Drive API is disabled in your Google Cloud Console project. Please open Google Cloud Console > Enabled APIs & Services > Enable 'Google Drive API'.");
             }
+
             throw new InvalidOperationException($"Google Drive API {actionName} failed ({response.StatusCode}): {content}");
         }
     }
@@ -579,5 +677,6 @@ public class UserAuthRecord
     public string GoogleClientId { get; set; } = string.Empty;
     public string GoogleClientSecret { get; set; } = string.Empty;
     public string AccessToken { get; set; } = string.Empty;
+    public string RefreshToken { get; set; } = string.Empty;
     public DateTime AuthenticatedAt { get; set; } = DateTime.UtcNow;
 }
