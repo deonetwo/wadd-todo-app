@@ -13,6 +13,10 @@
     <vm:MainViewModel />
   </Design.DataContext>
 
+  <UserControl.KeyBindings>
+    <KeyBinding Gesture="Ctrl+B" Command="{Binding ToggleNavExpandedCommand}"/>
+  </UserControl.KeyBindings>
+
   <!-- ───── Icon Geometries (Fluent / Custom SVG paths) ───── -->
   <UserControl.Resources>
     <Geometry x:Key="MenuIconData">M3 6a1 1 0 0 1 1-1h16a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1zm0 6a1 1 0 0 1 1-1h16a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1zm0 6a1 1 0 0 1 1-1h16a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1z</Geometry>
@@ -36,59 +40,122 @@
     <!-- ══════════════════════════════════════════════════════
          WIDE / DESKTOP LAYOUT — nav rail + content area
     ══════════════════════════════════════════════════════ -->
-    <Grid IsVisible="{Binding !IsCompact}" ColumnDefinitions="64,*">
+    <Grid IsVisible="{Binding !IsCompact}" ColumnDefinitions="Auto,*">
 
       <!-- ──────────────────────────────────────────────────
-           NAV RAIL  (64px wide, icon-only vertical strip)
+           EXPANDABLE LEFT SIDEBAR / NAVIGATION DRAWER
       ────────────────────────────────────────────────── -->
       <Border Grid.Column="0"
+              Width="{Binding SidebarWidth}"
+              ClipToBounds="True"
               Background="{DynamicResource AppSurfaceBrush}"
               BorderBrush="{DynamicResource AppBorderBrush}"
               BorderThickness="0,0,1,0">
-        <Grid RowDefinitions="Auto,*,Auto">
+        <Border.Transitions>
+          <Transitions>
+            <DoubleTransition Property="Width" Duration="0:0:0.26" Easing="0.1,0.9,0.2,1.0"/>
+          </Transitions>
+        </Border.Transitions>
 
-          <!-- Brand mark: Wadd Logo -->
-          <Border Grid.Row="0" Padding="0,18,0,14" HorizontalAlignment="Center">
-            <Image Source="avares://Wadd.UI/Assets/logo.png"
-                   Width="38" Height="38"
-                   RenderOptions.BitmapInterpolationMode="HighQuality"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center"/>
-          </Border>
+        <Grid Width="240" HorizontalAlignment="Left" RowDefinitions="Auto,*,Auto">
 
-          <!-- Navigation Items: icon-only ListBox -->
+          <!-- ─── HEADER (240px wide) ─── -->
+          <Grid Grid.Row="0" ColumnDefinitions="64,*,Auto" Height="64">
+            <!-- Wadd Logo Button in left 64px column: toggles expansion when clicked -->
+            <Button Grid.Column="0"
+                    Classes="icon-btn"
+                    Command="{Binding ToggleNavExpandedCommand}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    ToolTip.Tip="Wadd ToDo · Toggle navigation (Ctrl+B)">
+              <Image Source="avares://Wadd.UI/Assets/logo.png"
+                     Width="28" Height="28"
+                     RenderOptions.BitmapInterpolationMode="HighQuality"/>
+            </Button>
+
+            <!-- App Title in middle column -->
+            <TextBlock Grid.Column="1"
+                       Text="Wadd"
+                       FontSize="18"
+                       FontWeight="Bold"
+                       Foreground="{DynamicResource AppTextPrimaryBrush}"
+                       VerticalAlignment="Center"/>
+
+            <!-- Collapse Toggle Button on the right -->
+            <Button Grid.Column="2"
+                    Classes="icon-btn"
+                    Command="{Binding ToggleNavExpandedCommand}"
+                    Margin="0,0,8,0"
+                    VerticalAlignment="Center"
+                    ToolTip.Tip="Collapse navigation (Ctrl+B)">
+              <PathIcon Data="{StaticResource MenuIconData}" Width="16" Height="16"/>
+            </Button>
+          </Grid>
+
+          <!-- ─── NAVIGATION ITEMS (Single Unified ListBox) ─── -->
           <ListBox Grid.Row="1"
                    Background="Transparent"
                    BorderThickness="0"
                    SelectedIndex="{Binding SelectedNavIndex}"
-                   Padding="0,4">
-            <ListBoxItem Classes="nav-rail-item"
-                         ToolTip.Tip="Tasks">
-              <PathIcon Data="{StaticResource CheckListIconData}" Width="19" Height="19"/>
+                   Padding="4,4">
+
+            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Tasks">
+              <Grid ColumnDefinitions="56,*,Auto" Height="44">
+                <PathIcon Grid.Column="0" Data="{StaticResource CheckListIconData}" Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="Tasks" FontSize="14" VerticalAlignment="Center"/>
+                <Border Grid.Column="2"
+                        Background="{DynamicResource AppSurfaceElevatedBrush}"
+                        CornerRadius="10"
+                        Padding="7,2"
+                        Margin="0,0,10,0"
+                        VerticalAlignment="Center">
+                  <TextBlock Text="{Binding TodoItems.Count}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                </Border>
+              </Grid>
             </ListBoxItem>
-            <ListBoxItem Classes="nav-rail-item"
-                         ToolTip.Tip="Calendar">
-              <PathIcon Data="{StaticResource CalendarIconData}" Width="19" Height="19"/>
+
+            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Calendar">
+              <Grid ColumnDefinitions="56,*" Height="44">
+                <PathIcon Grid.Column="0" Data="{StaticResource CalendarIconData}" Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="Calendar" FontSize="14" VerticalAlignment="Center"/>
+              </Grid>
             </ListBoxItem>
-            <ListBoxItem Classes="nav-rail-item"
-                         ToolTip.Tip="Diagnostics">
-              <PathIcon Data="{StaticResource TracingIconData}" Width="19" Height="19"/>
+
+            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Diagnostics">
+              <Grid ColumnDefinitions="56,*" Height="44">
+                <PathIcon Grid.Column="0" Data="{StaticResource TracingIconData}" Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="Diagnostics" FontSize="14" VerticalAlignment="Center"/>
+              </Grid>
             </ListBoxItem>
-            <ListBoxItem Classes="nav-rail-item"
-                         ToolTip.Tip="Settings">
-              <PathIcon Data="{StaticResource SettingsIconData}" Width="19" Height="19"/>
+
+            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Settings">
+              <Grid ColumnDefinitions="56,*" Height="44">
+                <PathIcon Grid.Column="0" Data="{StaticResource SettingsIconData}" Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="Settings" FontSize="14" VerticalAlignment="Center"/>
+              </Grid>
             </ListBoxItem>
           </ListBox>
 
-          <!-- Bottom actions: sync + status dot -->
+          <!-- Bottom Footer: Collapsed (Width=64 to stay visible in collapsed rail) -->
           <StackPanel Grid.Row="2"
-                      Spacing="6"
-                      HorizontalAlignment="Center"
+                      IsVisible="{Binding !IsNavExpanded}"
+                      Width="64"
+                      HorizontalAlignment="Left"
+                      Spacing="8"
                       Margin="0,0,0,18">
+            <Button Classes="icon-btn"
+                    Command="{Binding ToggleThemeCommand}"
+                    HorizontalAlignment="Center">
+              <Panel>
+                <PathIcon Data="{StaticResource MoonIconData}" Width="16" Height="16" IsVisible="{Binding !IsDarkMode}" ToolTip.Tip="Switch to Dark Mode"/>
+                <PathIcon Data="{StaticResource SunIconData}" Width="16" Height="16" IsVisible="{Binding IsDarkMode}" ToolTip.Tip="Switch to Light Mode"/>
+              </Panel>
+            </Button>
             <Button Classes="icon-btn"
                     Command="{Binding SyncCommand}"
                     IsEnabled="{Binding !IsSyncing}"
-                    ToolTip.Tip="Sync with Google Apps Script">
+                    HorizontalAlignment="Center"
+                    ToolTip.Tip="Sync Cloud">
               <PathIcon Data="{StaticResource SyncIconData}" Width="16" Height="16"/>
             </Button>
             <!-- Status indicator dot -->
@@ -103,6 +170,45 @@
                      IsVisible="{Binding IsSyncing}"
                      ToolTip.Tip="Syncing…"/>
           </StackPanel>
+
+          <Border Grid.Row="2"
+                  IsVisible="{Binding IsNavExpanded}"
+                  Margin="10,0,10,16"
+                  Padding="12,10"
+                  Background="{DynamicResource AppSurfaceElevatedBrush}"
+                  BorderBrush="{DynamicResource AppBorderBrush}"
+                  BorderThickness="1"
+                  CornerRadius="10">
+            <StackPanel Spacing="10">
+              <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                  <TextBlock Text="STORAGE &amp; SYNC" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                  <TextBlock Text="SQLite Local Mode" IsVisible="{Binding !IsGoogleSignedIn}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                  <TextBlock Text="{Binding GoogleUserEmail}" IsVisible="{Binding IsGoogleSignedIn}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppTextPrimaryBrush}" TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+                <Button Grid.Column="1"
+                        Classes="icon-btn"
+                        Command="{Binding ToggleThemeCommand}"
+                        VerticalAlignment="Center">
+                  <Panel>
+                    <PathIcon Data="{StaticResource MoonIconData}" Width="14" Height="14" IsVisible="{Binding !IsDarkMode}" ToolTip.Tip="Switch to Dark Mode"/>
+                    <PathIcon Data="{StaticResource SunIconData}" Width="14" Height="14" IsVisible="{Binding IsDarkMode}" ToolTip.Tip="Switch to Light Mode"/>
+                  </Panel>
+                </Button>
+              </Grid>
+              <Button Classes="outline"
+                      Command="{Binding SyncCommand}"
+                      IsEnabled="{Binding !IsSyncing}"
+                      HorizontalAlignment="Stretch">
+                <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                  <PathIcon Data="{StaticResource SyncIconData}" Width="13" Height="13"/>
+                  <TextBlock Text="Sync Cloud" IsVisible="{Binding !IsSyncing}" FontSize="12" FontWeight="SemiBold"/>
+                  <TextBlock Text="Syncing..." IsVisible="{Binding IsSyncing}" FontSize="12" FontWeight="SemiBold"/>
+                </StackPanel>
+              </Button>
+            </StackPanel>
+          </Border>
+
         </Grid>
       </Border>
 

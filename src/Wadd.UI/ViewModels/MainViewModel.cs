@@ -117,6 +117,12 @@ public partial class MainViewModel : ViewModelBase
     private bool _isSideMenuOpen;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SidebarWidth))]
+    private bool _isNavExpanded = false;
+
+    public double SidebarWidth => IsNavExpanded ? 240 : 64;
+
+    [ObservableProperty]
     private bool _isSyncing;
 
     [ObservableProperty]
@@ -442,6 +448,12 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void ToggleNavExpanded()
+    {
+        IsNavExpanded = !IsNavExpanded;
+    }
+
+    [RelayCommand]
     private void CloseSideMenu()
     {
         IsSideMenuOpen = false;
@@ -453,6 +465,16 @@ public partial class MainViewModel : ViewModelBase
         await LoadTodoItemsAsync();
     }
 
+    public bool IsDarkMode
+    {
+        get
+        {
+            if (CurrentThemeMode == ThemeMode.Dark) return true;
+            if (CurrentThemeMode == ThemeMode.Light) return false;
+            return Avalonia.Application.Current?.ActualThemeVariant == Avalonia.Styling.ThemeVariant.Dark;
+        }
+    }
+
     private void UpdateThemeLabel()
     {
         CurrentThemeLabel = CurrentThemeMode switch
@@ -461,5 +483,6 @@ public partial class MainViewModel : ViewModelBase
             ThemeMode.Dark => "Dark Mode",
             _ => "System Default"
         };
+        OnPropertyChanged(nameof(IsDarkMode));
     }
 }

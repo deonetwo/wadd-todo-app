@@ -11,7 +11,28 @@ public class ThemeService : IThemeService
 
     public ThemeMode CurrentTheme => _currentTheme;
 
+    public bool IsDarkMode
+    {
+        get
+        {
+            if (_currentTheme == ThemeMode.Dark) return true;
+            if (_currentTheme == ThemeMode.Light) return false;
+            return Application.Current?.ActualThemeVariant == ThemeVariant.Dark;
+        }
+    }
+
     public event EventHandler<ThemeMode>? ThemeChanged;
+
+    public ThemeService()
+    {
+        if (Application.Current != null)
+        {
+            Application.Current.ActualThemeVariantChanged += (s, e) =>
+            {
+                ThemeChanged?.Invoke(this, _currentTheme);
+            };
+        }
+    }
 
     public void SetTheme(ThemeMode mode)
     {
@@ -30,13 +51,7 @@ public class ThemeService : IThemeService
 
     public void ToggleTheme()
     {
-        var nextTheme = _currentTheme switch
-        {
-            ThemeMode.System => ThemeMode.Light,
-            ThemeMode.Light => ThemeMode.Dark,
-            ThemeMode.Dark => ThemeMode.System,
-            _ => ThemeMode.System
-        };
+        var nextTheme = IsDarkMode ? ThemeMode.Light : ThemeMode.Dark;
         SetTheme(nextTheme);
     }
 }
