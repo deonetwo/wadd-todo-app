@@ -21,4 +21,6 @@ public class TodoItem
     public DateTime? UpdatedAt { get; set; }
 
     public DateTime? DueDate { get; set; }
+
+    public DateTime? ReminderAt { get; set; }
 }

@@ -14,6 +14,12 @@ public partial class App : Application
 
     public override void Initialize()
     {
+        var enUSInfo = new System.Globalization.CultureInfo("en-US");
+        System.Globalization.CultureInfo.DefaultThreadCurrentCulture = enUSInfo;
+        System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = enUSInfo;
+        System.Threading.Thread.CurrentThread.CurrentCulture = enUSInfo;
+        System.Threading.Thread.CurrentThread.CurrentUICulture = enUSInfo;
+
         AvaloniaXamlLoader.Load(this);
     }
 

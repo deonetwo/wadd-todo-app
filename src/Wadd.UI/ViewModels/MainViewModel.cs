@@ -111,6 +111,51 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasNewTaskReminder))]
+    [NotifyPropertyChangedFor(nameof(NewTaskReminderFormatted))]
+    private DateTime? _newTaskReminderDate;
+
+    partial void OnNewTaskReminderDateChanged(DateTime? value)
+    {
+        if (value.HasValue && !NewTaskReminderTime.HasValue)
+        {
+            NewTaskReminderTime = TimeSpan.Zero;
+        }
+    }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasNewTaskReminder))]
+    [NotifyPropertyChangedFor(nameof(NewTaskReminderFormatted))]
+    private TimeSpan? _newTaskReminderTime;
+
+    public bool HasNewTaskReminder => NewTaskReminderDate.HasValue || NewTaskReminderTime.HasValue;
+
+    public string NewTaskReminderFormatted
+    {
+        get
+        {
+            var dt = GetCombinedNewTaskReminder();
+            if (!dt.HasValue) return string.Empty;
+            var date = dt.Value.Date;
+            var today = DateTime.Today;
+            var timeStr = dt.Value.ToString("HH:mm");
+            if (date == today) return $"Today at {timeStr}";
+            if (date == today.AddDays(1)) return $"Tomorrow at {timeStr}";
+            return $"{dt.Value:MMM d, yyyy} at {timeStr}";
+        }
+    }
+
+    private DateTime? GetCombinedNewTaskReminder()
+    {
+        if (!NewTaskReminderDate.HasValue && !NewTaskReminderTime.HasValue)
+            return null;
+
+        var baseDate = NewTaskReminderDate?.Date ?? DateTime.Today;
+        var time = NewTaskReminderTime ?? TimeSpan.Zero; // Default is 00:00
+        return baseDate.Add(time);
+    }
+
+    [ObservableProperty]
     private bool _isCompact;
 
     [ObservableProperty]
@@ -250,6 +295,34 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void SetReminderLaterToday()
+    {
+        NewTaskReminderDate = DateTime.Today;
+        NewTaskReminderTime = new TimeSpan(17, 0, 0); // 5:00 PM
+    }
+
+    [RelayCommand]
+    private void SetReminderTomorrowMorning()
+    {
+        NewTaskReminderDate = DateTime.Today.AddDays(1);
+        NewTaskReminderTime = new TimeSpan(9, 0, 0); // 9:00 AM
+    }
+
+    [RelayCommand]
+    private void SetReminderNextWeek()
+    {
+        NewTaskReminderDate = DateTime.Today.AddDays(7);
+        NewTaskReminderTime = new TimeSpan(9, 0, 0); // 9:00 AM
+    }
+
+    [RelayCommand]
+    private void ClearReminder()
+    {
+        NewTaskReminderDate = null;
+        NewTaskReminderTime = null;
+    }
+
+    [RelayCommand]
     private async Task AddTaskAsync()
     {
         if (string.IsNullOrWhiteSpace(NewTaskTitle)) return;
@@ -263,7 +336,8 @@ public partial class MainViewModel : ViewModelBase
                 IsCompleted = false,
                 Priority = TodoPriority.Medium,
                 CreatedAt = DateTime.UtcNow,
-                DueDate = NewTaskDueDate
+                DueDate = NewTaskDueDate,
+                ReminderAt = GetCombinedNewTaskReminder()
             };
 
             await _todoService.AddTodoAsync(newItem);
@@ -273,6 +347,8 @@ public partial class MainViewModel : ViewModelBase
                 NewTaskTitle = string.Empty;
                 NewTaskDescription = string.Empty;
                 NewTaskDueDate = null;
+                NewTaskReminderDate = null;
+                NewTaskReminderTime = null;
             });
 
             await LoadTodoItemsAsync();

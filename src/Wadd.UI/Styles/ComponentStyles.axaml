@@ -417,4 +417,44 @@
     <Setter Property="Margin"     Value="0"/>
   </Style>
 
+  <!-- Center the icon visually within the rightmost section of TimePicker -->
+  <Style Selector="TimePicker /template/ PathIcon">
+    <Setter Property="Data" Value="{DynamicResource BellIconData}" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Margin" Value="0" />
+  </Style>
+  <Style Selector="TimePicker /template/ PathIcon#ClockIcon">
+    <Setter Property="Data" Value="{DynamicResource BellIconData}" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Margin" Value="0" />
+  </Style>
+  <Style Selector="TimePicker /template/ PathIcon#PART_ClockIcon">
+    <Setter Property="Data" Value="{DynamicResource BellIconData}" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Margin" Value="0" />
+  </Style>
+  <Style Selector="TimePickerPresenter /template/ PathIcon">
+    <Setter Property="Data" Value="{DynamicResource BellIconData}" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Margin" Value="0" />
+  </Style>
+
+  <!-- Style to hide/remove clock icon inside TimePicker -->
+  <Style Selector="TimePicker.no-clock /template/ PathIcon">
+    <Setter Property="IsVisible" Value="False" />
+    <Setter Property="Width" Value="0" />
+  </Style>
+  <Style Selector="TimePicker.no-clock /template/ PathIcon#ClockIcon">
+    <Setter Property="IsVisible" Value="False" />
+    <Setter Property="Width" Value="0" />
+  </Style>
+  <Style Selector="TimePicker.no-clock /template/ PathIcon#PART_ClockIcon">
+    <Setter Property="IsVisible" Value="False" />
+    <Setter Property="Width" Value="0" />
+  </Style>
+
 </Styles>

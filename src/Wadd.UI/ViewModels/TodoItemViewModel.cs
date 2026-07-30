@@ -74,6 +74,25 @@ public partial class TodoItemViewModel : ViewModelBase
         }
     }
 
+    public DateTime? ReminderAt => Model.ReminderAt;
+
+    public bool HasReminder => Model.ReminderAt.HasValue;
+
+    public string ReminderAtFormatted
+    {
+        get
+        {
+            if (!Model.ReminderAt.HasValue) return string.Empty;
+            var dt = Model.ReminderAt.Value;
+            var date = dt.Date;
+            var today = DateTime.Today;
+            var timeStr = dt.ToString("HH:mm");
+            if (date == today) return $"Today at {timeStr}";
+            if (date == today.AddDays(1)) return $"Tomorrow at {timeStr}";
+            return $"{dt:MMM d} at {timeStr}";
+        }
+    }
+
     public TodoItemViewModel(TodoItem model)
     {
         _model = model ?? throw new ArgumentNullException(nameof(model));
