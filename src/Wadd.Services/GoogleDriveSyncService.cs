@@ -116,13 +116,68 @@ public class GoogleDriveSyncService : ISyncService
         }
     }
 
+    private static readonly byte[] AuthStorageSalt = "Wadd.Auth.Salt.2026"u8.ToArray();
+    private static readonly byte[] AuthStoragePassphrase = "Wadd-GoogleDrive-OAuth-SecureTokenKey"u8.ToArray();
+
+    private static byte[] EncryptAuthData(byte[] plainBytes)
+    {
+        var derivedBytes = Rfc2898DeriveBytes.Pbkdf2(AuthStoragePassphrase, AuthStorageSalt, 10000, HashAlgorithmName.SHA256, 48);
+        var key = derivedBytes[..32];
+        var iv = derivedBytes[32..];
+
+        using var aes = Aes.Create();
+        aes.Key = key;
+        aes.IV = iv;
+
+        using var ms = new MemoryStream();
+        using (var cs = new CryptoStream(ms, aes.CreateEncryptor(), CryptoStreamMode.Write))
+        {
+            cs.Write(plainBytes, 0, plainBytes.Length);
+            cs.FlushFinalBlock();
+        }
+        return ms.ToArray();
+    }
+
+    private static byte[] DecryptAuthData(byte[] cipherBytes)
+    {
+        var derivedBytes = Rfc2898DeriveBytes.Pbkdf2(AuthStoragePassphrase, AuthStorageSalt, 10000, HashAlgorithmName.SHA256, 48);
+        var key = derivedBytes[..32];
+        var iv = derivedBytes[32..];
+
+        using var aes = Aes.Create();
+        aes.Key = key;
+        aes.IV = iv;
+
+        using var ms = new MemoryStream();
+        using (var cs = new CryptoStream(ms, aes.CreateDecryptor(), CryptoStreamMode.Write))
+        {
+            cs.Write(cipherBytes, 0, cipherBytes.Length);
+            cs.FlushFinalBlock();
+        }
+        return ms.ToArray();
+    }
+
     private void LoadAuthRecord()
     {
         try
         {
             if (File.Exists(_authFilePath))
             {
-                var json = File.ReadAllText(_authFilePath);
+                var fileBytes = File.ReadAllBytes(_authFilePath);
+                if (fileBytes.Length == 0) return;
+
+                string json;
+                // Backward compatibility: detect if file is unencrypted plaintext JSON (starts with '{')
+                if (fileBytes[0] == (byte)'{')
+                {
+                    json = Encoding.UTF8.GetString(fileBytes);
+                }
+                else
+                {
+                    var decryptedBytes = DecryptAuthData(fileBytes);
+                    json = Encoding.UTF8.GetString(decryptedBytes);
+                }
+
                 _authRecord = JsonSerializer.Deserialize<UserAuthRecord>(json, JsonOptions);
 
                 // Purge obsolete/dummy placeholder records
@@ -135,10 +190,16 @@ public class GoogleDriveSyncService : ISyncService
                     _authRecord = null;
                     try { File.Delete(_authFilePath); } catch { }
                 }
+                else if (fileBytes[0] == (byte)'{')
+                {
+                    // Automatically migrate legacy plaintext file to encrypted storage
+                    SaveAuthRecord();
+                }
             }
         }
-        catch
+        catch (Exception ex)
         {
+            Trace.WriteLine($"[WARN] Failed to load/decrypt auth record: {ex.Message}");
             _authRecord = null;
         }
     }
@@ -150,16 +211,18 @@ public class GoogleDriveSyncService : ISyncService
             if (_authRecord != null)
             {
                 var json = JsonSerializer.Serialize(_authRecord, JsonOptions);
-                File.WriteAllText(_authFilePath, json);
+                var plainBytes = Encoding.UTF8.GetBytes(json);
+                var encryptedBytes = EncryptAuthData(plainBytes);
+                File.WriteAllBytes(_authFilePath, encryptedBytes);
             }
             else if (File.Exists(_authFilePath))
             {
                 File.Delete(_authFilePath);
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore storage write exceptions
+            Trace.WriteLine($"[ERROR] Failed to save encrypted auth record: {ex.Message}");
         }
     }
 
