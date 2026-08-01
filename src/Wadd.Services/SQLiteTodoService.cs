@@ -1,6 +1,7 @@
 using SQLite;
 using Wadd.Core.Interfaces;
 using Wadd.Core.Models;
+using Wadd.Services.Entities;
 
 namespace Wadd.Services;
 
@@ -12,7 +13,6 @@ public class SQLiteTodoService : ITodoService
 
     public SQLiteTodoService()
     {
-        // Initialize SQLitePCLRaw bundle_e_sqlite3 battery
         SQLitePCL.Batteries_V2.Init();
 
         var folderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Wadd");
@@ -47,7 +47,7 @@ public class SQLiteTodoService : ITodoService
         {
             if (!_isInitialized)
             {
-                await _database.CreateTableAsync<TodoItem>();
+                await _database.CreateTableAsync<TodoItemEntity>();
                 _isInitialized = true;
             }
         }
@@ -60,7 +60,8 @@ public class SQLiteTodoService : ITodoService
     public async Task<IEnumerable<TodoItem>> GetTodosAsync(CancellationToken cancellationToken = default)
     {
         await EnsureInitializedAsync();
-        return await _database.Table<TodoItem>().OrderByDescending(x => x.CreatedAt).ToListAsync();
+        var entities = await _database.Table<TodoItemEntity>().OrderByDescending(x => x.CreatedAt).ToListAsync();
+        return entities.Select(e => e.ToDomain());
     }
 
     public async Task<IEnumerable<TodoItem>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -69,7 +70,8 @@ public class SQLiteTodoService : ITodoService
     public async Task<TodoItem?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         await EnsureInitializedAsync();
-        return await _database.Table<TodoItem>().FirstOrDefaultAsync(x => x.Id == id);
+        var entity = await _database.Table<TodoItemEntity>().FirstOrDefaultAsync(x => x.Id == id);
+        return entity?.ToDomain();
     }
 
     public async Task<TodoItem> AddTodoAsync(TodoItem item, CancellationToken cancellationToken = default)
@@ -82,7 +84,8 @@ public class SQLiteTodoService : ITodoService
         item.CreatedAt = DateTime.UtcNow;
         item.UpdatedAt = DateTime.UtcNow;
 
-        await _database.InsertAsync(item);
+        var entity = TodoItemEntity.FromDomain(item);
+        await _database.InsertAsync(entity);
         return item;
     }
 
@@ -93,7 +96,8 @@ public class SQLiteTodoService : ITodoService
     {
         await EnsureInitializedAsync();
         item.UpdatedAt = DateTime.UtcNow;
-        var rows = await _database.UpdateAsync(item);
+        var entity = TodoItemEntity.FromDomain(item);
+        var rows = await _database.UpdateAsync(entity);
         return rows > 0;
     }
 
@@ -103,10 +107,10 @@ public class SQLiteTodoService : ITodoService
     public async Task<bool> DeleteTodoAsync(Guid id, CancellationToken cancellationToken = default)
     {
         await EnsureInitializedAsync();
-        var item = await GetByIdAsync(id, cancellationToken);
-        if (item == null) return false;
+        var entity = await _database.Table<TodoItemEntity>().FirstOrDefaultAsync(x => x.Id == id);
+        if (entity == null) return false;
 
-        var rows = await _database.DeleteAsync(item);
+        var rows = await _database.DeleteAsync(entity);
         return rows > 0;
     }
 
@@ -120,9 +124,6 @@ public class SQLiteTodoService : ITodoService
         if (item == null) return false;
 
         item.IsCompleted = !item.IsCompleted;
-        item.UpdatedAt = DateTime.UtcNow;
-
-        var rows = await _database.UpdateAsync(item);
-        return rows > 0;
+        return await UpdateTodoAsync(item, cancellationToken);
     }
 }

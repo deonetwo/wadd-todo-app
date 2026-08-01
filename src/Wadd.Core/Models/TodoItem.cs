@@ -1,11 +1,9 @@
-using SQLite;
 using Wadd.Core.Enums;
 
 namespace Wadd.Core.Models;
 
 public class TodoItem
 {
-    [PrimaryKey]
     public Guid Id { get; set; } = Guid.NewGuid();
 
     public string Title { get; set; } = string.Empty;
