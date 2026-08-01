@@ -25,55 +25,31 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     private string _currentDateFull = DateTime.Now.ToString("dddd, MMMM d, yyyy");
 
-    private CancellationTokenSource? _statusTimerCts;
+    public ObservableCollection<NotificationBubbleItem> StatusNotifications { get; } = new();
 
     [ObservableProperty]
     private string _statusMessage = "Ready (Local Mode)";
 
-    [ObservableProperty]
-    private double _statusOpacity = 1.0;
-
-    [ObservableProperty]
-    private bool _isStatusVisible = true;
-
     partial void OnStatusMessageChanged(string value)
     {
-        _statusTimerCts?.Cancel();
-        _statusTimerCts = new CancellationTokenSource();
-        var token = _statusTimerCts.Token;
-
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            StatusOpacity = 0.0;
-            IsStatusVisible = false;
+        if (string.IsNullOrWhiteSpace(value) || value == "Ready (Local Mode)")
             return;
-        }
 
-        StatusOpacity = 1.0;
-        IsStatusVisible = true;
+        var notif = new NotificationBubbleItem(value);
+        StatusNotifications.Add(notif);
 
         Task.Run(async () =>
         {
-            try
+            await Task.Delay(4000);
+            await Dispatcher.UIThread.InvokeAsync(() =>
             {
-                await Task.Delay(3500, token);
-                await Dispatcher.UIThread.InvokeAsync(() =>
-                {
-                    StatusOpacity = 0.0;
-                });
-                await Task.Delay(450, token);
-                await Dispatcher.UIThread.InvokeAsync(() =>
-                {
-                    if (!token.IsCancellationRequested && StatusOpacity == 0.0)
-                    {
-                        IsStatusVisible = false;
-                    }
-                });
-            }
-            catch (OperationCanceledException)
+                notif.Opacity = 0.0;
+            });
+            await Task.Delay(450);
+            await Dispatcher.UIThread.InvokeAsync(() =>
             {
-                // Canceled due to a new status message arriving
-            }
+                StatusNotifications.Remove(notif);
+            });
         });
     }
 
@@ -105,7 +81,6 @@ public partial class MainViewModel : ViewModelBase
             var today = DateTime.Today;
             if (date == today) return "Today";
             if (date == today.AddDays(1)) return "Tomorrow";
-            if (date == today.AddDays(7)) return $"Next Week ({NewTaskDueDate.Value:MMM d})";
             return NewTaskDueDate.Value.ToString("MMM d, yyyy");
         }
     }
@@ -560,5 +535,20 @@ public partial class MainViewModel : ViewModelBase
             _ => "System Default"
         };
         OnPropertyChanged(nameof(IsDarkMode));
+    }
+}
+
+public partial class NotificationBubbleItem : ObservableObject
+{
+    public string Message { get; }
+    public string Timestamp { get; }
+
+    [ObservableProperty]
+    private double _opacity = 1.0;
+
+    public NotificationBubbleItem(string message)
+    {
+        Message = message;
+        Timestamp = DateTime.Now.ToString("HH:mm");
     }
 }
