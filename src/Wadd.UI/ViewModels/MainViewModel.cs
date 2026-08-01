@@ -411,7 +411,13 @@ public partial class MainViewModel : ViewModelBase
         {
             StatusMessage = "Exporting tasks to Excel...";
             var localFolder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            if (string.IsNullOrWhiteSpace(localFolder))
+            {
+                localFolder = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+            }
             var exportDir = Path.Combine(localFolder, "Wadd", "Exports");
+            Directory.CreateDirectory(exportDir);
+
             var fileName = $"todo_export_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
             var filePath = Path.Combine(exportDir, fileName);
 
