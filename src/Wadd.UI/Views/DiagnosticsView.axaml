@@ -1,0 +1,45 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Wadd.UI.ViewModels;assembly=Wadd.UI"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="700"
+             x:Class="Wadd.UI.Views.DiagnosticsView"
+             x:DataType="vm:MainViewModel">
+
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="64,52,80,120" Spacing="0">
+      <TextBlock Text="Diagnostics" Classes="display-xl" Margin="0,0,0,6"/>
+      <TextBlock Text="Application health, SQLite telemetry, and cloud sync status." Classes="small" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+      <Separator Classes="divider" Margin="0,28,0,40"/>
+
+      <Grid ColumnDefinitions="*,*,*">
+        <Border Grid.Column="0" Classes="content-block" Margin="0,0,12,0">
+          <StackPanel Spacing="10">
+            <TextBlock Text="DATABASE" Classes="micro"/>
+            <TextBlock Text="SQLite" Classes="heading"/>
+            <TextBlock Text="Connected · WAL Mode Enabled" Classes="small"
+                       Foreground="{DynamicResource AppAccentSuccessBrush}"/>
+          </StackPanel>
+        </Border>
+
+        <Border Grid.Column="1" Classes="content-block" Margin="0,0,12,0">
+          <StackPanel Spacing="10">
+            <TextBlock Text="LATENCY" Classes="micro"/>
+            <TextBlock Text="0.14 ms" Classes="heading"/>
+            <TextBlock Text="Optimal read/write speed" Classes="small" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+          </StackPanel>
+        </Border>
+
+        <Border Grid.Column="2" Classes="content-block">
+          <StackPanel Spacing="10">
+            <TextBlock Text="CLOUD SYNC" Classes="micro"/>
+            <TextBlock Text="Private Google Drive" Classes="heading"/>
+            <TextBlock Text="AES-256 PBKDF2 OAuth Ready" Classes="small"
+                       Foreground="{DynamicResource AppPrimaryBrush}"/>
+          </StackPanel>
+        </Border>
+      </Grid>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

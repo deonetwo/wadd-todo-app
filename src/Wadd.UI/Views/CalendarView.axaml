@@ -1,0 +1,44 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Wadd.UI.ViewModels;assembly=Wadd.UI"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="700"
+             x:Class="Wadd.UI.Views.CalendarView"
+             x:DataType="vm:MainViewModel">
+
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="64,52,80,120" Spacing="0">
+      <TextBlock Text="{Binding CurrentDateFull}" Classes="micro" Foreground="{DynamicResource AppPrimaryBrush}" Margin="0,0,0,4"/>
+      <TextBlock Text="Calendar &amp; Timeline" Classes="display-xl" Margin="0,0,0,6"/>
+      <TextBlock Text="Upcoming task schedule and deadline overview." Classes="small" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+      <Separator Classes="divider" Margin="0,28,0,40"/>
+
+      <Grid ColumnDefinitions="*,*,*">
+        <Border Grid.Column="0" Classes="content-block" Margin="0,0,12,0">
+          <StackPanel Spacing="10">
+            <TextBlock Text="TODAY" Classes="micro" Foreground="{DynamicResource AppPrimaryBrush}"/>
+            <TextBlock Text="Task Review" Classes="heading"/>
+            <TextBlock Text="Review pending local tasks" Classes="small" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+          </StackPanel>
+        </Border>
+
+        <Border Grid.Column="1" Classes="content-block" Margin="0,0,12,0">
+          <StackPanel Spacing="10">
+            <TextBlock Text="TOMORROW" Classes="micro" Foreground="{DynamicResource AppAccentSuccessBrush}"/>
+            <TextBlock Text="Cloud Sync" Classes="heading"/>
+            <TextBlock Text="Google Drive automatic backup" Classes="small" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+          </StackPanel>
+        </Border>
+
+        <Border Grid.Column="2" Classes="content-block">
+          <StackPanel Spacing="10">
+            <TextBlock Text="THIS WEEK" Classes="micro" Foreground="{DynamicResource AppAccentWarningBrush}"/>
+            <TextBlock Text="Weekly Export" Classes="heading"/>
+            <TextBlock Text="Generate Excel task reports" Classes="small" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+          </StackPanel>
+        </Border>
+      </Grid>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
