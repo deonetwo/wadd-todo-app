@@ -259,7 +259,7 @@ public class GoogleDriveSyncService : ISyncService
         }
 
         // Open system browser popup to Google login site AFTER listener starts
-        OpenBrowserUrl(authUrl);
+        await OpenBrowserUrlAsync(authUrl);
 
         try
         {
@@ -522,8 +522,34 @@ public class GoogleDriveSyncService : ISyncService
         return ("Google Drive User", "Google Account");
     }
 
-    private static void OpenBrowserUrl(string url)
+    private static async Task OpenBrowserUrlAsync(string url)
     {
+        try
+        {
+            if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow != null)
+            {
+                var topLevel = Avalonia.Controls.TopLevel.GetTopLevel(desktop.MainWindow);
+                if (topLevel?.Launcher != null)
+                {
+                    var launched = await topLevel.Launcher.LaunchUriAsync(new Uri(url));
+                    if (launched) return;
+                }
+            }
+            else if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.ISingleViewApplicationLifetime singleView && singleView.MainView != null)
+            {
+                var topLevel = Avalonia.Controls.TopLevel.GetTopLevel(singleView.MainView);
+                if (topLevel?.Launcher != null)
+                {
+                    var launched = await topLevel.Launcher.LaunchUriAsync(new Uri(url));
+                    if (launched) return;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Trace.WriteLine($"[WARN] Avalonia TopLevel.Launcher failed, falling back to process launcher: {ex.Message}");
+        }
+
         try
         {
             Process.Start(new ProcessStartInfo
@@ -536,8 +562,8 @@ public class GoogleDriveSyncService : ISyncService
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                url = url.Replace("&", "^&");
-                Process.Start(new ProcessStartInfo("cmd", $"/c start {url}") { CreateNoWindow = true });
+                var escapedUrl = url.Replace("&", "^&");
+                Process.Start(new ProcessStartInfo("cmd", $"/c start {escapedUrl}") { CreateNoWindow = true });
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
