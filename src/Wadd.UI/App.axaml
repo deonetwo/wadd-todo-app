@@ -10,12 +10,12 @@
             <x:String x:Key="StringTimePickerSecondText">seconds</x:String>
             <x:String x:Key="TimePickerHourHeader">hours</x:String>
             <x:String x:Key="TimePickerMinuteHeader">minutes</x:String>
-            <Geometry x:Key="BellIconData">M12 2a5 5 0 0 0-5 5v3.586l-.707.707A1 1 0 0 0 6 13h12a1 1 0 0 0 .707-1.707L18 10.586V7a5 5 0 0 0-5-5zm-3 12a3 3 0 0 0 6 0h-6z</Geometry>
             <Geometry x:Key="TimePickerClockIcon">M12 2a5 5 0 0 0-5 5v3.586l-.707.707A1 1 0 0 0 6 13h12a1 1 0 0 0 .707-1.707L18 10.586V7a5 5 0 0 0-5-5zm-3 12a3 3 0 0 0 6 0h-6z</Geometry>
             <Geometry x:Key="SemiTimePickerClockIcon">M12 2a5 5 0 0 0-5 5v3.586l-.707.707A1 1 0 0 0 6 13h12a1 1 0 0 0 .707-1.707L18 10.586V7a5 5 0 0 0-5-5zm-3 12a3 3 0 0 0 6 0h-6z</Geometry>
             <Geometry x:Key="SemiIconTime">M12 2a5 5 0 0 0-5 5v3.586l-.707.707A1 1 0 0 0 6 13h12a1 1 0 0 0 .707-1.707L18 10.586V7a5 5 0 0 0-5-5zm-3 12a3 3 0 0 0 6 0h-6z</Geometry>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceInclude Source="avares://Wadd.UI/Styles/ColorTokens.axaml" />
+                <ResourceInclude Source="avares://Wadd.UI/Styles/Icons.axaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

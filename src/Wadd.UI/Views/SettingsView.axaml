@@ -1,0 +1,188 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Wadd.UI.ViewModels;assembly=Wadd.UI"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="700"
+             x:Class="Wadd.UI.Views.SettingsView"
+             x:DataType="vm:MainViewModel">
+
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="64,48,80,180" Spacing="24" HorizontalAlignment="Stretch">
+
+      <!-- Header -->
+      <StackPanel Spacing="4">
+        <TextBlock Text="Settings &amp; About" Classes="display"/>
+        <TextBlock Text="Manage theme preferences, cloud synchronization, data export, and application information."
+                   Classes="small"
+                   Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+      </StackPanel>
+
+      <!-- 1. Appearance / Theme -->
+      <Border Classes="content-block">
+        <StackPanel Spacing="16">
+          <TextBlock Text="APPEARANCE" Classes="micro"/>
+          <StackPanel Spacing="4">
+            <TextBlock Text="Interface Theme" Classes="heading"/>
+            <TextBlock Text="Choose your preferred color theme or match your system default."
+                       Classes="small"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+          </StackPanel>
+
+          <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,4,0,0">
+            <Button Classes="outline"
+                    Command="{Binding SetThemeModeCommand}"
+                    CommandParameter="System">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <PathIcon Data="{StaticResource MonitorIconData}" Width="14" Height="14"/>
+                <TextBlock Text="System"/>
+              </StackPanel>
+            </Button>
+
+            <Button Classes="outline"
+                    Command="{Binding SetThemeModeCommand}"
+                    CommandParameter="Light">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <PathIcon Data="{StaticResource SunIconData}" Width="14" Height="14"/>
+                <TextBlock Text="Light"/>
+              </StackPanel>
+            </Button>
+
+            <Button Classes="outline"
+                    Command="{Binding SetThemeModeCommand}"
+                    CommandParameter="Dark">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <PathIcon Data="{StaticResource MoonIconData}" Width="14" Height="14"/>
+                <TextBlock Text="Dark"/>
+              </StackPanel>
+            </Button>
+          </StackPanel>
+
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <TextBlock Text="Active mode:" Classes="small"/>
+            <TextBlock Text="{Binding CurrentThemeLabel}" Classes="small"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource AppPrimaryBrush}"/>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <!-- 2. Private Google Drive Cloud Sync -->
+      <Border Classes="content-block">
+        <StackPanel Spacing="16">
+          <TextBlock Text="CLOUD SYNCHRONIZATION" Classes="micro"/>
+          <StackPanel Spacing="4">
+            <TextBlock Text="Private Google Drive Backup" Classes="heading"/>
+            <TextBlock Text="Synchronize your tasks securely to your private Google Drive storage across Windows &amp; Android."
+                       Classes="small"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+          </StackPanel>
+
+          <!-- Signed Out State -->
+          <StackPanel IsVisible="{Binding !IsGoogleSignedIn}" Spacing="14">
+            <Button Classes="primary"
+                    Command="{Binding SignInWithGoogleCommand}"
+                    HorizontalAlignment="Left"
+                    ToolTip.Tip="Sign in with your Google Account">
+              <StackPanel Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">
+                <Border Width="20" Height="20" CornerRadius="10" Background="#FFFFFF" VerticalAlignment="Center">
+                  <TextBlock Text="G" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Text="Connect Google Drive Account" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
+            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+              <TextBlock Text="🔒" FontSize="12" VerticalAlignment="Center"/>
+              <TextBlock Text="Your task database is safely backed up to your personal Google Drive." Classes="small" VerticalAlignment="Center"/>
+            </StackPanel>
+          </StackPanel>
+
+          <!-- Signed In State -->
+          <StackPanel IsVisible="{Binding IsGoogleSignedIn}" Spacing="16">
+            <Border Background="{DynamicResource AppSurfaceElevatedBrush}"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="14,12">
+              <Grid ColumnDefinitions="Auto,*,Auto">
+                <Border Grid.Column="0" Width="36" Height="36" CornerRadius="18" Background="{DynamicResource AppPrimaryBrush}" Margin="0,0,12,0">
+                  <TextBlock Text="G" FontSize="18" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
+                  <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding GoogleUserEmail}" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                    <Border Background="{DynamicResource AppAccentTintBrush}" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                      <TextBlock Text="Connected" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                    </Border>
+                  </StackPanel>
+                  <TextBlock Text="{Binding GoogleUserName}" Classes="small" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                </StackPanel>
+
+                <Button Grid.Column="2"
+                        Classes="outline"
+                        Command="{Binding SignOutGoogleCommand}"
+                        VerticalAlignment="Center">
+                  <TextBlock Text="Sign Out" FontSize="12"/>
+                </Button>
+              </Grid>
+            </Border>
+
+            <Button Classes="primary" Command="{Binding SyncCommand}" IsEnabled="{Binding !IsSyncing}" HorizontalAlignment="Left">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <PathIcon Data="{StaticResource SyncIconData}" Width="13" Height="13"/>
+                <TextBlock Text="Sync Now with Google Drive"/>
+              </StackPanel>
+            </Button>
+          </StackPanel>
+
+        </StackPanel>
+      </Border>
+
+      <!-- 3. Export Data -->
+      <Border Classes="content-block">
+        <StackPanel Spacing="14">
+          <TextBlock Text="DATA MANAGEMENT" Classes="micro"/>
+          <StackPanel Spacing="4">
+            <TextBlock Text="Export To Excel" Classes="heading"/>
+            <TextBlock Text="Export all your tasks, due dates, and priorities to an Excel (.xlsx) file."
+                       Classes="small"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+          </StackPanel>
+
+          <Button Classes="outline" Command="{Binding ExportToExcelCommand}" HorizontalAlignment="Left">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <PathIcon Data="{StaticResource ExportIconData}" Width="14" Height="14"/>
+              <TextBlock Text="Export Tasks to Excel"/>
+            </StackPanel>
+          </Button>
+        </StackPanel>
+      </Border>
+
+      <!-- 4. About & Version Info -->
+      <Border Classes="content-block">
+        <StackPanel Spacing="14">
+          <TextBlock Text="ABOUT APPLICATION" Classes="micro"/>
+          <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto" Margin="0,4,0,0">
+            <!-- App Logo & Name -->
+            <Image Grid.Row="0" Grid.Column="0" Source="avares://Wadd.UI/Assets/logo.png"
+                   Width="40" Height="40" Margin="0,0,16,12" VerticalAlignment="Center"/>
+            <StackPanel Grid.Row="0" Grid.Column="1" VerticalAlignment="Center">
+              <TextBlock Text="Wadd ToDo" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+              <TextBlock Text="Version 1.0.0 (.NET 10 + Avalonia UI 11)" Classes="small" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            </StackPanel>
+
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Developer:" Classes="small" FontWeight="SemiBold" Margin="0,0,16,6"/>
+            <TextBlock Grid.Row="1" Grid.Column="1" Text="Dewanto (Wadd Software Engineering)" Classes="small" Margin="0,0,0,6"/>
+
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Platforms:" Classes="small" FontWeight="SemiBold" Margin="0,0,16,6"/>
+            <TextBlock Grid.Row="2" Grid.Column="1" Text="Windows (x64/Arm64) &amp; Android (min API 21+)" Classes="small" Margin="0,0,0,6"/>
+
+            <TextBlock Grid.Row="3" Grid.Column="0" Text="Copyright:" Classes="small" FontWeight="SemiBold" Margin="0,0,16,0"/>
+            <TextBlock Grid.Row="3" Grid.Column="1" Text="© 2026 Wadd Application. All rights reserved." Classes="small"/>
+          </Grid>
+        </StackPanel>
+      </Border>
+
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
