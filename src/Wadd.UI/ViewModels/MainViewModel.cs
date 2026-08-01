@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 using Wadd.Core.Enums;
 using Wadd.Core.Interfaces;
 using Wadd.Core.Models;
@@ -183,7 +184,11 @@ public partial class MainViewModel : ViewModelBase
 
     public ObservableCollection<TodoItemViewModel> TodoItems { get; } = new();
 
-    public MainViewModel() : this(new SQLiteTodoService(), new ThemeService(), new SyncService(), new ExcelExportService())
+    public MainViewModel() : this(
+        App.Services?.GetService<ITodoService>() ?? new SQLiteTodoService(),
+        App.Services?.GetService<IThemeService>() ?? new ThemeService(),
+        App.Services?.GetService<ISyncService>() ?? new GoogleDriveSyncService(App.Services?.GetService<ITodoService>() ?? new SQLiteTodoService()),
+        App.Services?.GetService<IExportService>() ?? new ExcelExportService())
     {
     }
 
@@ -228,11 +233,37 @@ public partial class MainViewModel : ViewModelBase
             var itemsList = (await _todoService.GetTodosAsync()).ToList();
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
-                TodoItems.Clear();
-                foreach (var item in itemsList)
+                var existingDict = TodoItems.ToDictionary(vm => vm.Id);
+                var freshIds = new HashSet<Guid>(itemsList.Select(x => x.Id));
+
+                // 1. Remove items that no longer exist
+                for (int i = TodoItems.Count - 1; i >= 0; i--)
                 {
-                    TodoItems.Add(new TodoItemViewModel(item));
+                    if (!freshIds.Contains(TodoItems[i].Id))
+                    {
+                        TodoItems.RemoveAt(i);
+                    }
                 }
+
+                // 2. Update existing items in place or add new ones in order
+                for (int i = 0; i < itemsList.Count; i++)
+                {
+                    var item = itemsList[i];
+                    if (existingDict.TryGetValue(item.Id, out var existingVm))
+                    {
+                        existingVm.UpdateFromModel(item);
+                        var currentIndex = TodoItems.IndexOf(existingVm);
+                        if (currentIndex != i && currentIndex >= 0)
+                        {
+                            TodoItems.Move(currentIndex, i);
+                        }
+                    }
+                    else
+                    {
+                        TodoItems.Insert(i, new TodoItemViewModel(item));
+                    }
+                }
+
                 StatusMessage = $"Loaded {TodoItems.Count} tasks from local database.";
             });
         }

@@ -97,4 +97,20 @@ public partial class TodoItemViewModel : ViewModelBase
     {
         _model = model ?? throw new ArgumentNullException(nameof(model));
     }
+
+    public void UpdateFromModel(TodoItem newModel)
+    {
+        ArgumentNullException.ThrowIfNull(newModel);
+        Model = newModel;
+        OnPropertyChanged(nameof(Title));
+        OnPropertyChanged(nameof(Description));
+        OnPropertyChanged(nameof(IsCompleted));
+        OnPropertyChanged(nameof(Priority));
+        OnPropertyChanged(nameof(DueDate));
+        OnPropertyChanged(nameof(HasDueDate));
+        OnPropertyChanged(nameof(DueDateFormatted));
+        OnPropertyChanged(nameof(ReminderAt));
+        OnPropertyChanged(nameof(HasReminder));
+        OnPropertyChanged(nameof(ReminderAtFormatted));
+    }
 }
