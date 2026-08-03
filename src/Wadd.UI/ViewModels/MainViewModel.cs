@@ -77,6 +77,99 @@ public partial class MainViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(NewTaskDueDateFormatted))]
     private DateTime? _newTaskDueDate;
 
+    public DateTime MinDueDate => DateTime.Today;
+
+    public TimeSpan GetSuggestedLaterTodayTime()
+    {
+        var now = DateTime.Now;
+        if (now.Hour < 17)
+        {
+            return new TimeSpan(17, 0, 0);
+        }
+        else if (now.Hour < 20)
+        {
+            return new TimeSpan(20, 0, 0);
+        }
+        else if (now.Hour < 22)
+        {
+            return new TimeSpan(22, 0, 0);
+        }
+        else
+        {
+            return new TimeSpan(23, 59, 0);
+        }
+    }
+
+    public string ReminderLaterTodayText
+    {
+        get
+        {
+            var time = GetSuggestedLaterTodayTime();
+            return $"Later Today ({time:hh\\:mm})";
+        }
+    }
+
+    public bool IsReminderLaterTodayEnabled
+    {
+        get
+        {
+            var time = GetSuggestedLaterTodayTime();
+            var preset = DateTime.Today.Add(time);
+            if (preset <= DateTime.Now) return false;
+
+            if (!NewTaskDueDate.HasValue) return true;
+            var maxAllowed = NewTaskDueDate.Value.TimeOfDay == TimeSpan.Zero
+                ? NewTaskDueDate.Value.Date.AddDays(1).AddTicks(-1)
+                : NewTaskDueDate.Value;
+            return preset <= maxAllowed;
+        }
+    }
+
+    public bool IsReminderTomorrowMorningEnabled
+    {
+        get
+        {
+            var preset = DateTime.Today.AddDays(1).AddHours(9);
+            if (preset <= DateTime.Now) return false;
+
+            if (!NewTaskDueDate.HasValue) return true;
+            var maxAllowed = NewTaskDueDate.Value.TimeOfDay == TimeSpan.Zero
+                ? NewTaskDueDate.Value.Date.AddDays(1).AddTicks(-1)
+                : NewTaskDueDate.Value;
+            return preset <= maxAllowed;
+        }
+    }
+
+    public bool IsReminderNextWeekEnabled
+    {
+        get
+        {
+            var preset = DateTime.Today.AddDays(7).AddHours(9);
+            if (preset <= DateTime.Now) return false;
+
+            if (!NewTaskDueDate.HasValue) return true;
+            var maxAllowed = NewTaskDueDate.Value.TimeOfDay == TimeSpan.Zero
+                ? NewTaskDueDate.Value.Date.AddDays(1).AddTicks(-1)
+                : NewTaskDueDate.Value;
+            return preset <= maxAllowed;
+        }
+    }
+
+    partial void OnNewTaskDueDateChanged(DateTime? value)
+    {
+        if (value.HasValue && value.Value.Date < DateTime.Today)
+        {
+            NewTaskDueDate = DateTime.Today;
+            StatusMessage = "Due date cannot be set in the past.";
+            return;
+        }
+        ValidateAndResetReminderIfExceedsDueDate();
+        OnPropertyChanged(nameof(ReminderLaterTodayText));
+        OnPropertyChanged(nameof(IsReminderLaterTodayEnabled));
+        OnPropertyChanged(nameof(IsReminderTomorrowMorningEnabled));
+        OnPropertyChanged(nameof(IsReminderNextWeekEnabled));
+    }
+
     public bool HasNewTaskDueDate => NewTaskDueDate.HasValue;
 
     public string NewTaskDueDateFormatted
@@ -103,12 +196,48 @@ public partial class MainViewModel : ViewModelBase
         {
             NewTaskReminderTime = TimeSpan.Zero;
         }
+        ValidateAndResetReminderIfExceedsDueDate();
     }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasNewTaskReminder))]
     [NotifyPropertyChangedFor(nameof(NewTaskReminderFormatted))]
     private TimeSpan? _newTaskReminderTime;
+
+    partial void OnNewTaskReminderTimeChanged(TimeSpan? value)
+    {
+        ValidateAndResetReminderIfExceedsDueDate();
+    }
+
+    private bool _isValidatingReminder;
+
+    private void ValidateAndResetReminderIfExceedsDueDate()
+    {
+        if (_isValidatingReminder) return;
+        if (!NewTaskDueDate.HasValue) return;
+
+        var reminderDt = GetCombinedNewTaskReminder();
+        if (!reminderDt.HasValue) return;
+
+        DateTime maxReminderAllowed = NewTaskDueDate.Value.TimeOfDay == TimeSpan.Zero
+            ? NewTaskDueDate.Value.Date.AddDays(1).AddTicks(-1)
+            : NewTaskDueDate.Value;
+
+        if (reminderDt.Value > maxReminderAllowed)
+        {
+            _isValidatingReminder = true;
+            try
+            {
+                NewTaskReminderDate = null;
+                NewTaskReminderTime = null;
+                StatusMessage = "Reminder reset because it exceeded the due date.";
+            }
+            finally
+            {
+                _isValidatingReminder = false;
+            }
+        }
+    }
 
     public bool HasNewTaskReminder => NewTaskReminderDate.HasValue || NewTaskReminderTime.HasValue;
 
@@ -295,7 +424,14 @@ public partial class MainViewModel : ViewModelBase
         _ = LoadTodoItemsAsync();
 
         var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
-        timer.Tick += (_, _) => OnPropertyChanged(nameof(LastUpdatedFormatted));
+        timer.Tick += (_, _) =>
+        {
+            OnPropertyChanged(nameof(LastUpdatedFormatted));
+            OnPropertyChanged(nameof(ReminderLaterTodayText));
+            OnPropertyChanged(nameof(IsReminderLaterTodayEnabled));
+            OnPropertyChanged(nameof(IsReminderTomorrowMorningEnabled));
+            OnPropertyChanged(nameof(IsReminderNextWeekEnabled));
+        };
         timer.Start();
     }
 
@@ -461,8 +597,15 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private void SetReminderLaterToday()
     {
+        var time = GetSuggestedLaterTodayTime();
+        var preset = DateTime.Today.Add(time);
+        if (preset <= DateTime.Now)
+        {
+            StatusMessage = "Cannot set reminder in the past.";
+            return;
+        }
         NewTaskReminderDate = DateTime.Today;
-        NewTaskReminderTime = new TimeSpan(17, 0, 0); // 5:00 PM
+        NewTaskReminderTime = time;
     }
 
     [RelayCommand]
@@ -490,6 +633,22 @@ public partial class MainViewModel : ViewModelBase
     private async Task AddTaskAsync()
     {
         if (string.IsNullOrWhiteSpace(NewTaskTitle)) return;
+
+        var reminderAt = GetCombinedNewTaskReminder();
+        if (NewTaskDueDate.HasValue && reminderAt.HasValue)
+        {
+            DateTime maxAllowed = NewTaskDueDate.Value.TimeOfDay == TimeSpan.Zero
+                ? NewTaskDueDate.Value.Date.AddDays(1).AddTicks(-1)
+                : NewTaskDueDate.Value;
+
+            if (reminderAt.Value > maxAllowed)
+            {
+                NewTaskReminderDate = null;
+                NewTaskReminderTime = null;
+                StatusMessage = "Reminder reset because it exceeded the due date.";
+                return;
+            }
+        }
 
         try
         {

@@ -85,13 +85,15 @@
                                 HorizontalAlignment="Stretch"
                                 HorizontalContentAlignment="Left"
                                 Command="{Binding SetReminderLaterTodayCommand}"
-                                Content="Later Today (17:00)"/>
+                                IsEnabled="{Binding IsReminderLaterTodayEnabled}"
+                                Content="{Binding ReminderLaterTodayText}"/>
                         <Button Classes="ghost"
                                 Foreground="{DynamicResource AppTextPrimaryBrush}"
                                 FontWeight="SemiBold"
                                 HorizontalAlignment="Stretch"
                                 HorizontalContentAlignment="Left"
                                 Command="{Binding SetReminderTomorrowMorningCommand}"
+                                IsEnabled="{Binding IsReminderTomorrowMorningEnabled}"
                                 Content="Tomorrow Morning (09:00)"/>
                         <Button Classes="ghost"
                                 Foreground="{DynamicResource AppTextPrimaryBrush}"
@@ -99,12 +101,15 @@
                                 HorizontalAlignment="Stretch"
                                 HorizontalContentAlignment="Left"
                                 Command="{Binding SetReminderNextWeekCommand}"
+                                IsEnabled="{Binding IsReminderNextWeekEnabled}"
                                 Content="Next Week (09:00)"/>
 
                         <Separator Classes="divider" Margin="0,4"/>
 
                         <TextBlock Text="CUSTOM DATE &amp; TIME" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="2,0,0,2"/>
                         <CalendarDatePicker SelectedDate="{Binding NewTaskReminderDate, Mode=TwoWay}"
+                                            DisplayDateStart="{Binding MinDueDate}"
+                                            DisplayDateEnd="{Binding NewTaskDueDate}"
                                             Watermark="Reminder Date..."
                                             HorizontalAlignment="Stretch"/>
                         <TimePicker Classes="no-clock"
@@ -149,6 +154,7 @@
                         <Separator Classes="divider" Margin="0,4"/>
 
                         <CalendarDatePicker SelectedDate="{Binding NewTaskDueDate, Mode=TwoWay}"
+                                            DisplayDateStart="{Binding MinDueDate}"
                                             Watermark="Choose Date..."
                                             HorizontalAlignment="Stretch"/>
                       </StackPanel>
