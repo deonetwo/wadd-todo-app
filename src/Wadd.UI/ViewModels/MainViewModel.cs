@@ -572,7 +572,251 @@ public partial class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasCompletedTodayTodoItems));
         OnPropertyChanged(nameof(HasCompletedHistoryTodoItems));
         OnPropertyChanged(nameof(HasAllRecurringTodoItems));
+
+        GenerateCalendarGrid();
     }
+
+    #region Calendar View Logic
+
+    private bool _isUpdatingCalendarPickers;
+
+    [ObservableProperty]
+    private DateTime _currentCalendarDate = DateTime.Today;
+
+    [ObservableProperty]
+    private string _currentMonthYearText = DateTime.Today.ToString("MMMM yyyy");
+
+    [ObservableProperty]
+    private int _selectedMonthIndex = DateTime.Today.Month - 1;
+
+    partial void OnSelectedMonthIndexChanged(int value)
+    {
+        if (_isUpdatingCalendarPickers) return;
+        if (value < 0 || value > 11) return;
+        int targetMonth = value + 1;
+        int targetYear = SelectedYear > 0 ? SelectedYear : CurrentCalendarDate.Year;
+        int maxDays = DateTime.DaysInMonth(targetYear, targetMonth);
+        int targetDay = Math.Min(CurrentCalendarDate.Day, maxDays);
+
+        CurrentCalendarDate = new DateTime(targetYear, targetMonth, targetDay);
+        GenerateCalendarGrid();
+    }
+
+    [ObservableProperty]
+    private int _selectedYear = DateTime.Today.Year;
+
+    partial void OnSelectedYearChanged(int value)
+    {
+        if (_isUpdatingCalendarPickers) return;
+        if (value < 2000 || value > 2100) return;
+        int targetMonth = SelectedMonthIndex >= 0 ? SelectedMonthIndex + 1 : CurrentCalendarDate.Month;
+        int maxDays = DateTime.DaysInMonth(value, targetMonth);
+        int targetDay = Math.Min(CurrentCalendarDate.Day, maxDays);
+
+        CurrentCalendarDate = new DateTime(value, targetMonth, targetDay);
+        GenerateCalendarGrid();
+    }
+
+    public List<string> MonthOptions { get; } = new()
+    {
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    };
+
+    public List<int> YearOptions { get; } = Enumerable.Range(DateTime.Today.Year - 10, 21).ToList();
+
+    #region Recurrence & Task Filters for Calendar View
+
+    [ObservableProperty]
+    private bool _isStandardFilterEnabled = true;
+
+    partial void OnIsStandardFilterEnabledChanged(bool value) => GenerateCalendarGrid();
+
+    [ObservableProperty]
+    private bool _isDailyFilterEnabled = true;
+
+    partial void OnIsDailyFilterEnabledChanged(bool value) => GenerateCalendarGrid();
+
+    [ObservableProperty]
+    private bool _isWeekdaysFilterEnabled = true;
+
+    partial void OnIsWeekdaysFilterEnabledChanged(bool value) => GenerateCalendarGrid();
+
+    [ObservableProperty]
+    private bool _isWeeklyFilterEnabled = true;
+
+    partial void OnIsWeeklyFilterEnabledChanged(bool value) => GenerateCalendarGrid();
+
+    [ObservableProperty]
+    private bool _isMonthlyFilterEnabled = true;
+
+    partial void OnIsMonthlyFilterEnabledChanged(bool value) => GenerateCalendarGrid();
+
+    [ObservableProperty]
+    private bool _isYearlyFilterEnabled = true;
+
+    partial void OnIsYearlyFilterEnabledChanged(bool value) => GenerateCalendarGrid();
+
+    private IEnumerable<TodoItem> GetFilteredTodoModels()
+    {
+        return TodoItems.Select(x => x.Model).Where(item =>
+        {
+            if (!item.IsRecurring)
+            {
+                return IsStandardFilterEnabled;
+            }
+
+            string recurrenceType = (item.RecurrenceType ?? "None").ToLowerInvariant();
+            return recurrenceType switch
+            {
+                "daily" => IsDailyFilterEnabled,
+                "weekdays" => IsWeekdaysFilterEnabled,
+                "weekly" => IsWeeklyFilterEnabled,
+                "monthly" => IsMonthlyFilterEnabled,
+                "yearly" => IsYearlyFilterEnabled,
+                "custom" => IsDailyFilterEnabled || IsWeeklyFilterEnabled || IsMonthlyFilterEnabled,
+                _ => IsStandardFilterEnabled
+            };
+        });
+    }
+
+    #endregion
+
+    public ObservableCollection<CalendarDayViewModel> CalendarDays { get; } = new();
+
+    public ObservableCollection<TodoItemViewModel> SelectedDateTasks { get; } = new();
+
+    [ObservableProperty]
+    private bool _isSidebarOpen;
+
+    [ObservableProperty]
+    private CalendarDayViewModel? _selectedDay;
+
+    [ObservableProperty]
+    private string _selectedDateTitle = "Tasks for Selected Date";
+
+    public bool HasSelectedDateTasks => SelectedDateTasks.Count > 0;
+
+    [RelayCommand]
+    private void NextMonth()
+    {
+        CurrentCalendarDate = CurrentCalendarDate.AddMonths(1);
+        GenerateCalendarGrid();
+    }
+
+    [RelayCommand]
+    private void PreviousMonth()
+    {
+        CurrentCalendarDate = CurrentCalendarDate.AddMonths(-1);
+        GenerateCalendarGrid();
+    }
+
+    [RelayCommand]
+    private void JumpToToday()
+    {
+        CurrentCalendarDate = DateTime.Today;
+        GenerateCalendarGrid();
+        var todayVm = CalendarDays.FirstOrDefault(x => x.Date.Date == DateTime.Today);
+        if (todayVm != null)
+        {
+            SelectDay(todayVm);
+        }
+    }
+
+    [RelayCommand]
+    private void SelectDay(CalendarDayViewModel? day)
+    {
+        if (day == null) return;
+
+        foreach (var d in CalendarDays)
+        {
+            d.IsSelected = false;
+        }
+
+        day.IsSelected = true;
+        SelectedDay = day;
+
+        var tasksForDate = RecurrenceEvaluator.GetTasksForDate(day.Date, TodoItems.Select(x => x.Model)).ToList();
+        var freshSelectedTasks = TodoItems.Where(x => tasksForDate.Any(t => t.Id == x.Id)).ToList();
+
+        SyncCollection(SelectedDateTasks, freshSelectedTasks);
+        SelectedDateTitle = $"Tasks for {day.Date:MMM d, yyyy}";
+        IsSidebarOpen = true;
+
+        OnPropertyChanged(nameof(HasSelectedDateTasks));
+    }
+
+    [RelayCommand]
+    private void CloseSidebar()
+    {
+        IsSidebarOpen = false;
+    }
+
+    public void GenerateCalendarGrid()
+    {
+        CurrentMonthYearText = CurrentCalendarDate.ToString("MMMM yyyy");
+
+        _isUpdatingCalendarPickers = true;
+        try
+        {
+            SelectedMonthIndex = CurrentCalendarDate.Month - 1;
+            SelectedYear = CurrentCalendarDate.Year;
+        }
+        finally
+        {
+            _isUpdatingCalendarPickers = false;
+        }
+
+        var firstDayOfMonth = new DateTime(CurrentCalendarDate.Year, CurrentCalendarDate.Month, 1);
+        int offsetDays = (int)firstDayOfMonth.DayOfWeek; // Sunday = 0
+        var gridStartDate = firstDayOfMonth.AddDays(-offsetDays);
+
+        var freshDays = new List<CalendarDayViewModel>();
+        for (int i = 0; i < 42; i++)
+        {
+            var dayDate = gridStartDate.AddDays(i);
+            bool isCurrentMonth = dayDate.Month == CurrentCalendarDate.Month;
+            bool isToday = dayDate.Date == DateTime.Today;
+
+            var dayVm = new CalendarDayViewModel(dayDate, isCurrentMonth, isToday);
+
+            var matchingModels = RecurrenceEvaluator.GetTasksForDate(dayDate, GetFilteredTodoModels()).ToList();
+            var matchingVms = TodoItems.Where(x => matchingModels.Any(m => m.Id == x.Id)).ToList();
+
+            foreach (var vm in matchingVms)
+            {
+                dayVm.DayTasks.Add(vm);
+            }
+            dayVm.RefreshComputedProperties();
+
+            if (SelectedDay != null && dayVm.Date.Date == SelectedDay.Date.Date)
+            {
+                dayVm.IsSelected = true;
+            }
+
+            freshDays.Add(dayVm);
+        }
+
+        CalendarDays.Clear();
+        foreach (var d in freshDays)
+        {
+            CalendarDays.Add(d);
+        }
+
+        if (SelectedDay != null)
+        {
+            var updatedSelectedDay = CalendarDays.FirstOrDefault(x => x.Date.Date == SelectedDay.Date.Date);
+            if (updatedSelectedDay != null)
+            {
+                var tasksForDate = RecurrenceEvaluator.GetTasksForDate(updatedSelectedDay.Date, GetFilteredTodoModels()).ToList();
+                var freshSelectedTasks = TodoItems.Where(x => tasksForDate.Any(t => t.Id == x.Id)).ToList();
+                SyncCollection(SelectedDateTasks, freshSelectedTasks);
+                OnPropertyChanged(nameof(HasSelectedDateTasks));
+            }
+        }
+    }
+
+    #endregion
 
     private static void SyncCollection(ObservableCollection<TodoItemViewModel> collection, List<TodoItemViewModel> freshItems)
     {

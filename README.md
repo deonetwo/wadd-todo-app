@@ -25,13 +25,57 @@
 
 ## ✨ Key Features
 
-- **📋 Complete Task Management**: Create, edit, complete, delete, and manage tasks with priority levels (`Low`, `Medium`, `High`, `Critical`), due dates, and custom reminder times.
-- **🏷️ Dynamic Storage Mode Status**: User-friendly storage mode indicators in both Task View and Sidebar (`Local Storage Mode` when offline, `Synced with Google Drive` when signed in).
-- **⏱️ Real-Time "Last Updated" Freshness**: Live timestamp tracking (`Updated just now`, `Updated 5m ago`, `Updated at 8:40 PM`) auto-updated across mutations and powered by a 30-second background refresh timer.
-- **☁️ Google Drive Synchronization**: Seamless 2-way cloud backup and synchronization via Google OAuth 2.0 browser sign-in.
-- **📊 Excel Export**: One-click local data export to `.xlsx` spreadsheet format using MiniExcel.
+- **📅 Calendar & Timeline View**: Interactive 42-cell month grid with micro status indicators, recurring habit occurrence calculations (`RecurrenceEvaluator`), overflow badges (`+X more`), and a toggleable Right Detail Sidebar panel.
 - **🎨 Dynamic Theme Engine**: Smooth Light / Dark mode switching using Semi.Avalonia design tokens.
 - **📐 Responsive Dual Layout**: Adaptive responsive UI supporting desktop multi-column view and compact mobile layout.
+
+---
+
+## 📅 Calendar & Timeline View Architecture
+
+Wadd features a clean, responsive **Calendar & Timeline View** (`CalendarView.axaml` and `CalendarViewModel` / `CalendarDayViewModel`) designed for month-grid scheduling, habit tracking, overflow task management, and deep daily task detail inspection.
+
+```mermaid
+graph TD
+    A["CalendarView.axaml (UI Grid)"] --> B["MainViewModel (Calendar State & Navigation)"]
+    B --> C["CalendarDayViewModel (Cell ViewModels)"]
+    B --> D["RecurrenceEvaluator (Occurrence Engine)"]
+    C --> E["CalendarDayModel (Domain Model)"]
+    D --> F["TodoItem Collection (Domain Tasks)"]
+    B --> G["Right Detail Sidebar (Width=340)"]
+```
+
+### 1. 42-Cell Month Grid & Navigation
+- **Grid Layout**: Displays a 6-week x 7-day (42 cells) month grid via `UniformGrid Columns="7"`.
+- **Navigation Controls**:
+  - `PreviousMonthCommand` & `NextMonthCommand`: Navigates to previous/next month and recalculates day cells.
+  - `JumpToTodayCommand`: Resets grid view to `DateTime.Today` and highlights the current day cell.
+
+### 2. Recurring Task Occurrence Engine (`RecurrenceEvaluator`)
+- **API**: `RecurrenceEvaluator.GetTasksForDate(DateTime date, IEnumerable<TodoItem> allTasks)`
+- **Evaluation Rules**:
+  - **Standard Tasks**: Matches if `DueDate` or `ReminderAt` falls on target date.
+  - **Recurring Tasks (`IsRecurring == true`)**: Evaluates start date (`DueDate` or `ReminderAt` or `CreatedAt`) and evaluates recurrence rule:
+    - `Daily`: Matches every day after start date.
+    - `Weekdays`: Matches Monday–Friday.
+    - `Weekly`: Matches same day of week as start date.
+    - `Monthly`: Matches same day of month as start date.
+    - `Yearly`: Matches same month and day as start date.
+    - `Custom`: Evaluates `CustomRecurrenceInterval`, `CustomRecurrenceUnit` (`Days`, `Weeks`, `Months`, `Years`), and `CustomWeeklyDays` (e.g., `Mon,Wed,Fri`).
+
+### 3. Day Cell Model & Status Badges (`CalendarDayModel`)
+Each cell renders:
+- **Header**: Day number text (`DayNumberText`) with a highlighted `TODAY` pill badge if `IsToday == true`.
+- **Task Status Badges**: Mini status pills for visible tasks (max 2 visible per cell):
+  - Green indicator dot (`#10B981`) for completed tasks.
+  - Primary blue dot (`#3B82F6`) for pending tasks.
+  - 🔄 Icon for recurring habit tasks.
+- **Overflow Badge (`HasOverflow`)**: Renders a subtle `+X more` highlight badge when a day has more than 2 scheduled tasks.
+
+### 4. Right Detail Sidebar Panel
+- **Toggle Control**: Controlled via `IsSidebarOpen` (`bool`).
+- **Date Detail Selection**: Clicking any day cell (`SelectDayCommand`) highlights the day cell with an active primary border, populates `SelectedDateTasks` with full task details for that date, and slides open the right detail panel (`Width="340"`).
+- **Interactive Actions**: Users can check off tasks (`ToggleTodoCommand`), view task details, or delete tasks directly from the sidebar.
 
 ---
 

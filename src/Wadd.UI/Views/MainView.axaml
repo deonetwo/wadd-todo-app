@@ -360,6 +360,12 @@
         <!-- Compact Tasks View -->
         <views:TasksView IsVisible="{Binding IsTasksView}"/>
 
+        <!-- Compact Completed View -->
+        <views:CompletedTasksView IsVisible="{Binding IsCompletedView}"/>
+
+        <!-- Compact Recurring View -->
+        <views:RecurringTasksView IsVisible="{Binding IsRecurringView}"/>
+
         <!-- Compact Calendar View -->
         <views:CalendarView IsVisible="{Binding IsCalendarView}"/>
 
@@ -433,6 +439,18 @@
                 </ListBoxItem>
                 <ListBoxItem Classes="side-menu-item">
                   <StackPanel Orientation="Horizontal" Spacing="12">
+                    <PathIcon Data="{StaticResource CheckIconData}" Width="15" Height="15"/>
+                    <TextBlock Text="Completed" VerticalAlignment="Center"/>
+                  </StackPanel>
+                </ListBoxItem>
+                <ListBoxItem Classes="side-menu-item">
+                  <StackPanel Orientation="Horizontal" Spacing="12">
+                    <PathIcon Data="{StaticResource RepeatIconData}" Width="15" Height="15"/>
+                    <TextBlock Text="Recurring" VerticalAlignment="Center"/>
+                  </StackPanel>
+                </ListBoxItem>
+                <ListBoxItem Classes="side-menu-item">
+                  <StackPanel Orientation="Horizontal" Spacing="12">
                     <PathIcon Data="{StaticResource CalendarIconData}" Width="17" Height="17"/>
                     <TextBlock Text="Calendar" VerticalAlignment="Center"/>
                   </StackPanel>
@@ -471,25 +489,37 @@
           </ListBox.ItemsPanel>
           <ListBoxItem Classes="tab-item">
             <StackPanel Spacing="4" HorizontalAlignment="Center">
-              <PathIcon Data="{StaticResource CheckListIconData}" Width="20" Height="20" HorizontalAlignment="Center"/>
+              <PathIcon Data="{StaticResource CheckListIconData}" Width="18" Height="18" HorizontalAlignment="Center"/>
               <TextBlock Text="Tasks" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
             </StackPanel>
           </ListBoxItem>
           <ListBoxItem Classes="tab-item">
             <StackPanel Spacing="4" HorizontalAlignment="Center">
-              <PathIcon Data="{StaticResource CalendarIconData}" Width="20" Height="20" HorizontalAlignment="Center"/>
+              <PathIcon Data="{StaticResource CheckIconData}" Width="16" Height="16" HorizontalAlignment="Center"/>
+              <TextBlock Text="Done" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
+            </StackPanel>
+          </ListBoxItem>
+          <ListBoxItem Classes="tab-item">
+            <StackPanel Spacing="4" HorizontalAlignment="Center">
+              <PathIcon Data="{StaticResource RepeatIconData}" Width="16" Height="16" HorizontalAlignment="Center"/>
+              <TextBlock Text="Repeat" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
+            </StackPanel>
+          </ListBoxItem>
+          <ListBoxItem Classes="tab-item">
+            <StackPanel Spacing="4" HorizontalAlignment="Center">
+              <PathIcon Data="{StaticResource CalendarIconData}" Width="18" Height="18" HorizontalAlignment="Center"/>
               <TextBlock Text="Calendar" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
             </StackPanel>
           </ListBoxItem>
           <ListBoxItem Classes="tab-item">
             <StackPanel Spacing="4" HorizontalAlignment="Center">
-              <PathIcon Data="{StaticResource TracingIconData}" Width="20" Height="20" HorizontalAlignment="Center"/>
-              <TextBlock Text="Diagnostics" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
+              <PathIcon Data="{StaticResource TracingIconData}" Width="18" Height="18" HorizontalAlignment="Center"/>
+              <TextBlock Text="Diag" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
             </StackPanel>
           </ListBoxItem>
           <ListBoxItem Classes="tab-item">
             <StackPanel Spacing="4" HorizontalAlignment="Center">
-              <PathIcon Data="{StaticResource SettingsIconData}" Width="20" Height="20" HorizontalAlignment="Center"/>
+              <PathIcon Data="{StaticResource SettingsIconData}" Width="18" Height="18" HorizontalAlignment="Center"/>
               <TextBlock Text="Settings" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
             </StackPanel>
           </ListBoxItem>
