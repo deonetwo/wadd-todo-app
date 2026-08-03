@@ -24,19 +24,22 @@
   <Panel>
 
     <!-- ══════════════════════════════════════════════════════
-         WIDE / DESKTOP LAYOUT — nav rail + content area
+         WIDE / DESKTOP LAYOUT — nav rail + overlay drawer content
     ══════════════════════════════════════════════════════ -->
-    <Grid IsVisible="{Binding !IsCompact}" ColumnDefinitions="Auto,*">
+    <Panel IsVisible="{Binding !IsCompact}">
 
       <!-- ──────────────────────────────────────────────────
-           EXPANDABLE LEFT SIDEBAR / NAVIGATION DRAWER
+           EXPANDABLE LEFT SIDEBAR / NAVIGATION DRAWER (Overlay)
       ────────────────────────────────────────────────── -->
-      <Border Grid.Column="0"
-              Width="{Binding SidebarWidth}"
+      <Border Width="{Binding SidebarWidth}"
+              HorizontalAlignment="Left"
+              VerticalAlignment="Stretch"
+              ZIndex="100"
               ClipToBounds="True"
               Background="{DynamicResource AppSurfaceBrush}"
               BorderBrush="{DynamicResource AppBorderBrush}"
-              BorderThickness="0,0,1,0">
+              BorderThickness="0,0,1,0"
+              BoxShadow="4 0 20 0 #50000000">
         <Border.Transitions>
           <Transitions>
             <DoubleTransition Property="Width" Duration="0:0:0.26" Easing="0.1,0.9,0.2,1.0"/>
@@ -137,13 +140,6 @@
               </Grid>
             </ListBoxItem>
 
-            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Diagnostics">
-              <Grid ColumnDefinitions="56,*" Height="44">
-                <PathIcon Grid.Column="0" Data="{StaticResource TracingIconData}" Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="1" Text="Diagnostics" FontSize="14" VerticalAlignment="Center"/>
-              </Grid>
-            </ListBoxItem>
-
             <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Settings">
               <Grid ColumnDefinitions="56,*" Height="44">
                 <PathIcon Grid.Column="0" Data="{StaticResource SettingsIconData}" Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -232,7 +228,20 @@
       <!-- ──────────────────────────────────────────────────
            MAIN CONTENT AREA
       ────────────────────────────────────────────────── -->
-      <Panel Grid.Column="1">
+      <Panel Margin="64,0,0,0">
+
+        <!-- ─── Sidebar scrim: fades over content when drawer is expanded ─── -->
+        <Border ZIndex="50"
+                Background="#55000000"
+                IsHitTestVisible="{Binding IsNavExpanded}"
+                Opacity="{Binding ScrimOpacity}"
+                PointerPressed="OnScrimPressed">
+          <Border.Transitions>
+            <Transitions>
+              <DoubleTransition Property="Opacity" Duration="0:0:0.26" Easing="0.1,0.9,0.2,1.0"/>
+            </Transitions>
+          </Border.Transitions>
+        </Border>
 
         <!-- ─── Sync progress bar (top edge, 2px line) ─── -->
         <ProgressBar IsIndeterminate="True"
@@ -255,10 +264,7 @@
         <!-- ═══ TAB 3: CALENDAR VIEW ═══ -->
         <views:CalendarView IsVisible="{Binding IsCalendarView}"/>
 
-        <!-- ═══ TAB 2: DIAGNOSTICS VIEW ═══ -->
-        <views:DiagnosticsView IsVisible="{Binding IsTracingView}"/>
-
-        <!-- ═══ TAB 3: SETTINGS VIEW ═══ -->
+        <!-- ═══ TAB 4: SETTINGS VIEW ═══ -->
         <views:SettingsView IsVisible="{Binding IsSettingsView}"/>
 
         <!-- ═══ SMALL POST-SYNC PROMPT DIALOG ═══ -->
@@ -347,7 +353,7 @@
         </ItemsControl>
 
       </Panel>
-    </Grid>
+    </Panel>
 
     <!-- ══════════════════════════════════════════════════════
          COMPACT / MOBILE LAYOUT — full height + bottom tab bar
@@ -368,9 +374,6 @@
 
         <!-- Compact Calendar View -->
         <views:CalendarView IsVisible="{Binding IsCalendarView}"/>
-
-        <!-- Compact Diagnostics View -->
-        <views:DiagnosticsView IsVisible="{Binding IsTracingView}"/>
 
         <!-- Compact Settings View -->
         <views:SettingsView IsVisible="{Binding IsSettingsView}"/>
@@ -457,12 +460,6 @@
                 </ListBoxItem>
                 <ListBoxItem Classes="side-menu-item">
                   <StackPanel Orientation="Horizontal" Spacing="12">
-                    <PathIcon Data="{StaticResource TracingIconData}" Width="17" Height="17"/>
-                    <TextBlock Text="Diagnostics" VerticalAlignment="Center"/>
-                  </StackPanel>
-                </ListBoxItem>
-                <ListBoxItem Classes="side-menu-item">
-                  <StackPanel Orientation="Horizontal" Spacing="12">
                     <PathIcon Data="{StaticResource SettingsIconData}" Width="17" Height="17"/>
                     <TextBlock Text="Settings" VerticalAlignment="Center"/>
                   </StackPanel>
@@ -509,12 +506,6 @@
             <StackPanel Spacing="4" HorizontalAlignment="Center">
               <PathIcon Data="{StaticResource CalendarIconData}" Width="18" Height="18" HorizontalAlignment="Center"/>
               <TextBlock Text="Calendar" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
-            </StackPanel>
-          </ListBoxItem>
-          <ListBoxItem Classes="tab-item">
-            <StackPanel Spacing="4" HorizontalAlignment="Center">
-              <PathIcon Data="{StaticResource TracingIconData}" Width="18" Height="18" HorizontalAlignment="Center"/>
-              <TextBlock Text="Diag" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
             </StackPanel>
           </ListBoxItem>
           <ListBoxItem Classes="tab-item">

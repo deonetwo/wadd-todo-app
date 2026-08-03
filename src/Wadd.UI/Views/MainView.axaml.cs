@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Wadd.UI.ViewModels;
 
 namespace Wadd.UI.Views;
@@ -23,5 +24,11 @@ public partial class MainView : UserControl
                 vm.IsSideMenuOpen = false;
             }
         }
+    }
+
+    private void OnScrimPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.IsNavExpanded = false;
     }
 }

@@ -386,9 +386,11 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SidebarWidth))]
+    [NotifyPropertyChangedFor(nameof(ScrimOpacity))]
     private bool _isNavExpanded = false;
 
     public double SidebarWidth => IsNavExpanded ? 240 : 64;
+    public double ScrimOpacity => IsNavExpanded ? 1.0 : 0.0;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(StorageStatusText))]
@@ -458,8 +460,7 @@ public partial class MainViewModel : ViewModelBase
     public bool IsCompletedView => SelectedNavIndex == 1;
     public bool IsRecurringView => SelectedNavIndex == 2;
     public bool IsCalendarView => SelectedNavIndex == 3;
-    public bool IsTracingView => SelectedNavIndex == 4;
-    public bool IsSettingsView => SelectedNavIndex == 5;
+    public bool IsSettingsView => SelectedNavIndex == 4;
 
     partial void OnSelectedNavIndexChanged(int value)
     {
@@ -467,7 +468,6 @@ public partial class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsCompletedView));
         OnPropertyChanged(nameof(IsRecurringView));
         OnPropertyChanged(nameof(IsCalendarView));
-        OnPropertyChanged(nameof(IsTracingView));
         OnPropertyChanged(nameof(IsSettingsView));
     }
 
