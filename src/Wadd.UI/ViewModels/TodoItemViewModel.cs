@@ -70,9 +70,13 @@ public partial class TodoItemViewModel : ViewModelBase
             var today = DateTime.Today;
             if (date == today) return "Today";
             if (date == today.AddDays(1)) return "Tomorrow";
+            if (date < today && !Model.IsCompleted) return $"Overdue ({Model.DueDate.Value:MMM d})";
             return Model.DueDate.Value.ToString("MMM d");
         }
     }
+
+    public bool IsOverdue => Model.DueDate.HasValue && Model.DueDate.Value.Date < DateTime.Today && !Model.IsCompleted;
+    public bool IsDueToday => Model.DueDate.HasValue && Model.DueDate.Value.Date == DateTime.Today;
 
     public DateTime? ReminderAt => Model.ReminderAt;
 
@@ -93,6 +97,33 @@ public partial class TodoItemViewModel : ViewModelBase
         }
     }
 
+    public DateTime? CompletedAt => Model.CompletedAt;
+
+    public bool HasCompletedAt => Model.CompletedAt.HasValue;
+
+    public string CompletedAtFormatted
+    {
+        get
+        {
+            if (!Model.CompletedAt.HasValue) return string.Empty;
+            var local = Model.CompletedAt.Value.ToLocalTime();
+            var date = local.Date;
+            var today = DateTime.Today;
+            var timeStr = local.ToString("HH:mm");
+            if (date == today) return $"Completed today at {timeStr}";
+            if (date == today.AddDays(-1)) return $"Completed yesterday at {timeStr}";
+            return $"Completed {local:MMM d, HH:mm}";
+        }
+    }
+
+    public bool IsRecurring => Model.IsRecurring;
+
+    public string RecurrenceType => Model.RecurrenceType;
+
+    public bool HasRecurrence => Model.IsRecurring && !string.IsNullOrWhiteSpace(Model.RecurrenceType) && !Model.RecurrenceType.Equals("None", StringComparison.OrdinalIgnoreCase);
+
+    public string RecurrenceFormatted => Wadd.Core.Helpers.RecurrenceHelper.FormatRecurrenceText(Model.IsRecurring, Model.RecurrenceType, Model.CustomRecurrenceInterval, Model.CustomRecurrenceUnit, Model.CustomWeeklyDays);
+
     public TodoItemViewModel(TodoItem model)
     {
         _model = model ?? throw new ArgumentNullException(nameof(model));
@@ -112,5 +143,9 @@ public partial class TodoItemViewModel : ViewModelBase
         OnPropertyChanged(nameof(ReminderAt));
         OnPropertyChanged(nameof(HasReminder));
         OnPropertyChanged(nameof(ReminderAtFormatted));
+        OnPropertyChanged(nameof(IsRecurring));
+        OnPropertyChanged(nameof(RecurrenceType));
+        OnPropertyChanged(nameof(HasRecurrence));
+        OnPropertyChanged(nameof(RecurrenceFormatted));
     }
 }

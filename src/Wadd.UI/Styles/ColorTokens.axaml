@@ -48,6 +48,7 @@
       <SolidColorBrush x:Key="AppAccentSuccessBrush"   Color="{StaticResource AppAccentSuccessColor}"/>
       <SolidColorBrush x:Key="AppAccentWarningBrush"   Color="{StaticResource AppAccentWarningColor}"/>
       <SolidColorBrush x:Key="AppAccentDangerBrush"    Color="{StaticResource AppAccentDangerColor}"/>
+      <SolidColorBrush x:Key="AppAccentDangerSubtleBrush" Color="#26E11D48"/>
       <SolidColorBrush x:Key="AppNavStripBrush"        Color="{StaticResource AppNavStripColor}"/>
       <SolidColorBrush x:Key="AppAccentBrush"          Color="{StaticResource AppPrimaryColor}"/>
       <SolidColorBrush x:Key="AppPrimarySubtleBrush"   Color="Transparent"/>
@@ -93,6 +94,7 @@
       <SolidColorBrush x:Key="AppAccentSuccessBrush"   Color="{StaticResource AppAccentSuccessColor}"/>
       <SolidColorBrush x:Key="AppAccentWarningBrush"   Color="{StaticResource AppAccentWarningColor}"/>
       <SolidColorBrush x:Key="AppAccentDangerBrush"    Color="{StaticResource AppAccentDangerColor}"/>
+      <SolidColorBrush x:Key="AppAccentDangerSubtleBrush" Color="#33F43F5E"/>
       <SolidColorBrush x:Key="AppNavStripBrush"        Color="{StaticResource AppNavStripColor}"/>
       <SolidColorBrush x:Key="AppAccentBrush"          Color="{StaticResource AppPrimaryColor}"/>
       <SolidColorBrush x:Key="AppPrimarySubtleBrush"   Color="Transparent"/>

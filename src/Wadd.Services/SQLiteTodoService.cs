@@ -1,5 +1,6 @@
 using System.Text.Json;
 using SQLite;
+using Wadd.Core.Helpers;
 using Wadd.Core.Interfaces;
 using Wadd.Core.Models;
 using Wadd.Services.Entities;
@@ -123,6 +124,10 @@ public class SQLiteTodoService : ITodoService
         item.UpdatedAt = DateTime.UtcNow;
         item.Version = 1;
         item.IsDeleted = false;
+        if (item.IsCompleted)
+        {
+            item.CompletedAt ??= DateTime.UtcNow;
+        }
 
         var entity = TodoItemEntity.FromDomain(item);
         await _database.InsertAsync(entity);
@@ -143,6 +148,14 @@ public class SQLiteTodoService : ITodoService
         var existing = await _database.Table<TodoItemEntity>().FirstOrDefaultAsync(x => x.Id == item.Id);
         item.UpdatedAt = DateTime.UtcNow;
         item.Version = (existing?.Version ?? item.Version) + 1;
+        if (item.IsCompleted)
+        {
+            item.CompletedAt ??= DateTime.UtcNow;
+        }
+        else
+        {
+            item.CompletedAt = null;
+        }
 
         var entity = TodoItemEntity.FromDomain(item);
         var rows = await _database.UpdateAsync(entity);
@@ -188,6 +201,37 @@ public class SQLiteTodoService : ITodoService
         if (item == null) return false;
 
         item.IsCompleted = !item.IsCompleted;
+
+        if (item.IsCompleted && item.IsRecurring && !string.Equals(item.RecurrenceType, "None", StringComparison.OrdinalIgnoreCase))
+        {
+            var nextDueDate = RecurrenceHelper.CalculateNextDueDate(item);
+            var nextItem = new TodoItem
+            {
+                Id = Guid.NewGuid(),
+                Title = item.Title,
+                Description = item.Description,
+                IsCompleted = false,
+                Priority = item.Priority,
+                CreatedAt = DateTime.UtcNow,
+                DueDate = nextDueDate,
+                ReminderAt = item.ReminderAt.HasValue && item.DueDate.HasValue
+                    ? nextDueDate.Add(item.ReminderAt.Value.TimeOfDay)
+                    : item.ReminderAt,
+                IsRecurring = true,
+                RecurrenceType = item.RecurrenceType,
+                CustomRecurrenceInterval = item.CustomRecurrenceInterval,
+                CustomRecurrenceUnit = item.CustomRecurrenceUnit,
+                CustomWeeklyDays = item.CustomWeeklyDays
+            };
+
+            // Mark this completed historical instance as no longer actively recurring so toggling done/undone does not duplicate tasks
+            item.IsRecurring = false;
+
+            var updatedOriginal = await UpdateTodoAsync(item, cancellationToken);
+            await AddTodoAsync(nextItem, cancellationToken);
+            return updatedOriginal;
+        }
+
         return await UpdateTodoAsync(item, cancellationToken);
     }
 

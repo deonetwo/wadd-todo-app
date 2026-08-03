@@ -1,0 +1,147 @@
+using Wadd.Core.Models;
+
+namespace Wadd.Core.Helpers;
+
+public static class RecurrenceHelper
+{
+    public static DateTime CalculateNextDueDate(TodoItem item, DateTime? fromDate = null)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+
+        var baseDate = item.DueDate?.Date ?? fromDate?.Date ?? DateTime.Today;
+
+        if (!item.IsRecurring || string.IsNullOrWhiteSpace(item.RecurrenceType) || item.RecurrenceType.Equals("None", StringComparison.OrdinalIgnoreCase))
+        {
+            return baseDate;
+        }
+
+        return item.RecurrenceType switch
+        {
+            "Daily" => baseDate.AddDays(1),
+            "Weekdays" => GetNextWeekday(baseDate),
+            "Weekly" => baseDate.AddDays(7),
+            "Monthly" => baseDate.AddMonths(1),
+            "Yearly" => baseDate.AddYears(1),
+            "Custom" => CalculateCustomNextDueDate(baseDate, item.CustomRecurrenceInterval ?? 1, item.CustomRecurrenceUnit, item.CustomWeeklyDays),
+            _ => baseDate.AddDays(1)
+        };
+    }
+
+    private static DateTime GetNextWeekday(DateTime baseDate)
+    {
+        var next = baseDate.AddDays(1);
+        while (next.DayOfWeek == DayOfWeek.Saturday || next.DayOfWeek == DayOfWeek.Sunday)
+        {
+            next = next.AddDays(1);
+        }
+        return next;
+    }
+
+    private static DateTime CalculateCustomNextDueDate(DateTime baseDate, int interval, string? unit, string? weeklyDays)
+    {
+        if (interval < 1) interval = 1;
+        var normalizedUnit = unit?.Trim() ?? "Days";
+
+        if (normalizedUnit.Equals("Days", StringComparison.OrdinalIgnoreCase))
+        {
+            return baseDate.AddDays(interval);
+        }
+        if (normalizedUnit.Equals("Months", StringComparison.OrdinalIgnoreCase))
+        {
+            return baseDate.AddMonths(interval);
+        }
+        if (normalizedUnit.Equals("Years", StringComparison.OrdinalIgnoreCase))
+        {
+            return baseDate.AddYears(interval);
+        }
+        if (normalizedUnit.Equals("Weeks", StringComparison.OrdinalIgnoreCase))
+        {
+            return CalculateCustomWeeklyNextDueDate(baseDate, interval, weeklyDays);
+        }
+
+        return baseDate.AddDays(interval);
+    }
+
+    private static DateTime CalculateCustomWeeklyNextDueDate(DateTime baseDate, int interval, string? weeklyDays)
+    {
+        var days = ParseWeeklyDays(weeklyDays);
+        if (days.Count == 0)
+        {
+            return baseDate.AddDays(7 * interval);
+        }
+
+        // Check if there is another selected day later in the current week
+        var currentDayOfWeek = baseDate.DayOfWeek;
+        foreach (var day in days.OrderBy(d => d))
+        {
+            if (day > currentDayOfWeek)
+            {
+                int daysToAdd = (int)day - (int)currentDayOfWeek;
+                return baseDate.AddDays(daysToAdd);
+            }
+        }
+
+        // Otherwise advance to the target interval week and select the earliest day
+        var firstSelectedDay = days.OrderBy(d => d).First();
+        int daysUntilEndOfWeek = 7 - (int)currentDayOfWeek; // days to next Sunday/Monday
+        int additionalWeeksOffset = (interval - 1) * 7;
+        int totalDaysToAdd = daysUntilEndOfWeek + additionalWeeksOffset + (int)firstSelectedDay;
+        return baseDate.AddDays(totalDaysToAdd);
+    }
+
+    public static List<DayOfWeek> ParseWeeklyDays(string? weeklyDays)
+    {
+        var result = new List<DayOfWeek>();
+        if (string.IsNullOrWhiteSpace(weeklyDays)) return result;
+
+        var parts = weeklyDays.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        foreach (var part in parts)
+        {
+            if (Enum.TryParse<DayOfWeek>(part, true, out var day))
+            {
+                if (!result.Contains(day))
+                {
+                    result.Add(day);
+                }
+            }
+        }
+        return result;
+    }
+
+    public static string FormatRecurrenceText(bool isRecurring, string recurrenceType, int? customInterval, string? customUnit, string? customWeeklyDays)
+    {
+        if (!isRecurring || string.IsNullOrWhiteSpace(recurrenceType) || recurrenceType.Equals("None", StringComparison.OrdinalIgnoreCase))
+        {
+            return string.Empty;
+        }
+
+        switch (recurrenceType)
+        {
+            case "Daily":
+                return "Daily";
+            case "Weekdays":
+                return "Every Weekday";
+            case "Weekly":
+                return "Weekly";
+            case "Monthly":
+                return "Monthly";
+            case "Yearly":
+                return "Yearly";
+            case "Custom":
+                var interval = customInterval ?? 1;
+                var unit = customUnit ?? "Days";
+                if (unit.Equals("Weeks", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(customWeeklyDays))
+                {
+                    var parsedDays = ParseWeeklyDays(customWeeklyDays);
+                    var dayAbbrs = parsedDays.Select(d => d.ToString()[..3]).ToList();
+                    var daysFormatted = string.Join(", ", dayAbbrs);
+                    return interval == 1 ? $"Every Week ({daysFormatted})" : $"Every {interval} Weeks ({daysFormatted})";
+                }
+
+                var unitSingle = unit.TrimEnd('s');
+                return interval == 1 ? $"Every {unitSingle}" : $"Every {interval} {unit}";
+            default:
+                return recurrenceType;
+        }
+    }
+}

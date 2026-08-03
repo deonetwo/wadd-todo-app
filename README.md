@@ -59,6 +59,12 @@ The `TodoItem` entity is mapped directly to SQLite:
 | `CreatedAt` | `DateTime` | `DATETIME` | UTC timestamp when item was created |
 | `UpdatedAt` | `DateTime?` | `DATETIME` | Optional UTC timestamp of last update |
 | `DueDate` | `DateTime?` | `DATETIME` | Optional due date timestamp |
+| `ReminderAt` | `DateTime?` | `DATETIME` | Optional reminder date and time timestamp |
+| `IsRecurring` | `bool` | `INTEGER` (`0`/`1`) | Recurrence flag |
+| `RecurrenceType` | `string` | `TEXT` | Recurrence rule pattern (`None`, `Daily`, `Weekdays`, `Weekly`, `Monthly`, `Yearly`, `Custom`) |
+| `CustomRecurrenceInterval` | `int?` | `INTEGER` | Custom recurrence frequency interval (e.g., `2`) |
+| `CustomRecurrenceUnit` | `string?` | `TEXT` | Custom recurrence frequency unit (`Days`, `Weeks`, `Months`, `Years`) |
+| `CustomWeeklyDays` | `string?` | `TEXT` | Comma-separated selected weekdays when unit is `Weeks` (e.g., `Monday,Wednesday,Friday`) |
 
 ### 3. Dependency Injection Architecture
 

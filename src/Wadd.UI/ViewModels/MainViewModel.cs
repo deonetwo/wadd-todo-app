@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Wadd.Core.Enums;
+using Wadd.Core.Helpers;
 using Wadd.Core.Interfaces;
 using Wadd.Core.Models;
 using Wadd.Services;
@@ -267,6 +268,117 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsRepeatEnabled))]
+    [NotifyPropertyChangedFor(nameof(IsCustomRecurrenceVisible))]
+    [NotifyPropertyChangedFor(nameof(IsWeeklyDaysPickerVisible))]
+    [NotifyPropertyChangedFor(nameof(HasNewTaskRecurrence))]
+    [NotifyPropertyChangedFor(nameof(NewTaskRecurrenceFormatted))]
+    private string _selectedRecurrenceType = "None";
+
+    public bool IsRepeatEnabled => !string.IsNullOrWhiteSpace(SelectedRecurrenceType) && !SelectedRecurrenceType.Equals("None", StringComparison.OrdinalIgnoreCase);
+
+    public List<string> RecurrenceOptions { get; } = new() { "None", "Daily", "Weekdays", "Weekly", "Monthly", "Yearly", "Custom" };
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(NewTaskRecurrenceFormatted))]
+    private int _customInterval = 1;
+
+    partial void OnCustomIntervalChanged(int value)
+    {
+        if (value < 1) CustomInterval = 1;
+    }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsWeeklyDaysPickerVisible))]
+    [NotifyPropertyChangedFor(nameof(NewTaskRecurrenceFormatted))]
+    private string _selectedCustomUnit = "Days";
+
+    public List<string> CustomUnitOptions { get; } = new() { "Days", "Weeks", "Months", "Years" };
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(NewTaskRecurrenceFormatted))]
+    private bool _isMondaySelected;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(NewTaskRecurrenceFormatted))]
+    private bool _isTuesdaySelected;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(NewTaskRecurrenceFormatted))]
+    private bool _isWednesdaySelected;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(NewTaskRecurrenceFormatted))]
+    private bool _isThursdaySelected;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(NewTaskRecurrenceFormatted))]
+    private bool _isFridaySelected;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(NewTaskRecurrenceFormatted))]
+    private bool _isSaturdaySelected;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(NewTaskRecurrenceFormatted))]
+    private bool _isSundaySelected;
+
+    public bool IsCustomRecurrenceVisible => IsRepeatEnabled && SelectedRecurrenceType == "Custom";
+
+    public bool IsWeeklyDaysPickerVisible => IsCustomRecurrenceVisible && SelectedCustomUnit == "Weeks";
+
+    public bool HasNewTaskRecurrence => IsRepeatEnabled;
+
+    public string NewTaskRecurrenceFormatted
+    {
+        get
+        {
+            if (!IsRepeatEnabled) return string.Empty;
+            return RecurrenceHelper.FormatRecurrenceText(
+                IsRepeatEnabled,
+                SelectedRecurrenceType,
+                CustomInterval,
+                SelectedCustomUnit,
+                GetSelectedWeeklyDaysString());
+        }
+    }
+
+    private string GetSelectedWeeklyDaysString()
+    {
+        var days = new List<string>();
+        if (IsMondaySelected) days.Add("Monday");
+        if (IsTuesdaySelected) days.Add("Tuesday");
+        if (IsWednesdaySelected) days.Add("Wednesday");
+        if (IsThursdaySelected) days.Add("Thursday");
+        if (IsFridaySelected) days.Add("Friday");
+        if (IsSaturdaySelected) days.Add("Saturday");
+        if (IsSundaySelected) days.Add("Sunday");
+        return string.Join(",", days);
+    }
+
+    [RelayCommand]
+    private void SetRecurrenceType(string? type)
+    {
+        if (string.IsNullOrWhiteSpace(type)) return;
+        SelectedRecurrenceType = type;
+    }
+
+    [RelayCommand]
+    private void ClearRecurrence()
+    {
+        SelectedRecurrenceType = "None";
+        CustomInterval = 1;
+        SelectedCustomUnit = "Days";
+        IsMondaySelected = false;
+        IsTuesdaySelected = false;
+        IsWednesdaySelected = false;
+        IsThursdaySelected = false;
+        IsFridaySelected = false;
+        IsSaturdaySelected = false;
+        IsSundaySelected = false;
+    }
+
+    [ObservableProperty]
     private bool _isCompact;
 
     [ObservableProperty]
@@ -343,13 +455,17 @@ public partial class MainViewModel : ViewModelBase
     private int _selectedNavIndex = 0;
 
     public bool IsTasksView => SelectedNavIndex == 0;
-    public bool IsCalendarView => SelectedNavIndex == 1;
-    public bool IsTracingView => SelectedNavIndex == 2;
-    public bool IsSettingsView => SelectedNavIndex == 3;
+    public bool IsCompletedView => SelectedNavIndex == 1;
+    public bool IsRecurringView => SelectedNavIndex == 2;
+    public bool IsCalendarView => SelectedNavIndex == 3;
+    public bool IsTracingView => SelectedNavIndex == 4;
+    public bool IsSettingsView => SelectedNavIndex == 5;
 
     partial void OnSelectedNavIndexChanged(int value)
     {
         OnPropertyChanged(nameof(IsTasksView));
+        OnPropertyChanged(nameof(IsCompletedView));
+        OnPropertyChanged(nameof(IsRecurringView));
         OnPropertyChanged(nameof(IsCalendarView));
         OnPropertyChanged(nameof(IsTracingView));
         OnPropertyChanged(nameof(IsSettingsView));
@@ -362,6 +478,126 @@ public partial class MainViewModel : ViewModelBase
     private bool _isTaskWizardVisible;
 
     public ObservableCollection<TodoItemViewModel> TodoItems { get; } = new();
+
+    public ObservableCollection<TodoItemViewModel> UpcomingTodoItems { get; } = new();
+
+    public ObservableCollection<TodoItemViewModel> TodayTodoItems => StandardTodoItems;
+
+    public ObservableCollection<TodoItemViewModel> StandardTodoItems { get; } = new();
+
+    public ObservableCollection<TodoItemViewModel> CompletedTodayTodoItems { get; } = new();
+
+    public ObservableCollection<TodoItemViewModel> CompletedHistoryTodoItems { get; } = new();
+
+    public ObservableCollection<TodoItemViewModel> AllRecurringTodoItems { get; } = new();
+
+    public bool HasUpcomingTodoItems => UpcomingTodoItems.Count > 0;
+
+    public bool HasTodayTodoItems => StandardTodoItems.Count > 0;
+
+    public bool HasStandardTodoItems => StandardTodoItems.Count > 0;
+
+    public bool HasCompletedTodayTodoItems => CompletedTodayTodoItems.Count > 0;
+
+    public bool HasCompletedHistoryTodoItems => CompletedHistoryTodoItems.Count > 0;
+
+    public bool HasAllRecurringTodoItems => AllRecurringTodoItems.Count > 0;
+
+    [ObservableProperty]
+    private bool _isUpcomingTasksExpanded = true;
+
+    [ObservableProperty]
+    private bool _isTodayTasksExpanded = true;
+
+    [ObservableProperty]
+    private bool _isCompletedTodayExpanded = true;
+
+    [RelayCommand]
+    private void ToggleUpcomingTasksExpanded() => IsUpcomingTasksExpanded = !IsUpcomingTasksExpanded;
+
+    [RelayCommand]
+    private void ToggleTodayTasksExpanded() => IsTodayTasksExpanded = !IsTodayTasksExpanded;
+
+    [RelayCommand]
+    private void ToggleCompletedTodayExpanded() => IsCompletedTodayExpanded = !IsCompletedTodayExpanded;
+
+    [RelayCommand]
+    private void NavigateToRecurringView()
+    {
+        SelectedNavIndex = 2;
+    }
+
+    private void UpdateSubCollections()
+    {
+        var today = DateTime.Today;
+        var activeItems = TodoItems.Where(x => !x.IsCompleted).ToList();
+        var completedItems = TodoItems.Where(x => x.IsCompleted).ToList();
+
+        // Today tasks: active tasks with DueDate <= today OR ReminderAt <= today OR without any dates
+        var freshStandard = activeItems.Where(x =>
+            (x.DueDate.HasValue && x.DueDate.Value.Date <= today) ||
+            (x.ReminderAt.HasValue && x.ReminderAt.Value.Date <= today) ||
+            (!x.DueDate.HasValue && !x.ReminderAt.HasValue)).ToList();
+
+        // Upcoming tasks: active tasks not in Today list (due/reminded strictly in the future)
+        var allUpcoming = activeItems.Where(x => !freshStandard.Contains(x)).ToList();
+
+        // Cap upcoming display to 5 latest items
+        var freshUpcoming = allUpcoming
+            .OrderByDescending(x => x.CreatedAt)
+            .Take(5)
+            .ToList();
+
+        var freshCompletedToday = completedItems
+            .Where(x => !x.CompletedAt.HasValue || x.CompletedAt.Value.ToLocalTime().Date == today)
+            .OrderByDescending(x => x.CompletedAt ?? DateTime.MinValue)
+            .ToList();
+        var freshCompletedHistory = completedItems
+            .Where(x => x.CompletedAt.HasValue && x.CompletedAt.Value.ToLocalTime().Date < today)
+            .OrderByDescending(x => x.CompletedAt)
+            .ToList();
+
+        // All recurring tasks
+        var freshAllRecurring = TodoItems.Where(x => x.IsRecurring).ToList();
+
+        SyncCollection(UpcomingTodoItems, freshUpcoming);
+        SyncCollection(StandardTodoItems, freshStandard);
+        SyncCollection(CompletedTodayTodoItems, freshCompletedToday);
+        SyncCollection(CompletedHistoryTodoItems, freshCompletedHistory);
+        SyncCollection(AllRecurringTodoItems, freshAllRecurring);
+
+        OnPropertyChanged(nameof(HasUpcomingTodoItems));
+        OnPropertyChanged(nameof(HasTodayTodoItems));
+        OnPropertyChanged(nameof(HasStandardTodoItems));
+        OnPropertyChanged(nameof(HasCompletedTodayTodoItems));
+        OnPropertyChanged(nameof(HasCompletedHistoryTodoItems));
+        OnPropertyChanged(nameof(HasAllRecurringTodoItems));
+    }
+
+    private static void SyncCollection(ObservableCollection<TodoItemViewModel> collection, List<TodoItemViewModel> freshItems)
+    {
+        var freshSet = new HashSet<Guid>(freshItems.Select(x => x.Id));
+        for (int i = collection.Count - 1; i >= 0; i--)
+        {
+            if (!freshSet.Contains(collection[i].Id))
+            {
+                collection.RemoveAt(i);
+            }
+        }
+        for (int i = 0; i < freshItems.Count; i++)
+        {
+            var item = freshItems[i];
+            var currentIndex = collection.IndexOf(item);
+            if (currentIndex < 0)
+            {
+                collection.Insert(i, item);
+            }
+            else if (currentIndex != i && currentIndex >= 0)
+            {
+                collection.Move(currentIndex, i);
+            }
+        }
+    }
 
     public TaskConflictViewModel TaskConflictVm { get; }
 
@@ -557,6 +793,7 @@ public partial class MainViewModel : ViewModelBase
                     }
                 }
 
+                UpdateSubCollections();
                 LastUpdatedAt = DateTime.Now;
                 StatusMessage = $"Loaded {TodoItems.Count} tasks from local database.";
             });
@@ -660,7 +897,12 @@ public partial class MainViewModel : ViewModelBase
                 Priority = TodoPriority.Medium,
                 CreatedAt = DateTime.UtcNow,
                 DueDate = NewTaskDueDate,
-                ReminderAt = GetCombinedNewTaskReminder()
+                ReminderAt = GetCombinedNewTaskReminder(),
+                IsRecurring = IsRepeatEnabled,
+                RecurrenceType = IsRepeatEnabled ? SelectedRecurrenceType : "None",
+                CustomRecurrenceInterval = IsRepeatEnabled && SelectedRecurrenceType == "Custom" ? CustomInterval : null,
+                CustomRecurrenceUnit = IsRepeatEnabled && SelectedRecurrenceType == "Custom" ? SelectedCustomUnit : null,
+                CustomWeeklyDays = IsRepeatEnabled && SelectedRecurrenceType == "Custom" && SelectedCustomUnit == "Weeks" ? GetSelectedWeeklyDaysString() : null
             };
 
             await _todoService.AddTodoAsync(newItem);
@@ -672,6 +914,7 @@ public partial class MainViewModel : ViewModelBase
                 NewTaskDueDate = null;
                 NewTaskReminderDate = null;
                 NewTaskReminderTime = null;
+                ClearRecurrence();
             });
 
             await LoadTodoItemsAsync();

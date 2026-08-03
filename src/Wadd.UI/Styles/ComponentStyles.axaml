@@ -347,35 +347,137 @@
 
   <!-- ══════════════ TASK ROW ══════════════ -->
 
-  <!-- Minimal task row — separator on bottom, hover tint -->
+  <!-- Modern Soft Rounded Task Row Card -->
   <Style Selector="Border.task-row">
     <Setter Property="Background"      Value="Transparent"/>
-    <Setter Property="Padding"         Value="4,14"/>
-    <Setter Property="Margin"          Value="0"/>
-    <Setter Property="BorderBrush"     Value="{DynamicResource AppBorderBrush}"/>
-    <Setter Property="BorderThickness" Value="0,0,0,1"/>
-    <Setter Property="CornerRadius"    Value="0"/>
-    <Setter Property="Transitions">
-      <Transitions>
-        <BrushTransition Property="Background" Duration="0:0:0.1"/>
-      </Transitions>
-    </Setter>
+    <Setter Property="Padding"         Value="12,12"/>
+    <Setter Property="Margin"          Value="0,2"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="CornerRadius"    Value="10"/>
   </Style>
   <Style Selector="Border.task-row:pointerover">
     <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtleBrush}"/>
   </Style>
 
+  <!-- Action Task Row Button (View All Recurring, etc.) -->
+  <Style Selector="Button.action-task-row">
+    <Setter Property="Background"              Value="Transparent"/>
+    <Setter Property="BorderBrush"             Value="Transparent"/>
+    <Setter Property="BorderThickness"         Value="0"/>
+    <Setter Property="CornerRadius"            Value="10"/>
+    <Setter Property="Padding"                 Value="12,12"/>
+    <Setter Property="Margin"                  Value="0,2"/>
+    <Setter Property="HorizontalAlignment"     Value="Stretch"/>
+    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+    <Setter Property="Cursor"                  Value="Hand"/>
+  </Style>
+  <Style Selector="Button.action-task-row /template/ ContentPresenter">
+    <Setter Property="CornerRadius"            Value="10"/>
+    <Setter Property="BorderThickness"         Value="0"/>
+    <Setter Property="BorderBrush"             Value="Transparent"/>
+    <Setter Property="Background"              Value="Transparent"/>
+  </Style>
+  <Style Selector="Button.action-task-row:pointerover /template/ ContentPresenter">
+    <Setter Property="Background"              Value="{DynamicResource AppSurfaceSubtleBrush}"/>
+    <Setter Property="BorderBrush"             Value="Transparent"/>
+  </Style>
+  <Style Selector="Button.action-task-row:focus /template/ ContentPresenter">
+    <Setter Property="Background"              Value="{DynamicResource AppSurfaceSubtleBrush}"/>
+    <Setter Property="BorderBrush"             Value="Transparent"/>
+  </Style>
+
+  <!-- Modern Circular Task Toggle Style (Exact TasksView Standard) -->
+  <Style Selector="CheckBox.task-checkbox">
+    <Setter Property="Padding" Value="0"/>
+    <Setter Property="Margin" Value="0,2,16,0"/>
+    <Setter Property="Cursor" Value="Hand"/>
+    <Setter Property="VerticalAlignment" Value="Top"/>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="CheckBorder"
+                Width="22" Height="22"
+                CornerRadius="11"
+                BorderBrush="{DynamicResource AppTextSecondaryBrush}"
+                BorderThickness="2"
+                Background="Transparent"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+          <PathIcon x:Name="CheckIcon"
+                    Data="{StaticResource CheckIconData}"
+                    Width="11" Height="11"
+                    Foreground="#FFFFFF"
+                    Opacity="0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+            <PathIcon.Transitions>
+              <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.15"/>
+                <BrushTransition Property="Foreground" Duration="0:0:0.15"/>
+              </Transitions>
+            </PathIcon.Transitions>
+          </PathIcon>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <!-- Task Row Hover -> Highlight CheckBox Ring prominently with primary preview -->
+  <Style Selector="Border.task-row:pointerover CheckBox.task-checkbox /template/ Border#CheckBorder">
+    <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryBrush}"/>
+  </Style>
+  <Style Selector="Border.task-row:pointerover CheckBox.task-checkbox /template/ PathIcon#CheckIcon">
+    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryBrush}"/>
+    <Setter Property="Opacity" Value="0.35"/>
+  </Style>
+
+  <!-- Direct CheckBox Hover -> Tactile Preview -->
+  <Style Selector="CheckBox.task-checkbox:pointerover /template/ Border#CheckBorder">
+    <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryBrush}"/>
+  </Style>
+  <Style Selector="CheckBox.task-checkbox:pointerover /template/ PathIcon#CheckIcon">
+    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryBrush}"/>
+    <Setter Property="Opacity" Value="0.65"/>
+  </Style>
+
+  <!-- Checked State -->
+  <Style Selector="CheckBox.task-checkbox:checked /template/ Border#CheckBorder">
+    <Setter Property="Background" Value="{DynamicResource AppPrimaryBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryBrush}"/>
+  </Style>
+  <Style Selector="CheckBox.task-checkbox:checked /template/ PathIcon#CheckIcon">
+    <Setter Property="Foreground" Value="#FFFFFF"/>
+    <Setter Property="Opacity" Value="1"/>
+  </Style>
+  <Style Selector="CheckBox.task-checkbox:checked:pointerover /template/ PathIcon#CheckIcon">
+    <Setter Property="Foreground" Value="#FFFFFF"/>
+    <Setter Property="Opacity" Value="1"/>
+  </Style>
+
+  <!-- Completed Task Row De-emphasis -->
+  <Style Selector="Border.task-row.completed">
+    <Setter Property="Opacity" Value="0.55"/>
+  </Style>
+
+  <!-- Hover-only Delete Button reveal -->
+  <Style Selector="Border.task-row Button.danger">
+    <Setter Property="Opacity" Value="0"/>
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.15"/>
+      </Transitions>
+    </Setter>
+  </Style>
+  <Style Selector="Border.task-row:pointerover Button.danger">
+    <Setter Property="Opacity" Value="1"/>
+  </Style>
+
   <!-- task-card compat alias — uses task-row visuals -->
   <Style Selector="Border.task-card">
     <Setter Property="Background"      Value="Transparent"/>
-    <Setter Property="Padding"         Value="4,14"/>
-    <Setter Property="BorderBrush"     Value="{DynamicResource AppBorderBrush}"/>
-    <Setter Property="BorderThickness" Value="0,0,0,1"/>
-    <Setter Property="Transitions">
-      <Transitions>
-        <BrushTransition Property="Background" Duration="0:0:0.1"/>
-      </Transitions>
-    </Setter>
+    <Setter Property="Padding"         Value="12,12"/>
+    <Setter Property="Margin"          Value="0,2"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="CornerRadius"    Value="10"/>
   </Style>
   <Style Selector="Border.task-card:pointerover">
     <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtleBrush}"/>

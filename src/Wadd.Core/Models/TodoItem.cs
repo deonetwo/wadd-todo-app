@@ -12,6 +12,8 @@ public class TodoItem
 
     public bool IsCompleted { get; set; }
 
+    public DateTime? CompletedAt { get; set; }
+
     public TodoPriority Priority { get; set; } = TodoPriority.Medium;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -25,4 +27,14 @@ public class TodoItem
     public long Version { get; set; } = 1;
 
     public bool IsDeleted { get; set; } = false;
+
+    public bool IsRecurring { get; set; } = false;
+
+    public string RecurrenceType { get; set; } = "None";
+
+    public int? CustomRecurrenceInterval { get; set; }
+
+    public string? CustomRecurrenceUnit { get; set; }
+
+    public string? CustomWeeklyDays { get; set; }
 }

@@ -1,0 +1,139 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Wadd.UI.ViewModels;assembly=Wadd.UI"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="700"
+             x:Class="Wadd.UI.Views.RecurringTasksView"
+             x:DataType="vm:MainViewModel">
+
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="64,52,80,120" Spacing="0">
+
+      <!-- Page Header -->
+      <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,24">
+        <StackPanel Grid.Column="0" Spacing="4">
+          <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <PathIcon Data="{StaticResource RepeatIconData}" Width="22" Height="22" Foreground="{DynamicResource AppPrimaryBrush}"/>
+            <TextBlock Text="Recurring Tasks" Classes="h1"/>
+          </StackPanel>
+          <TextBlock Text="Overview of all repeating habits and scheduled task patterns."
+                     Classes="small"
+                     Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+        </StackPanel>
+
+        <!-- Count badge -->
+        <Border Grid.Column="1"
+                Background="{DynamicResource AppSurfaceElevatedBrush}"
+                CornerRadius="12"
+                Padding="12,6"
+                VerticalAlignment="Center">
+          <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+            <TextBlock Text="{Binding AllRecurringTodoItems.Count}"
+                       FontSize="14"
+                       FontWeight="Bold"
+                       Foreground="{DynamicResource AppPrimaryBrush}"/>
+            <TextBlock Text="recurring"
+                       FontSize="12"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+          </StackPanel>
+        </Border>
+      </Grid>
+
+      <!-- Recurring Task List -->
+      <StackPanel IsVisible="{Binding HasAllRecurringTodoItems}">
+        <ItemsControl ItemsSource="{Binding AllRecurringTodoItems}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:TodoItemViewModel">
+              <Border Classes="task-row" Classes.completed="{Binding IsCompleted}">
+                <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                  <!-- Checkbox -->
+                  <CheckBox Grid.Column="0"
+                            Classes="task-checkbox"
+                            IsChecked="{Binding IsCompleted, Mode=OneWay}"
+                            Command="{Binding $parent[UserControl].DataContext.ToggleTodoCommand}"
+                            CommandParameter="{Binding}"/>
+
+                  <!-- Task metadata -->
+                  <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Title}"
+                               Classes="body-bold task-title"
+                               FontSize="14"
+                               TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding Description}"
+                               Classes="small"
+                               IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                               TextWrapping="Wrap"/>
+                    <!-- Badges (Recurring Pattern & Next Due Date) -->
+                    <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,0">
+                      <!-- Recurrence Pattern Badge -->
+                      <Border Background="{DynamicResource AppAccentTintBrush}"
+                              BorderBrush="{DynamicResource AppAccentBrush}"
+                              BorderThickness="1"
+                              CornerRadius="4"
+                              Padding="6,2"
+                              HorizontalAlignment="Left">
+                        <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                          <PathIcon Data="{StaticResource RepeatIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                          <TextBlock Text="{Binding RecurrenceFormatted}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                        </StackPanel>
+                      </Border>
+
+                      <!-- Next Due Date Badge -->
+                      <Border IsVisible="{Binding HasDueDate}"
+                              Background="{DynamicResource AppPrimarySubtleBrush}"
+                              CornerRadius="4"
+                              Padding="6,2"
+                              HorizontalAlignment="Left">
+                        <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                          <PathIcon Data="{StaticResource CalendarIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                          <TextBlock Text="{Binding DueDateFormatted}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                        </StackPanel>
+                      </Border>
+                    </StackPanel>
+                  </StackPanel>
+
+                  <!-- Timestamp -->
+                  <TextBlock Grid.Column="2"
+                             Text="{Binding CreatedAt, StringFormat='{}{0:MMM d}'}"
+                             Classes="small"
+                             VerticalAlignment="Center"
+                             Margin="14,0,6,0"/>
+
+                  <!-- Delete -->
+                  <Button Grid.Column="3"
+                          Classes="danger"
+                          Command="{Binding $parent[UserControl].DataContext.DeleteTodoCommand}"
+                          CommandParameter="{Binding}"
+                          VerticalAlignment="Center"
+                          ToolTip.Tip="Delete task pattern">
+                    <PathIcon Data="{StaticResource CloseIconData}" Width="12" Height="12"/>
+                  </Button>
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+
+      <!-- Empty state -->
+      <StackPanel IsVisible="{Binding !AllRecurringTodoItems.Count}"
+                  HorizontalAlignment="Center"
+                  Margin="0,72,0,0"
+                  Spacing="14">
+        <PathIcon Data="{StaticResource RepeatIconData}"
+                  Width="40" Height="40"
+                  Foreground="{DynamicResource AppBorderBrush}"
+                  HorizontalAlignment="Center"/>
+        <TextBlock Text="No recurring tasks setup"
+                   Classes="heading"
+                   HorizontalAlignment="Center"
+                   Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+        <TextBlock Text="Set a repeat rule when creating a task to automate recurring to-dos."
+                   Classes="small"
+                   HorizontalAlignment="Center"/>
+      </StackPanel>
+
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

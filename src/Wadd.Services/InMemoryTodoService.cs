@@ -28,6 +28,10 @@ public class InMemoryTodoService : ITodoService
     {
         item.CreatedAt = DateTime.UtcNow;
         item.UpdatedAt = DateTime.UtcNow;
+        if (item.IsCompleted)
+        {
+            item.CompletedAt ??= DateTime.UtcNow;
+        }
         _items.Add(item);
         return Task.FromResult(item);
     }
@@ -41,6 +45,14 @@ public class InMemoryTodoService : ITodoService
         if (existingIndex < 0) return Task.FromResult(false);
 
         item.UpdatedAt = DateTime.UtcNow;
+        if (item.IsCompleted)
+        {
+            item.CompletedAt ??= DateTime.UtcNow;
+        }
+        else
+        {
+            item.CompletedAt = null;
+        }
         _items[existingIndex] = item;
         return Task.FromResult(true);
     }
@@ -63,6 +75,14 @@ public class InMemoryTodoService : ITodoService
         if (item == null) return Task.FromResult(false);
 
         item.IsCompleted = !item.IsCompleted;
+        if (item.IsCompleted)
+        {
+            item.CompletedAt = DateTime.UtcNow;
+        }
+        else
+        {
+            item.CompletedAt = null;
+        }
         item.UpdatedAt = DateTime.UtcNow;
         return Task.FromResult(true);
     }

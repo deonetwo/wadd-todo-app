@@ -168,6 +168,31 @@ public class ConflictResolutionEngine
             target.ReminderAt = local.ReminderAt;
         }
 
+        // Field 7: IsRecurring
+        target.IsRecurring = local.IsRecurring == cloud.IsRecurring
+            ? local.IsRecurring
+            : (baseItem != null && local.IsRecurring == baseItem.IsRecurring ? cloud.IsRecurring : local.IsRecurring);
+
+        // Field 8: RecurrenceType
+        target.RecurrenceType = local.RecurrenceType == cloud.RecurrenceType
+            ? local.RecurrenceType
+            : (baseItem != null && local.RecurrenceType == baseItem.RecurrenceType ? cloud.RecurrenceType : local.RecurrenceType);
+
+        // Field 9: CustomRecurrenceInterval
+        target.CustomRecurrenceInterval = local.CustomRecurrenceInterval == cloud.CustomRecurrenceInterval
+            ? local.CustomRecurrenceInterval
+            : (baseItem != null && local.CustomRecurrenceInterval == baseItem.CustomRecurrenceInterval ? cloud.CustomRecurrenceInterval : local.CustomRecurrenceInterval);
+
+        // Field 10: CustomRecurrenceUnit
+        target.CustomRecurrenceUnit = local.CustomRecurrenceUnit == cloud.CustomRecurrenceUnit
+            ? local.CustomRecurrenceUnit
+            : (baseItem != null && local.CustomRecurrenceUnit == baseItem.CustomRecurrenceUnit ? cloud.CustomRecurrenceUnit : local.CustomRecurrenceUnit);
+
+        // Field 11: CustomWeeklyDays
+        target.CustomWeeklyDays = local.CustomWeeklyDays == cloud.CustomWeeklyDays
+            ? local.CustomWeeklyDays
+            : (baseItem != null && local.CustomWeeklyDays == baseItem.CustomWeeklyDays ? cloud.CustomWeeklyDays : local.CustomWeeklyDays);
+
         return result;
     }
 }
