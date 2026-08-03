@@ -522,7 +522,7 @@
                       </Border>
 
                       <!-- Normal Due Date Badge -->
-                      <Border IsVisible="{Binding HasDueDate}"
+                      <Border IsVisible="{Binding HasDueDateOnly}"
                               Background="{DynamicResource AppPrimarySubtleBrush}"
                               CornerRadius="4"
                               Padding="6,2"
@@ -641,7 +641,7 @@
                       </Border>
 
                       <!-- Normal Due Date Badge -->
-                      <Border IsVisible="{Binding HasDueDate}"
+                      <Border IsVisible="{Binding HasDueDateOnly}"
                               Background="{DynamicResource AppPrimarySubtleBrush}"
                               CornerRadius="4"
                               Padding="6,2"
