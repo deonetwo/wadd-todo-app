@@ -326,13 +326,13 @@
 
                     <!-- Reminder Badge -->
                     <Border IsVisible="{Binding HasReminder}"
-                            Background="{DynamicResource AppAccentTintBrush}"
+                            Background="{DynamicResource AppPrimarySubtleBrush}"
                             CornerRadius="4"
                             Padding="6,2"
                             HorizontalAlignment="Left">
                       <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                        <PathIcon Data="{StaticResource BellIconData}" Width="10" Height="10" Foreground="{DynamicResource AppAccentBrush}"/>
-                        <TextBlock Text="{Binding ReminderAtFormatted}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppAccentBrush}"/>
+                        <PathIcon Data="{StaticResource BellIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                        <TextBlock Text="{Binding ReminderAtFormatted}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppPrimaryBrush}"/>
                       </StackPanel>
                     </Border>
                   </StackPanel>

@@ -49,6 +49,8 @@
       <SolidColorBrush x:Key="AppAccentWarningBrush"   Color="{StaticResource AppAccentWarningColor}"/>
       <SolidColorBrush x:Key="AppAccentDangerBrush"    Color="{StaticResource AppAccentDangerColor}"/>
       <SolidColorBrush x:Key="AppNavStripBrush"        Color="{StaticResource AppNavStripColor}"/>
+      <SolidColorBrush x:Key="AppAccentBrush"          Color="{StaticResource AppPrimaryColor}"/>
+      <SolidColorBrush x:Key="AppPrimarySubtleBrush"   Color="Transparent"/>
     </ResourceDictionary>
 
     <!-- ───── DARK THEME ───── -->
@@ -92,6 +94,8 @@
       <SolidColorBrush x:Key="AppAccentWarningBrush"   Color="{StaticResource AppAccentWarningColor}"/>
       <SolidColorBrush x:Key="AppAccentDangerBrush"    Color="{StaticResource AppAccentDangerColor}"/>
       <SolidColorBrush x:Key="AppNavStripBrush"        Color="{StaticResource AppNavStripColor}"/>
+      <SolidColorBrush x:Key="AppAccentBrush"          Color="{StaticResource AppPrimaryColor}"/>
+      <SolidColorBrush x:Key="AppPrimarySubtleBrush"   Color="Transparent"/>
     </ResourceDictionary>
 
   </ResourceDictionary.ThemeDictionaries>
