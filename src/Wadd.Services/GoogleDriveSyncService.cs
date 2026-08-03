@@ -9,17 +9,29 @@ using Wadd.Core.Models;
 
 namespace Wadd.Services;
 
-/// <summary>
-/// Implementation of ISyncService for synchronizing Todo items with Google Drive.
-/// Handles Google OAuth 2.0 browser authorization, loopback authentication callbacks,
-/// and 2-way state merging into the local SQLite database.
-/// </summary>
+public class CloudSyncMetadata
+{
+    public long LatestRevision { get; set; } = 1;
+    public int SchemaVersion { get; set; } = 1;
+    public DateTime LastSync { get; set; } = DateTime.UtcNow;
+    public List<DeviceMetadata> RegisteredDevices { get; set; } = new();
+}
+
 public class GoogleDriveSyncService : ISyncService
 {
     private readonly ITodoService _todoService;
+    private readonly ISyncLogRepository _syncLogRepository;
+    private readonly IConflictRepository _conflictRepository;
+    private readonly IDeviceService _deviceService;
+    private readonly ConflictResolutionEngine _conflictEngine;
     private readonly HttpClient _httpClient;
     private UserAuthRecord? _authRecord;
     private readonly string _authFilePath;
+
+    private const string SyncFolderName = "Wadd ToDo Sync Data";
+    const string WarningFileName = "⚠️_WARNING_DO_NOT_DELETE_WADD_SYNC_FOLDER.txt";
+    private const string MetadataFileName = "wadd_cloud_metadata.json";
+    private const string LogsFileName = "wadd_sync_logs.json";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -33,7 +45,12 @@ public class GoogleDriveSyncService : ISyncService
 
     public string GoogleClientId
     {
-        get => _authRecord?.GoogleClientId ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") ?? string.Empty;
+        get
+        {
+            var envVal = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
+            if (!string.IsNullOrWhiteSpace(envVal)) return envVal.Trim();
+            return _authRecord?.GoogleClientId ?? string.Empty;
+        }
         set
         {
             _authRecord ??= new UserAuthRecord();
@@ -42,25 +59,79 @@ public class GoogleDriveSyncService : ISyncService
         }
     }
 
+    public string GoogleClientSecret
+    {
+        get
+        {
+            var envVal = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET");
+            if (!string.IsNullOrWhiteSpace(envVal)) return envVal.Trim();
+            return _authRecord?.GoogleClientSecret ?? string.Empty;
+        }
+        set
+        {
+            _authRecord ??= new UserAuthRecord();
+            _authRecord.GoogleClientSecret = value;
+            SaveAuthRecord();
+        }
+    }
+
     public string WebAppUrl { get; set; }
 
-    public GoogleDriveSyncService(ITodoService todoService, HttpClient? httpClient = null, string? webAppUrl = null)
+    public int UnresolvedConflictCount { get; private set; }
+    public event EventHandler? ConflictCountChanged;
+
+    public GoogleDriveSyncService(
+        ITodoService todoService,
+        HttpClient? httpClient = null,
+        string? webAppUrl = null,
+        ISyncLogRepository? syncLogRepository = null,
+        IConflictRepository? conflictRepository = null,
+        IDeviceService? deviceService = null,
+        ConflictResolutionEngine? conflictEngine = null)
     {
         _todoService = todoService ?? throw new ArgumentNullException(nameof(todoService));
         _httpClient = httpClient ?? new HttpClient();
 
+        if (_todoService is SQLiteTodoService sqliteService)
+        {
+            _syncLogRepository = syncLogRepository ?? sqliteService.SyncLogRepository;
+            _deviceService = deviceService ?? sqliteService.DeviceService;
+            _conflictRepository = conflictRepository ?? new SQLiteConflictRepository(sqliteService.DatabaseConnection);
+        }
+        else
+        {
+            _deviceService = deviceService ?? new DeviceService();
+            _syncLogRepository = syncLogRepository ?? new SQLiteSyncLogRepository(Wadd.Core.Helpers.AppDataHelper.GetWaddFilePath("wadd.db"));
+            _conflictRepository = conflictRepository ?? new SQLiteConflictRepository(Wadd.Core.Helpers.AppDataHelper.GetWaddFilePath("wadd.db"));
+        }
+
+        _conflictEngine = conflictEngine ?? new ConflictResolutionEngine();
+
         LoadEnvFile();
 
-        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var dir = Path.Combine(localAppData, "Wadd");
-        Directory.CreateDirectory(dir);
-        _authFilePath = Path.Combine(dir, "google_user_auth.json");
+        _authFilePath = Wadd.Core.Helpers.AppDataHelper.GetWaddFilePath("google_user_auth.json");
 
         WebAppUrl = webAppUrl 
             ?? Environment.GetEnvironmentVariable("WADD_SYNC_URL") 
             ?? string.Empty;
 
         LoadAuthRecord();
+        _ = RefreshConflictCountAsync();
+    }
+
+    public async Task RefreshConflictCountAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var conflicts = await _conflictRepository.GetUnresolvedConflictsAsync(cancellationToken);
+            var count = conflicts.Count();
+            if (UnresolvedConflictCount != count)
+            {
+                UnresolvedConflictCount = count;
+                ConflictCountChanged?.Invoke(this, EventArgs.Empty);
+            }
+        }
+        catch { }
     }
 
     private static void LoadEnvFile()
@@ -89,7 +160,7 @@ public class GoogleDriveSyncService : ISyncService
                         {
                             var key = parts[0].Trim();
                             var val = parts[1].Trim().Trim('"', '\'');
-                            if (!string.IsNullOrWhiteSpace(key) && string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(key)))
+                            if (!string.IsNullOrWhiteSpace(key))
                             {
                                 Environment.SetEnvironmentVariable(key, val);
                             }
@@ -99,62 +170,7 @@ public class GoogleDriveSyncService : ISyncService
                 }
             }
         }
-        catch
-        {
-            // Ignore env parsing exceptions
-        }
-    }
-
-    public string GoogleClientSecret
-    {
-        get => _authRecord?.GoogleClientSecret ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET") ?? string.Empty;
-        set
-        {
-            _authRecord ??= new UserAuthRecord();
-            _authRecord.GoogleClientSecret = value;
-            SaveAuthRecord();
-        }
-    }
-
-    private static readonly byte[] AuthStorageSalt = "Wadd.Auth.Salt.2026"u8.ToArray();
-    private static readonly byte[] AuthStoragePassphrase = "Wadd-GoogleDrive-OAuth-SecureTokenKey"u8.ToArray();
-
-    private static byte[] EncryptAuthData(byte[] plainBytes)
-    {
-        var derivedBytes = Rfc2898DeriveBytes.Pbkdf2(AuthStoragePassphrase, AuthStorageSalt, 10000, HashAlgorithmName.SHA256, 48);
-        var key = derivedBytes[..32];
-        var iv = derivedBytes[32..];
-
-        using var aes = Aes.Create();
-        aes.Key = key;
-        aes.IV = iv;
-
-        using var ms = new MemoryStream();
-        using (var cs = new CryptoStream(ms, aes.CreateEncryptor(), CryptoStreamMode.Write))
-        {
-            cs.Write(plainBytes, 0, plainBytes.Length);
-            cs.FlushFinalBlock();
-        }
-        return ms.ToArray();
-    }
-
-    private static byte[] DecryptAuthData(byte[] cipherBytes)
-    {
-        var derivedBytes = Rfc2898DeriveBytes.Pbkdf2(AuthStoragePassphrase, AuthStorageSalt, 10000, HashAlgorithmName.SHA256, 48);
-        var key = derivedBytes[..32];
-        var iv = derivedBytes[32..];
-
-        using var aes = Aes.Create();
-        aes.Key = key;
-        aes.IV = iv;
-
-        using var ms = new MemoryStream();
-        using (var cs = new CryptoStream(ms, aes.CreateDecryptor(), CryptoStreamMode.Write))
-        {
-            cs.Write(cipherBytes, 0, cipherBytes.Length);
-            cs.FlushFinalBlock();
-        }
-        return ms.ToArray();
+        catch { }
     }
 
     private void LoadAuthRecord()
@@ -163,45 +179,11 @@ public class GoogleDriveSyncService : ISyncService
         {
             if (File.Exists(_authFilePath))
             {
-                var fileBytes = File.ReadAllBytes(_authFilePath);
-                if (fileBytes.Length == 0) return;
-
-                string json;
-                // Backward compatibility: detect if file is unencrypted plaintext JSON (starts with '{')
-                if (fileBytes[0] == (byte)'{')
-                {
-                    json = Encoding.UTF8.GetString(fileBytes);
-                }
-                else
-                {
-                    var decryptedBytes = DecryptAuthData(fileBytes);
-                    json = Encoding.UTF8.GetString(decryptedBytes);
-                }
-
+                var json = File.ReadAllText(_authFilePath);
                 _authRecord = JsonSerializer.Deserialize<UserAuthRecord>(json, JsonOptions);
-
-                // Purge obsolete/dummy placeholder records
-                if (_authRecord != null && (string.IsNullOrWhiteSpace(_authRecord.UserEmail) 
-                    || _authRecord.UserEmail == "Connected Account" 
-                    || _authRecord.UserEmail == "connected.google.user@gmail.com" 
-                    || _authRecord.UserEmail == "user@gmail.com"
-                    || _authRecord.UserEmail == "Google Drive User"))
-                {
-                    _authRecord = null;
-                    try { File.Delete(_authFilePath); } catch { }
-                }
-                else if (fileBytes[0] == (byte)'{')
-                {
-                    // Automatically migrate legacy plaintext file to encrypted storage
-                    SaveAuthRecord();
-                }
             }
         }
-        catch (Exception ex)
-        {
-            Trace.WriteLine($"[WARN] Failed to load/decrypt auth record: {ex.Message}");
-            _authRecord = null;
-        }
+        catch { }
     }
 
     private void SaveAuthRecord()
@@ -211,337 +193,263 @@ public class GoogleDriveSyncService : ISyncService
             if (_authRecord != null)
             {
                 var json = JsonSerializer.Serialize(_authRecord, JsonOptions);
-                var plainBytes = Encoding.UTF8.GetBytes(json);
-                var encryptedBytes = EncryptAuthData(plainBytes);
-                File.WriteAllBytes(_authFilePath, encryptedBytes);
-            }
-            else if (File.Exists(_authFilePath))
-            {
-                File.Delete(_authFilePath);
+                File.WriteAllText(_authFilePath, json);
             }
         }
-        catch (Exception ex)
-        {
-            Trace.WriteLine($"[ERROR] Failed to save encrypted auth record: {ex.Message}");
-        }
+        catch { }
     }
 
     public async Task<bool> SignInAsync(CancellationToken cancellationToken = default)
     {
-        var clientId = string.IsNullOrWhiteSpace(GoogleClientId)
-            ? (Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") ?? string.Empty)
-            : GoogleClientId;
-
-        if (string.IsNullOrWhiteSpace(clientId))
+        if (string.IsNullOrWhiteSpace(GoogleClientId))
         {
-            throw new InvalidOperationException("Google OAuth Client ID is required. Please set GOOGLE_CLIENT_ID in your .env file.");
+            throw new InvalidOperationException("Google Client ID is missing. Please set GOOGLE_CLIENT_ID environment variable or paste it in Settings.");
         }
 
         var redirectUri = "http://localhost:5001/";
         var state = Guid.NewGuid().ToString("N");
-        var (codeVerifier, codeChallenge) = GeneratePkce();
+        var codeVerifier = GenerateCryptoRandomString(32);
+        var codeChallenge = CreateCodeChallenge(codeVerifier);
 
-        var loginHint = !string.IsNullOrWhiteSpace(UserEmail) && UserEmail != "Connected Account" 
-            ? $"&login_hint={Uri.EscapeDataString(UserEmail)}" 
-            : string.Empty;
-        var authUrl = $"https://accounts.google.com/o/oauth2/v2/auth?client_id={clientId}&redirect_uri={Uri.EscapeDataString(redirectUri)}&response_type=code&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdrive.file%20email%20profile&access_type=offline&prompt=consent&state={state}&code_challenge={codeChallenge}&code_challenge_method=S256{loginHint}";
-
-        using var listener = new HttpListener();
-        try
-        {
-            listener.Prefixes.Add("http://localhost:5001/");
-            listener.Prefixes.Add("http://127.0.0.1:5001/");
-            listener.Start();
-        }
-        catch
-        {
-            // Ignore socket binding exceptions if port is restricted
-        }
-
-        // Open system browser popup to Google login site AFTER listener starts
-        await OpenBrowserUrlAsync(authUrl);
+        var listener = new HttpListener();
+        listener.Prefixes.Add(redirectUri);
+        listener.Start();
 
         try
         {
-            // Wait for Google callback on loopback listener
+            var authUrl = $"https://accounts.google.com/o/oauth2/v2/auth?" +
+                          $"client_id={Uri.EscapeDataString(GoogleClientId)}&" +
+                          $"redirect_uri={Uri.EscapeDataString(redirectUri)}&" +
+                          $"response_type=code&" +
+                          $"scope={Uri.EscapeDataString("openid email profile https://www.googleapis.com/auth/drive.file")}&" +
+                          $"code_challenge={Uri.EscapeDataString(codeChallenge)}&" +
+                          $"code_challenge_method=S256&" +
+                          $"state={Uri.EscapeDataString(state)}&" +
+                          $"access_type=offline&" +
+                          $"prompt=consent";
+
+            OpenBrowserUrl(authUrl);
+
             var contextTask = listener.GetContextAsync();
-            var completedTask = await Task.WhenAny(contextTask, Task.Delay(45000, cancellationToken));
+            var timeoutTask = Task.Delay(TimeSpan.FromMinutes(2), cancellationToken);
 
-            if (completedTask == contextTask)
+            var completedTask = await Task.WhenAny(contextTask, timeoutTask);
+            if (completedTask == timeoutTask)
             {
-                var context = await contextTask;
-                var returnedState = context.Request.QueryString["state"];
-                var code = context.Request.QueryString["code"];
-
-                var htmlResponse = "<!DOCTYPE html><html><head><meta charset='utf-8'/></head><body style='font-family:sans-serif;text-align:center;padding-top:60px;background:#0F172A;color:#F8FAFC;'><h2>✅ Wadd Google Drive Connected!</h2><p>You may now close this browser tab and return to Wadd.</p></body></html>";
-                var buffer = Encoding.UTF8.GetBytes(htmlResponse);
-                context.Response.ContentType = "text/html; charset=utf-8";
-                context.Response.ContentLength64 = buffer.Length;
-                await context.Response.OutputStream.WriteAsync(buffer, cancellationToken);
-                context.Response.OutputStream.Close();
-
-                if (returnedState != state)
-                {
-                    throw new InvalidOperationException("OAuth authorization state mismatch (CSRF protection trigger).");
-                }
-
-                if (!string.IsNullOrWhiteSpace(code))
-                {
-                    // Exchange authorization code for token with PKCE verifier
-                    var (accessToken, refreshToken, email, name) = await ExchangeCodeForTokenAsync(code, codeVerifier, clientId, redirectUri, cancellationToken);
-
-                    _authRecord = new UserAuthRecord
-                    {
-                        IsSignedIn = true,
-                        UserEmail = email,
-                        UserName = name,
-                        AccessToken = accessToken,
-                        RefreshToken = refreshToken,
-                        AuthenticatedAt = DateTime.UtcNow
-                    };
-
-                    SaveAuthRecord();
-                    return true;
-                }
+                throw new TimeoutException("Google Sign-In authorization timed out. Please try again.");
             }
-        }
-        catch (Exception ex)
-        {
-            _authRecord = null;
-            if (File.Exists(_authFilePath)) { try { File.Delete(_authFilePath); } catch { } }
-            throw new InvalidOperationException($"Google sign-in failed: {ex.Message}", ex);
-        }
 
-        _authRecord = null;
-        if (File.Exists(_authFilePath)) { try { File.Delete(_authFilePath); } catch { } }
-        throw new InvalidOperationException("Google sign-in timed out or was cancelled by user. Please try signing in again.");
-    }
+            var context = await contextTask;
+            var request = context.Request;
+            var response = context.Response;
 
-    private static (string verifier, string challenge) GeneratePkce()
-    {
-        var bytes = new byte[32];
-        RandomNumberGenerator.Fill(bytes);
-        var verifier = Convert.ToBase64String(bytes).Replace("+", "-").Replace("/", "_").Replace("=", "");
+            var code = request.QueryString["code"];
+            var returnedState = request.QueryString["state"];
+            var error = request.QueryString["error"];
 
-        var challengeBytes = SHA256.HashData(Encoding.UTF8.GetBytes(verifier));
-        var challenge = Convert.ToBase64String(challengeBytes).Replace("+", "-").Replace("/", "_").Replace("=", "");
-
-        return (verifier, challenge);
-    }
-
-    private async Task<bool> TryRefreshTokenAsync(CancellationToken cancellationToken)
-    {
-        if (_authRecord == null || string.IsNullOrWhiteSpace(_authRecord.RefreshToken))
-        {
-            return false;
-        }
-
-        var clientId = string.IsNullOrWhiteSpace(GoogleClientId)
-            ? (Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") ?? string.Empty)
-            : GoogleClientId;
-
-        var clientSecret = string.IsNullOrWhiteSpace(GoogleClientSecret)
-            ? (Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET") ?? string.Empty)
-            : GoogleClientSecret;
-
-        if (string.IsNullOrWhiteSpace(clientId)) return false;
-
-        try
-        {
-            var tokenParams = new List<KeyValuePair<string, string>>
+            if (!string.IsNullOrEmpty(error))
             {
-                new("client_id", clientId),
-                new("refresh_token", _authRecord.RefreshToken),
-                new("grant_type", "refresh_token")
+                SendHtmlResponse(response, "Authorization Failed", $"<h3>Google Sign-in failed: {WebUtility.HtmlEncode(error)}</h3><p>You can close this window and return to Wadd.</p>");
+                throw new InvalidOperationException($"Google auth error: {error}");
+            }
+
+            if (returnedState != state || string.IsNullOrEmpty(code))
+            {
+                SendHtmlResponse(response, "Invalid Response", "<h3>Invalid authorization state or missing code.</h3><p>You can close this window.</p>");
+                throw new InvalidOperationException("Invalid authorization state received from Google callback.");
+            }
+
+            SendHtmlResponse(response, "Sign-in Successful!", "<h2 style='color:#2563eb;'>Authentication Successful!</h2><p>Wadd ToDo has been successfully connected to your Google Drive account.</p><p>You may now close this browser tab and return to Wadd.</p>");
+
+            var tokenRecord = await ExchangeCodeForTokensAsync(code, codeVerifier, redirectUri, cancellationToken);
+            var userInfo = await FetchUserInfoAsync(tokenRecord.AccessToken, cancellationToken);
+
+            _authRecord = new UserAuthRecord
+            {
+                IsSignedIn = true,
+                UserEmail = userInfo.Email,
+                UserName = userInfo.Name,
+                GoogleClientId = GoogleClientId,
+                AccessToken = tokenRecord.AccessToken,
+                RefreshToken = tokenRecord.RefreshToken,
+                AuthenticatedAt = DateTime.UtcNow
             };
 
-            if (!string.IsNullOrWhiteSpace(clientSecret))
-            {
-                tokenParams.Add(new("client_secret", clientSecret));
-            }
-
-            var content = new FormUrlEncodedContent(tokenParams);
-            var response = await _httpClient.PostAsync("https://oauth2.googleapis.com/token", content, cancellationToken);
-            if (response.IsSuccessStatusCode)
-            {
-                var json = await response.Content.ReadAsStringAsync(cancellationToken);
-                using var doc = JsonDocument.Parse(json);
-                if (doc.RootElement.TryGetProperty("access_token", out var tokenProp))
-                {
-                    _authRecord.AccessToken = tokenProp.GetString() ?? _authRecord.AccessToken;
-                    _authRecord.AuthenticatedAt = DateTime.UtcNow;
-                    SaveAuthRecord();
-                    return true;
-                }
-            }
+            SaveAuthRecord();
+            return true;
         }
-        catch
+        finally
         {
-            // Token refresh failure handling
+            try { listener.Stop(); } catch { }
         }
-
-        return false;
     }
 
-    private async Task<(string accessToken, string refreshToken, string email, string name)> ExchangeCodeForTokenAsync(string code, string codeVerifier, string clientId, string redirectUri, CancellationToken cancellationToken)
+    private static void SendHtmlResponse(HttpListenerResponse response, string title, string bodyHtml)
     {
-        if (string.IsNullOrWhiteSpace(code))
-        {
-            throw new InvalidOperationException("Authorization code is empty.");
-        }
+        var html = $@"<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='utf-8'/>
+  <title>{title}</title>
+  <style>
+    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #f8f9fa; color: #1e293b; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }}
+    .card {{ background: white; padding: 2.5rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); text-align: center; max-width: 420px; }}
+  </style>
+</head>
+<body>
+  <div class='card'>
+    {bodyHtml}
+  </div>
+</body>
+</html>";
+        var bytes = Encoding.UTF8.GetBytes(html);
+        response.ContentType = "text/html; charset=utf-8";
+        response.ContentLength64 = bytes.Length;
+        response.OutputStream.Write(bytes, 0, bytes.Length);
+        response.OutputStream.Close();
+    }
 
-        var clientSecret = string.IsNullOrWhiteSpace(GoogleClientSecret)
-            ? (Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET") ?? string.Empty)
-            : GoogleClientSecret;
-
-        var tokenParams = new List<KeyValuePair<string, string>>
+    private async Task<(string AccessToken, string RefreshToken)> ExchangeCodeForTokensAsync(string code, string codeVerifier, string redirectUri, CancellationToken cancellationToken)
+    {
+        var tokenUrl = "https://oauth2.googleapis.com/token";
+        var dict = new Dictionary<string, string>
         {
-            new("client_id", clientId),
-            new("code", code),
-            new("code_verifier", codeVerifier),
-            new("grant_type", "authorization_code"),
-            new("redirect_uri", redirectUri)
+            ["client_id"] = GoogleClientId,
+            ["code"] = code,
+            ["code_verifier"] = codeVerifier,
+            ["grant_type"] = "authorization_code",
+            ["redirect_uri"] = redirectUri
         };
 
+        var clientSecret = GoogleClientSecret;
         if (!string.IsNullOrWhiteSpace(clientSecret))
         {
-            tokenParams.Add(new("client_secret", clientSecret));
+            dict["client_secret"] = clientSecret;
         }
 
-        var content = new FormUrlEncodedContent(tokenParams);
-        var response = await _httpClient.PostAsync("https://oauth2.googleapis.com/token", content, cancellationToken);
+        using var request = new HttpRequestMessage(HttpMethod.Post, tokenUrl)
+        {
+            Content = new FormUrlEncodedContent(dict)
+        };
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {
-            throw new InvalidOperationException($"Google OAuth Token Exchange failed: {json}");
+            throw new InvalidOperationException($"Token exchange failed ({response.StatusCode}): {json}");
         }
 
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
-        var accessToken = root.TryGetProperty("access_token", out var tokenProp) ? tokenProp.GetString() : code;
-        var refreshToken = root.TryGetProperty("refresh_token", out var refreshProp) ? refreshProp.GetString() : string.Empty;
+        var accessToken = root.GetProperty("access_token").GetString() ?? string.Empty;
+        var refreshToken = root.TryGetProperty("refresh_token", out var rtProp) ? rtProp.GetString() ?? string.Empty : string.Empty;
 
-        var email = string.Empty;
-        var name = string.Empty;
-
-        // 1. Instantly extract user email & name from Google ID Token JWT payload
-        if (root.TryGetProperty("id_token", out var idTokenProp))
-        {
-            var idToken = idTokenProp.GetString();
-            if (!string.IsNullOrWhiteSpace(idToken))
-            {
-                var jwtProfile = ParseIdTokenPayload(idToken);
-                email = jwtProfile.email;
-                name = jwtProfile.name;
-            }
-        }
-
-        // 2. Query Google UserInfo API as secondary fallback
-        if (string.IsNullOrWhiteSpace(email) && !string.IsNullOrWhiteSpace(accessToken))
-        {
-            var userInfo = await FetchGoogleUserInfoAsync(accessToken, cancellationToken);
-            email = userInfo.email;
-            name = userInfo.name;
-        }
-
-        if (string.IsNullOrWhiteSpace(email))
-        {
-            throw new InvalidOperationException("Failed to retrieve authenticated user email from Google OAuth profile.");
-        }
-
-        return (accessToken ?? code, refreshToken ?? string.Empty, email, name);
+        return (accessToken, refreshToken);
     }
 
-    private static (string email, string name) ParseIdTokenPayload(string idToken)
+    private async Task<(string Email, string Name)> FetchUserInfoAsync(string accessToken, CancellationToken cancellationToken)
     {
+        var userInfoUrl = "https://www.googleapis.com/oauth2/v2/userinfo";
+        using var request = new HttpRequestMessage(HttpMethod.Get, userInfoUrl);
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return ("user@google.com", "Google User");
+        }
+
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+
+        var email = root.TryGetProperty("email", out var emailProp) ? emailProp.GetString() ?? "user@google.com" : "user@google.com";
+        var name = root.TryGetProperty("name", out var nameProp) ? nameProp.GetString() ?? "Google User" : "Google User";
+
+        return (email, name);
+    }
+
+    private async Task<bool> TryRefreshTokenAsync(CancellationToken cancellationToken)
+    {
+        if (_authRecord == null || string.IsNullOrWhiteSpace(_authRecord.RefreshToken)) return false;
+
         try
         {
-            var parts = idToken.Split('.');
-            if (parts.Length >= 2)
+            var tokenUrl = "https://oauth2.googleapis.com/token";
+            var dict = new Dictionary<string, string>
             {
-                var payloadBase64 = parts[1];
-                switch (payloadBase64.Length % 4)
-                {
-                    case 2: payloadBase64 += "=="; break;
-                    case 3: payloadBase64 += "="; break;
-                }
-                var jsonBytes = Convert.FromBase64String(payloadBase64.Replace('-', '+').Replace('_', '/'));
-                var json = Encoding.UTF8.GetString(jsonBytes);
+                ["client_id"] = GoogleClientId,
+                ["refresh_token"] = _authRecord.RefreshToken,
+                ["grant_type"] = "refresh_token"
+            };
+
+            var clientSecret = GoogleClientSecret;
+            if (!string.IsNullOrWhiteSpace(clientSecret))
+            {
+                dict["client_secret"] = clientSecret;
+            }
+
+            using var request = new HttpRequestMessage(HttpMethod.Post, tokenUrl)
+            {
+                Content = new FormUrlEncodedContent(dict)
+            };
+
+            var response = await _httpClient.SendAsync(request, cancellationToken);
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync(cancellationToken);
                 using var doc = JsonDocument.Parse(json);
                 var root = doc.RootElement;
-
-                var email = root.TryGetProperty("email", out var emailProp) ? emailProp.GetString() : null;
-                var name = root.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : null;
-
-                if (!string.IsNullOrWhiteSpace(email))
+                if (root.TryGetProperty("access_token", out var atProp))
                 {
-                    return (email, string.IsNullOrWhiteSpace(name) ? email.Split('@')[0] : name);
+                    _authRecord.AccessToken = atProp.GetString() ?? string.Empty;
+                    SaveAuthRecord();
+                    return true;
                 }
             }
         }
-        catch
-        {
-            // Ignore JWT parsing exception
-        }
+        catch { }
 
-        return (string.Empty, string.Empty);
+        return false;
     }
 
-    private async Task<(string email, string name)> FetchGoogleUserInfoAsync(string accessToken, CancellationToken cancellationToken)
+    private static string GenerateCryptoRandomString(int length)
     {
-        if (!string.IsNullOrWhiteSpace(accessToken))
+        byte[] randomBytes = new byte[length];
+        using (var rng = RandomNumberGenerator.Create())
         {
-            try
-            {
-                using var request = new HttpRequestMessage(HttpMethod.Get, "https://www.googleapis.com/oauth2/v2/userinfo");
-                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-
-                var response = await _httpClient.SendAsync(request, cancellationToken);
-                if (response.IsSuccessStatusCode)
-                {
-                    var json = await response.Content.ReadAsStringAsync(cancellationToken);
-                    using var doc = JsonDocument.Parse(json);
-                    var root = doc.RootElement;
-
-                    var email = root.TryGetProperty("email", out var emailProp) ? emailProp.GetString() : null;
-                    var name = root.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : null;
-
-                    if (!string.IsNullOrWhiteSpace(email))
-                    {
-                        return (email, string.IsNullOrWhiteSpace(name) ? email.Split('@')[0] : name);
-                    }
-                }
-            }
-            catch
-            {
-                // Ignore userinfo endpoint errors
-            }
+            rng.GetBytes(randomBytes);
         }
-
-        return ("Google Drive User", "Google Account");
+        return Convert.ToBase64String(randomBytes)
+            .Replace("+", "-")
+            .Replace("/", "_")
+            .Replace("=", "")
+            .Substring(0, length);
     }
 
-    private static async Task OpenBrowserUrlAsync(string url)
+    private static string CreateCodeChallenge(string codeVerifier)
+    {
+        using var sha256 = SHA256.Create();
+        var challengeBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(codeVerifier));
+        return Convert.ToBase64String(challengeBytes)
+            .Replace("+", "-")
+            .Replace("/", "_")
+            .Replace("=", "");
+    }
+
+    private static void OpenBrowserUrl(string url)
     {
         try
         {
-            if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow != null)
+            if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
             {
                 var topLevel = Avalonia.Controls.TopLevel.GetTopLevel(desktop.MainWindow);
                 if (topLevel?.Launcher != null)
                 {
-                    var launched = await topLevel.Launcher.LaunchUriAsync(new Uri(url));
-                    if (launched) return;
-                }
-            }
-            else if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.ISingleViewApplicationLifetime singleView && singleView.MainView != null)
-            {
-                var topLevel = Avalonia.Controls.TopLevel.GetTopLevel(singleView.MainView);
-                if (topLevel?.Launcher != null)
-                {
-                    var launched = await topLevel.Launcher.LaunchUriAsync(new Uri(url));
-                    if (launched) return;
+                    topLevel.Launcher.LaunchUriAsync(new Uri(url));
+                    return;
                 }
             }
         }
@@ -586,7 +494,9 @@ public class GoogleDriveSyncService : ISyncService
         }
     }
 
-    private const string DriveFileName = "wadd_sync_data.json";
+    // =========================================================================
+    //  OFFLINE-FIRST INCREMENTAL MULTI-DEVICE SYNCHRONIZATION ENGINE
+    // =========================================================================
 
     public async Task<bool> SyncAsync(CancellationToken cancellationToken = default)
     {
@@ -599,53 +509,194 @@ public class GoogleDriveSyncService : ISyncService
 
         try
         {
-            // 1. Search for existing wadd_sync_data.json file in user's Google Drive
-            var fileId = await FindGoogleDriveFileIdAsync(token, cancellationToken);
-            List<TodoItem>? remoteItems = null;
+            // 1. Ensure parent folder "Wadd ToDo Sync Data" exists on Google Drive
+            var folderId = await EnsureSyncFolderExistsAsync(token, cancellationToken);
 
-            if (!string.IsNullOrWhiteSpace(fileId))
+            // 2. Ensure warning file exists inside folder
+            await EnsureWarningFileExistsAsync(token, folderId, cancellationToken);
+
+            // 3. Fetch remote metadata and remote sync logs
+            var metadataFileId = await FindFolderFileIdAsync(token, folderId, MetadataFileName, cancellationToken);
+            var logsFileId = await FindFolderFileIdAsync(token, folderId, LogsFileName, cancellationToken);
+
+            CloudSyncMetadata cloudMetadata = new();
+            if (!string.IsNullOrWhiteSpace(metadataFileId))
             {
-                // 2. Download remote file content from Google Drive
-                remoteItems = await DownloadGoogleDriveFileAsync(token, fileId, cancellationToken);
+                var metaJson = await DownloadFileContentAsync(token, metadataFileId, cancellationToken);
+                if (!string.IsNullOrWhiteSpace(metaJson))
+                {
+                    cloudMetadata = JsonSerializer.Deserialize<CloudSyncMetadata>(metaJson, JsonOptions) ?? new CloudSyncMetadata();
+                }
             }
 
-            // 3. 2-Way Merge Strategy: Update local database with missing or newer remote items
-            if (remoteItems != null && remoteItems.Count > 0)
+            List<SyncLog> cloudLogs = new();
+            if (!string.IsNullOrWhiteSpace(logsFileId))
             {
-                foreach (var remoteItem in remoteItems)
+                var logsJson = await DownloadFileContentAsync(token, logsFileId, cancellationToken);
+                if (!string.IsNullOrWhiteSpace(logsJson))
                 {
-                    var localItem = await _todoService.GetByIdAsync(remoteItem.Id, cancellationToken);
-                    if (localItem == null)
+                    cloudLogs = JsonSerializer.Deserialize<List<SyncLog>>(logsJson, JsonOptions) ?? new List<SyncLog>();
+                }
+            }
+
+            // Register current device metadata in cloud metadata
+            var deviceMeta = _deviceService.GetDeviceMetadata();
+            var existingDevIndex = cloudMetadata.RegisteredDevices.FindIndex(d => d.DeviceId == deviceMeta.DeviceId);
+            if (existingDevIndex >= 0)
+                cloudMetadata.RegisteredDevices[existingDevIndex] = deviceMeta;
+            else
+                cloudMetadata.RegisteredDevices.Add(deviceMeta);
+
+            // 4. Fetch local pending logs
+            var localPendingLogs = (await _syncLogRepository.GetPendingLogsAsync(cancellationToken)).ToList();
+
+            // 5. Build combined map of records modified locally or remotely
+            var recordIdsToProcess = new HashSet<Guid>();
+            foreach (var log in localPendingLogs) recordIdsToProcess.Add(log.RecordId);
+            foreach (var log in cloudLogs) recordIdsToProcess.Add(log.RecordId);
+
+            // Fetch all local items (including soft deleted)
+            var localItemsDict = new Dictionary<Guid, TodoItem>();
+            var rawSqliteSvc = _todoService as SQLiteTodoService;
+
+            if (rawSqliteSvc != null)
+            {
+                var allRaw = await rawSqliteSvc.GetAllRawAsync(cancellationToken);
+                localItemsDict = allRaw.ToDictionary(x => x.Id);
+            }
+            else
+            {
+                var allItems = await _todoService.GetTodosAsync(cancellationToken);
+                localItemsDict = allItems.ToDictionary(x => x.Id);
+            }
+
+            // Create dictionary of latest remote state per record ID by replaying cloud logs
+            var cloudItemsDict = ReplayLogsToSnapshot(cloudLogs);
+
+            // 6. Process each record for incremental sync & conflict detection
+            var mergedLogsToUpload = new List<SyncLog>(cloudLogs);
+            var logsToMarkSynced = new List<Guid>();
+
+            foreach (var log in localPendingLogs)
+            {
+                if (!mergedLogsToUpload.Any(l => l.Id == log.Id))
+                {
+                    mergedLogsToUpload.Add(log);
+                }
+                logsToMarkSynced.Add(log.Id);
+            }
+
+            foreach (var recordId in recordIdsToProcess)
+            {
+                bool hasLocal = localItemsDict.TryGetValue(recordId, out var localItem);
+                bool hasCloud = cloudItemsDict.TryGetValue(recordId, out var cloudItem);
+
+                if (hasLocal && !hasCloud)
+                {
+                    // Created locally, upload to cloud
+                    continue; 
+                }
+                else if (!hasLocal && hasCloud)
+                {
+                    // Created on remote device, download to local
+                    if (rawSqliteSvc != null)
                     {
-                        await _todoService.AddTodoAsync(remoteItem, cancellationToken);
+                        await rawSqliteSvc.DirectUpsertFromSyncAsync(cloudItem!, cancellationToken);
                     }
                     else
                     {
-                        var remoteTime = remoteItem.UpdatedAt ?? remoteItem.CreatedAt;
-                        var localTime = localItem.UpdatedAt ?? localItem.CreatedAt;
+                        await _todoService.AddTodoAsync(cloudItem!, cancellationToken);
+                    }
+                }
+                else if (hasLocal && hasCloud)
+                {
+                    // Modified on both sides -> Conflict detection / Field merge
+                    var localMod = localItem!.UpdatedAt ?? localItem.CreatedAt;
+                    var cloudMod = cloudItem!.UpdatedAt ?? cloudItem.CreatedAt;
 
-                        if (remoteTime > localTime)
+                    if (localItem.Version > cloudItem.Version && localMod > cloudMod)
+                    {
+                        // Local is strictly newer
+                        continue;
+                    }
+                    else if (cloudItem.Version > localItem.Version && cloudMod > localMod)
+                    {
+                        // Cloud is strictly newer
+                        if (rawSqliteSvc != null)
                         {
-                            await _todoService.UpdateTodoAsync(remoteItem, cancellationToken);
+                            await rawSqliteSvc.DirectUpsertFromSyncAsync(cloudItem, cancellationToken);
+                        }
+                    }
+                    else
+                    {
+                        // Independent changes -> Attempt Field-by-Field Merge
+                        var mergeResult = _conflictEngine.MergeTodoItems(localItem, cloudItem, null);
+                        if (!mergeResult.HasConflict)
+                        {
+                            // Auto-merge successful! Apply merged state locally and add to cloud logs
+                            if (rawSqliteSvc != null)
+                            {
+                                await rawSqliteSvc.DirectUpsertFromSyncAsync(mergeResult.MergedItem, cancellationToken);
+                            }
+
+                            var autoMergeLog = new SyncLog
+                            {
+                                Id = Guid.NewGuid(),
+                                TableName = "TodoItem",
+                                RecordId = mergeResult.MergedItem.Id,
+                                Operation = mergeResult.MergedItem.IsDeleted ? SyncOperation.Delete : SyncOperation.Update,
+                                PayloadJson = JsonSerializer.Serialize(mergeResult.MergedItem, JsonOptions),
+                                Timestamp = DateTime.UtcNow,
+                                DeviceId = _deviceService.GetDeviceId(),
+                                Synced = true
+                            };
+                            mergedLogsToUpload.Add(autoMergeLog);
+                        }
+                        else
+                        {
+                            // Overlapping field conflict! Store in Conflict Repository for user resolution
+                            var conflict = new SyncConflict
+                            {
+                                Id = Guid.NewGuid(),
+                                TableName = "TodoItem",
+                                RecordId = recordId,
+                                LocalVersionJson = JsonSerializer.Serialize(localItem, JsonOptions),
+                                CloudVersionJson = JsonSerializer.Serialize(cloudItem, JsonOptions),
+                                LocalUpdatedAt = localItem.UpdatedAt ?? localItem.CreatedAt,
+                                CloudUpdatedAt = cloudItem.UpdatedAt ?? cloudItem.CreatedAt,
+                                OriginatingDeviceId = _deviceService.GetDeviceId(),
+                                ConflictingFieldsJson = JsonSerializer.Serialize(mergeResult.ConflictingFields, JsonOptions),
+                                CreatedAt = DateTime.UtcNow,
+                                Status = ConflictStatus.Unresolved
+                            };
+
+                            await _conflictRepository.AddConflictAsync(conflict, cancellationToken);
                         }
                     }
                 }
             }
 
-            // 4. Fetch consolidated items from local SQLite database (now containing all merged items)
-            var mergedItems = (await _todoService.GetTodosAsync(cancellationToken)).ToList();
-            var jsonPayload = JsonSerializer.Serialize(mergedItems, JsonOptions);
+            // Mark local logs as synced
+            await _syncLogRepository.MarkLogsAsSyncedAsync(logsToMarkSynced, cancellationToken);
 
-            // 5. Upload the complete, authoritative merged dataset back to Google Drive
-            if (!string.IsNullOrWhiteSpace(fileId))
-            {
-                await UpdateGoogleDriveFileAsync(token, fileId, jsonPayload, cancellationToken);
-            }
+            // Update cloud metadata & sync logs inside "Wadd ToDo Sync Data" folder
+            cloudMetadata.LatestRevision = mergedLogsToUpload.Count;
+            cloudMetadata.LastSync = DateTime.UtcNow;
+
+            var updatedMetaJson = JsonSerializer.Serialize(cloudMetadata, JsonOptions);
+            var updatedLogsJson = JsonSerializer.Serialize(mergedLogsToUpload, JsonOptions);
+
+            if (!string.IsNullOrWhiteSpace(metadataFileId))
+                await UpdateGoogleDriveFileAsync(token, metadataFileId, updatedMetaJson, cancellationToken);
             else
-            {
-                await CreateGoogleDriveFileAsync(token, jsonPayload, cancellationToken);
-            }
+                await CreateFileInFolderAsync(token, folderId, MetadataFileName, updatedMetaJson, cancellationToken);
 
+            if (!string.IsNullOrWhiteSpace(logsFileId))
+                await UpdateGoogleDriveFileAsync(token, logsFileId, updatedLogsJson, cancellationToken);
+            else
+                await CreateFileInFolderAsync(token, folderId, LogsFileName, updatedLogsJson, cancellationToken);
+
+            await RefreshConflictCountAsync(cancellationToken);
             return true;
         }
         catch (HttpRequestException ex)
@@ -658,14 +709,78 @@ public class GoogleDriveSyncService : ISyncService
         }
     }
 
-    private async Task<string?> FindGoogleDriveFileIdAsync(string accessToken, CancellationToken cancellationToken)
+    private static Dictionary<Guid, TodoItem> ReplayLogsToSnapshot(List<SyncLog> logs)
     {
-        var searchUrl = "https://www.googleapis.com/drive/v3/files?q=name%3D%27wadd_sync_data.json%27%20and%20trashed%3Dfalse&fields=files(id%2Cname)";
+        var dict = new Dictionary<Guid, TodoItem>();
+        foreach (var log in logs.OrderBy(l => l.Timestamp))
+        {
+            if (string.IsNullOrWhiteSpace(log.PayloadJson)) continue;
+            try
+            {
+                var item = JsonSerializer.Deserialize<TodoItem>(log.PayloadJson, JsonOptions);
+                if (item != null)
+                {
+                    dict[item.Id] = item;
+                }
+            }
+            catch { }
+        }
+        return dict;
+    }
+
+    private async Task<string> EnsureSyncFolderExistsAsync(string accessToken, CancellationToken cancellationToken)
+    {
+        var searchUrl = $"https://www.googleapis.com/drive/v3/files?q=name%3D%27{Uri.EscapeDataString(SyncFolderName)}%27%20and%20mimeType%3D%27application%2Fvnd.google-apps.folder%27%20and%20trashed%3Dfalse&fields=files(id%2Cname)";
         using var request = new HttpRequestMessage(HttpMethod.Get, searchUrl);
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
-        await EnsureDriveSuccessAsync(response, "Search");
+        await EnsureDriveSuccessAsync(response, "Search Sync Folder");
+
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
+        using var doc = JsonDocument.Parse(json);
+        if (doc.RootElement.TryGetProperty("files", out var filesArr) && filesArr.GetArrayLength() > 0)
+        {
+            return filesArr[0].GetProperty("id").GetString()!;
+        }
+
+        // Create folder if not found
+        var createUrl = "https://www.googleapis.com/drive/v3/files";
+        using var createReq = new HttpRequestMessage(HttpMethod.Post, createUrl);
+        createReq.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+        var folderMeta = JsonSerializer.Serialize(new
+        {
+            name = SyncFolderName,
+            mimeType = "application/vnd.google-apps.folder"
+        });
+        createReq.Content = new StringContent(folderMeta, Encoding.UTF8, "application/json");
+
+        var createResp = await _httpClient.SendAsync(createReq, cancellationToken);
+        await EnsureDriveSuccessAsync(createResp, "Create Sync Folder");
+
+        var createJson = await createResp.Content.ReadAsStringAsync(cancellationToken);
+        using var createDoc = JsonDocument.Parse(createJson);
+        return createDoc.RootElement.GetProperty("id").GetString()!;
+    }
+
+    private async Task EnsureWarningFileExistsAsync(string accessToken, string folderId, CancellationToken cancellationToken)
+    {
+        var fileId = await FindFolderFileIdAsync(accessToken, folderId, WarningFileName, cancellationToken);
+        if (string.IsNullOrWhiteSpace(fileId))
+        {
+            var warningContent = "⚠️ WARNING: This folder contains synchronization data for Wadd To-Do Application.\nDo NOT delete or modify files inside this folder, as doing so will disconnect sync and may result in loss of un-synced data.";
+            await CreateFileInFolderAsync(accessToken, folderId, WarningFileName, warningContent, cancellationToken);
+        }
+    }
+
+    private async Task<string?> FindFolderFileIdAsync(string accessToken, string folderId, string fileName, CancellationToken cancellationToken)
+    {
+        var searchUrl = $"https://www.googleapis.com/drive/v3/files?q=name%3D%27{Uri.EscapeDataString(fileName)}%27%20and%20%27{folderId}%27%20in%20parents%20and%20trashed%3Dfalse&fields=files(id%2Cname)";
+        using var request = new HttpRequestMessage(HttpMethod.Get, searchUrl);
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        await EnsureDriveSuccessAsync(response, $"Search {fileName}");
 
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
         using var doc = JsonDocument.Parse(json);
@@ -677,36 +792,19 @@ public class GoogleDriveSyncService : ISyncService
         return null;
     }
 
-    private async Task<List<TodoItem>?> DownloadGoogleDriveFileAsync(string accessToken, string fileId, CancellationToken cancellationToken)
+    private async Task<string> DownloadFileContentAsync(string accessToken, string fileId, CancellationToken cancellationToken)
     {
         var downloadUrl = $"https://www.googleapis.com/drive/v3/files/{fileId}?alt=media";
         using var request = new HttpRequestMessage(HttpMethod.Get, downloadUrl);
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
-        await EnsureDriveSuccessAsync(response, "Download");
+        await EnsureDriveSuccessAsync(response, "Download File Content");
 
-        var json = await response.Content.ReadAsStringAsync(cancellationToken);
-        if (!string.IsNullOrWhiteSpace(json))
-        {
-            return JsonSerializer.Deserialize<List<TodoItem>>(json, JsonOptions);
-        }
-
-        return null;
+        return await response.Content.ReadAsStringAsync(cancellationToken);
     }
 
-    private async Task UpdateGoogleDriveFileAsync(string accessToken, string fileId, string jsonPayload, CancellationToken cancellationToken)
-    {
-        var uploadUrl = $"https://www.googleapis.com/upload/drive/v3/files/{fileId}?uploadType=media";
-        using var request = new HttpRequestMessage(HttpMethod.Patch, uploadUrl);
-        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-        request.Content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
-
-        var response = await _httpClient.SendAsync(request, cancellationToken);
-        await EnsureDriveSuccessAsync(response, "Update");
-    }
-
-    private async Task CreateGoogleDriveFileAsync(string accessToken, string jsonPayload, CancellationToken cancellationToken)
+    private async Task CreateFileInFolderAsync(string accessToken, string folderId, string fileName, string content, CancellationToken cancellationToken)
     {
         var uploadUrl = "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart";
         using var request = new HttpRequestMessage(HttpMethod.Post, uploadUrl);
@@ -715,18 +813,28 @@ public class GoogleDriveSyncService : ISyncService
         var boundary = "---WaddBoundary" + Guid.NewGuid().ToString("N");
         var multipartContent = new MultipartContent("related", boundary);
 
-        // Part 1: File Metadata
-        var metadataJson = JsonSerializer.Serialize(new { name = DriveFileName, mimeType = "application/json" });
-        var metadataContent = new StringContent(metadataJson, Encoding.UTF8, "application/json");
-        multipartContent.Add(metadataContent);
-
-        // Part 2: File Payload
-        var fileContent = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
-        multipartContent.Add(fileContent);
+        var metadataJson = JsonSerializer.Serialize(new
+        {
+            name = fileName,
+            parents = new[] { folderId }
+        });
+        multipartContent.Add(new StringContent(metadataJson, Encoding.UTF8, "application/json"));
+        multipartContent.Add(new StringContent(content, Encoding.UTF8, "application/json"));
 
         request.Content = multipartContent;
         var response = await _httpClient.SendAsync(request, cancellationToken);
-        await EnsureDriveSuccessAsync(response, "Upload");
+        await EnsureDriveSuccessAsync(response, $"Upload {fileName}");
+    }
+
+    private async Task UpdateGoogleDriveFileAsync(string accessToken, string fileId, string content, CancellationToken cancellationToken)
+    {
+        var uploadUrl = $"https://www.googleapis.com/upload/drive/v3/files/{fileId}?uploadType=media";
+        using var request = new HttpRequestMessage(HttpMethod.Patch, uploadUrl);
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+        request.Content = new StringContent(content, Encoding.UTF8, "application/json");
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        await EnsureDriveSuccessAsync(response, "Update File");
     }
 
     private async Task EnsureDriveSuccessAsync(HttpResponseMessage response, string actionName)
@@ -737,13 +845,11 @@ public class GoogleDriveSyncService : ISyncService
 
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized || content.Contains("Invalid Credentials") || content.Contains("invalid_token") || content.Contains("authError"))
             {
-                // Attempt automatic token renewal using refresh_token
                 if (await TryRefreshTokenAsync(CancellationToken.None))
                 {
                     return;
                 }
 
-                // If refresh failed or credentials revoked, sign out cleanly
                 await SignOutAsync();
                 throw new InvalidOperationException("Google session expired or credentials revoked. Please sign in with Google again in Settings.");
             }

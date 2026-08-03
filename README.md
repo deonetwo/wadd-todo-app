@@ -23,6 +23,18 @@
 
 ---
 
+## ✨ Key Features
+
+- **📋 Complete Task Management**: Create, edit, complete, delete, and manage tasks with priority levels (`Low`, `Medium`, `High`, `Critical`), due dates, and custom reminder times.
+- **🏷️ Dynamic Storage Mode Status**: User-friendly storage mode indicators in both Task View and Sidebar (`Local Storage Mode` when offline, `Synced with Google Drive` when signed in).
+- **⏱️ Real-Time "Last Updated" Freshness**: Live timestamp tracking (`Updated just now`, `Updated 5m ago`, `Updated at 8:40 PM`) auto-updated across mutations and powered by a 30-second background refresh timer.
+- **☁️ Google Drive Synchronization**: Seamless 2-way cloud backup and synchronization via Google OAuth 2.0 browser sign-in.
+- **📊 Excel Export**: One-click local data export to `.xlsx` spreadsheet format using MiniExcel.
+- **🎨 Dynamic Theme Engine**: Smooth Light / Dark mode switching using Semi.Avalonia design tokens.
+- **📐 Responsive Dual Layout**: Adaptive responsive UI supporting desktop multi-column view and compact mobile layout.
+
+---
+
 ## 💾 Data Architecture
 
 Wadd uses an embedded, local **SQLite** database powered by `sqlite-net-pcl` and `SQLitePCLRaw.bundle_e_sqlite3`.
@@ -90,41 +102,107 @@ Export files are saved locally to platform-safe directory locations:
 
 ---
 
-## 🔄 Synchronization & Backup (Private Google Drive)
+## 🔄 Offline-First Multi-Device Synchronization Engine
 
-Wadd features **Private Google Drive Synchronization** powered by `GoogleDriveSyncService` (implementing `ISyncService` in `Wadd.Services`) using direct **Google OAuth 2.0 Browser Sign-In**.
+Wadd features a robust **Offline-First Multi-Device Synchronization Engine** powered by `GoogleDriveSyncService` (implementing `ISyncService` in `Wadd.Services`) with incremental syncing, automatic field-level merging, soft deletes, sync logging, and a dedicated **Conflict Resolution Center UI**.
 
-### 1. Architectural Workflow
+---
+
+### 1. Architectural Principles & Workflow
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant User as App User
-    participant Browser as System Web Browser
-    participant App as Wadd App (Avalonia UI)
-    participant Service as GoogleDriveSyncService
-    participant Google as Google OAuth & Drive REST API
-    participant SQLite as Local SQLite DB (wadd.db)
+    participant LocalDB as Local SQLite DB (wadd.db)
+    participant SyncLog as SQLite SyncLog Table
+    participant Engine as Wadd Sync Engine
+    participant Drive as Google Drive ("Wadd ToDo Sync Data")
+    participant ConflictRepo as SQLite Conflict Repository
 
-    User->>App: Click "Sign in with Google"
-    App->>Browser: Open Google OAuth URL (https://accounts.google.com/...)
-    Browser->>Google: Authenticate user & grant Drive scope
-    Google-->>App: Redirect authorization code to http://localhost:5001/
-    App->>Google: Exchange code for OAuth Access Token & User Info
-    Google-->>App: Return user email, display name & Bearer Token
-    App->>User: Display signed-in account badge in Settings
-
-    User->>App: Click "Sync now"
-    Service->>SQLite: Fetch local TodoItem collection
-    Service->>Google: Upload wadd_sync_data.json to user's private Google Drive
-    Service->>Google: Fetch remote wadd_sync_data.json from user's Google Drive
-    Service->>SQLite: 2-Way State Merge (by Id & UpdatedAt timestamp)
-    Service-->>App: Sync Completed (Refresh UI List)
+    LocalDB->>SyncLog: Log local mutations (INSERT, UPDATE, DELETE)
+    Engine->>Drive: Ensure parent folder "Wadd ToDo Sync Data" & warning file exist
+    Engine->>Drive: Download remote "wadd_cloud_metadata.json" & "wadd_sync_logs.json"
+    Engine->>SyncLog: Fetch pending local change logs
+    Engine->>Engine: Replay remote logs & compare local vs cloud record versions
+    alt Non-overlapping field modifications
+        Engine->>LocalDB: Apply automatic field-level merge (upsert)
+    else Overlapping field modifications
+        Engine->>ConflictRepo: Store unresolved conflict & show UI notification
+    end
+    Engine->>SyncLog: Mark pending logs as synced
+    Engine->>Drive: Upload consolidated cloud metadata & incremental sync logs
 ```
 
 ---
 
-### 2. Setting Up Google OAuth 2.0 Client ID
+### 2. Google Drive Folder & File Structure
+
+Sync data is safely isolated in a dedicated parent folder on Google Drive rather than the root directory:
+
+- **Parent Folder Name**: `Wadd ToDo Sync Data` (`application/vnd.google-apps.folder`)
+- **Warning File**: `⚠️_WARNING_DO_NOT_DELETE_WADD_SYNC_FOLDER.txt`
+  - *Contains instructions warning users not to delete or tamper with the folder.*
+- **Cloud Metadata (`wadd_cloud_metadata.json`)**:
+  - `latest_revision`: Incremental revision counter.
+  - `schema_version`: Data schema version identifier.
+  - `last_sync`: Timestamp of last successful synchronization.
+  - `registered_devices`: List of all synced devices (`DeviceId`, `DeviceName`, `Platform`, `LastSyncedAt`).
+- **Sync Logs (`wadd_sync_logs.json`)**:
+  - Incremental list of sync operations across all registered devices.
+
+---
+
+### 3. Database Schema Extensions & New Tables
+
+#### A. Extended `TodoItem` Schema
+- `Version` (`long`): Monotonically increasing record version number.
+- `IsDeleted` (`bool`): Soft delete indicator (records are soft-deleted to propagate deletions to other devices).
+
+#### B. Sync Log Table (`SyncLog`)
+- `Id` (`Guid`): Unique log entry ID.
+- `TableName` (`string`): Target table name (`TodoItem`).
+- `RecordId` (`Guid`): Target record ID.
+- `Operation` (`int`): `0 = Insert`, `1 = Update`, `2 = Delete`.
+- `PayloadJson` (`string`): Serialized record JSON payload.
+- `Timestamp` (`DateTime`): UTC modification timestamp.
+- `DeviceId` (`string`): Originating device ID.
+- `Synced` (`bool`): Local sync state flag.
+- `Revision` (`long`): Incremental revision index.
+
+#### C. Conflict Table (`SyncConflict`)
+- `Id` (`Guid`): Conflict identifier.
+- `TableName` (`string`): Affected table name.
+- `RecordId` (`Guid`): Affected record ID.
+- `LocalVersionJson` (`string`): Serialized local record version.
+- `CloudVersionJson` (`string`): Serialized cloud record version.
+- `LocalUpdatedAt` (`DateTime`): Local modification timestamp.
+- `CloudUpdatedAt` (`DateTime`): Cloud modification timestamp.
+- `OriginatingDeviceId` (`string`): Originating device ID.
+- `ConflictingFieldsJson` (`string`): List of conflicting field names.
+- `Status` (`int`): `0 = Unresolved`, `1 = Resolved`.
+- `ResolvedAt` (`DateTime?`): Resolution timestamp.
+- `ResolutionType` (`int?`): `0 = KeepLocal`, `1 = KeepCloud`, `2 = ManualMerge`.
+- `ResolvedVersionJson` (`string?`): Resulting merged record payload.
+
+---
+
+### 4. Conflict Detection & Task Conflict Dialog Workflow
+
+1. **Automatic Field-Level Merging**:
+   - When different devices modify distinct properties of the same task (e.g. Device A edits `Title` while Device B edits `Priority`), Wadd merges both changes automatically without requiring user intervention.
+2. **Task Conflict Dialog (`TaskConflictDialog.axaml`)**:
+   - If both devices modify the exact same property to conflicting values, Wadd prompts the user for review.
+   - **Default Choice Behavior**: **Option 1: Local Device** (`SelectLocalVersion`) is **SELECTED BY DEFAULT** upon opening or navigating to a task index.
+   - **Location Context Badges**:
+     - `📱 Option 1: Local Device`
+     - `☁️ Option 2: Cloud (Google Drive)`
+   - **Deletion Alert Boxes**: Highlighted red alert boxes (`"🗑️ Task Deleted Locally"` / `"🗑️ Task Deleted in Cloud"`) display when `IsDeleted == true`.
+   - **Active Task Details**: Displays Name, Status (`Completed` / `In Progress`), and Priority (`High` / `Medium` / `Low`).
+   - **Navigation**: `[Previous]` and `[Continue]` buttons for smooth conflict navigation.
+
+---
+
+### 5. Setting Up Google OAuth 2.0 Client ID
 
 To connect Wadd to your own Google Cloud project:
 
@@ -193,24 +271,24 @@ Wadd features an adaptive user interface designed to render smoothly across desk
 ### UI Shell Wireframe Layout Overview
 
 ```text
-+-----------------------------------------------------------------------------------+
-|  [Logo] Wadd ToDo [APP]   |  🟢 Local Mode (SQLite Storage)  [Sync Now 🔄]  | ☀️ 🌙 🖥️|
-+-----------------------------------------------------------------------------------+
-| NAVIGATION        | MAIN CONTENT PANEL                                            |
-|                   | +-----------------------------------------------------------+ |
-| 📋 Tasks          | | Task Management (SQLite Local Database)                  | |
-| 📊 Calendar (PH)  | | [ Title TextBox                        ]  [ Add Task ]    | |
-| 🔍 Tracing (PH)   | +-----------------------------------------------------------+ |
-|                   | +-----------------------------------------------------------+ |
-|                   | | Stored Todo Items                            [ Reload 🔄 ]| |
-|                   | | [x] Buy Groceries                             [ Delete 🗑️ ]| |
-|                   | | [ ] Finish Report                             [ Delete 🗑️ ]| |
-|                   | +-----------------------------------------------------------+ |
-| ----------------- | +-----------------------------------------------------------+ |
-| DATA ACTIONS      | | 🔍 Tracing Area Placeholder (Wireframe Control Box)       | |
-| [ 📥 Export Excel]| | [ Trace Logs: Active ]  [ Latency: 0.2ms ]  [ Memory: Safe ]| |
-|                   | +-----------------------------------------------------------+ |
-+-----------------------------------------------------------------------------------+
++-------------------------------------------------------------------------------------------------+
+|  [Logo] Wadd ToDo [APP]   |  🟢 Local Storage Mode (Saved to local storage · Updated just now)   | ☀️ 🌙 🖥️|
++-------------------------------------------------------------------------------------------------+
+| NAVIGATION        | MAIN CONTENT PANEL                                                          |
+|                   | +-------------------------------------------------------------------------+ |
+| 📋 Tasks          | | Task Management (Local Storage / Cloud Synced)                          | |
+| 📊 Calendar (PH)  | | [ Title TextBox                        ]  [ Add Task ]                  | |
+| 🔍 Tracing (PH)   | +-------------------------------------------------------------------------+ |
+|                   | +-------------------------------------------------------------------------+ |
+|                   | | Stored Todo Items                                          [ Reload 🔄 ]| |
+|                   | | [x] Buy Groceries                                           [ Delete 🗑️ ]| |
+|                   | | [ ] Finish Report                                           [ Delete 🗑️ ]| |
+|                   | +-------------------------------------------------------------------------+ |
+| ----------------- | +-------------------------------------------------------------------------+ |
+| STORAGE & SYNC    | | 🔍 Tracing Area Placeholder (Wireframe Control Box)                     | |
+| Local Storage Mode| | [ Trace Logs: Active ]  [ Latency: 0.2ms ]  [ Memory: Safe ]              | |
+| Updated just now  | +-------------------------------------------------------------------------+ |
++-------------------------------------------------------------------------------------------------+
 ```
 
 ---

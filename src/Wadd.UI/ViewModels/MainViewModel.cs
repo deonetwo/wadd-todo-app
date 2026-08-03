@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -7,6 +9,7 @@ using Wadd.Core.Enums;
 using Wadd.Core.Interfaces;
 using Wadd.Core.Models;
 using Wadd.Services;
+using Wadd.UI.Views;
 
 namespace Wadd.UI.ViewModels;
 
@@ -19,6 +22,9 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty]
     private string _title = "Wadd - ToDo Application";
+
+    [ObservableProperty]
+    private bool _isConflictDialogVisible;
 
     [ObservableProperty]
     private string _currentDateFormatted = DateTime.Now.ToString("dddd, MMMM d").ToUpperInvariant();
@@ -144,13 +150,43 @@ public partial class MainViewModel : ViewModelBase
     public double SidebarWidth => IsNavExpanded ? 240 : 64;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(StorageStatusText))]
     private bool _isSyncing;
 
     [ObservableProperty]
     private string _syncEndpointUrl = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(StorageStatusText))]
     private bool _isGoogleSignedIn;
+
+    public string StorageStatusText
+    {
+        get
+        {
+            if (IsSyncing) return "Syncing with cloud…";
+            if (IsGoogleSignedIn) return "Synced with Google Drive";
+            return "Saved to local storage";
+        }
+    }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(LastUpdatedFormatted))]
+    private DateTime? _lastUpdatedAt;
+
+    public string LastUpdatedFormatted
+    {
+        get
+        {
+            if (!LastUpdatedAt.HasValue) return "Local Storage Mode";
+            var now = DateTime.Now;
+            var diff = now - LastUpdatedAt.Value;
+            if (diff.TotalSeconds < 60) return "Updated just now";
+            if (diff.TotalMinutes < 60) return $"Updated {Math.Max(1, (int)diff.TotalMinutes)}m ago";
+            if (LastUpdatedAt.Value.Date == now.Date) return $"Updated at {LastUpdatedAt.Value:h:mm tt}";
+            return $"Updated {LastUpdatedAt.Value:MMM d, h:mm tt}";
+        }
+    }
 
     [ObservableProperty]
     private string _googleUserEmail = string.Empty;
@@ -164,6 +200,14 @@ public partial class MainViewModel : ViewModelBase
     partial void OnGoogleClientIdChanged(string value)
     {
         _syncService.GoogleClientId = value;
+    }
+
+    [ObservableProperty]
+    private string _googleClientSecret = string.Empty;
+
+    partial void OnGoogleClientSecretChanged(string value)
+    {
+        _syncService.GoogleClientSecret = value;
     }
 
     [ObservableProperty]
@@ -182,7 +226,19 @@ public partial class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsSettingsView));
     }
 
+    [ObservableProperty]
+    private bool _isReviewPromptVisible;
+
+    [ObservableProperty]
+    private bool _isTaskWizardVisible;
+
     public ObservableCollection<TodoItemViewModel> TodoItems { get; } = new();
+
+    public TaskConflictViewModel TaskConflictVm { get; }
+
+    public int UnresolvedConflictCount => _syncService.UnresolvedConflictCount;
+    public bool HasUnresolvedConflicts => UnresolvedConflictCount > 0;
+    public string UnresolvedConflictNotificationText => $"{UnresolvedConflictCount} task update(s) require your review.";
 
     public MainViewModel() : this(
         App.Services?.GetService<ITodoService>() ?? new SQLiteTodoService(),
@@ -198,6 +254,28 @@ public partial class MainViewModel : ViewModelBase
         _themeService = themeService ?? throw new ArgumentNullException(nameof(themeService));
         _syncService = syncService ?? throw new ArgumentNullException(nameof(syncService));
         _exportService = exportService ?? throw new ArgumentNullException(nameof(exportService));
+
+        IConflictRepository conflictRepo;
+        if (_todoService is SQLiteTodoService sqliteSvc)
+        {
+            conflictRepo = new SQLiteConflictRepository(sqliteSvc.DatabaseConnection);
+        }
+        else
+        {
+            conflictRepo = new SQLiteConflictRepository(Wadd.Core.Helpers.AppDataHelper.GetWaddFilePath("wadd.db"));
+        }
+
+        TaskConflictVm = new TaskConflictViewModel(conflictRepo, _todoService, _syncService);
+
+        _syncService.ConflictCountChanged += (_, _) =>
+        {
+            Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                OnPropertyChanged(nameof(UnresolvedConflictCount));
+                OnPropertyChanged(nameof(HasUnresolvedConflicts));
+                OnPropertyChanged(nameof(UnresolvedConflictNotificationText));
+            });
+        };
 
         _currentThemeMode = _themeService.CurrentTheme;
         UpdateThemeLabel();
@@ -215,6 +293,84 @@ public partial class MainViewModel : ViewModelBase
 
         UpdateGoogleAuthState();
         _ = LoadTodoItemsAsync();
+
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
+        timer.Tick += (_, _) => OnPropertyChanged(nameof(LastUpdatedFormatted));
+        timer.Start();
+    }
+
+    [RelayCommand]
+    private async Task ReviewNowAsync()
+    {
+        IsReviewPromptVisible = false;
+        await ShowTaskReviewWizardAsync();
+    }
+
+    [RelayCommand]
+    private void ReviewLater()
+    {
+        IsReviewPromptVisible = false;
+        StatusMessage = "Task updates saved for later review.";
+    }
+
+    [RelayCommand]
+    public async Task ShowTaskReviewWizardAsync()
+    {
+        await TaskConflictVm.LoadConflictsAsync();
+        if (TaskConflictVm.Conflicts.Count == 0) return;
+
+        var tcs = new TaskCompletionSource<bool>();
+
+        EventHandler onCompletedHandler = null!;
+        onCompletedHandler = (_, _) =>
+        {
+            TaskConflictVm.OnCompleted -= onCompletedHandler;
+            tcs.TrySetResult(true);
+        };
+        TaskConflictVm.OnCompleted += onCompletedHandler;
+
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow != null)
+        {
+            var window = new TaskConflictDialog
+            {
+                DataContext = TaskConflictVm
+            };
+
+            EventHandler desktopCloseHandler = null!;
+            desktopCloseHandler = (_, _) =>
+            {
+                TaskConflictVm.OnCompleted -= desktopCloseHandler;
+                window.Close();
+            };
+            TaskConflictVm.OnCompleted += desktopCloseHandler;
+
+            await window.ShowDialog(desktop.MainWindow);
+            tcs.TrySetResult(true);
+        }
+        else
+        {
+            IsTaskWizardVisible = true;
+            await tcs.Task;
+            IsTaskWizardVisible = false;
+        }
+
+        await LoadTodoItemsAsync();
+        StatusMessage = "Syncing reviewed changes to Google Drive...";
+        try
+        {
+            await _syncService.SyncAsync();
+            StatusMessage = "✓ All task updates have been reviewed successfully.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"✓ Task updates saved. Sync update pending: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private void OpenConflictCenter()
+    {
+        _ = ShowTaskReviewWizardAsync();
     }
 
     private void UpdateGoogleAuthState()
@@ -223,6 +379,7 @@ public partial class MainViewModel : ViewModelBase
         GoogleUserEmail = _syncService.UserEmail ?? string.Empty;
         GoogleUserName = _syncService.UserName ?? "Google Account User";
         GoogleClientId = _syncService.GoogleClientId ?? string.Empty;
+        GoogleClientSecret = _syncService.GoogleClientSecret ?? string.Empty;
     }
 
     [RelayCommand]
@@ -264,6 +421,7 @@ public partial class MainViewModel : ViewModelBase
                     }
                 }
 
+                LastUpdatedAt = DateTime.Now;
                 StatusMessage = $"Loaded {TodoItems.Count} tasks from local database.";
             });
         }
@@ -473,12 +631,22 @@ public partial class MainViewModel : ViewModelBase
         try
         {
             IsSyncing = true;
-            StatusMessage = "Syncing with Google Apps Script endpoint...";
+            StatusMessage = "Syncing with Google Drive...";
             var success = await _syncService.SyncAsync();
             if (success)
             {
-                StatusMessage = "Sync completed successfully. Local database updated.";
+                LastUpdatedAt = DateTime.Now;
                 await LoadTodoItemsAsync();
+
+                if (HasUnresolvedConflicts)
+                {
+                    StatusMessage = $"{UnresolvedConflictCount} task update(s) require your review.";
+                    IsReviewPromptVisible = true;
+                }
+                else
+                {
+                    StatusMessage = "✓ Sync completed successfully.";
+                }
             }
             else
             {

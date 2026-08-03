@@ -1,0 +1,137 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Wadd.UI.ViewModels;assembly=Wadd.UI"
+             mc:Ignorable="d" d:DesignWidth="460" d:DesignHeight="520"
+             x:Class="Wadd.UI.Views.TaskReviewWizardView"
+             x:DataType="vm:TaskReviewWizardViewModel">
+
+  <Border Padding="32,28" Background="{DynamicResource AppBackgroundBrush}">
+    <Grid RowDefinitions="Auto,*,Auto">
+
+      <!-- ═══ HEADER: TASK TITLE & CONDITION QUESTION ═══ -->
+      <StackPanel Grid.Row="0" Spacing="8" Margin="0,0,0,24" HorizontalAlignment="Center">
+        <!-- Progress Bar & Count -->
+        <TextBlock Text="{Binding HeaderText}"
+                   FontSize="12"
+                   FontWeight="Bold"
+                   Foreground="{DynamicResource AppPrimaryBrush}"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,4"/>
+
+        <ProgressBar Value="{Binding ProgressPercentage}"
+                     Maximum="100"
+                     Minimum="0"
+                     Height="4"
+                     CornerRadius="2"
+                     Foreground="{DynamicResource AppPrimaryBrush}"
+                     Background="{DynamicResource AppBorderBrush}"
+                     Width="200"
+                     HorizontalAlignment="Center"/>
+
+        <!-- Task Title (e.g. Todo 3) -->
+        <TextBlock Text="{Binding CurrentItem.TaskTitle}"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   Foreground="{DynamicResource AppTextPrimaryBrush}"
+                   HorizontalAlignment="Center"
+                   TextAlignment="Center"
+                   TextWrapping="Wrap"
+                   Margin="0,12,0,0"/>
+
+        <!-- Question Prompt (e.g. Which status is correct?) -->
+        <TextBlock Text="{Binding CurrentItem.QuestionPrompt}"
+                   FontSize="14"
+                   Foreground="{DynamicResource AppTextSecondaryBrush}"
+                   HorizontalAlignment="Center"
+                   TextAlignment="Center"/>
+      </StackPanel>
+
+      <!-- ═══ RADIO CHOICES (OPTION A & OPTION B) ═══ -->
+      <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Spacing="16" MaxWidth="380" HorizontalAlignment="Center" IsVisible="{Binding CurrentItem, Converter={x:Static ObjectConverters.IsNotNull}}">
+
+          <!-- OPTION A CARD -->
+          <Border Padding="18,16"
+                  CornerRadius="12"
+                  Background="{DynamicResource AppSurfaceElevatedBrush}"
+                  BorderBrush="{DynamicResource AppBorderBrush}"
+                  BorderThickness="1">
+            <RadioButton IsChecked="{Binding CurrentItem.IsOptionAChecked, Mode=TwoWay}"
+                         GroupName="TaskChoice"
+                         HorizontalAlignment="Stretch">
+              <StackPanel Spacing="4" Margin="6,0,0,0">
+                <TextBlock Text="{Binding CurrentItem.OptionADisplay}"
+                           FontSize="16"
+                           FontWeight="Bold"
+                           Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                <TextBlock Text="{Binding CurrentItem.OptionATime}"
+                           FontSize="12"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </StackPanel>
+            </RadioButton>
+          </Border>
+
+          <!-- OPTION B CARD -->
+          <Border Padding="18,16"
+                  CornerRadius="12"
+                  Background="{DynamicResource AppSurfaceElevatedBrush}"
+                  BorderBrush="{DynamicResource AppBorderBrush}"
+                  BorderThickness="1">
+            <RadioButton IsChecked="{Binding CurrentItem.IsOptionBChecked, Mode=TwoWay}"
+                         GroupName="TaskChoice"
+                         HorizontalAlignment="Stretch">
+              <StackPanel Spacing="4" Margin="6,0,0,0">
+                <TextBlock Text="{Binding CurrentItem.OptionBDisplay}"
+                           FontSize="16"
+                           FontWeight="Bold"
+                           Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                <TextBlock Text="{Binding CurrentItem.OptionBTime}"
+                           FontSize="12"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </StackPanel>
+            </RadioButton>
+          </Border>
+
+        </StackPanel>
+      </ScrollViewer>
+
+      <!-- ═══ FOOTER: CONTINUE BUTTON & NAV ═══ -->
+      <StackPanel Grid.Row="2" Spacing="16" Margin="0,24,0,0">
+        <!-- Main Action Button [ Continue ] -->
+        <Button Classes="primary"
+                Command="{Binding ContinueCommand}"
+                HorizontalAlignment="Center"
+                Padding="40,12"
+                CornerRadius="22"
+                MinWidth="180"
+                HorizontalContentAlignment="Center">
+          <TextBlock Text="{Binding ContinueButtonText}" FontSize="14" FontWeight="Bold"/>
+        </Button>
+
+        <!-- Previous / Next Links -->
+        <Grid ColumnDefinitions="*,*" IsVisible="{Binding TotalCount, Converter={x:Static ObjectConverters.IsNotNull}}">
+          <Button Grid.Column="0"
+                  Classes="outline"
+                  Command="{Binding PreviousTaskCommand}"
+                  IsEnabled="{Binding HasPrevious}"
+                  HorizontalAlignment="Left"
+                  Padding="12,6">
+            <TextBlock Text="Previous" FontSize="11"/>
+          </Button>
+
+          <Button Grid.Column="1"
+                  Classes="outline"
+                  Command="{Binding NextTaskCommand}"
+                  IsEnabled="{Binding HasNext}"
+                  HorizontalAlignment="Right"
+                  Padding="12,6">
+            <TextBlock Text="Next" FontSize="11"/>
+          </Button>
+        </Grid>
+      </StackPanel>
+
+    </Grid>
+  </Border>
+</UserControl>

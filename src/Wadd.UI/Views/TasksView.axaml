@@ -23,12 +23,16 @@
                        Classes="small"/>
             <TextBlock Text="·" Classes="small"/>
             <TextBlock IsVisible="{Binding !IsSyncing}"
-                       Text="SQLite local storage"
+                       Text="{Binding StorageStatusText}"
                        Classes="small"/>
             <TextBlock IsVisible="{Binding IsSyncing}"
                        Text="Syncing with cloud…"
                        Classes="small"
                        Foreground="{DynamicResource AppPrimaryBrush}"/>
+            <TextBlock Text="·" Classes="small"/>
+            <TextBlock Text="{Binding LastUpdatedFormatted}"
+                       Classes="small"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"/>
           </StackPanel>
         </StackPanel>
 

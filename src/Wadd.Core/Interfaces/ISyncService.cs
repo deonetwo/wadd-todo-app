@@ -9,8 +9,13 @@ public interface ISyncService
     string? UserEmail { get; }
     string? UserName { get; }
     string GoogleClientId { get; set; }
+    string GoogleClientSecret { get; set; }
+
+    int UnresolvedConflictCount { get; }
+    event EventHandler? ConflictCountChanged;
 
     Task<bool> SignInAsync(CancellationToken cancellationToken = default);
     Task SignOutAsync(CancellationToken cancellationToken = default);
     Task<bool> SyncAsync(CancellationToken cancellationToken = default);
+    Task RefreshConflictCountAsync(CancellationToken cancellationToken = default);
 }

@@ -26,6 +26,12 @@ public class TodoItemEntity
 
     public DateTime? ReminderAt { get; set; }
 
+    [Indexed]
+    public long Version { get; set; } = 1;
+
+    [Indexed]
+    public bool IsDeleted { get; set; } = false;
+
     public TodoItem ToDomain()
     {
         return new TodoItem
@@ -38,7 +44,9 @@ public class TodoItemEntity
             CreatedAt = CreatedAt,
             UpdatedAt = UpdatedAt,
             DueDate = DueDate,
-            ReminderAt = ReminderAt
+            ReminderAt = ReminderAt,
+            Version = Version,
+            IsDeleted = IsDeleted
         };
     }
 
@@ -55,7 +63,9 @@ public class TodoItemEntity
             CreatedAt = item.CreatedAt,
             UpdatedAt = item.UpdatedAt,
             DueDate = item.DueDate,
-            ReminderAt = item.ReminderAt
+            ReminderAt = item.ReminderAt,
+            Version = item.Version <= 0 ? 1 : item.Version,
+            IsDeleted = item.IsDeleted
         };
     }
 }

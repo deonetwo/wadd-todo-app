@@ -1,0 +1,18 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:views="clr-namespace:Wadd.UI.Views;assembly=Wadd.UI"
+        xmlns:vm="clr-namespace:Wadd.UI.ViewModels;assembly=Wadd.UI"
+        mc:Ignorable="d" d:DesignWidth="540" d:DesignHeight="640"
+        x:Class="Wadd.UI.Views.TaskReviewWizardWindow"
+        x:DataType="vm:TaskReviewWizardViewModel"
+        Title="Task Review"
+        Width="480" Height="520"
+        MinWidth="420" MinHeight="480"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource AppBackgroundBrush}">
+
+  <views:TaskReviewWizardView/>
+
+</Window>

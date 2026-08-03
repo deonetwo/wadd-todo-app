@@ -21,4 +21,8 @@ public class TodoItem
     public DateTime? DueDate { get; set; }
 
     public DateTime? ReminderAt { get; set; }
+
+    public long Version { get; set; } = 1;
+
+    public bool IsDeleted { get; set; } = false;
 }

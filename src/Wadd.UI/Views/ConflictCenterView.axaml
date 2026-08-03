@@ -1,0 +1,132 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Wadd.UI.ViewModels;assembly=Wadd.UI"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="700"
+             x:Class="Wadd.UI.Views.ConflictCenterView"
+             x:DataType="vm:ConflictCenterViewModel">
+
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="64,52,80,120" Spacing="24">
+
+      <!-- Page Header -->
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Grid.Column="0" Spacing="4">
+          <TextBlock Text="DATA SYNCHRONIZATION" Classes="micro" Foreground="{DynamicResource AppPrimaryBrush}"/>
+          <TextBlock Text="Conflict Resolution Center" Classes="display-xl"/>
+          <TextBlock Text="{Binding StatusMessage}" Classes="small" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+        </StackPanel>
+
+        <Button Grid.Column="1" Classes="outline" Command="{Binding LoadConflictsCommand}" VerticalAlignment="Center">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <PathIcon Data="{StaticResource SyncIconData}" Width="13" Height="13"/>
+            <TextBlock Text="Refresh Conflicts" FontSize="12" FontWeight="SemiBold"/>
+          </StackPanel>
+        </Button>
+      </Grid>
+
+      <!-- Main Layout: Active Conflicts -->
+      <Grid ColumnDefinitions="320,*" RowDefinitions="Auto" Margin="0,12,0,0">
+        
+        <!-- Conflict List Panel -->
+        <Border Grid.Column="0" Margin="0,0,16,0" Padding="16" Background="{DynamicResource AppSurfaceElevatedBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1" CornerRadius="12">
+          <StackPanel Spacing="14">
+            <TextBlock Text="UNRESOLVED CONFLICTS" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+            
+            <TextBlock Text="No active conflicts found. All data is synchronized cleanly across devices."
+                       IsVisible="{Binding !UnresolvedConflicts.Count}"
+                       Classes="small" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="0,8"/>
+
+            <ListBox ItemsSource="{Binding UnresolvedConflicts}"
+                     SelectedItem="{Binding SelectedConflict}"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     CornerRadius="8"
+                     MaxHeight="480">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:SyncConflictItemViewModel">
+                  <Border Padding="12,10" Margin="0,2" CornerRadius="8" Background="{DynamicResource AppSurfaceBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+                    <StackPanel Spacing="4">
+                      <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0" Text="{Binding TableName}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                        <TextBlock Grid.Column="1" Text="CONFLICT" FontSize="9" FontWeight="Bold" Foreground="#EF4444"/>
+                      </Grid>
+                      <TextBlock Text="{Binding RecordId, StringFormat='Record ID: {0}'}" FontSize="10" Foreground="{DynamicResource AppTextSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
+                      <TextBlock Text="{Binding LocalUpdatedAt, StringFormat='Local: {0:MMM d, h:mm tt}'}" FontSize="10" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                      <TextBlock Text="{Binding CloudUpdatedAt, StringFormat='Cloud: {0:MMM d, h:mm tt}'}" FontSize="10" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                    </StackPanel>
+                  </Border>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </StackPanel>
+        </Border>
+
+        <!-- Side-by-Side Comparison Panel -->
+        <Border Grid.Column="1" Padding="20" Background="{DynamicResource AppSurfaceElevatedBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1" CornerRadius="12">
+          <StackPanel Spacing="18" DataContext="{Binding SelectedConflict}">
+
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Grid.Column="0" Spacing="2">
+                <TextBlock Text="Side-by-Side Field Comparison" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                <TextBlock Text="Review field differences between local device and cloud version." FontSize="12" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </StackPanel>
+
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                <Button Classes="outline" Command="{Binding $parent[UserControl].((vm:ConflictCenterViewModel)DataContext).KeepLocalVersionCommand}" CommandParameter="{Binding}">
+                  <TextBlock Text="Keep Local" FontSize="12"/>
+                </Button>
+                <Button Classes="outline" Command="{Binding $parent[UserControl].((vm:ConflictCenterViewModel)DataContext).KeepCloudVersionCommand}" CommandParameter="{Binding}">
+                  <TextBlock Text="Keep Cloud" FontSize="12"/>
+                </Button>
+                <Button Classes="primary" Command="{Binding $parent[UserControl].((vm:ConflictCenterViewModel)DataContext).ResolveCustomMergeCommand}" CommandParameter="{Binding}">
+                  <TextBlock Text="Apply Selection" FontSize="12" FontWeight="Bold"/>
+                </Button>
+              </StackPanel>
+            </Grid>
+
+            <!-- Table Header -->
+            <Border Padding="12,8" Background="{DynamicResource AppSurfaceBrush}" CornerRadius="6">
+              <Grid ColumnDefinitions="140,*,*,80">
+                <TextBlock Grid.Column="0" Text="FIELD NAME" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                <TextBlock Grid.Column="1" Text="LOCAL VERSION" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                <TextBlock Grid.Column="2" Text="CLOUD VERSION" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                <TextBlock Grid.Column="3" Text="USE VALUE" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}" HorizontalAlignment="Center"/>
+              </Grid>
+            </Border>
+
+            <!-- Field Comparison List -->
+            <ItemsControl ItemsSource="{Binding DiffFields}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:ConflictDiffFieldViewModel">
+                  <Border Padding="12,10" Margin="0,2" CornerRadius="6"
+                          Background="{DynamicResource AppSurfaceBrush}"
+                          BorderBrush="{DynamicResource AppBorderBrush}"
+                          BorderThickness="1">
+                    <Grid ColumnDefinitions="140,*,*,80">
+                      <TextBlock Grid.Column="0" Text="{Binding FieldName}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                      
+                      <TextBlock Grid.Column="1" Text="{Binding LocalValue}" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource AppTextPrimaryBrush}" TextWrapping="Wrap"/>
+                      
+                      <TextBlock Grid.Column="2" Text="{Binding CloudValue}" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource AppTextPrimaryBrush}" TextWrapping="Wrap"/>
+
+                      <StackPanel Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4">
+                        <RadioButton GroupName="{Binding FieldName}" Content="Local" IsChecked="{Binding UseLocalValue}" FontSize="10"/>
+                        <RadioButton GroupName="{Binding FieldName}" Content="Cloud" IsChecked="{Binding !UseLocalValue}" FontSize="10"/>
+                      </StackPanel>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+          </StackPanel>
+        </Border>
+
+      </Grid>
+
+    </StackPanel>
+  </ScrollViewer>
+
+</UserControl>

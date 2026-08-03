@@ -1,0 +1,206 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:Wadd.UI.ViewModels;assembly=Wadd.UI"
+        mc:Ignorable="d" d:DesignWidth="460" d:DesignHeight="550"
+        x:Class="Wadd.UI.Views.TaskConflictDialog"
+        x:DataType="vm:TaskConflictViewModel"
+        Title="Task Review &amp; Conflict Resolution"
+        Width="460" Height="550"
+        MinWidth="420" MinHeight="500"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        Background="{DynamicResource AppBackgroundBrush}">
+
+  <Window.Styles>
+    <!-- Interactive Card-Style RadioButton Template without Radio Dots -->
+    <Style Selector="RadioButton.card">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border x:Name="CardBorder"
+                  Background="{TemplateBinding Background}"
+                  BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}"
+                  CornerRadius="10"
+                  Padding="16"
+                  HorizontalAlignment="Stretch">
+            <ContentPresenter Content="{TemplateBinding Content}"
+                               ContentTemplate="{TemplateBinding ContentTemplate}"/>
+          </Border>
+        </ControlTemplate>
+      </Setter>
+      <Setter Property="Background" Value="{DynamicResource AppSurfaceElevatedBrush}"/>
+      <Setter Property="BorderBrush" Value="#334155"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="HorizontalAlignment" Value="Stretch"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+
+    <!-- Hover State (:pointerover) -->
+    <Style Selector="RadioButton.card:pointerover /template/ Border#CardBorder">
+      <Setter Property="BorderBrush" Value="#475569"/>
+      <Setter Property="Background" Value="#1E293B"/>
+    </Style>
+
+    <!-- Selected / Checked State with Green Accent Border & Subtle Background Tint -->
+    <Style Selector="RadioButton.card:checked /template/ Border#CardBorder">
+      <Setter Property="BorderBrush" Value="#10B981"/>
+      <Setter Property="BorderThickness" Value="2"/>
+      <Setter Property="Background" Value="#0F2922"/>
+    </Style>
+  </Window.Styles>
+
+  <Grid RowDefinitions="Auto, Auto, *, Auto" Margin="24">
+
+    <!-- Progress Header -->
+    <StackPanel Grid.Row="0" HorizontalAlignment="Center" Spacing="6" Margin="0,0,0,16">
+      <TextBlock Text="{Binding ConflictProgressText, FallbackValue='Reviewing Conflict 1 of 3'}"
+                 Foreground="#10B981"
+                 HorizontalAlignment="Center"
+                 FontWeight="SemiBold" />
+
+      <ProgressBar Value="{Binding CurrentConflictIndex}"
+                   Maximum="{Binding TotalConflicts}"
+                   Height="4" Width="200"
+                   Foreground="#10B981" Background="#334155" />
+    </StackPanel>
+
+    <!-- Task Title & Guidance Subtitle -->
+    <StackPanel Grid.Row="1" Spacing="6" Margin="0,0,0,20">
+      <TextBlock Text="{Binding TaskTitle, FallbackValue='Task Title'}"
+                 FontSize="22" FontWeight="Bold"
+                 HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
+      <TextBlock Text="Choose which data version you want to keep:"
+                 FontSize="13" Foreground="{DynamicResource AppTextSecondaryBrush}"
+                 HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
+    </StackPanel>
+
+    <!-- Options List -->
+    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+      <StackPanel Spacing="16">
+
+        <!-- Option 1: Local Device -->
+        <RadioButton Classes="card"
+                     GroupName="ConflictOption"
+                     IsChecked="{Binding SelectLocalVersion, Mode=TwoWay}">
+          <Grid RowDefinitions="Auto, Auto" HorizontalAlignment="Stretch">
+            <!-- Row 0: Soft Pill Badge & Timestamp -->
+            <Grid Grid.Row="0" ColumnDefinitions="Auto, *" VerticalAlignment="Center">
+              <Border Grid.Column="0" Background="#064E3B" CornerRadius="12" Padding="8,4">
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                  <PathIcon Data="{StaticResource DeviceIconData}" Width="12" Height="12" Foreground="#34D399"/>
+                  <TextBlock Text="Option 1: Local Device" FontSize="11" Foreground="#34D399" FontWeight="Bold"/>
+                </StackPanel>
+              </Border>
+              <TextBlock Grid.Column="1"
+                         Text="{Binding LocalUpdatedTime, FallbackValue='Updated 11:29 PM'}"
+                         FontSize="11"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"
+                         HorizontalAlignment="Right"
+                         VerticalAlignment="Center"/>
+            </Grid>
+
+            <!-- Row 1: State Display (Deleted Alert Banner or Active Task Details) -->
+            <StackPanel Grid.Row="1" Margin="0,10,0,0">
+              <!-- Deleted Warning Banner -->
+              <Border IsVisible="{Binding IsLocalDeleted}"
+                      Background="#7F1D1D"
+                      CornerRadius="6"
+                      Padding="10,8"
+                      HorizontalAlignment="Stretch">
+                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                  <PathIcon Data="{StaticResource TrashIconData}" Width="14" Height="14" Foreground="#FCA5A5"/>
+                  <TextBlock Text="Task deleted on Local Device"
+                             Foreground="#FCA5A5"
+                             FontWeight="SemiBold"
+                             FontSize="12"
+                             TextWrapping="Wrap"/>
+                </StackPanel>
+              </Border>
+
+              <!-- Active Task Details Aligned Grid -->
+              <Grid IsVisible="{Binding !IsLocalDeleted}" ColumnDefinitions="56, Auto, *" RowDefinitions="Auto, Auto, Auto">
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" FontWeight="Bold" FontSize="14" VerticalAlignment="Center"/>
+                <TextBlock Grid.Row="0" Grid.Column="1" Text=":" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" Margin="4,0,8,0"/>
+                <TextBlock Grid.Row="0" Grid.Column="2" Text="{Binding LocalTaskName}" FontWeight="Light" FontSize="14" TextWrapping="Wrap" VerticalAlignment="Center"/>
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Status" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center" Margin="0,4,0,0"/>
+                <TextBlock Grid.Row="1" Grid.Column="1" Text=":" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center" Margin="4,4,8,0"/>
+                <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding LocalTaskStatus}" FontWeight="Light" FontSize="12" Foreground="{DynamicResource AppTextSecondaryBrush}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,4,0,0"/>
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Priority" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center" Margin="0,4,0,0"/>
+                <TextBlock Grid.Row="2" Grid.Column="1" Text=":" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center" Margin="4,4,8,0"/>
+                <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding LocalTaskPriority}" FontWeight="Light" FontSize="12" Foreground="{DynamicResource AppTextSecondaryBrush}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,4,0,0"/>
+              </Grid>
+            </StackPanel>
+          </Grid>
+        </RadioButton>
+
+        <!-- Option 2: Cloud (Google Drive) -->
+        <RadioButton Classes="card"
+                     GroupName="ConflictOption"
+                     IsChecked="{Binding SelectCloudVersion, Mode=TwoWay}">
+          <Grid RowDefinitions="Auto, Auto" HorizontalAlignment="Stretch">
+            <!-- Row 0: Soft Pill Badge & Timestamp -->
+            <Grid Grid.Row="0" ColumnDefinitions="Auto, *" VerticalAlignment="Center">
+              <Border Grid.Column="0" Background="#1E3A8A" CornerRadius="12" Padding="8,4">
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                  <PathIcon Data="{StaticResource SyncIconData}" Width="12" Height="12" Foreground="#60A5FA"/>
+                  <TextBlock Text="Option 2: Google Drive" FontSize="11" Foreground="#60A5FA" FontWeight="Bold"/>
+                </StackPanel>
+              </Border>
+              <TextBlock Grid.Column="1"
+                         Text="{Binding CloudUpdatedTime, FallbackValue='Updated 11:29 PM'}"
+                         FontSize="11"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"
+                         HorizontalAlignment="Right"
+                         VerticalAlignment="Center"/>
+            </Grid>
+
+            <!-- Row 1: State Display (Deleted Alert Banner or Active Task Details) -->
+            <StackPanel Grid.Row="1" Margin="0,10,0,0">
+              <!-- Deleted Warning Banner -->
+              <Border IsVisible="{Binding IsCloudDeleted}"
+                      Background="#7F1D1D"
+                      CornerRadius="6"
+                      Padding="10,8"
+                      HorizontalAlignment="Stretch">
+                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                  <PathIcon Data="{StaticResource TrashIconData}" Width="14" Height="14" Foreground="#FCA5A5"/>
+                  <TextBlock Text="Task deleted in Google Drive"
+                             Foreground="#FCA5A5"
+                             FontWeight="SemiBold"
+                             FontSize="12"
+                             TextWrapping="Wrap"/>
+                </StackPanel>
+              </Border>
+
+              <!-- Active Task Details Aligned Grid -->
+              <Grid IsVisible="{Binding !IsCloudDeleted}" ColumnDefinitions="56, Auto, *" RowDefinitions="Auto, Auto, Auto">
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" FontWeight="Bold" FontSize="14" VerticalAlignment="Center"/>
+                <TextBlock Grid.Row="0" Grid.Column="1" Text=":" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" Margin="4,0,8,0"/>
+                <TextBlock Grid.Row="0" Grid.Column="2" Text="{Binding CloudTaskName}" FontWeight="Light" FontSize="14" TextWrapping="Wrap" VerticalAlignment="Center"/>
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Status" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center" Margin="0,4,0,0"/>
+                <TextBlock Grid.Row="1" Grid.Column="1" Text=":" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center" Margin="4,4,8,0"/>
+                <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding CloudTaskStatus}" FontWeight="Light" FontSize="12" Foreground="{DynamicResource AppTextSecondaryBrush}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,4,0,0"/>
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Priority" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center" Margin="0,4,0,0"/>
+                <TextBlock Grid.Row="2" Grid.Column="1" Text=":" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center" Margin="4,4,8,0"/>
+                <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding CloudTaskPriority}" FontWeight="Light" FontSize="12" Foreground="{DynamicResource AppTextSecondaryBrush}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,4,0,0"/>
+              </Grid>
+            </StackPanel>
+          </Grid>
+        </RadioButton>
+
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- Bottom Navigation -->
+    <Grid Grid.Row="3" ColumnDefinitions="Auto, *, Auto" Margin="0,16,0,0">
+      <Button Grid.Column="0" Content="Previous" Command="{Binding PreviousCommand}" IsEnabled="{Binding CanGoPrevious}" Classes="outline" />
+      <Button Grid.Column="2" Content="Apply &amp; Continue" Command="{Binding ApplyAndNextCommand}" IsEnabled="{Binding CanContinue}" Classes="primary" />
+    </Grid>
+  </Grid>
+</Window>
