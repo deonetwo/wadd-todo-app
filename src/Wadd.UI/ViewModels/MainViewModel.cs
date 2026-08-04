@@ -1186,6 +1186,7 @@ public partial class MainViewModel : ViewModelBase
 
         try
         {
+            var initialDueDate = NewTaskDueDate?.Date ?? DateTime.Today;
             var newItem = new TodoItem
             {
                 Title = NewTaskTitle.Trim(),
@@ -1193,7 +1194,6 @@ public partial class MainViewModel : ViewModelBase
                 IsCompleted = false,
                 Priority = TodoPriority.Medium,
                 CreatedAt = DateTime.UtcNow,
-                DueDate = NewTaskDueDate,
                 ReminderAt = GetCombinedNewTaskReminder(),
                 IsRecurring = IsRepeatEnabled,
                 RecurrenceType = IsRepeatEnabled ? SelectedRecurrenceType : "None",
@@ -1201,6 +1201,10 @@ public partial class MainViewModel : ViewModelBase
                 CustomRecurrenceUnit = IsRepeatEnabled && SelectedRecurrenceType == "Custom" ? SelectedCustomUnit : null,
                 CustomWeeklyDays = IsRepeatEnabled && SelectedRecurrenceType == "Custom" && SelectedCustomUnit == "Weeks" ? GetSelectedWeeklyDaysString() : null
             };
+
+            newItem.DueDate = IsRepeatEnabled
+                ? RecurrenceHelper.GetFirstValidOccurrenceDate(newItem, initialDueDate)
+                : NewTaskDueDate;
 
             await _todoService.AddTodoAsync(newItem);
 

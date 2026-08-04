@@ -26,16 +26,11 @@ public static class RecurrenceEvaluator
             return false;
         }
 
-        DateTime startDate = item.CreatedAt.Date;
-        if (item.DueDate.HasValue && item.DueDate.Value.Date < startDate)
-        {
-            startDate = item.DueDate.Value.Date;
-        }
-        if (item.ReminderAt.HasValue && item.ReminderAt.Value.Date < startDate)
-        {
-            startDate = item.ReminderAt.Value.Date;
-        }
-        if (targetDate < startDate)
+        // Determine recurrence anchor date & start cutoff date
+        DateTime anchorDate = item.DueDate?.Date ?? item.ReminderAt?.Date ?? item.CreatedAt.Date;
+        DateTime startCutoff = item.DueDate?.Date ?? item.ReminderAt?.Date ?? item.CreatedAt.Date;
+
+        if (targetDate < startCutoff)
         {
             return false;
         }
@@ -51,21 +46,21 @@ public static class RecurrenceEvaluator
                 return targetDate.DayOfWeek != DayOfWeek.Saturday && targetDate.DayOfWeek != DayOfWeek.Sunday;
 
             case "weekly":
-                return targetDate.DayOfWeek == startDate.DayOfWeek;
+                return targetDate.DayOfWeek == anchorDate.DayOfWeek;
 
             case "monthly":
                 int targetMaxDaysInMonth = DateTime.DaysInMonth(targetDate.Year, targetDate.Month);
-                int targetDay = Math.Min(startDate.Day, targetMaxDaysInMonth);
+                int targetDay = Math.Min(anchorDate.Day, targetMaxDaysInMonth);
                 return targetDate.Day == targetDay;
 
             case "yearly":
-                if (targetDate.Month != startDate.Month) return false;
+                if (targetDate.Month != anchorDate.Month) return false;
                 int maxDaysInYearlyMonth = DateTime.DaysInMonth(targetDate.Year, targetDate.Month);
-                int expectedDay = Math.Min(startDate.Day, maxDaysInYearlyMonth);
+                int expectedDay = Math.Min(anchorDate.Day, maxDaysInYearlyMonth);
                 return targetDate.Day == expectedDay;
 
             case "custom":
-                return IsCustomRecurrenceOnDate(item, startDate, targetDate);
+                return IsCustomRecurrenceOnDate(item, anchorDate, targetDate);
 
             default:
                 return false;

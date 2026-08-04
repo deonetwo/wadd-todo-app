@@ -124,6 +124,12 @@ public class SQLiteTodoService : ITodoService
         item.UpdatedAt = DateTime.UtcNow;
         item.Version = 1;
         item.IsDeleted = false;
+        if (item.IsRecurring)
+        {
+            var initialDate = item.DueDate?.Date ?? DateTime.Today;
+            item.DueDate = RecurrenceHelper.GetFirstValidOccurrenceDate(item, initialDate);
+        }
+
         if (item.IsCompleted)
         {
             item.CompletedAt ??= DateTime.UtcNow;

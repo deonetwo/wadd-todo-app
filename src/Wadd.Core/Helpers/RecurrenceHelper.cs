@@ -48,6 +48,54 @@ public static class RecurrenceHelper
         return next;
     }
 
+    public static DateTime GetFirstValidOccurrenceDate(TodoItem item, DateTime baseDate)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+
+        if (!item.IsRecurring || string.IsNullOrWhiteSpace(item.RecurrenceType) || item.RecurrenceType.Equals("None", StringComparison.OrdinalIgnoreCase))
+        {
+            return baseDate.Date;
+        }
+
+        var candidate = baseDate.Date;
+        string recType = item.RecurrenceType;
+
+        if (recType.Equals("Weekdays", StringComparison.OrdinalIgnoreCase))
+        {
+            while (candidate.DayOfWeek == DayOfWeek.Saturday || candidate.DayOfWeek == DayOfWeek.Sunday)
+            {
+                candidate = candidate.AddDays(1);
+            }
+            return candidate;
+        }
+
+        if (recType.Equals("Custom", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(item.CustomRecurrenceUnit, "Weeks", StringComparison.OrdinalIgnoreCase) &&
+            !string.IsNullOrWhiteSpace(item.CustomWeeklyDays))
+        {
+            var allowedDays = item.CustomWeeklyDays
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(d => d.Substring(0, Math.Min(3, d.Length)))
+                .ToList();
+
+            if (allowedDays.Count > 0)
+            {
+                int maxCheck = 7;
+                while (maxCheck-- > 0)
+                {
+                    string dayAbbrev = candidate.DayOfWeek.ToString().Substring(0, 3);
+                    if (allowedDays.Any(d => d.Equals(dayAbbrev, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return candidate;
+                    }
+                    candidate = candidate.AddDays(1);
+                }
+            }
+        }
+
+        return candidate;
+    }
+
     private static DateTime GetNextWeekday(DateTime baseDate)
     {
         var next = baseDate.AddDays(1);

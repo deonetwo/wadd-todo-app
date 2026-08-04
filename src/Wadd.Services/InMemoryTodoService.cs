@@ -28,6 +28,12 @@ public class InMemoryTodoService : ITodoService
     {
         item.CreatedAt = DateTime.UtcNow;
         item.UpdatedAt = DateTime.UtcNow;
+        if (item.IsRecurring)
+        {
+            var initialDate = item.DueDate?.Date ?? DateTime.Today;
+            item.DueDate = Wadd.Core.Helpers.RecurrenceHelper.GetFirstValidOccurrenceDate(item, initialDate);
+        }
+
         if (item.IsCompleted)
         {
             item.CompletedAt ??= DateTime.UtcNow;

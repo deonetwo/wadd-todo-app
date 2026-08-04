@@ -202,4 +202,82 @@ public class RecurrenceHelperTests
         Assert.Single(aug11TasksAfterUndo);
         Assert.False(aug11TasksAfterUndo.Single().IsCompleted);
     }
+
+    [Fact]
+    public async Task AddTodoAsync_WhenRecurringTaskCreatedWithoutDueDate_SetsFirstDueDateToToday()
+    {
+        var service = new InMemoryTodoService();
+        var recurringItemWithoutDueDate = new TodoItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Morning Routine",
+            IsRecurring = true,
+            RecurrenceType = "Daily",
+            DueDate = null
+        };
+
+        var created = await service.AddTodoAsync(recurringItemWithoutDueDate);
+
+        Assert.NotNull(created.DueDate);
+        Assert.Equal(DateTime.Today, created.DueDate.Value.Date);
+    }
+
+    [Fact]
+    public void WeeklyTask_WithExplicitDueDate_AnchorsToDueDateDayOfWeek()
+    {
+        var aug6Thursday = new DateTime(2026, 8, 6);
+        var weeklyTask = new TodoItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Weekly Team Sync",
+            CreatedAt = new DateTime(2026, 8, 4), // Tuesday
+            DueDate = aug6Thursday,               // Thursday
+            IsRecurring = true,
+            RecurrenceType = "Weekly"
+        };
+
+        // Before Aug 6 (e.g. Aug 4, Tuesday): Should NOT be scheduled
+        Assert.False(RecurrenceEvaluator.IsTaskScheduledOnDate(weeklyTask, new DateTime(2026, 8, 4)));
+
+        // On Aug 6 (Thursday): Should BE scheduled
+        Assert.True(RecurrenceEvaluator.IsTaskScheduledOnDate(weeklyTask, aug6Thursday));
+
+        // Next week Aug 13 (Thursday): Should BE scheduled
+        Assert.True(RecurrenceEvaluator.IsTaskScheduledOnDate(weeklyTask, new DateTime(2026, 8, 13)));
+
+        // Intermediate Tuesday Aug 11: Should NOT be scheduled
+        Assert.False(RecurrenceEvaluator.IsTaskScheduledOnDate(weeklyTask, new DateTime(2026, 8, 11)));
+    }
+
+    [Fact]
+    public void WeekdaysTask_WithSaturdayDueDate_SnapsToMonday()
+    {
+        var satAug8 = new DateTime(2026, 8, 8);
+        var task = new TodoItem
+        {
+            Title = "Workday Report",
+            IsRecurring = true,
+            RecurrenceType = "Weekdays"
+        };
+
+        var firstValid = RecurrenceHelper.GetFirstValidOccurrenceDate(task, satAug8);
+        Assert.Equal(new DateTime(2026, 8, 10), firstValid); // Monday Aug 10
+    }
+
+    [Fact]
+    public void CustomSunMonTask_WithSaturdayDueDate_SnapsToSunday()
+    {
+        var satAug8 = new DateTime(2026, 8, 8);
+        var task = new TodoItem
+        {
+            Title = "Weekend Workout",
+            IsRecurring = true,
+            RecurrenceType = "Custom",
+            CustomRecurrenceUnit = "Weeks",
+            CustomWeeklyDays = "Sun,Mon"
+        };
+
+        var firstValid = RecurrenceHelper.GetFirstValidOccurrenceDate(task, satAug8);
+        Assert.Equal(new DateTime(2026, 8, 9), firstValid); // Sunday Aug 9
+    }
 }
