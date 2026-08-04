@@ -810,6 +810,44 @@
                                Classes="small"
                                IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                                TextWrapping="Wrap"/>
+                    <!-- Badges (Due Date, Reminder & Repeat) -->
+                    <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,0">
+                      <!-- Due Date Badge -->
+                      <Border IsVisible="{Binding HasDueDate}"
+                              Background="{DynamicResource AppPrimarySubtleBrush}"
+                              CornerRadius="4"
+                              Padding="6,2"
+                              HorizontalAlignment="Left">
+                        <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                          <PathIcon Data="{StaticResource CalendarIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                          <TextBlock Text="{Binding DueDateFormatted}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                        </StackPanel>
+                      </Border>
+
+                      <!-- Reminder Badge -->
+                      <Border IsVisible="{Binding HasReminder}"
+                              Background="{DynamicResource AppPrimarySubtleBrush}"
+                              CornerRadius="4"
+                              Padding="6,2"
+                              HorizontalAlignment="Left">
+                        <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                          <PathIcon Data="{StaticResource BellIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                          <TextBlock Text="{Binding ReminderAtFormatted}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                        </StackPanel>
+                      </Border>
+
+                      <!-- Repeat Badge -->
+                      <Border IsVisible="{Binding HasRecurrence}"
+                              Background="{DynamicResource AppPrimarySubtleBrush}"
+                              CornerRadius="4"
+                              Padding="6,2"
+                              HorizontalAlignment="Left">
+                        <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                          <PathIcon Data="{StaticResource RepeatIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                          <TextBlock Text="{Binding RecurrenceFormatted}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                        </StackPanel>
+                      </Border>
+                    </StackPanel>
                   </StackPanel>
 
                   <!-- Completed Timestamp -->

@@ -66,13 +66,12 @@ public partial class TodoItemViewModel : ViewModelBase
         get
         {
             if (!Model.DueDate.HasValue) return string.Empty;
-            if (Model.IsCompleted) return "Completed";
             var date = Model.DueDate.Value.Date;
             var today = DateTime.Today;
             if (date == today) return "Today";
             if (date == today.AddDays(1)) return "Tomorrow";
-            if (date < today) return $"Overdue ({Model.DueDate.Value:MMM d})";
-            if (date > today && Model.IsRecurring) return $"Upcoming ({Model.DueDate.Value:MMM d})";
+            if (date < today && !Model.IsCompleted) return $"Overdue ({Model.DueDate.Value:MMM d})";
+            if (date > today && Model.IsRecurring && !Model.IsCompleted) return $"Upcoming ({Model.DueDate.Value:MMM d})";
             return Model.DueDate.Value.ToString("MMM d");
         }
     }
@@ -89,15 +88,14 @@ public partial class TodoItemViewModel : ViewModelBase
     {
         get
         {
-            if (Model.IsCompleted) return "Completed";
             var targetDate = ContextDate?.Date ?? Model.DueDate?.Date;
             if (!targetDate.HasValue) return string.Empty;
 
             var today = DateTime.Today;
             if (targetDate.Value == today) return "Today";
             if (targetDate.Value == today.AddDays(1)) return "Tomorrow";
-            if (targetDate.Value < today) return $"Overdue ({targetDate.Value:MMM d})";
-            if (targetDate.Value > today && Model.IsRecurring) return $"Upcoming ({targetDate.Value:MMM d})";
+            if (targetDate.Value < today && !Model.IsCompleted) return $"Overdue ({targetDate.Value:MMM d})";
+            if (targetDate.Value > today && Model.IsRecurring && !Model.IsCompleted) return $"Upcoming ({targetDate.Value:MMM d})";
             return targetDate.Value.ToString("MMM d");
         }
     }
