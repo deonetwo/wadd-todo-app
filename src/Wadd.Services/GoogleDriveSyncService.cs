@@ -342,7 +342,7 @@ public class GoogleDriveSyncService : ISyncService
 
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
-        var accessToken = root.GetProperty("access_token").GetString() ?? string.Empty;
+        var accessToken = root.TryGetProperty("access_token", out var atProp) ? atProp.GetString() ?? string.Empty : string.Empty;
         var refreshToken = root.TryGetProperty("refresh_token", out var rtProp) ? rtProp.GetString() ?? string.Empty : string.Empty;
 
         return (accessToken, refreshToken);
@@ -562,12 +562,12 @@ public class GoogleDriveSyncService : ISyncService
             if (rawSqliteSvc != null)
             {
                 var allRaw = await rawSqliteSvc.GetAllRawAsync(cancellationToken);
-                localItemsDict = allRaw.ToDictionary(x => x.Id);
+                localItemsDict = allRaw.GroupBy(x => x.Id).ToDictionary(g => g.Key, g => g.First());
             }
             else
             {
                 var allItems = await _todoService.GetTodosAsync(cancellationToken);
-                localItemsDict = allItems.ToDictionary(x => x.Id);
+                localItemsDict = allItems.GroupBy(x => x.Id).ToDictionary(g => g.Key, g => g.First());
             }
 
             // Create dictionary of latest remote state per record ID by replaying cloud logs
@@ -741,7 +741,11 @@ public class GoogleDriveSyncService : ISyncService
         using var doc = JsonDocument.Parse(json);
         if (doc.RootElement.TryGetProperty("files", out var filesArr) && filesArr.GetArrayLength() > 0)
         {
-            return filesArr[0].GetProperty("id").GetString()!;
+            var firstFile = filesArr[0];
+            if (firstFile.TryGetProperty("id", out var idProp) && !string.IsNullOrEmpty(idProp.GetString()))
+            {
+                return idProp.GetString()!;
+            }
         }
 
         // Create folder if not found
@@ -760,7 +764,11 @@ public class GoogleDriveSyncService : ISyncService
 
         var createJson = await createResp.Content.ReadAsStringAsync(cancellationToken);
         using var createDoc = JsonDocument.Parse(createJson);
-        return createDoc.RootElement.GetProperty("id").GetString()!;
+        if (createDoc.RootElement.TryGetProperty("id", out var newIdProp) && !string.IsNullOrEmpty(newIdProp.GetString()))
+        {
+            return newIdProp.GetString()!;
+        }
+        throw new InvalidOperationException($"Failed to create sync folder on Google Drive: {createJson}");
     }
 
     private async Task EnsureWarningFileExistsAsync(string accessToken, string folderId, CancellationToken cancellationToken)
@@ -786,7 +794,11 @@ public class GoogleDriveSyncService : ISyncService
         using var doc = JsonDocument.Parse(json);
         if (doc.RootElement.TryGetProperty("files", out var filesArr) && filesArr.GetArrayLength() > 0)
         {
-            return filesArr[0].GetProperty("id").GetString();
+            var firstFile = filesArr[0];
+            if (firstFile.TryGetProperty("id", out var fileIdProp))
+            {
+                return fileIdProp.GetString();
+            }
         }
 
         return null;

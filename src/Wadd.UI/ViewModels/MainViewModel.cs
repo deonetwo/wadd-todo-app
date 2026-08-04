@@ -1059,7 +1059,7 @@ public partial class MainViewModel : ViewModelBase
             var itemsList = (await _todoService.GetTodosAsync()).ToList();
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
-                var existingDict = TodoItems.ToDictionary(vm => vm.Id);
+                var existingDict = TodoItems.GroupBy(vm => vm.Id).ToDictionary(g => g.Key, g => g.First());
                 var freshIds = new HashSet<Guid>(itemsList.Select(x => x.Id));
 
                 // 1. Remove items that no longer exist
