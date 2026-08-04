@@ -8,7 +8,7 @@ public static class RecurrenceHelper
     {
         ArgumentNullException.ThrowIfNull(item);
 
-        var baseDate = item.DueDate?.Date ?? fromDate?.Date ?? DateTime.Today;
+        var baseDate = fromDate?.Date ?? item.DueDate?.Date ?? DateTime.Today;
 
         if (!item.IsRecurring || string.IsNullOrWhiteSpace(item.RecurrenceType) || item.RecurrenceType.Equals("None", StringComparison.OrdinalIgnoreCase))
         {
@@ -25,6 +25,27 @@ public static class RecurrenceHelper
             "Custom" => CalculateCustomNextDueDate(baseDate, item.CustomRecurrenceInterval ?? 1, item.CustomRecurrenceUnit, item.CustomWeeklyDays),
             _ => baseDate.AddDays(1)
         };
+    }
+
+    public static DateTime CalculateNextUncompletedDueDate(TodoItem item, DateTime? fromDate = null, IEnumerable<TodoItem>? allTasks = null)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        var next = CalculateNextDueDate(item, fromDate);
+
+        if (allTasks == null) return next;
+
+        var completedDates = allTasks
+            .Where(t => t.IsCompleted && t.Title.Equals(item.Title, StringComparison.OrdinalIgnoreCase) && t.DueDate.HasValue)
+            .Select(t => t.DueDate!.Value.Date)
+            .ToHashSet();
+
+        int safetyMax = 365;
+        while (completedDates.Contains(next.Date) && safetyMax-- > 0)
+        {
+            next = CalculateNextDueDate(item, next);
+        }
+
+        return next;
     }
 
     private static DateTime GetNextWeekday(DateTime baseDate)

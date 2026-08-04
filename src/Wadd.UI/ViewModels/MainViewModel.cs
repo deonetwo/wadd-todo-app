@@ -527,6 +527,12 @@ public partial class MainViewModel : ViewModelBase
         SelectedNavIndex = 2;
     }
 
+    [RelayCommand]
+    private void NavigateToCalendarView()
+    {
+        SelectedNavIndex = 3;
+    }
+
     private void UpdateSubCollections()
     {
         var today = DateTime.Today;
@@ -539,12 +545,14 @@ public partial class MainViewModel : ViewModelBase
             (x.ReminderAt.HasValue && x.ReminderAt.Value.Date <= today) ||
             (!x.DueDate.HasValue && !x.ReminderAt.HasValue)).ToList();
 
-        // Upcoming tasks: active tasks not in Today list (due/reminded strictly in the future)
-        var allUpcoming = activeItems.Where(x => !freshStandard.Contains(x)).ToList();
+        // Upcoming tasks: active one-off (non-recurring) tasks due or reminded strictly in the future, sorted by nearest due date
+        var allUpcoming = activeItems
+            .Where(x => !x.IsRecurring && !freshStandard.Contains(x))
+            .OrderBy(x => x.DueDate ?? x.ReminderAt ?? DateTime.MaxValue)
+            .ToList();
 
-        // Cap upcoming display to 5 latest items
+        // Cap upcoming display to 5 nearest items
         var freshUpcoming = allUpcoming
-            .OrderByDescending(x => x.CreatedAt)
             .Take(5)
             .ToList();
 
@@ -657,16 +665,42 @@ public partial class MainViewModel : ViewModelBase
 
     partial void OnIsYearlyFilterEnabledChanged(bool value) => GenerateCalendarGrid();
 
+    [ObservableProperty]
+    private bool _isCompletedFilterEnabled = true;
+
+    partial void OnIsCompletedFilterEnabledChanged(bool value) => GenerateCalendarGrid();
+
     private IEnumerable<TodoItem> GetFilteredTodoModels()
     {
-        return TodoItems.Select(x => x.Model).Where(item =>
+        var allModels = TodoItems.Select(x => x.Model).ToList();
+        var recurringTitleToTypeMap = allModels
+            .Where(t => t.IsRecurring && !string.IsNullOrWhiteSpace(t.RecurrenceType) && !t.RecurrenceType.Equals("None", StringComparison.OrdinalIgnoreCase))
+            .GroupBy(t => t.Title.Trim().ToLowerInvariant())
+            .ToDictionary(g => g.Key, g => g.First().RecurrenceType);
+
+        return allModels.Where(item =>
         {
-            if (!item.IsRecurring)
+            if (item.IsCompleted && !IsCompletedFilterEnabled)
+            {
+                return false;
+            }
+
+            string recType = item.RecurrenceType ?? "None";
+            if (recType.Equals("None", StringComparison.OrdinalIgnoreCase) && item.IsCompleted)
+            {
+                var titleKey = item.Title.Trim().ToLowerInvariant();
+                if (recurringTitleToTypeMap.TryGetValue(titleKey, out var parentRecType))
+                {
+                    recType = parentRecType;
+                }
+            }
+
+            string recurrenceType = recType.ToLowerInvariant();
+            if (recurrenceType.Equals("none", StringComparison.OrdinalIgnoreCase))
             {
                 return IsStandardFilterEnabled;
             }
 
-            string recurrenceType = (item.RecurrenceType ?? "None").ToLowerInvariant();
             return recurrenceType switch
             {
                 "daily" => IsDailyFilterEnabled,
@@ -738,6 +772,10 @@ public partial class MainViewModel : ViewModelBase
 
         var tasksForDate = RecurrenceEvaluator.GetTasksForDate(day.Date, TodoItems.Select(x => x.Model)).ToList();
         var freshSelectedTasks = TodoItems.Where(x => tasksForDate.Any(t => t.Id == x.Id)).ToList();
+        foreach (var taskVm in freshSelectedTasks)
+        {
+            taskVm.ContextDate = day.Date;
+        }
 
         SyncCollection(SelectedDateTasks, freshSelectedTasks);
         SelectedDateTitle = $"Tasks for {day.Date:MMM d, yyyy}";
@@ -810,6 +848,10 @@ public partial class MainViewModel : ViewModelBase
             {
                 var tasksForDate = RecurrenceEvaluator.GetTasksForDate(updatedSelectedDay.Date, GetFilteredTodoModels()).ToList();
                 var freshSelectedTasks = TodoItems.Where(x => tasksForDate.Any(t => t.Id == x.Id)).ToList();
+                foreach (var taskVm in freshSelectedTasks)
+                {
+                    taskVm.ContextDate = updatedSelectedDay.Date;
+                }
                 SyncCollection(SelectedDateTasks, freshSelectedTasks);
                 OnPropertyChanged(nameof(HasSelectedDateTasks));
             }
@@ -1178,7 +1220,8 @@ public partial class MainViewModel : ViewModelBase
         if (itemVm == null) return;
         try
         {
-            await _todoService.ToggleCompleteAsync(itemVm.Id);
+            DateTime? targetDate = IsCalendarView && SelectedDay != null ? SelectedDay.Date : null;
+            await _todoService.ToggleCompleteAsync(itemVm.Id, targetDate);
             await LoadTodoItemsAsync();
         }
         catch (Exception ex)

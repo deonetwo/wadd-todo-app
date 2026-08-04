@@ -1,6 +1,7 @@
 using System;
 using Wadd.Core.Helpers;
 using Wadd.Core.Models;
+using Wadd.Services;
 using Xunit;
 
 namespace Wadd.Tests;
@@ -152,5 +153,53 @@ public class RecurrenceHelperTests
         await service.ToggleCompleteAsync(item.Id);
         var all3 = (await service.GetTodosAsync()).ToList();
         Assert.Equal(2, all3.Count); // NO duplicate child created! Still 2 items
+    }
+
+    [Fact]
+    public async Task ToggleCompleteAsync_WhenAheadDateIsCompleted_SkipsPreCompletedDate()
+    {
+        var service = new InMemoryTodoService();
+        var activeItem = new TodoItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Daily Practice",
+            DueDate = new DateTime(2026, 8, 9),
+            IsRecurring = true,
+            RecurrenceType = "Daily"
+        };
+        await service.CreateAsync(activeItem);
+
+        // Pre-complete Aug 11 ahead of time
+        await service.ToggleCompleteAsync(activeItem.Id, new DateTime(2026, 8, 11));
+
+        // Complete Aug 9
+        await service.ToggleCompleteAsync(activeItem.Id, new DateTime(2026, 8, 9));
+
+        // Complete Aug 10
+        await service.ToggleCompleteAsync(activeItem.Id, new DateTime(2026, 8, 10));
+
+        // Active task should have hopped past Aug 11 to Aug 12
+        Assert.Equal(new DateTime(2026, 8, 12), activeItem.DueDate?.Date);
+
+        // Get tasks for Aug 11: should return ONLY the 1 completed instance for Aug 11
+        var allTasks = (await service.GetAllAsync()).ToList();
+        var aug11Tasks = RecurrenceEvaluator.GetTasksForDate(new DateTime(2026, 8, 11), allTasks).ToList();
+
+        Assert.Single(aug11Tasks);
+        Assert.True(aug11Tasks.Single().IsCompleted);
+
+        // Now uncomplete Aug 11
+        var completedAug11Item = aug11Tasks.Single();
+        await service.ToggleCompleteAsync(completedAug11Item.Id, new DateTime(2026, 8, 11));
+
+        // Active task due date should pull back to Aug 11
+        Assert.Equal(new DateTime(2026, 8, 11), activeItem.DueDate?.Date);
+
+        // Get tasks for Aug 11: task should NOT disappear, but return 1 active uncompleted task for Aug 11
+        var allTasksAfterUndo = (await service.GetAllAsync()).ToList();
+        var aug11TasksAfterUndo = RecurrenceEvaluator.GetTasksForDate(new DateTime(2026, 8, 11), allTasksAfterUndo).ToList();
+
+        Assert.Single(aug11TasksAfterUndo);
+        Assert.False(aug11TasksAfterUndo.Single().IsCompleted);
     }
 }

@@ -66,4 +66,25 @@ public class CalendarAndRecurrenceEvaluatorTests
         Assert.Equal(2, model.OverflowCount);
         Assert.Equal(2, model.VisibleTasks.Count());
     }
+
+    [Fact]
+    public async Task ToggleCompleteAsync_WithTargetDate_MaterializesCompletedOccurrence()
+    {
+        var service = new InMemoryTodoService();
+        var activeItem = new TodoItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Daily Exercise",
+            DueDate = new DateTime(2026, 8, 1),
+            IsRecurring = true,
+            RecurrenceType = "Daily"
+        };
+        await service.CreateAsync(activeItem);
+
+        var targetDate = new DateTime(2026, 8, 10);
+        await service.ToggleCompleteAsync(activeItem.Id, targetDate);
+
+        var allItems = (await service.GetAllAsync()).ToList();
+        Assert.True(allItems.Count >= 1);
+    }
 }

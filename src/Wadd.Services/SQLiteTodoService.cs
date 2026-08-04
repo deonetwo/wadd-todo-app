@@ -194,17 +194,72 @@ public class SQLiteTodoService : ITodoService
     public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         => await DeleteTodoAsync(id, cancellationToken);
 
-    public async Task<bool> ToggleCompleteAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<bool> ToggleCompleteAsync(Guid id, DateTime? targetDate = null, CancellationToken cancellationToken = default)
     {
         await EnsureInitializedAsync();
         var item = await GetByIdAsync(id, cancellationToken);
         if (item == null) return false;
 
+        var allTodos = await GetTodosAsync(cancellationToken);
+
+        if (targetDate.HasValue && item.IsRecurring && !string.Equals(item.RecurrenceType, "None", StringComparison.OrdinalIgnoreCase))
+        {
+            DateTime dateToComplete = targetDate.Value.Date;
+
+            var completedInstance = new TodoItem
+            {
+                Id = Guid.NewGuid(),
+                Title = item.Title,
+                Description = item.Description,
+                IsCompleted = true,
+                CompletedAt = DateTime.UtcNow,
+                Priority = item.Priority,
+                CreatedAt = DateTime.UtcNow,
+                DueDate = dateToComplete,
+                ReminderAt = item.ReminderAt.HasValue && item.DueDate.HasValue
+                    ? dateToComplete.Add(item.ReminderAt.Value.TimeOfDay)
+                    : item.ReminderAt,
+                IsRecurring = false,
+                RecurrenceType = item.RecurrenceType
+            };
+
+            DateTime activeDueDate = item.DueDate?.Date ?? DateTime.Today;
+            if (dateToComplete <= activeDueDate)
+            {
+                var nextDueDate = RecurrenceHelper.CalculateNextUncompletedDueDate(item, dateToComplete, allTodos);
+                item.DueDate = nextDueDate;
+                if (item.ReminderAt.HasValue)
+                {
+                    item.ReminderAt = nextDueDate.Add(item.ReminderAt.Value.TimeOfDay);
+                }
+            }
+
+            await AddTodoAsync(completedInstance, cancellationToken);
+            return await UpdateTodoAsync(item, cancellationToken);
+        }
+
+        if (targetDate.HasValue && item.IsCompleted && !item.IsRecurring)
+        {
+            await DeleteTodoAsync(item.Id, cancellationToken);
+
+            var activeParent = allTodos.FirstOrDefault(t => t.IsRecurring && !t.IsCompleted && t.Title.Equals(item.Title, StringComparison.OrdinalIgnoreCase));
+            if (activeParent != null && targetDate.Value.Date < (activeParent.DueDate?.Date ?? DateTime.MaxValue))
+            {
+                activeParent.DueDate = targetDate.Value.Date;
+                if (activeParent.ReminderAt.HasValue)
+                {
+                    activeParent.ReminderAt = targetDate.Value.Date.Add(activeParent.ReminderAt.Value.TimeOfDay);
+                }
+                await UpdateTodoAsync(activeParent, cancellationToken);
+            }
+            return true;
+        }
+
         item.IsCompleted = !item.IsCompleted;
 
         if (item.IsCompleted && item.IsRecurring && !string.Equals(item.RecurrenceType, "None", StringComparison.OrdinalIgnoreCase))
         {
-            var nextDueDate = RecurrenceHelper.CalculateNextDueDate(item);
+            var nextDueDate = RecurrenceHelper.CalculateNextUncompletedDueDate(item, null, allTodos);
             var nextItem = new TodoItem
             {
                 Id = Guid.NewGuid(),

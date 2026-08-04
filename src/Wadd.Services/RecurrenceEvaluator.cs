@@ -26,7 +26,15 @@ public static class RecurrenceEvaluator
             return false;
         }
 
-        DateTime startDate = (item.DueDate ?? item.ReminderAt ?? item.CreatedAt).Date;
+        DateTime startDate = item.CreatedAt.Date;
+        if (item.DueDate.HasValue && item.DueDate.Value.Date < startDate)
+        {
+            startDate = item.DueDate.Value.Date;
+        }
+        if (item.ReminderAt.HasValue && item.ReminderAt.Value.Date < startDate)
+        {
+            startDate = item.ReminderAt.Value.Date;
+        }
         if (targetDate < startDate)
         {
             return false;
@@ -122,6 +130,28 @@ public static class RecurrenceEvaluator
 
     public static IEnumerable<TodoItem> GetTasksForDate(DateTime date, IEnumerable<TodoItem> allTasks)
     {
-        return allTasks.Where(task => IsTaskScheduledOnDate(task, date));
+        DateTime targetDate = date.Date;
+        var taskList = allTasks.ToList();
+
+        // 1. Direct/explicit items assigned to this date (completed or specific one-off tasks)
+        var directItemsForDate = taskList
+            .Where(t => (t.DueDate.HasValue && t.DueDate.Value.Date == targetDate) ||
+                        (t.ReminderAt.HasValue && t.ReminderAt.Value.Date == targetDate))
+            .DistinctBy(t => new { Title = t.Title.Trim().ToLowerInvariant(), t.IsCompleted })
+            .ToList();
+
+        var completedTitlesOnDate = directItemsForDate
+            .Where(t => t.IsCompleted)
+            .Select(t => t.Title.Trim().ToLowerInvariant())
+            .ToHashSet();
+
+        // 2. Active recurring tasks evaluated for this date (excluding titles already completed on this date)
+        var activeRecurringForDate = taskList
+            .Where(t => t.IsRecurring && !t.IsCompleted)
+            .Where(t => IsTaskScheduledOnDate(t, targetDate))
+            .Where(t => !completedTitlesOnDate.Contains(t.Title.Trim().ToLowerInvariant()))
+            .ToList();
+
+        return directItemsForDate.Concat(activeRecurringForDate).DistinctBy(t => t.Id);
     }
 }

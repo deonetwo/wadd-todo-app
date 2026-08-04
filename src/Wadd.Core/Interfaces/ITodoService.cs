@@ -16,5 +16,5 @@ public interface ITodoService
     Task<bool> UpdateAsync(TodoItem item, CancellationToken cancellationToken = default);
     Task<bool> DeleteTodoAsync(Guid id, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
-    Task<bool> ToggleCompleteAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<bool> ToggleCompleteAsync(Guid id, DateTime? targetDate = null, CancellationToken cancellationToken = default);
 }

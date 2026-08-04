@@ -69,10 +69,62 @@ public class InMemoryTodoService : ITodoService
         return Task.FromResult(true);
     }
 
-    public Task<bool> ToggleCompleteAsync(Guid id, CancellationToken cancellationToken = default)
+    public Task<bool> ToggleCompleteAsync(Guid id, DateTime? targetDate = null, CancellationToken cancellationToken = default)
     {
         var item = _items.FirstOrDefault(x => x.Id == id);
         if (item == null) return Task.FromResult(false);
+
+        if (targetDate.HasValue && item.IsRecurring && !string.Equals(item.RecurrenceType, "None", StringComparison.OrdinalIgnoreCase))
+        {
+            DateTime dateToComplete = targetDate.Value.Date;
+
+            var completedInstance = new TodoItem
+            {
+                Id = Guid.NewGuid(),
+                Title = item.Title,
+                Description = item.Description,
+                IsCompleted = true,
+                CompletedAt = DateTime.UtcNow,
+                Priority = item.Priority,
+                CreatedAt = DateTime.UtcNow,
+                DueDate = dateToComplete,
+                ReminderAt = item.ReminderAt.HasValue && item.DueDate.HasValue
+                    ? dateToComplete.Add(item.ReminderAt.Value.TimeOfDay)
+                    : item.ReminderAt,
+                IsRecurring = false,
+                RecurrenceType = item.RecurrenceType
+            };
+
+            DateTime activeDueDate = item.DueDate?.Date ?? DateTime.Today;
+            if (dateToComplete <= activeDueDate)
+            {
+                var nextDueDate = Wadd.Core.Helpers.RecurrenceHelper.CalculateNextUncompletedDueDate(item, dateToComplete, _items);
+                item.DueDate = nextDueDate;
+                if (item.ReminderAt.HasValue)
+                {
+                    item.ReminderAt = nextDueDate.Add(item.ReminderAt.Value.TimeOfDay);
+                }
+            }
+
+            _items.Add(completedInstance);
+            return Task.FromResult(true);
+        }
+
+        if (targetDate.HasValue && item.IsCompleted && !item.IsRecurring)
+        {
+            _items.Remove(item);
+
+            var activeParent = _items.FirstOrDefault(t => t.IsRecurring && !t.IsCompleted && t.Title.Equals(item.Title, StringComparison.OrdinalIgnoreCase));
+            if (activeParent != null && targetDate.Value.Date < (activeParent.DueDate?.Date ?? DateTime.MaxValue))
+            {
+                activeParent.DueDate = targetDate.Value.Date;
+                if (activeParent.ReminderAt.HasValue)
+                {
+                    activeParent.ReminderAt = targetDate.Value.Date.Add(activeParent.ReminderAt.Value.TimeOfDay);
+                }
+            }
+            return Task.FromResult(true);
+        }
 
         item.IsCompleted = !item.IsCompleted;
         if (item.IsCompleted)

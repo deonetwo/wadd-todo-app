@@ -118,10 +118,10 @@
               </Grid>
             </ListBoxItem>
 
-            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Recurring Tasks">
+            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Repeating Tasks">
               <Grid ColumnDefinitions="56,*,Auto" Height="44">
                 <PathIcon Grid.Column="0" Data="{StaticResource RepeatIconData}" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="1" Text="Recurring" FontSize="14" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="Repeating" FontSize="14" VerticalAlignment="Center"/>
                 <Border Grid.Column="2"
                         Background="{DynamicResource AppSurfaceElevatedBrush}"
                         CornerRadius="10"
