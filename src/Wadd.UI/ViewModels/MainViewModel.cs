@@ -589,6 +589,17 @@ public partial class MainViewModel : ViewModelBase
     private bool _isUpdatingCalendarPickers;
 
     [ObservableProperty]
+    private bool _isSingleColumnCalendar;
+
+    [RelayCommand]
+    private void SetCalendarLayoutMode(string? mode)
+    {
+        IsSingleColumnCalendar = string.Equals(mode, "Schedule", StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(mode, "SingleColumn", StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(mode, "Portrait", StringComparison.OrdinalIgnoreCase);
+    }
+
+    [ObservableProperty]
     private DateTime _currentCalendarDate = DateTime.Today;
 
     [ObservableProperty]

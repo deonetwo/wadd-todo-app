@@ -9,6 +9,10 @@ public partial class CalendarDayViewModel : ViewModelBase
 
     public string DayNumberText => Date.Day.ToString();
 
+    public string DayOfWeekShortText => Date.ToString("ddd").ToUpperInvariant();
+
+    public string FullDateText => Date.ToString("dddd, MMM d, yyyy");
+
     [ObservableProperty]
     private bool _isCurrentMonth;
 
