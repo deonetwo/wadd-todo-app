@@ -79,8 +79,20 @@
                         </StackPanel>
                       </Border>
 
-                      <!-- Next Due Date Badge -->
-                      <Border IsVisible="{Binding HasDueDate}"
+                      <!-- Overdue Date Badge -->
+                      <Border IsVisible="{Binding IsOverdue}"
+                              Background="{DynamicResource AppAccentDangerSubtleBrush}"
+                              CornerRadius="4"
+                              Padding="6,2"
+                              HorizontalAlignment="Left">
+                        <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                          <PathIcon Data="{StaticResource CalendarIconData}" Width="10" Height="10" Foreground="{DynamicResource AppAccentDangerBrush}"/>
+                          <TextBlock Text="{Binding DueDateFormatted}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AppAccentDangerBrush}"/>
+                        </StackPanel>
+                      </Border>
+
+                      <!-- Normal Due Date Badge -->
+                      <Border IsVisible="{Binding HasDueDateOnly}"
                               Background="{DynamicResource AppPrimarySubtleBrush}"
                               CornerRadius="4"
                               Padding="6,2"

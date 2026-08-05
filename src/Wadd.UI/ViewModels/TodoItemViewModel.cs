@@ -49,6 +49,13 @@ public partial class TodoItemViewModel : ViewModelBase
             {
                 Model.IsCompleted = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(DueDateFormatted));
+                OnPropertyChanged(nameof(ContextDueDateFormatted));
+                OnPropertyChanged(nameof(IsOverdue));
+                OnPropertyChanged(nameof(HasDueDateOnly));
+                OnPropertyChanged(nameof(IsDueToday));
+                OnPropertyChanged(nameof(CompletedAtFormatted));
+                OnPropertyChanged(nameof(HasCompletedAt));
             }
         }
     }
@@ -166,9 +173,16 @@ public partial class TodoItemViewModel : ViewModelBase
         OnPropertyChanged(nameof(DueDate));
         OnPropertyChanged(nameof(HasDueDate));
         OnPropertyChanged(nameof(DueDateFormatted));
+        OnPropertyChanged(nameof(ContextDueDateFormatted));
+        OnPropertyChanged(nameof(IsOverdue));
+        OnPropertyChanged(nameof(HasDueDateOnly));
+        OnPropertyChanged(nameof(IsDueToday));
         OnPropertyChanged(nameof(ReminderAt));
         OnPropertyChanged(nameof(HasReminder));
         OnPropertyChanged(nameof(ReminderAtFormatted));
+        OnPropertyChanged(nameof(CompletedAt));
+        OnPropertyChanged(nameof(HasCompletedAt));
+        OnPropertyChanged(nameof(CompletedAtFormatted));
         OnPropertyChanged(nameof(IsRecurring));
         OnPropertyChanged(nameof(RecurrenceType));
         OnPropertyChanged(nameof(HasRecurrence));
