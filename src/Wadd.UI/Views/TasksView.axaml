@@ -8,6 +8,13 @@
              x:DataType="vm:MainViewModel">
 
   <UserControl.Styles>
+    <Style Selector="StackPanel.view-container">
+      <Setter Property="Margin" Value="64,52,80,120"/>
+    </Style>
+    <Style Selector="StackPanel.view-container.compact">
+      <Setter Property="Margin" Value="16,20,16,40"/>
+    </Style>
+
     <Style Selector="CheckBox.task-checkbox:pointerover /template/ ContentPresenter">
       <Setter Property="Background" Value="Transparent"/>
       <Setter Property="BorderThickness" Value="0"/>
@@ -27,7 +34,7 @@
   </UserControl.Styles>
 
   <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-    <StackPanel Margin="64,52,80,120" Spacing="0">
+    <StackPanel Classes="view-container" Classes.compact="{Binding IsCompact}" Spacing="0">
 
       <!-- Page header -->
       <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">

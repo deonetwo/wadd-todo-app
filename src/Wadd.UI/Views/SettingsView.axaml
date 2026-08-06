@@ -7,14 +7,24 @@
              x:Class="Wadd.UI.Views.SettingsView"
              x:DataType="vm:MainViewModel">
 
+  <UserControl.Styles>
+    <Style Selector="StackPanel.view-container">
+      <Setter Property="Margin" Value="64,48,80,180"/>
+    </Style>
+    <Style Selector="StackPanel.view-container.compact">
+      <Setter Property="Margin" Value="16,20,16,40"/>
+    </Style>
+  </UserControl.Styles>
+
   <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-    <StackPanel Margin="64,48,80,180" Spacing="24" HorizontalAlignment="Stretch">
+    <StackPanel Classes="view-container" Classes.compact="{Binding IsCompact}" Spacing="24" HorizontalAlignment="Stretch">
 
       <!-- Header -->
       <StackPanel Spacing="4">
         <TextBlock Text="Settings &amp; About" Classes="display"/>
         <TextBlock Text="Manage theme preferences, cloud synchronization, data export, and application information."
                    Classes="small"
+                   TextWrapping="Wrap"
                    Foreground="{DynamicResource AppTextSecondaryBrush}"/>
       </StackPanel>
 
@@ -26,13 +36,15 @@
             <TextBlock Text="Interface Theme" Classes="heading"/>
             <TextBlock Text="Choose your preferred color theme or match your system default."
                        Classes="small"
+                       TextWrapping="Wrap"
                        Foreground="{DynamicResource AppTextSecondaryBrush}"/>
           </StackPanel>
 
-          <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,4,0,0">
+          <WrapPanel Orientation="Horizontal" Margin="0,4,0,0">
             <Button Classes="outline"
                     Command="{Binding SetThemeModeCommand}"
-                    CommandParameter="System">
+                    CommandParameter="System"
+                    Margin="0,0,8,8">
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <PathIcon Data="{StaticResource MonitorIconData}" Width="14" Height="14"/>
                 <TextBlock Text="System"/>
@@ -41,7 +53,8 @@
 
             <Button Classes="outline"
                     Command="{Binding SetThemeModeCommand}"
-                    CommandParameter="Light">
+                    CommandParameter="Light"
+                    Margin="0,0,8,8">
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <PathIcon Data="{StaticResource SunIconData}" Width="14" Height="14"/>
                 <TextBlock Text="Light"/>
@@ -50,13 +63,14 @@
 
             <Button Classes="outline"
                     Command="{Binding SetThemeModeCommand}"
-                    CommandParameter="Dark">
+                    CommandParameter="Dark"
+                    Margin="0,0,8,8">
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <PathIcon Data="{StaticResource MoonIconData}" Width="14" Height="14"/>
                 <TextBlock Text="Dark"/>
               </StackPanel>
             </Button>
-          </StackPanel>
+          </WrapPanel>
 
           <StackPanel Orientation="Horizontal" Spacing="6">
             <TextBlock Text="Active mode:" Classes="small"/>
@@ -75,6 +89,7 @@
             <TextBlock Text="Private Google Drive Backup" Classes="heading"/>
             <TextBlock Text="Synchronize your tasks securely to your private Google Drive storage across Windows &amp; Android."
                        Classes="small"
+                       TextWrapping="Wrap"
                        Foreground="{DynamicResource AppTextSecondaryBrush}"/>
           </StackPanel>
 
@@ -88,13 +103,13 @@
                 <Border Width="20" Height="20" CornerRadius="10" Background="#FFFFFF" VerticalAlignment="Center">
                   <TextBlock Text="G" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
-                <TextBlock Text="Connect Google Drive Account" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                <TextBlock Text="Connect Google Drive Account" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/>
               </StackPanel>
             </Button>
-            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-              <TextBlock Text="🔒" FontSize="12" VerticalAlignment="Center"/>
-              <TextBlock Text="Your task database is safely backed up to your personal Google Drive." Classes="small" VerticalAlignment="Center"/>
-            </StackPanel>
+            <Grid ColumnDefinitions="Auto,*" Margin="0,2,0,0">
+              <TextBlock Grid.Column="0" Text="🔒" FontSize="12" VerticalAlignment="Top" Margin="0,1,6,0"/>
+              <TextBlock Grid.Column="1" Text="Your task database is safely backed up to your personal Google Drive." Classes="small" TextWrapping="Wrap" VerticalAlignment="Center"/>
+            </Grid>
           </StackPanel>
 
           <!-- Signed In State -->
