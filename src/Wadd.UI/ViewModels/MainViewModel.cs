@@ -782,11 +782,10 @@ public partial class MainViewModel : ViewModelBase
         SelectedDay = day;
 
         var tasksForDate = RecurrenceEvaluator.GetTasksForDate(day.Date, TodoItems.Select(x => x.Model)).ToList();
-        var freshSelectedTasks = TodoItems.Where(x => tasksForDate.Any(t => t.Id == x.Id)).ToList();
-        foreach (var taskVm in freshSelectedTasks)
-        {
-            taskVm.ContextDate = day.Date;
-        }
+        var freshSelectedTasks = TodoItems
+            .Where(x => tasksForDate.Any(t => t.Id == x.Id))
+            .Select(x => new TodoItemViewModel(x.Model) { ContextDate = day.Date })
+            .ToList();
 
         SyncCollection(SelectedDateTasks, freshSelectedTasks);
         SelectedDateTitle = $"Tasks for {day.Date:MMM d, yyyy}";
@@ -834,7 +833,11 @@ public partial class MainViewModel : ViewModelBase
 
             foreach (var vm in matchingVms)
             {
-                dayVm.DayTasks.Add(vm);
+                var contextualVm = new TodoItemViewModel(vm.Model)
+                {
+                    ContextDate = dayDate
+                };
+                dayVm.DayTasks.Add(contextualVm);
             }
             dayVm.RefreshComputedProperties();
 
@@ -858,11 +861,10 @@ public partial class MainViewModel : ViewModelBase
             if (updatedSelectedDay != null)
             {
                 var tasksForDate = RecurrenceEvaluator.GetTasksForDate(updatedSelectedDay.Date, GetFilteredTodoModels()).ToList();
-                var freshSelectedTasks = TodoItems.Where(x => tasksForDate.Any(t => t.Id == x.Id)).ToList();
-                foreach (var taskVm in freshSelectedTasks)
-                {
-                    taskVm.ContextDate = updatedSelectedDay.Date;
-                }
+                var freshSelectedTasks = TodoItems
+                    .Where(x => tasksForDate.Any(t => t.Id == x.Id))
+                    .Select(x => new TodoItemViewModel(x.Model) { ContextDate = updatedSelectedDay.Date })
+                    .ToList();
                 SyncCollection(SelectedDateTasks, freshSelectedTasks);
                 OnPropertyChanged(nameof(HasSelectedDateTasks));
             }
@@ -884,14 +886,27 @@ public partial class MainViewModel : ViewModelBase
         for (int i = 0; i < freshItems.Count; i++)
         {
             var item = freshItems[i];
-            var currentIndex = collection.IndexOf(item);
-            if (currentIndex < 0)
+            int existingIndex = -1;
+            for (int j = 0; j < collection.Count; j++)
+            {
+                if (collection[j].Id == item.Id)
+                {
+                    existingIndex = j;
+                    break;
+                }
+            }
+
+            if (existingIndex < 0)
             {
                 collection.Insert(i, item);
             }
-            else if (currentIndex != i && currentIndex >= 0)
+            else
             {
-                collection.Move(currentIndex, i);
+                collection[existingIndex].ContextDate = item.ContextDate;
+                if (existingIndex != i)
+                {
+                    collection.Move(existingIndex, i);
+                }
             }
         }
     }
@@ -1235,7 +1250,7 @@ public partial class MainViewModel : ViewModelBase
         if (itemVm == null) return;
         try
         {
-            DateTime? targetDate = IsCalendarView && SelectedDay != null ? SelectedDay.Date : null;
+            DateTime? targetDate = itemVm.ContextDate ?? (IsCalendarView && SelectedDay != null ? SelectedDay.Date : itemVm.DueDate);
             await _todoService.ToggleCompleteAsync(itemVm.Id, targetDate);
             await LoadTodoItemsAsync();
         }

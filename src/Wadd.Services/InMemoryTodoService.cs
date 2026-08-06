@@ -80,9 +80,11 @@ public class InMemoryTodoService : ITodoService
         var item = _items.FirstOrDefault(x => x.Id == id);
         if (item == null) return Task.FromResult(false);
 
-        if (targetDate.HasValue && item.IsRecurring && !string.Equals(item.RecurrenceType, "None", StringComparison.OrdinalIgnoreCase))
+        DateTime? effectiveTargetDate = targetDate ?? item.DueDate;
+
+        if (effectiveTargetDate.HasValue && !item.IsCompleted && item.IsRecurring && !string.Equals(item.RecurrenceType, "None", StringComparison.OrdinalIgnoreCase))
         {
-            DateTime dateToComplete = targetDate.Value.Date;
+            DateTime dateToComplete = effectiveTargetDate.Value.Date;
 
             var completedInstance = new TodoItem
             {
@@ -98,7 +100,10 @@ public class InMemoryTodoService : ITodoService
                     ? dateToComplete.Add(item.ReminderAt.Value.TimeOfDay)
                     : item.ReminderAt,
                 IsRecurring = false,
-                RecurrenceType = item.RecurrenceType
+                RecurrenceType = item.RecurrenceType,
+                CustomRecurrenceInterval = item.CustomRecurrenceInterval,
+                CustomRecurrenceUnit = item.CustomRecurrenceUnit,
+                CustomWeeklyDays = item.CustomWeeklyDays
             };
 
             DateTime activeDueDate = item.DueDate?.Date ?? DateTime.Today;
@@ -116,20 +121,32 @@ public class InMemoryTodoService : ITodoService
             return Task.FromResult(true);
         }
 
-        if (targetDate.HasValue && item.IsCompleted && !item.IsRecurring)
+        if (item.IsCompleted && !string.Equals(item.RecurrenceType, "None", StringComparison.OrdinalIgnoreCase))
         {
-            _items.Remove(item);
-
             var activeParent = _items.FirstOrDefault(t => t.IsRecurring && !t.IsCompleted && t.Title.Equals(item.Title, StringComparison.OrdinalIgnoreCase));
-            if (activeParent != null && targetDate.Value.Date < (activeParent.DueDate?.Date ?? DateTime.MaxValue))
+            if (activeParent != null)
             {
-                activeParent.DueDate = targetDate.Value.Date;
-                if (activeParent.ReminderAt.HasValue)
+                _items.Remove(item);
+
+                DateTime untoggledDate = effectiveTargetDate?.Date ?? item.DueDate?.Date ?? DateTime.Today;
+                if (untoggledDate < (activeParent.DueDate?.Date ?? DateTime.MaxValue))
                 {
-                    activeParent.ReminderAt = targetDate.Value.Date.Add(activeParent.ReminderAt.Value.TimeOfDay);
+                    activeParent.DueDate = untoggledDate;
+                    if (activeParent.ReminderAt.HasValue)
+                    {
+                        activeParent.ReminderAt = untoggledDate.Add(activeParent.ReminderAt.Value.TimeOfDay);
+                    }
                 }
+                return Task.FromResult(true);
             }
-            return Task.FromResult(true);
+            else
+            {
+                item.IsCompleted = false;
+                item.IsRecurring = true;
+                item.CompletedAt = null;
+                item.UpdatedAt = DateTime.UtcNow;
+                return Task.FromResult(true);
+            }
         }
 
         item.IsCompleted = !item.IsCompleted;

@@ -207,10 +207,11 @@ public class SQLiteTodoService : ITodoService
         if (item == null) return false;
 
         var allTodos = await GetTodosAsync(cancellationToken);
+        DateTime? effectiveTargetDate = targetDate ?? item.DueDate;
 
-        if (targetDate.HasValue && item.IsRecurring && !string.Equals(item.RecurrenceType, "None", StringComparison.OrdinalIgnoreCase))
+        if (effectiveTargetDate.HasValue && !item.IsCompleted && item.IsRecurring && !string.Equals(item.RecurrenceType, "None", StringComparison.OrdinalIgnoreCase))
         {
-            DateTime dateToComplete = targetDate.Value.Date;
+            DateTime dateToComplete = effectiveTargetDate.Value.Date;
 
             var completedInstance = new TodoItem
             {
@@ -226,7 +227,10 @@ public class SQLiteTodoService : ITodoService
                     ? dateToComplete.Add(item.ReminderAt.Value.TimeOfDay)
                     : item.ReminderAt,
                 IsRecurring = false,
-                RecurrenceType = item.RecurrenceType
+                RecurrenceType = item.RecurrenceType,
+                CustomRecurrenceInterval = item.CustomRecurrenceInterval,
+                CustomRecurrenceUnit = item.CustomRecurrenceUnit,
+                CustomWeeklyDays = item.CustomWeeklyDays
             };
 
             DateTime activeDueDate = item.DueDate?.Date ?? DateTime.Today;
@@ -244,21 +248,32 @@ public class SQLiteTodoService : ITodoService
             return await UpdateTodoAsync(item, cancellationToken);
         }
 
-        if (targetDate.HasValue && item.IsCompleted && !item.IsRecurring)
+        if (item.IsCompleted && !string.Equals(item.RecurrenceType, "None", StringComparison.OrdinalIgnoreCase))
         {
-            await DeleteTodoAsync(item.Id, cancellationToken);
-
             var activeParent = allTodos.FirstOrDefault(t => t.IsRecurring && !t.IsCompleted && t.Title.Equals(item.Title, StringComparison.OrdinalIgnoreCase));
-            if (activeParent != null && targetDate.Value.Date < (activeParent.DueDate?.Date ?? DateTime.MaxValue))
+            if (activeParent != null)
             {
-                activeParent.DueDate = targetDate.Value.Date;
-                if (activeParent.ReminderAt.HasValue)
+                await DeleteTodoAsync(item.Id, cancellationToken);
+
+                DateTime untoggledDate = effectiveTargetDate?.Date ?? item.DueDate?.Date ?? DateTime.Today;
+                if (untoggledDate < (activeParent.DueDate?.Date ?? DateTime.MaxValue))
                 {
-                    activeParent.ReminderAt = targetDate.Value.Date.Add(activeParent.ReminderAt.Value.TimeOfDay);
+                    activeParent.DueDate = untoggledDate;
+                    if (activeParent.ReminderAt.HasValue)
+                    {
+                        activeParent.ReminderAt = untoggledDate.Add(activeParent.ReminderAt.Value.TimeOfDay);
+                    }
+                    await UpdateTodoAsync(activeParent, cancellationToken);
                 }
-                await UpdateTodoAsync(activeParent, cancellationToken);
+                return true;
             }
-            return true;
+            else
+            {
+                item.IsCompleted = false;
+                item.IsRecurring = true;
+                item.CompletedAt = null;
+                return await UpdateTodoAsync(item, cancellationToken);
+            }
         }
 
         item.IsCompleted = !item.IsCompleted;
@@ -285,7 +300,6 @@ public class SQLiteTodoService : ITodoService
                 CustomWeeklyDays = item.CustomWeeklyDays
             };
 
-            // Mark this completed historical instance as no longer actively recurring so toggling done/undone does not duplicate tasks
             item.IsRecurring = false;
 
             var updatedOriginal = await UpdateTodoAsync(item, cancellationToken);
