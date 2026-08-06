@@ -43,13 +43,29 @@ public class GoogleDriveSyncService : ISyncService
     public string? UserEmail => _authRecord?.UserEmail;
     public string? UserName => _authRecord?.UserName;
 
+    private static string? GetAssemblyMetadata(string key)
+    {
+        var attribute = typeof(GoogleDriveSyncService).Assembly
+            .GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
+            .OfType<System.Reflection.AssemblyMetadataAttribute>()
+            .FirstOrDefault(a => string.Equals(a.Key, key, StringComparison.OrdinalIgnoreCase));
+        return attribute?.Value;
+    }
+
     public string GoogleClientId
     {
         get
         {
             var envVal = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
             if (!string.IsNullOrWhiteSpace(envVal)) return envVal.Trim();
-            return _authRecord?.GoogleClientId ?? string.Empty;
+
+            if (!string.IsNullOrWhiteSpace(_authRecord?.GoogleClientId))
+                return _authRecord.GoogleClientId;
+
+            var compiledVal = GetAssemblyMetadata("GoogleClientId");
+            if (!string.IsNullOrWhiteSpace(compiledVal)) return compiledVal.Trim();
+
+            return string.Empty;
         }
         set
         {
