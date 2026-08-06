@@ -316,6 +316,7 @@
                                       CornerRadius="5"
                                       Padding="5,3"
                                       Margin="0,1"
+                                      ToolTip.Tip="{Binding Title}"
                                       Classes.completed="{Binding IsCompleted}">
                                 <Border.Styles>
                                   <Style Selector="Border.completed">
@@ -338,6 +339,7 @@
                                              FontSize="10"
                                              FontWeight="Medium"
                                              Foreground="{DynamicResource AppTextPrimaryBrush}"
+                                             TextWrapping="NoWrap"
                                              TextTrimming="CharacterEllipsis"/>
 
                                   <!-- Mini Recurrence Indicator Icon -->

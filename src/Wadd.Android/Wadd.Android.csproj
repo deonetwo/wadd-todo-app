@@ -3,17 +3,21 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0-android</TargetFramework>
-    <SupportedOSPlatformVersion>21.0</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion>23.0</SupportedOSPlatformVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationId>com.wadd.todoapp</ApplicationId>
     <ApplicationVersion>1</ApplicationVersion>
     <ApplicationTitle>Wadd</ApplicationTitle>
+    <EmbedAssembliesIntoApk Condition="'$(Configuration)' == 'Debug'">true</EmbedAssembliesIntoApk>
+
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="11.2.5" />
-    <PackageReference Include="Avalonia.Android" Version="11.2.5" />
+    <PackageReference Include="Avalonia" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Android" Version="12.1.1" />
+    <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.11" />
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3.android" Version="2.1.12" />
   </ItemGroup>
 
   <ItemGroup>

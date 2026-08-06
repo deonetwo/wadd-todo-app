@@ -81,7 +81,7 @@
         <Grid ColumnDefinitions="*,Auto">
           <TextBox Grid.Column="0"
                    Classes="composer"
-                   Watermark="What do you need to do?"
+                   PlaceholderText="What do you need to do?"
                    Text="{Binding NewTaskTitle, Mode=TwoWay}"
                    FontSize="20"
                    FontWeight="Medium"
@@ -132,7 +132,7 @@
                         <CalendarDatePicker SelectedDate="{Binding NewTaskReminderDate, Mode=TwoWay}"
                                             DisplayDateStart="{Binding MinDueDate}"
                                             DisplayDateEnd="{Binding NewTaskDueDate}"
-                                            Watermark="Reminder Date..."
+                                            PlaceholderText="Reminder Date..."
                                             HorizontalAlignment="Stretch"/>
                         <TimePicker Classes="no-clock"
                                     SelectedTime="{Binding NewTaskReminderTime, Mode=TwoWay}"
@@ -177,7 +177,7 @@
 
                         <CalendarDatePicker SelectedDate="{Binding NewTaskDueDate, Mode=TwoWay}"
                                             DisplayDateStart="{Binding MinDueDate}"
-                                            Watermark="Choose Date..."
+                                            PlaceholderText="Choose Date..."
                                             HorizontalAlignment="Stretch"/>
                       </StackPanel>
                     </Flyout>
@@ -307,7 +307,7 @@
 
         <!-- Description Sub-Input -->
         <TextBox Classes="composer"
-                 Watermark="Add a note or context… (optional)"
+                 PlaceholderText="Add a note or context… (optional)"
                  Text="{Binding NewTaskDescription, Mode=TwoWay}"
                  FontSize="13"
                  Padding="0,8"
