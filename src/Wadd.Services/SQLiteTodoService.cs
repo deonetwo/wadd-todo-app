@@ -69,6 +69,7 @@ public class SQLiteTodoService : ITodoService
                 await _database.CreateTableAsync<TodoItemEntity>();
                 await _database.CreateTableAsync<SyncLogEntity>();
                 await _database.CreateTableAsync<SyncConflictEntity>();
+                await _database.CreateTableAsync<DateNoteEntity>();
                 _isInitialized = true;
             }
         }
@@ -367,6 +368,66 @@ public class SQLiteTodoService : ITodoService
         catch (Exception ex)
         {
             System.Diagnostics.Trace.WriteLine($"Failed to write sync log: {ex.Message}");
+        }
+    }
+
+    public async Task<string?> GetDateNoteAsync(DateTime date, CancellationToken cancellationToken = default)
+    {
+        await EnsureInitializedAsync();
+        var key = date.ToString("yyyy-MM-dd");
+        var entity = await _database.Table<DateNoteEntity>().FirstOrDefaultAsync(x => x.DateKey == key);
+        return entity?.NoteText;
+    }
+
+    public async Task<Dictionary<string, string>> GetAllDateNotesAsync(CancellationToken cancellationToken = default)
+    {
+        await EnsureInitializedAsync();
+        var entities = await _database.Table<DateNoteEntity>().ToListAsync();
+        return entities.Where(x => !string.IsNullOrWhiteSpace(x.NoteText))
+                       .ToDictionary(x => x.DateKey, x => x.NoteText);
+    }
+
+    public async Task SaveDateNoteAsync(DateTime date, string noteText, CancellationToken cancellationToken = default)
+    {
+        await EnsureInitializedAsync();
+        var key = date.ToString("yyyy-MM-dd");
+        var existing = await _database.Table<DateNoteEntity>().FirstOrDefaultAsync(x => x.DateKey == key);
+
+        if (string.IsNullOrWhiteSpace(noteText))
+        {
+            if (existing != null)
+            {
+                await _database.DeleteAsync(existing);
+            }
+            return;
+        }
+
+        if (existing == null)
+        {
+            await _database.InsertAsync(new DateNoteEntity
+            {
+                DateKey = key,
+                NoteText = noteText,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+        }
+        else
+        {
+            existing.NoteText = noteText;
+            existing.UpdatedAt = DateTime.UtcNow;
+            await _database.UpdateAsync(existing);
+        }
+    }
+
+    public async Task DeleteDateNoteAsync(DateTime date, CancellationToken cancellationToken = default)
+    {
+        await EnsureInitializedAsync();
+        var key = date.ToString("yyyy-MM-dd");
+        var existing = await _database.Table<DateNoteEntity>().FirstOrDefaultAsync(x => x.DateKey == key);
+        if (existing != null)
+        {
+            await _database.DeleteAsync(existing);
         }
     }
 }

@@ -17,4 +17,10 @@ public interface ITodoService
     Task<bool> DeleteTodoAsync(Guid id, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     Task<bool> ToggleCompleteAsync(Guid id, DateTime? targetDate = null, CancellationToken cancellationToken = default);
+
+    // Calendar Date Notes
+    Task<string?> GetDateNoteAsync(DateTime date, CancellationToken cancellationToken = default);
+    Task<Dictionary<string, string>> GetAllDateNotesAsync(CancellationToken cancellationToken = default);
+    Task SaveDateNoteAsync(DateTime date, string noteText, CancellationToken cancellationToken = default);
+    Task DeleteDateNoteAsync(DateTime date, CancellationToken cancellationToken = default);
 }

@@ -564,4 +564,15 @@
     <Setter Property="Width" Value="0" />
   </Style>
 
+  <!-- ══════════════ TOOLTIP STYLING ══════════════ -->
+  <Style Selector="ToolTip">
+    <Setter Property="Background" Value="{DynamicResource AppSurfaceElevatedBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="6"/>
+    <Setter Property="Padding" Value="8,5"/>
+    <Setter Property="FontSize" Value="12"/>
+  </Style>
+
 </Styles>

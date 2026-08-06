@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Wadd.Core.Interfaces;
 using Wadd.Core.Models;
 
@@ -160,5 +161,38 @@ public class InMemoryTodoService : ITodoService
         }
         item.UpdatedAt = DateTime.UtcNow;
         return Task.FromResult(true);
+    }
+
+    private readonly ConcurrentDictionary<string, string> _dateNotes = new();
+
+    public Task<string?> GetDateNoteAsync(DateTime date, CancellationToken cancellationToken = default)
+    {
+        _dateNotes.TryGetValue(date.ToString("yyyy-MM-dd"), out var note);
+        return Task.FromResult(note);
+    }
+
+    public Task<Dictionary<string, string>> GetAllDateNotesAsync(CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(new Dictionary<string, string>(_dateNotes));
+    }
+
+    public Task SaveDateNoteAsync(DateTime date, string noteText, CancellationToken cancellationToken = default)
+    {
+        var key = date.ToString("yyyy-MM-dd");
+        if (string.IsNullOrWhiteSpace(noteText))
+        {
+            _dateNotes.TryRemove(key, out _);
+        }
+        else
+        {
+            _dateNotes[key] = noteText;
+        }
+        return Task.CompletedTask;
+    }
+
+    public Task DeleteDateNoteAsync(DateTime date, CancellationToken cancellationToken = default)
+    {
+        _dateNotes.TryRemove(date.ToString("yyyy-MM-dd"), out _);
+        return Task.CompletedTask;
     }
 }

@@ -286,13 +286,22 @@
                     </Border.Styles>
 
                     <Grid RowDefinitions="Auto,*">
-                      <!-- Day Header: Date Number + Today Pill -->
+                      <!-- Day Header: Date Number + Note Icon + Today Pill -->
                       <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,6">
-                        <TextBlock Grid.Column="0"
-                                   Text="{Binding DayNumberText}"
-                                   FontSize="14"
-                                   FontWeight="Bold"
-                                   Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding DayNumberText}"
+                                     FontSize="14"
+                                     FontWeight="Bold"
+                                     Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+
+                          <!-- Note Indicator Badge -->
+                          <PathIcon Data="{StaticResource NoteIconData}"
+                                    Width="11" Height="11"
+                                    IsVisible="{Binding HasNote}"
+                                    Foreground="{DynamicResource AppPrimaryBrush}"
+                                    ToolTip.Tip="{Binding NoteText}"
+                                    VerticalAlignment="Center"/>
+                        </StackPanel>
 
                         <!-- Today Indicator Badge -->
                         <Border Grid.Column="1"
@@ -413,6 +422,18 @@
 
                     <!-- Right Day Tasks Agenda Stream -->
                     <StackPanel Grid.Column="1" Spacing="8">
+                      <!-- Date Note Banner if Present -->
+                      <Border IsVisible="{Binding HasNote}"
+                              Background="{DynamicResource AppPrimarySubtleBrush}"
+                              CornerRadius="6"
+                              Padding="10,6"
+                              Margin="0,0,0,4">
+                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                          <PathIcon Data="{StaticResource NoteIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                          <TextBlock Text="{Binding NoteText}" FontSize="12" FontWeight="Medium" Foreground="{DynamicResource AppTextPrimaryBrush}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                      </Border>
+
                       <!-- Agenda Tasks -->
                       <ItemsControl ItemsSource="{Binding DayTasks}" IsVisible="{Binding HasTasks}">
                         <ItemsControl.ItemTemplate>
@@ -482,7 +503,7 @@
             BorderThickness="1,0,0,0"
             BoxShadow="-8 0 24 0 #40000000"
             ZIndex="10">
-      <Grid RowDefinitions="Auto,*">
+      <Grid RowDefinitions="Auto,*,Auto">
         <!-- Sidebar Header -->
         <Border Grid.Row="0" Padding="20,20,16,16">
           <Grid ColumnDefinitions="*,Auto">
@@ -502,10 +523,10 @@
           </Grid>
         </Border>
 
-        <!-- Sidebar Content List -->
+        <!-- Sidebar Content List (Tasks) -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-          <StackPanel Margin="16,0,16,24" Spacing="12">
-            <Separator Classes="divider" Margin="0,0,0,8"/>
+          <StackPanel Margin="16,0,16,16" Spacing="12">
+            <Separator Classes="divider" Margin="0,0,0,4"/>
 
             <!-- Empty State -->
             <StackPanel IsVisible="{Binding !HasSelectedDateTasks}" Spacing="8" Margin="0,32,0,0" HorizontalAlignment="Center">
@@ -589,6 +610,23 @@
             </ItemsControl>
           </StackPanel>
         </ScrollViewer>
+
+        <!-- ═══ BOTTOM DATE NOTE SECTION (Auto-saving, top-left placeholder, CornerRadius 4) ═══ -->
+        <Border Grid.Row="2"
+                Padding="12,0,12,12">
+          <TextBox Text="{Binding SelectedDayNoteText, Mode=TwoWay}"
+                   PlaceholderText="Add note"
+                   AcceptsReturn="True"
+                   TextWrapping="Wrap"
+                   MinHeight="90"
+                   MaxHeight="140"
+                   FontSize="12"
+                   CornerRadius="4"
+                   Padding="10,8"
+                   VerticalContentAlignment="Top"
+                   HorizontalContentAlignment="Left"
+                   Classes="styled"/>
+        </Border>
       </Grid>
     </Border>
   </Panel>

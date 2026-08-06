@@ -25,6 +25,11 @@ public partial class CalendarDayViewModel : ViewModelBase
     [ObservableProperty]
     private ObservableCollection<TodoItemViewModel> _dayTasks = new();
 
+    [ObservableProperty]
+    private string _noteText = string.Empty;
+
+    public bool HasNote => !string.IsNullOrWhiteSpace(NoteText);
+
     public bool HasTasks => DayTasks.Count > 0;
 
     public bool HasOverflow => DayTasks.Count > 2;
@@ -44,6 +49,7 @@ public partial class CalendarDayViewModel : ViewModelBase
 
     public void RefreshComputedProperties()
     {
+        OnPropertyChanged(nameof(HasNote));
         OnPropertyChanged(nameof(HasTasks));
         OnPropertyChanged(nameof(HasOverflow));
         OnPropertyChanged(nameof(OverflowCount));

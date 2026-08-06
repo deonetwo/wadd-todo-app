@@ -727,6 +727,52 @@ public partial class MainViewModel : ViewModelBase
 
     #endregion
 
+    private readonly Dictionary<string, string> _dateNotes = new();
+    private bool _isSelectingDay;
+    private DispatcherTimer? _dateNoteSaveTimer;
+
+    [ObservableProperty]
+    private string _selectedDayNoteText = string.Empty;
+
+    partial void OnSelectedDayNoteTextChanged(string value)
+    {
+        if (_selectedDay == null || _isSelectingDay) return;
+
+        // 1. Instantly update in-memory SelectedDay NoteText & badge
+        var dateKey = _selectedDay.Date.ToString("yyyy-MM-dd");
+        var trimmedText = value?.Trim() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(trimmedText))
+        {
+            _dateNotes.Remove(dateKey);
+            _selectedDay.NoteText = string.Empty;
+        }
+        else
+        {
+            _dateNotes[dateKey] = trimmedText;
+            _selectedDay.NoteText = trimmedText;
+        }
+        _selectedDay.RefreshComputedProperties();
+
+        // 2. Debounce async SQLite persistence (500ms delay after last keystroke)
+        if (_dateNoteSaveTimer == null)
+        {
+            _dateNoteSaveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+            _dateNoteSaveTimer.Tick += async (_, _) =>
+            {
+                _dateNoteSaveTimer?.Stop();
+                if (_selectedDay != null)
+                {
+                    var noteToSave = SelectedDayNoteText?.Trim() ?? string.Empty;
+                    await _todoService.SaveDateNoteAsync(_selectedDay.Date, noteToSave);
+                }
+            };
+        }
+
+        _dateNoteSaveTimer.Stop();
+        _dateNoteSaveTimer.Start();
+    }
+
     public ObservableCollection<CalendarDayViewModel> CalendarDays { get; } = new();
 
     public ObservableCollection<TodoItemViewModel> SelectedDateTasks { get; } = new();
@@ -778,8 +824,11 @@ public partial class MainViewModel : ViewModelBase
             d.IsSelected = false;
         }
 
+        _isSelectingDay = true;
         day.IsSelected = true;
         SelectedDay = day;
+        SelectedDayNoteText = day.NoteText;
+        _isSelectingDay = false;
 
         var tasksForDate = RecurrenceEvaluator.GetTasksForDate(day.Date, TodoItems.Select(x => x.Model)).ToList();
         var freshSelectedTasks = TodoItems
@@ -792,6 +841,48 @@ public partial class MainViewModel : ViewModelBase
         IsSidebarOpen = true;
 
         OnPropertyChanged(nameof(HasSelectedDateTasks));
+    }
+
+    [RelayCommand]
+    private async Task SaveSelectedDayNoteAsync()
+    {
+        if (SelectedDay == null) return;
+
+        var dateKey = SelectedDay.Date.ToString("yyyy-MM-dd");
+        var text = SelectedDayNoteText?.Trim() ?? string.Empty;
+
+        await _todoService.SaveDateNoteAsync(SelectedDay.Date, text);
+
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            _dateNotes.Remove(dateKey);
+            SelectedDay.NoteText = string.Empty;
+        }
+        else
+        {
+            _dateNotes[dateKey] = text;
+            SelectedDay.NoteText = text;
+        }
+
+        SelectedDay.RefreshComputedProperties();
+        GenerateCalendarGrid();
+        StatusMessage = $"Note saved for {SelectedDay.Date:MMM d}";
+    }
+
+    [RelayCommand]
+    private async Task DeleteSelectedDayNoteAsync()
+    {
+        if (SelectedDay == null) return;
+
+        var dateKey = SelectedDay.Date.ToString("yyyy-MM-dd");
+        await _todoService.DeleteDateNoteAsync(SelectedDay.Date);
+
+        _dateNotes.Remove(dateKey);
+        SelectedDayNoteText = string.Empty;
+        SelectedDay.NoteText = string.Empty;
+        SelectedDay.RefreshComputedProperties();
+        GenerateCalendarGrid();
+        StatusMessage = $"Note deleted for {SelectedDay.Date:MMM d}";
     }
 
     [RelayCommand]
@@ -827,6 +918,10 @@ public partial class MainViewModel : ViewModelBase
             bool isToday = dayDate.Date == DateTime.Today;
 
             var dayVm = new CalendarDayViewModel(dayDate, isCurrentMonth, isToday);
+            if (_dateNotes.TryGetValue(dayDate.ToString("yyyy-MM-dd"), out var noteText))
+            {
+                dayVm.NoteText = noteText;
+            }
 
             var matchingModels = RecurrenceEvaluator.GetTasksForDate(dayDate, GetFilteredTodoModels()).ToList();
             var matchingVms = TodoItems.Where(x => matchingModels.Any(m => m.Id == x.Id)).ToList();
@@ -1072,8 +1167,16 @@ public partial class MainViewModel : ViewModelBase
         try
         {
             var itemsList = (await _todoService.GetTodosAsync()).ToList();
+            var notesDict = await _todoService.GetAllDateNotesAsync();
+
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
+                _dateNotes.Clear();
+                foreach (var kvp in notesDict)
+                {
+                    _dateNotes[kvp.Key] = kvp.Value;
+                }
+
                 var existingDict = TodoItems.GroupBy(vm => vm.Id).ToDictionary(g => g.Key, g => g.First());
                 var freshIds = new HashSet<Guid>(itemsList.Select(x => x.Id));
 
@@ -1106,6 +1209,7 @@ public partial class MainViewModel : ViewModelBase
                 }
 
                 UpdateSubCollections();
+                GenerateCalendarGrid();
                 LastUpdatedAt = DateTime.Now;
                 StatusMessage = $"Loaded {TodoItems.Count} tasks from local database.";
             });
