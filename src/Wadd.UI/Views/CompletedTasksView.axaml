@@ -23,8 +23,8 @@
       <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,24">
         <StackPanel Grid.Column="0" Spacing="4">
           <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-            <PathIcon Data="{StaticResource CheckListIconData}" Width="24" Height="24" Foreground="{DynamicResource AppPrimaryBrush}"/>
-            <TextBlock Text="Completed History" Classes="h1"/>
+            <PathIcon Data="{StaticResource CheckListIconData}" Width="22" Height="22" Foreground="{DynamicResource AppPrimaryBrush}"/>
+            <TextBlock Text="Completed History" Classes="display"/>
           </StackPanel>
           <TextBlock Text="Archive of tasks completed before today."
                      Classes="small"

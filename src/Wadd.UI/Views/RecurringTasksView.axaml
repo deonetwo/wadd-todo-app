@@ -24,9 +24,9 @@
         <StackPanel Grid.Column="0" Spacing="4">
           <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
             <PathIcon Data="{StaticResource RepeatIconData}" Width="22" Height="22" Foreground="{DynamicResource AppPrimaryBrush}"/>
-            <TextBlock Text="Repeating Tasks" Classes="h1"/>
+            <TextBlock Text="Repeating Tasks" Classes="display"/>
           </StackPanel>
-          <TextBlock Text="Overview of all repeating habits and scheduled task patterns."
+          <TextBlock Text="Overview of all scheduled repeating tasks."
                      Classes="small"
                      Foreground="{DynamicResource AppTextSecondaryBrush}"/>
         </StackPanel>
