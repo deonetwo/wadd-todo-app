@@ -354,6 +354,11 @@
     <Setter Property="Margin"          Value="0,2"/>
     <Setter Property="BorderThickness" Value="0"/>
     <Setter Property="CornerRadius"    Value="10"/>
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.25" Easing="0.1,0.9,0.2,1.0"/>
+      </Transitions>
+    </Setter>
   </Style>
   <Style Selector="Border.task-row:pointerover">
     <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtleBrush}"/>

@@ -31,6 +31,12 @@
 
 ---
 
+## 📌 Roadmap & Upcoming Features (TODO)
+
+- [ ] **Task Strikethrough Formatting**: Add horizontal line (`TextDecorations="Strikethrough"`) on task title when completing a task.
+
+---
+
 ## 📅 Calendar & Timeline View Architecture
 
 Wadd features a clean, responsive **Calendar & Timeline View** (`CalendarView.axaml` and `CalendarViewModel` / `CalendarDayViewModel`) designed for month-grid scheduling, habit tracking, overflow task management, and deep daily task detail inspection.

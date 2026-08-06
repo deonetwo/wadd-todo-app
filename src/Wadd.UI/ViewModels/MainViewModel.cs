@@ -1250,6 +1250,9 @@ public partial class MainViewModel : ViewModelBase
         if (itemVm == null) return;
         try
         {
+            itemVm.IsCompleted = !itemVm.IsCompleted;
+            await Task.Delay(250);
+
             DateTime? targetDate = itemVm.ContextDate ?? (IsCalendarView && SelectedDay != null ? SelectedDay.Date : itemVm.DueDate);
             await _todoService.ToggleCompleteAsync(itemVm.Id, targetDate);
             await LoadTodoItemsAsync();
