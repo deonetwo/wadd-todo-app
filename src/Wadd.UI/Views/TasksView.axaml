@@ -33,8 +33,9 @@
     </Style>
   </UserControl.Styles>
 
-  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-    <StackPanel Classes="view-container" Classes.compact="{Binding IsCompact}" Spacing="0">
+  <Panel>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Classes="view-container" Classes.compact="{Binding IsCompact}" Spacing="0">
 
       <!-- Page header -->
       <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">
@@ -82,8 +83,8 @@
       <!-- Full-width divider -->
       <Separator Classes="divider" Margin="0,24,0,32"/>
 
-      <!-- ── Task Composer ── -->
-      <StackPanel Spacing="0" Margin="0,0,0,40">
+      <!-- ── Desktop Task Composer ── -->
+      <StackPanel Spacing="0" Margin="0,0,0,40" IsVisible="{Binding !IsCompact}">
         <!-- Title input + Add button -->
         <Grid ColumnDefinitions="*,Auto">
           <TextBox Grid.Column="0"
@@ -900,4 +901,24 @@
 
     </StackPanel>
   </ScrollViewer>
+
+  <!-- Floating Action Button (FAB) for Compact / Mobile Mode -->
+  <Border IsVisible="{Binding IsCompact}"
+          HorizontalAlignment="Right"
+          VerticalAlignment="Bottom"
+          Margin="0,0,24,24"
+          ZIndex="500"
+          CornerRadius="28"
+          BoxShadow="0 6 18 0 #60000000">
+    <Button Command="{Binding OpenMobileTaskComposerCommand}"
+            Width="56" Height="56"
+            CornerRadius="28"
+            Background="{DynamicResource AppPrimaryBrush}"
+            HorizontalContentAlignment="Center"
+            VerticalContentAlignment="Center"
+            ToolTip.Tip="Add task">
+      <PathIcon Data="{StaticResource PlusIconData}" Width="20" Height="20" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    </Button>
+  </Border>
+</Panel>
 </UserControl>

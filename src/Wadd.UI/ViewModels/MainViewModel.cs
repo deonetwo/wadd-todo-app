@@ -361,6 +361,10 @@ public partial class MainViewModel : ViewModelBase
     {
         if (string.IsNullOrWhiteSpace(type)) return;
         SelectedRecurrenceType = type;
+        if (type != "Custom")
+        {
+            CloseMobileRepeatSheet();
+        }
     }
 
     [RelayCommand]
@@ -378,11 +382,74 @@ public partial class MainViewModel : ViewModelBase
         IsSundaySelected = false;
     }
 
+    [RelayCommand]
+    private void OpenMobileTaskComposer()
+    {
+        IsMobileTaskComposerOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseMobileTaskComposer()
+    {
+        IsMobileTaskComposerOpen = false;
+        IsMobileDueDateSheetOpen = false;
+        IsMobileReminderSheetOpen = false;
+        IsMobileRepeatSheetOpen = false;
+    }
+
+    [RelayCommand]
+    private void OpenMobileDueDateSheet()
+    {
+        IsMobileDueDateSheetOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseMobileDueDateSheet()
+    {
+        IsMobileDueDateSheetOpen = false;
+    }
+
+    [RelayCommand]
+    private void OpenMobileReminderSheet()
+    {
+        IsMobileReminderSheetOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseMobileReminderSheet()
+    {
+        IsMobileReminderSheetOpen = false;
+    }
+
+    [RelayCommand]
+    private void OpenMobileRepeatSheet()
+    {
+        IsMobileRepeatSheetOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseMobileRepeatSheet()
+    {
+        IsMobileRepeatSheetOpen = false;
+    }
+
     [ObservableProperty]
     private bool _isCompact;
 
     [ObservableProperty]
     private bool _isSideMenuOpen;
+
+    [ObservableProperty]
+    private bool _isMobileTaskComposerOpen;
+
+    [ObservableProperty]
+    private bool _isMobileDueDateSheetOpen;
+
+    [ObservableProperty]
+    private bool _isMobileReminderSheetOpen;
+
+    [ObservableProperty]
+    private bool _isMobileRepeatSheetOpen;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SidebarWidth))]
@@ -1227,18 +1294,21 @@ public partial class MainViewModel : ViewModelBase
     private void SetDueDateLaterToday()
     {
         NewTaskDueDate = DateTime.Today;
+        CloseMobileDueDateSheet();
     }
 
     [RelayCommand]
     private void SetDueDateTomorrow()
     {
         NewTaskDueDate = DateTime.Today.AddDays(1);
+        CloseMobileDueDateSheet();
     }
 
     [RelayCommand]
     private void SetDueDateNextWeek()
     {
         NewTaskDueDate = DateTime.Today.AddDays(7);
+        CloseMobileDueDateSheet();
     }
 
     [RelayCommand]
@@ -1259,6 +1329,7 @@ public partial class MainViewModel : ViewModelBase
         }
         NewTaskReminderDate = DateTime.Today;
         NewTaskReminderTime = time;
+        CloseMobileReminderSheet();
     }
 
     [RelayCommand]
@@ -1266,6 +1337,7 @@ public partial class MainViewModel : ViewModelBase
     {
         NewTaskReminderDate = DateTime.Today.AddDays(1);
         NewTaskReminderTime = new TimeSpan(9, 0, 0); // 9:00 AM
+        CloseMobileReminderSheet();
     }
 
     [RelayCommand]
@@ -1273,6 +1345,7 @@ public partial class MainViewModel : ViewModelBase
     {
         NewTaskReminderDate = DateTime.Today.AddDays(7);
         NewTaskReminderTime = new TimeSpan(9, 0, 0); // 9:00 AM
+        CloseMobileReminderSheet();
     }
 
     [RelayCommand]
@@ -1335,6 +1408,10 @@ public partial class MainViewModel : ViewModelBase
                 NewTaskReminderDate = null;
                 NewTaskReminderTime = null;
                 ClearRecurrence();
+                IsMobileTaskComposerOpen = false;
+                IsMobileDueDateSheetOpen = false;
+                IsMobileReminderSheetOpen = false;
+                IsMobileRepeatSheetOpen = false;
             });
 
             await LoadTodoItemsAsync();

@@ -31,4 +31,28 @@ public partial class MainView : UserControl
         if (DataContext is MainViewModel vm)
             vm.IsNavExpanded = false;
     }
+
+    private void OnMobileComposerBackgroundPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.CloseMobileTaskComposerCommand.Execute(null);
+    }
+
+    private void OnMobileDueDateBackgroundPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.CloseMobileDueDateSheetCommand.Execute(null);
+    }
+
+    private void OnMobileReminderBackgroundPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.CloseMobileReminderSheetCommand.Execute(null);
+    }
+
+    private void OnMobileRepeatBackgroundPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.CloseMobileRepeatSheetCommand.Execute(null);
+    }
 }
