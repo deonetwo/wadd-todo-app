@@ -75,18 +75,48 @@ public class GoogleDriveSyncService : ISyncService
         }
     }
 
-    public string GoogleClientSecret
+    public string FirebaseApiKey
     {
         get
         {
-            var envVal = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET");
+            var envVal = Environment.GetEnvironmentVariable("FIREBASE_API_KEY");
             if (!string.IsNullOrWhiteSpace(envVal)) return envVal.Trim();
-            return _authRecord?.GoogleClientSecret ?? string.Empty;
+
+            if (!string.IsNullOrWhiteSpace(_authRecord?.FirebaseApiKey))
+                return _authRecord.FirebaseApiKey;
+
+            var compiledVal = GetAssemblyMetadata("FirebaseApiKey");
+            if (!string.IsNullOrWhiteSpace(compiledVal)) return compiledVal.Trim();
+
+            return string.Empty;
         }
         set
         {
             _authRecord ??= new UserAuthRecord();
-            _authRecord.GoogleClientSecret = value;
+            _authRecord.FirebaseApiKey = value;
+            SaveAuthRecord();
+        }
+    }
+
+    public string FirebaseProjectId
+    {
+        get
+        {
+            var envVal = Environment.GetEnvironmentVariable("FIREBASE_PROJECT_ID");
+            if (!string.IsNullOrWhiteSpace(envVal)) return envVal.Trim();
+
+            if (!string.IsNullOrWhiteSpace(_authRecord?.FirebaseProjectId))
+                return _authRecord.FirebaseProjectId;
+
+            var compiledVal = GetAssemblyMetadata("FirebaseProjectId");
+            if (!string.IsNullOrWhiteSpace(compiledVal)) return compiledVal.Trim();
+
+            return string.Empty;
+        }
+        set
+        {
+            _authRecord ??= new UserAuthRecord();
+            _authRecord.FirebaseProjectId = value;
             SaveAuthRecord();
         }
     }
@@ -168,14 +198,14 @@ public class GoogleDriveSyncService : ISyncService
                     var lines = File.ReadAllLines(path);
                     foreach (var line in lines)
                     {
-                        var trimmed = line.Trim();
+                        var trimmed = line.Trim().Trim('\uFEFF', '\u200B');
                         if (string.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith("#")) continue;
 
                         var parts = trimmed.Split('=', 2);
                         if (parts.Length == 2)
                         {
-                            var key = parts[0].Trim();
-                            var val = parts[1].Trim().Trim('"', '\'');
+                            var key = parts[0].Trim().Trim('\uFEFF', '\u200B');
+                            var val = parts[1].Trim().Trim('"', '\'').Trim('\uFEFF', '\u200B');
                             if (!string.IsNullOrWhiteSpace(key))
                             {
                                 Environment.SetEnvironmentVariable(key, val);
@@ -222,13 +252,12 @@ public class GoogleDriveSyncService : ISyncService
             throw new InvalidOperationException("Google Client ID is missing. Please set GOOGLE_CLIENT_ID environment variable or paste it in Settings.");
         }
 
-        var redirectUri = "http://localhost:5001/";
-        var state = Guid.NewGuid().ToString("N");
-        var codeVerifier = GenerateCryptoRandomString(32);
-        var codeChallenge = CreateCodeChallenge(codeVerifier);
+        var localRedirectUri = "http://localhost:5001/";
+        var redirectUri = localRedirectUri;
 
+        var state = Guid.NewGuid().ToString("N");
         var listener = new HttpListener();
-        listener.Prefixes.Add(redirectUri);
+        listener.Prefixes.Add(localRedirectUri);
         listener.Start();
 
         try
@@ -236,58 +265,79 @@ public class GoogleDriveSyncService : ISyncService
             var authUrl = $"https://accounts.google.com/o/oauth2/v2/auth?" +
                           $"client_id={Uri.EscapeDataString(GoogleClientId)}&" +
                           $"redirect_uri={Uri.EscapeDataString(redirectUri)}&" +
-                          $"response_type=code&" +
+                          $"response_type=id_token%20token&" +
                           $"scope={Uri.EscapeDataString("openid email profile https://www.googleapis.com/auth/drive.file")}&" +
-                          $"code_challenge={Uri.EscapeDataString(codeChallenge)}&" +
-                          $"code_challenge_method=S256&" +
                           $"state={Uri.EscapeDataString(state)}&" +
-                          $"access_type=offline&" +
+                          $"nonce={Guid.NewGuid().ToString("N")}&" +
                           $"prompt=consent";
 
             OpenBrowserUrl(authUrl);
 
-            var contextTask = listener.GetContextAsync();
-            var timeoutTask = Task.Delay(TimeSpan.FromMinutes(2), cancellationToken);
+            string code = string.Empty;
+            string idToken = string.Empty;
+            string accessToken = string.Empty;
+            string returnedState = string.Empty;
+            string error = string.Empty;
 
-            var completedTask = await Task.WhenAny(contextTask, timeoutTask);
-            if (completedTask == timeoutTask)
+            var timeoutTask = Task.Delay(TimeSpan.FromMinutes(3), cancellationToken);
+
+            while (!cancellationToken.IsCancellationRequested)
             {
-                throw new TimeoutException("Google Sign-In authorization timed out. Please try again.");
+                var contextTask = listener.GetContextAsync();
+                var completedTask = await Task.WhenAny(contextTask, timeoutTask);
+                if (completedTask == timeoutTask)
+                {
+                    throw new TimeoutException("Google Sign-In authorization timed out. Please try again.");
+                }
+
+                var context = await contextTask;
+                var request = context.Request;
+                var response = context.Response;
+
+                if (request.Url?.AbsolutePath == "/callback")
+                {
+                    code = request.QueryString["code"] ?? string.Empty;
+                    idToken = request.QueryString["id_token"] ?? string.Empty;
+                    accessToken = request.QueryString["access_token"] ?? string.Empty;
+                    returnedState = request.QueryString["state"] ?? string.Empty;
+                    error = request.QueryString["error"] ?? string.Empty;
+
+                    SendHtmlResponse(response, "Sign-in Successful!", "<h2 style='color:#2563eb;'>Authentication Successful!</h2><p>Wadd ToDo has been successfully connected.</p><p>You may now close this browser tab and return to Wadd.</p>");
+                    break;
+                }
+                else
+                {
+                    SendHtmlBridgePage(response);
+                }
             }
-
-            var context = await contextTask;
-            var request = context.Request;
-            var response = context.Response;
-
-            var code = request.QueryString["code"];
-            var returnedState = request.QueryString["state"];
-            var error = request.QueryString["error"];
 
             if (!string.IsNullOrEmpty(error))
             {
-                SendHtmlResponse(response, "Authorization Failed", $"<h3>Google Sign-in failed: {WebUtility.HtmlEncode(error)}</h3><p>You can close this window and return to Wadd.</p>");
                 throw new InvalidOperationException($"Google auth error: {error}");
             }
 
-            if (returnedState != state || string.IsNullOrEmpty(code))
-            {
-                SendHtmlResponse(response, "Invalid Response", "<h3>Invalid authorization state or missing code.</h3><p>You can close this window.</p>");
-                throw new InvalidOperationException("Invalid authorization state received from Google callback.");
-            }
+            string googleAccessToken = accessToken;
+            string googleRefreshToken = string.Empty;
+            string googleIdToken = idToken;
 
-            SendHtmlResponse(response, "Sign-in Successful!", "<h2 style='color:#2563eb;'>Authentication Successful!</h2><p>Wadd ToDo has been successfully connected to your Google Drive account.</p><p>You may now close this browser tab and return to Wadd.</p>");
 
-            var tokenRecord = await ExchangeCodeForTokensAsync(code, codeVerifier, redirectUri, cancellationToken);
-            var userInfo = await FetchUserInfoAsync(tokenRecord.AccessToken, cancellationToken);
+
+            var userInfo = await FetchUserInfoAsync(googleAccessToken, cancellationToken);
+            var fbSession = await ExchangeGoogleIdTokenWithFirebaseAsync(googleIdToken, googleAccessToken, redirectUri, cancellationToken);
 
             _authRecord = new UserAuthRecord
             {
                 IsSignedIn = true,
-                UserEmail = userInfo.Email,
-                UserName = userInfo.Name,
+                UserEmail = !string.IsNullOrWhiteSpace(fbSession.Email) ? fbSession.Email : userInfo.Email,
+                UserName = !string.IsNullOrWhiteSpace(fbSession.DisplayName) ? fbSession.DisplayName : userInfo.Name,
                 GoogleClientId = GoogleClientId,
-                AccessToken = tokenRecord.AccessToken,
-                RefreshToken = tokenRecord.RefreshToken,
+                FirebaseApiKey = FirebaseApiKey,
+                FirebaseProjectId = FirebaseProjectId,
+                AccessToken = googleAccessToken,
+                RefreshToken = googleRefreshToken,
+                FirebaseIdToken = fbSession.FirebaseIdToken,
+                FirebaseRefreshToken = fbSession.FirebaseRefreshToken,
+                FirebaseLocalId = fbSession.LocalId,
                 AuthenticatedAt = DateTime.UtcNow
             };
 
@@ -325,7 +375,7 @@ public class GoogleDriveSyncService : ISyncService
         response.OutputStream.Close();
     }
 
-    private async Task<(string AccessToken, string RefreshToken)> ExchangeCodeForTokensAsync(string code, string codeVerifier, string redirectUri, CancellationToken cancellationToken)
+    private async Task<(string AccessToken, string RefreshToken, string IdToken)> ExchangeCodeForTokensAsync(string code, string codeVerifier, string redirectUri, CancellationToken cancellationToken)
     {
         var tokenUrl = "https://oauth2.googleapis.com/token";
         var dict = new Dictionary<string, string>
@@ -337,7 +387,7 @@ public class GoogleDriveSyncService : ISyncService
             ["redirect_uri"] = redirectUri
         };
 
-        var clientSecret = GoogleClientSecret;
+        var clientSecret = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET")?.Trim();
         if (!string.IsNullOrWhiteSpace(clientSecret))
         {
             dict["client_secret"] = clientSecret;
@@ -353,15 +403,120 @@ public class GoogleDriveSyncService : ISyncService
 
         if (!response.IsSuccessStatusCode)
         {
-            throw new InvalidOperationException($"Token exchange failed ({response.StatusCode}): {json}");
+            var clientId = GoogleClientId;
+            var maskedClientId = clientId.Length > 12 
+                ? $"{clientId[..6]}...{clientId[^6..]}" 
+                : (string.IsNullOrWhiteSpace(clientId) ? "[EMPTY]" : clientId);
+
+            var extraTip = json.Contains("client_secret", StringComparison.OrdinalIgnoreCase) || json.Contains("invalid_client", StringComparison.OrdinalIgnoreCase)
+                ? "\n\nTip: This error occurs if your Google Client ID was created as a 'Web application' in Google Cloud Console.\n" +
+                  "To fix this:\n" +
+                  "1. In Google Cloud Console (APIs & Services > Credentials), create an OAuth Client ID with Application Type = 'Desktop app', OR\n" +
+                  "2. Set GOOGLE_CLIENT_SECRET=\"GOCSPX-...\" in your .env file."
+                : "";
+
+            throw new InvalidOperationException(
+                $"Google OAuth token exchange failed ({response.StatusCode}).\n" +
+                $"Client ID Used: {maskedClientId}\n" +
+                $"Google Response: {json}{extraTip}");
         }
 
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
         var accessToken = root.TryGetProperty("access_token", out var atProp) ? atProp.GetString() ?? string.Empty : string.Empty;
         var refreshToken = root.TryGetProperty("refresh_token", out var rtProp) ? rtProp.GetString() ?? string.Empty : string.Empty;
+        var idToken = root.TryGetProperty("id_token", out var idProp) ? idProp.GetString() ?? string.Empty : string.Empty;
 
-        return (accessToken, refreshToken);
+        return (accessToken, refreshToken, idToken);
+    }
+
+    private static void SendHtmlBridgePage(HttpListenerResponse response)
+    {
+        var html = @"<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='utf-8'/>
+  <title>Authenticating Wadd...</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8f9fa; color: #1e293b; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+    .card { background: white; padding: 2.5rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); text-align: center; max-width: 420px; }
+  </style>
+</head>
+<body>
+  <div class='card'>
+    <h2 style='color:#2563eb;'>Completing Authentication...</h2>
+    <p>Please wait while Wadd connects your account.</p>
+  </div>
+  <script>
+    var params = new URLSearchParams(window.location.search);
+    var hash = new URLSearchParams(window.location.hash.substring(1));
+    var idToken = params.get('id_token') || hash.get('id_token') || '';
+    var accessToken = params.get('access_token') || hash.get('access_token') || '';
+    var code = params.get('code') || hash.get('code') || '';
+    var state = params.get('state') || hash.get('state') || '';
+    var error = params.get('error') || hash.get('error') || '';
+
+    fetch('/callback?id_token=' + encodeURIComponent(idToken) + '&access_token=' + encodeURIComponent(accessToken) + '&code=' + encodeURIComponent(code) + '&state=' + encodeURIComponent(state) + '&error=' + encodeURIComponent(error))
+      .then(function() {
+        document.body.innerHTML = ""<div class='card'><h2 style='color:#2563eb;'>Authentication Successful!</h2><p>You can close this tab and return to Wadd.</p></div>"";
+      });
+  </script>
+</body>
+</html>";
+        var bytes = Encoding.UTF8.GetBytes(html);
+        response.ContentType = "text/html; charset=utf-8";
+        response.ContentLength64 = bytes.Length;
+        response.OutputStream.Write(bytes, 0, bytes.Length);
+        response.OutputStream.Close();
+    }
+
+    private async Task<(string FirebaseIdToken, string FirebaseRefreshToken, string LocalId, string Email, string DisplayName)> ExchangeGoogleIdTokenWithFirebaseAsync(string googleIdToken, string googleAccessToken, string requestUri, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(FirebaseApiKey) || (string.IsNullOrWhiteSpace(googleIdToken) && string.IsNullOrWhiteSpace(googleAccessToken)))
+        {
+            return (string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
+        }
+
+        try
+        {
+            var firebaseUrl = $"https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key={Uri.EscapeDataString(FirebaseApiKey)}";
+            var postBody = !string.IsNullOrWhiteSpace(googleIdToken)
+                ? $"id_token={googleIdToken}&providerId=google.com"
+                : $"access_token={googleAccessToken}&providerId=google.com";
+
+            var payload = new
+            {
+                postBody = postBody,
+                requestUri = requestUri,
+                returnIdpCredential = true,
+                returnSecureToken = true
+            };
+
+            var jsonContent = JsonSerializer.Serialize(payload);
+            using var request = new HttpRequestMessage(HttpMethod.Post, firebaseUrl)
+            {
+                Content = new StringContent(jsonContent, Encoding.UTF8, "application/json")
+            };
+
+            var response = await _httpClient.SendAsync(request, cancellationToken);
+            var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            if (response.IsSuccessStatusCode)
+            {
+                using var doc = JsonDocument.Parse(responseJson);
+                var root = doc.RootElement;
+                var fbIdToken = root.TryGetProperty("idToken", out var idp) ? idp.GetString() ?? "" : "";
+                var fbRefreshToken = root.TryGetProperty("refreshToken", out var rfp) ? rfp.GetString() ?? "" : "";
+                var localId = root.TryGetProperty("localId", out var lidp) ? lidp.GetString() ?? "" : "";
+                var email = root.TryGetProperty("email", out var ep) ? ep.GetString() ?? "" : "";
+                var displayName = root.TryGetProperty("displayName", out var dnp) ? dnp.GetString() ?? "" : "";
+
+                return (fbIdToken, fbRefreshToken, localId, email, displayName);
+            }
+        }
+        catch { }
+
+        return (string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
     }
 
     private async Task<(string Email, string Name)> FetchUserInfoAsync(string accessToken, CancellationToken cancellationToken)
@@ -401,7 +556,7 @@ public class GoogleDriveSyncService : ISyncService
                 ["grant_type"] = "refresh_token"
             };
 
-            var clientSecret = GoogleClientSecret;
+            var clientSecret = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET")?.Trim();
             if (!string.IsNullOrWhiteSpace(clientSecret))
             {
                 dict["client_secret"] = clientSecret;
@@ -898,8 +1053,12 @@ public class UserAuthRecord
     public string UserEmail { get; set; } = string.Empty;
     public string UserName { get; set; } = string.Empty;
     public string GoogleClientId { get; set; } = string.Empty;
-    public string GoogleClientSecret { get; set; } = string.Empty;
+    public string FirebaseApiKey { get; set; } = string.Empty;
+    public string FirebaseProjectId { get; set; } = string.Empty;
     public string AccessToken { get; set; } = string.Empty;
     public string RefreshToken { get; set; } = string.Empty;
+    public string FirebaseIdToken { get; set; } = string.Empty;
+    public string FirebaseRefreshToken { get; set; } = string.Empty;
+    public string FirebaseLocalId { get; set; } = string.Empty;
     public DateTime AuthenticatedAt { get; set; } = DateTime.UtcNow;
 }

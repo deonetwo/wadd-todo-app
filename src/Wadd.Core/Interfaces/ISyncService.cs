@@ -9,7 +9,8 @@ public interface ISyncService
     string? UserEmail { get; }
     string? UserName { get; }
     string GoogleClientId { get; set; }
-    string GoogleClientSecret { get; set; }
+    string FirebaseApiKey { get; set; }
+    string FirebaseProjectId { get; set; }
 
     int UnresolvedConflictCount { get; }
     event EventHandler? ConflictCountChanged;

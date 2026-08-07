@@ -513,11 +513,19 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [ObservableProperty]
-    private string _googleClientSecret = string.Empty;
+    private string _firebaseApiKey = string.Empty;
 
-    partial void OnGoogleClientSecretChanged(string value)
+    partial void OnFirebaseApiKeyChanged(string value)
     {
-        _syncService.GoogleClientSecret = value;
+        _syncService.FirebaseApiKey = value;
+    }
+
+    [ObservableProperty]
+    private string _firebaseProjectId = string.Empty;
+
+    partial void OnFirebaseProjectIdChanged(string value)
+    {
+        _syncService.FirebaseProjectId = value;
     }
 
     [ObservableProperty]
@@ -1225,7 +1233,8 @@ public partial class MainViewModel : ViewModelBase
         GoogleUserEmail = _syncService.UserEmail ?? string.Empty;
         GoogleUserName = _syncService.UserName ?? "Google Account User";
         GoogleClientId = _syncService.GoogleClientId ?? string.Empty;
-        GoogleClientSecret = _syncService.GoogleClientSecret ?? string.Empty;
+        FirebaseApiKey = _syncService.FirebaseApiKey ?? string.Empty;
+        FirebaseProjectId = _syncService.FirebaseProjectId ?? string.Empty;
     }
 
     [RelayCommand]
