@@ -5,12 +5,28 @@
     <FileVersion>0.9.0.0</FileVersion>
 
     <GoogleClientId Condition="'$(GoogleClientId)' == ''">$(GOOGLE_CLIENT_ID)</GoogleClientId>
+    <FirebaseApiKey Condition="'$(FirebaseApiKey)' == ''">$(FIREBASE_API_KEY)</FirebaseApiKey>
+    <FirebaseProjectId Condition="'$(FirebaseProjectId)' == ''">$(FIREBASE_PROJECT_ID)</FirebaseProjectId>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(GoogleClientId)' != ''">
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
       <_Parameter1>GoogleClientId</_Parameter1>
       <_Parameter2>$(GoogleClientId)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(FirebaseApiKey)' != ''">
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>FirebaseApiKey</_Parameter1>
+      <_Parameter2>$(FirebaseApiKey)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(FirebaseProjectId)' != ''">
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>FirebaseProjectId</_Parameter1>
+      <_Parameter2>$(FirebaseProjectId)</_Parameter2>
     </AssemblyAttribute>
   </ItemGroup>
 </Project>
