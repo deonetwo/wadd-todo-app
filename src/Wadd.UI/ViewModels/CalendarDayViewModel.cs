@@ -30,6 +30,21 @@ public partial class CalendarDayViewModel : ViewModelBase
 
     public bool HasNote => !string.IsNullOrWhiteSpace(NoteText);
 
+    public string FirstLineNoteText
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(NoteText)) return string.Empty;
+            return NoteText.Replace("\r\n", " ").Replace("\n", " ").Replace("\r", " ").Trim();
+        }
+    }
+
+    partial void OnNoteTextChanged(string value)
+    {
+        OnPropertyChanged(nameof(HasNote));
+        OnPropertyChanged(nameof(FirstLineNoteText));
+    }
+
     public bool HasTasks => DayTasks.Count > 0;
 
     public bool HasOverflow => DayTasks.Count > 2;
@@ -50,6 +65,7 @@ public partial class CalendarDayViewModel : ViewModelBase
     public void RefreshComputedProperties()
     {
         OnPropertyChanged(nameof(HasNote));
+        OnPropertyChanged(nameof(FirstLineNoteText));
         OnPropertyChanged(nameof(HasTasks));
         OnPropertyChanged(nameof(HasOverflow));
         OnPropertyChanged(nameof(OverflowCount));

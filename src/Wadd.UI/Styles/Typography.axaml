@@ -24,6 +24,10 @@
     <Setter Property="FontWeight"    Value="ExtraBold"/>
     <Setter Property="LetterSpacing" Value="-1.2"/>
   </Style>
+  <Style Selector="StackPanel.compact TextBlock.display-xl, Border.compact TextBlock.display-xl">
+    <Setter Property="FontSize"      Value="22"/>
+    <Setter Property="LetterSpacing" Value="-0.5"/>
+  </Style>
 
   <!-- ── Display · 26sp Bold — section hero ── -->
   <Style Selector="TextBlock.display">
@@ -31,6 +35,10 @@
     <Setter Property="FontSize"      Value="26"/>
     <Setter Property="FontWeight"    Value="Bold"/>
     <Setter Property="LetterSpacing" Value="-0.7"/>
+  </Style>
+  <Style Selector="StackPanel.compact TextBlock.display, Border.compact TextBlock.display">
+    <Setter Property="FontSize"      Value="20"/>
+    <Setter Property="LetterSpacing" Value="-0.4"/>
   </Style>
 
   <!-- ── Heading · 19sp SemiBold ── -->

@@ -76,6 +76,8 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasNewTaskDueDate))]
     [NotifyPropertyChangedFor(nameof(NewTaskDueDateFormatted))]
+    [NotifyPropertyChangedFor(nameof(DueDateHeaderYear))]
+    [NotifyPropertyChangedFor(nameof(DueDateHeaderMainText))]
     private DateTime? _newTaskDueDate;
 
     public DateTime MinDueDate => DateTime.Today;
@@ -189,6 +191,8 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasNewTaskReminder))]
     [NotifyPropertyChangedFor(nameof(NewTaskReminderFormatted))]
+    [NotifyPropertyChangedFor(nameof(ReminderHeaderYear))]
+    [NotifyPropertyChangedFor(nameof(ReminderHeaderMainText))]
     private DateTime? _newTaskReminderDate;
 
     partial void OnNewTaskReminderDateChanged(DateTime? value)
@@ -203,11 +207,74 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasNewTaskReminder))]
     [NotifyPropertyChangedFor(nameof(NewTaskReminderFormatted))]
+    [NotifyPropertyChangedFor(nameof(ReminderHeaderMainText))]
     private TimeSpan? _newTaskReminderTime;
 
     partial void OnNewTaskReminderTimeChanged(TimeSpan? value)
     {
         ValidateAndResetReminderIfExceedsDueDate();
+    }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsReminderDateTabSelected))]
+    [NotifyPropertyChangedFor(nameof(IsReminderTimeTabSelected))]
+    [NotifyPropertyChangedFor(nameof(ReminderHeaderMainText))]
+    private int _reminderSelectedTab = 0;
+
+    public bool IsReminderDateTabSelected => ReminderSelectedTab == 0;
+    public bool IsReminderTimeTabSelected => ReminderSelectedTab == 1;
+
+    [RelayCommand]
+    private void SelectReminderDateTab() => ReminderSelectedTab = 0;
+
+    [RelayCommand]
+    private void SelectReminderTimeTab() => ReminderSelectedTab = 1;
+
+    public string ReminderHeaderYear => (NewTaskReminderDate ?? DateTime.Today).ToString("yyyy");
+
+    public string ReminderHeaderMainText
+    {
+        get
+        {
+            var dateStr = (NewTaskReminderDate ?? DateTime.Today).ToString("ddd, MMM d");
+            if (IsReminderTimeTabSelected && NewTaskReminderTime.HasValue)
+            {
+                var timeStr = DateTime.Today.Add(NewTaskReminderTime.Value).ToString("HH:mm");
+                return $"{dateStr}, {timeStr}";
+            }
+            return dateStr;
+        }
+    }
+
+    public string DueDateHeaderYear => (NewTaskDueDate ?? DateTime.Today).ToString("yyyy");
+    public string DueDateHeaderMainText => (NewTaskDueDate ?? DateTime.Today).ToString("ddd, MMM d");
+
+    [RelayCommand]
+    private void SetReminderPresetMorning()
+    {
+        if (!NewTaskReminderDate.HasValue) NewTaskReminderDate = DateTime.Today;
+        NewTaskReminderTime = new TimeSpan(9, 0, 0);
+    }
+
+    [RelayCommand]
+    private void SetReminderPresetAfternoon()
+    {
+        if (!NewTaskReminderDate.HasValue) NewTaskReminderDate = DateTime.Today;
+        NewTaskReminderTime = new TimeSpan(13, 0, 0);
+    }
+
+    [RelayCommand]
+    private void SetReminderPresetEvening()
+    {
+        if (!NewTaskReminderDate.HasValue) NewTaskReminderDate = DateTime.Today;
+        NewTaskReminderTime = new TimeSpan(17, 0, 0);
+    }
+
+    [RelayCommand]
+    private void SetReminderPresetNight()
+    {
+        if (!NewTaskReminderDate.HasValue) NewTaskReminderDate = DateTime.Today;
+        NewTaskReminderTime = new TimeSpan(20, 0, 0);
     }
 
     private bool _isValidatingReminder;

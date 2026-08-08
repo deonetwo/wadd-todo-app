@@ -23,7 +23,7 @@
       <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,24">
         <StackPanel Grid.Column="0" Spacing="4">
           <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-            <PathIcon Data="{StaticResource CheckListIconData}" Width="22" Height="22" Foreground="{DynamicResource AppPrimaryBrush}"/>
+            <PathIcon Data="{StaticResource CheckListIconData}" Width="18" Height="18" Foreground="{DynamicResource AppPrimaryBrush}"/>
             <TextBlock Text="Completed History" Classes="display"/>
           </StackPanel>
           <TextBlock Text="Archive of tasks completed before today."
@@ -118,6 +118,7 @@
                   <!-- Completed Timestamp -->
                   <TextBlock Grid.Column="2"
                              Text="{Binding CompletedAtFormatted}"
+                             IsVisible="{Binding !$parent[UserControl].DataContext.IsCompact}"
                              Classes="small"
                              VerticalAlignment="Center"
                              Margin="14,0,6,0"/>

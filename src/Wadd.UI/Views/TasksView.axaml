@@ -65,6 +65,7 @@
 
         <!-- Toolbar -->
         <StackPanel Grid.Column="1"
+                    IsVisible="{Binding !IsCompact}"
                     Orientation="Horizontal"
                     Spacing="8"
                     VerticalAlignment="Bottom"
@@ -570,6 +571,7 @@
                   <!-- Timestamp -->
                   <TextBlock Grid.Column="2"
                              Text="{Binding CreatedAt, StringFormat='{}{0:MMM d}'}"
+                             IsVisible="{Binding !$parent[UserControl].DataContext.IsCompact}"
                              Classes="small"
                              VerticalAlignment="Center"
                              Margin="14,0,6,0"/>
@@ -861,6 +863,7 @@
                   <!-- Completed Timestamp -->
                   <TextBlock Grid.Column="2"
                              Text="{Binding CompletedAtFormatted}"
+                             IsVisible="{Binding !$parent[UserControl].DataContext.IsCompact}"
                              Classes="small"
                              VerticalAlignment="Center"
                              Margin="14,0,6,0"/>

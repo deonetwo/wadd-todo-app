@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Wadd.UI.ViewModels;
 
 namespace Wadd.UI.Views;
@@ -31,5 +32,18 @@ public partial class CalendarView : UserControl
                 vm.IsSingleColumnCalendar = false;
             }
         }
+    }
+
+    private void OnSidebarBackdropPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+        {
+            vm.CloseSidebarCommand.Execute(null);
+        }
+    }
+
+    private void OnSidebarContentPressed(object? sender, PointerPressedEventArgs e)
+    {
+        e.Handled = true;
     }
 }

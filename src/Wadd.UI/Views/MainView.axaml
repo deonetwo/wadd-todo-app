@@ -580,107 +580,107 @@
                      TextWrapping="Wrap"/>
 
             <!-- Active Chips Preview Row -->
-            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+            <WrapPanel Orientation="Horizontal" Margin="0,4,0,4">
               <!-- Selected Due Date Chip -->
               <Border IsVisible="{Binding HasNewTaskDueDate}"
-                      Background="{DynamicResource AppAccentTintBrush}"
-                      BorderBrush="{DynamicResource AppAccentBrush}"
+                      Background="{DynamicResource AppPrimarySubtleBrush}"
+                      BorderBrush="{DynamicResource AppPrimaryBrush}"
                       BorderThickness="1"
-                      CornerRadius="14"
-                      Padding="10,5">
-                <Grid ColumnDefinitions="Auto,Auto,Auto" VerticalAlignment="Center">
-                  <PathIcon Grid.Column="0" Data="{StaticResource CalendarIconData}" Width="12" Height="12" Foreground="{DynamicResource AppAccentBrush}" Margin="0,0,6,0"/>
-                  <TextBlock Grid.Column="1" Text="{Binding NewTaskDueDateFormatted}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppAccentBrush}" Margin="0,0,8,0"/>
-                  <Button Grid.Column="2" Command="{Binding ClearDueDateCommand}" Classes="ghost" Padding="0" Width="16" Height="16">
-                    <PathIcon Data="{StaticResource CloseIconData}" Width="10" Height="10" Foreground="{DynamicResource AppAccentBrush}"/>
+                      CornerRadius="10"
+                      Padding="7,3"
+                      Margin="0,0,5,5">
+                <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                  <PathIcon Data="{StaticResource CalendarIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <TextBlock Text="{Binding NewTaskDueDateFormatted}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <Button Command="{Binding ClearDueDateCommand}" Classes="ghost" Padding="0" Width="14" Height="14" VerticalAlignment="Center" VerticalContentAlignment="Center">
+                    <PathIcon Data="{StaticResource CloseIconData}" Width="9" Height="9" Foreground="{DynamicResource AppPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                   </Button>
-                </Grid>
+                </StackPanel>
               </Border>
 
               <!-- Selected Reminder Chip -->
               <Border IsVisible="{Binding HasNewTaskReminder}"
-                      Background="{DynamicResource AppAccentTintBrush}"
-                      BorderBrush="{DynamicResource AppAccentBrush}"
+                      Background="{DynamicResource AppPrimarySubtleBrush}"
+                      BorderBrush="{DynamicResource AppPrimaryBrush}"
                       BorderThickness="1"
-                      CornerRadius="14"
-                      Padding="10,5">
-                <Grid ColumnDefinitions="Auto,Auto,Auto" VerticalAlignment="Center">
-                  <PathIcon Grid.Column="0" Data="{StaticResource BellIconData}" Width="12" Height="12" Foreground="{DynamicResource AppAccentBrush}" Margin="0,0,6,0"/>
-                  <TextBlock Grid.Column="1" Text="{Binding NewTaskReminderFormatted}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppAccentBrush}" Margin="0,0,8,0"/>
-                  <Button Grid.Column="2" Command="{Binding ClearReminderCommand}" Classes="ghost" Padding="0" Width="16" Height="16">
-                    <PathIcon Data="{StaticResource CloseIconData}" Width="10" Height="10" Foreground="{DynamicResource AppAccentBrush}"/>
+                      CornerRadius="10"
+                      Padding="7,3"
+                      Margin="0,0,5,5">
+                <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                  <PathIcon Data="{StaticResource BellIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <TextBlock Text="{Binding NewTaskReminderFormatted}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <Button Command="{Binding ClearReminderCommand}" Classes="ghost" Padding="0" Width="14" Height="14" VerticalAlignment="Center" VerticalContentAlignment="Center">
+                    <PathIcon Data="{StaticResource CloseIconData}" Width="9" Height="9" Foreground="{DynamicResource AppPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                   </Button>
-                </Grid>
+                </StackPanel>
               </Border>
 
               <!-- Selected Recurrence Chip -->
               <Border IsVisible="{Binding HasNewTaskRecurrence}"
-                      Background="{DynamicResource AppAccentTintBrush}"
-                      BorderBrush="{DynamicResource AppAccentBrush}"
+                      Background="{DynamicResource AppPrimarySubtleBrush}"
+                      BorderBrush="{DynamicResource AppPrimaryBrush}"
                       BorderThickness="1"
-                      CornerRadius="14"
-                      Padding="10,5">
-                <Grid ColumnDefinitions="Auto,Auto,Auto" VerticalAlignment="Center">
-                  <PathIcon Grid.Column="0" Data="{StaticResource RepeatIconData}" Width="12" Height="12" Foreground="{DynamicResource AppAccentBrush}" Margin="0,0,6,0"/>
-                  <TextBlock Grid.Column="1" Text="{Binding NewTaskRecurrenceFormatted}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppAccentBrush}" Margin="0,0,8,0"/>
-                  <Button Grid.Column="2" Command="{Binding ClearRecurrenceCommand}" Classes="ghost" Padding="0" Width="16" Height="16">
-                    <PathIcon Data="{StaticResource CloseIconData}" Width="10" Height="10" Foreground="{DynamicResource AppAccentBrush}"/>
+                      CornerRadius="10"
+                      Padding="7,3"
+                      Margin="0,0,5,5">
+                <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                  <PathIcon Data="{StaticResource RepeatIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <TextBlock Text="{Binding NewTaskRecurrenceFormatted}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <Button Command="{Binding ClearRecurrenceCommand}" Classes="ghost" Padding="0" Width="14" Height="14" VerticalAlignment="Center" VerticalContentAlignment="Center">
+                    <PathIcon Data="{StaticResource CloseIconData}" Width="9" Height="9" Foreground="{DynamicResource AppPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                   </Button>
-                </Grid>
+                </StackPanel>
               </Border>
+            </WrapPanel>
+
+            <!-- Bottom Action Row: Date, Reminder, Repeat buttons -->
+            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+              <Button Classes="outline"
+                      Command="{Binding OpenMobileDueDateSheetCommand}"
+                      Padding="12,7"
+                      CornerRadius="16"
+                      ToolTip.Tip="Set due date">
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                  <PathIcon Data="{StaticResource CalendarIconData}" Width="13" Height="13" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <TextBlock Text="Due Date" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                </StackPanel>
+              </Button>
+
+              <Button Classes="outline"
+                      Command="{Binding OpenMobileReminderSheetCommand}"
+                      Padding="12,7"
+                      CornerRadius="16"
+                      ToolTip.Tip="Set reminder">
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                  <PathIcon Data="{StaticResource BellIconData}" Width="13" Height="13" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <TextBlock Text="Reminder" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                </StackPanel>
+              </Button>
+
+              <Button Classes="outline"
+                      Command="{Binding OpenMobileRepeatSheetCommand}"
+                      Padding="12,7"
+                      CornerRadius="16"
+                      ToolTip.Tip="Set recurrence">
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                  <PathIcon Data="{StaticResource RepeatIconData}" Width="13" Height="13" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <TextBlock Text="Repeat" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                </StackPanel>
+              </Button>
             </StackPanel>
 
-            <!-- Bottom Action Row: Date, Reminder, Repeat buttons + Save Task Button -->
-            <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto" Margin="0,8,0,0">
-              <Button Grid.Column="0"
-                      Classes="outline"
-                      Command="{Binding OpenMobileDueDateSheetCommand}"
-                      Margin="0,0,8,0"
-                      Padding="12,8"
-                      CornerRadius="18"
-                      ToolTip.Tip="Set due date">
-                <StackPanel Orientation="Horizontal" Spacing="6">
-                  <PathIcon Data="{StaticResource CalendarIconData}" Width="14" Height="14" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                  <TextBlock Text="Due Date" FontSize="12" FontWeight="SemiBold"/>
-                </StackPanel>
-              </Button>
-
-              <Button Grid.Column="1"
-                      Classes="outline"
-                      Command="{Binding OpenMobileReminderSheetCommand}"
-                      Margin="0,0,8,0"
-                      Padding="12,8"
-                      CornerRadius="18"
-                      ToolTip.Tip="Set reminder">
-                <StackPanel Orientation="Horizontal" Spacing="6">
-                  <PathIcon Data="{StaticResource BellIconData}" Width="14" Height="14" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                  <TextBlock Text="Reminder" FontSize="12" FontWeight="SemiBold"/>
-                </StackPanel>
-              </Button>
-
-              <Button Grid.Column="2"
-                      Classes="outline"
-                      Command="{Binding OpenMobileRepeatSheetCommand}"
-                      Padding="12,8"
-                      CornerRadius="18"
-                      ToolTip.Tip="Set recurrence">
-                <StackPanel Orientation="Horizontal" Spacing="6">
-                  <PathIcon Data="{StaticResource RepeatIconData}" Width="14" Height="14" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                  <TextBlock Text="Repeat" FontSize="12" FontWeight="SemiBold"/>
-                </StackPanel>
-              </Button>
-
-              <Button Grid.Column="4"
-                      Classes="primary"
-                      Command="{Binding AddTaskCommand}"
-                      Padding="20,10"
-                      CornerRadius="20">
-                <StackPanel Orientation="Horizontal" Spacing="6">
-                  <PathIcon Data="{StaticResource PlusIconData}" Width="12" Height="12" Foreground="#FFFFFF"/>
-                  <TextBlock Text="Add Task" FontSize="13" FontWeight="Bold"/>
-                </StackPanel>
-              </Button>
-            </Grid>
+            <!-- Save Task Button Row (New Line, Right Aligned) -->
+            <Button Classes="primary"
+                    Command="{Binding AddTaskCommand}"
+                    HorizontalAlignment="Right"
+                    Margin="0,12,0,0"
+                    Padding="22,10"
+                    CornerRadius="20">
+              <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <PathIcon Data="{StaticResource PlusIconData}" Width="13" Height="13" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                <TextBlock Text="Add Task" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
 
           </StackPanel>
         </Border>
@@ -688,161 +688,261 @@
     </Border>
 
     <!-- ══════════════════════════════════════════════════════
-         MOBILE DUE DATE SELECTION BOTTOM SHEET
+         MOBILE DUE DATE SELECTION FLOATING DIALOG
     ══════════════════════════════════════════════════════ -->
     <Border IsVisible="{Binding IsMobileDueDateSheetOpen}"
-            Background="#90000000"
+            Background="#A0000000"
             ZIndex="2100">
       <Panel>
         <Border Background="Transparent" PointerPressed="OnMobileDueDateBackgroundPressed"/>
 
-        <Border VerticalAlignment="Bottom"
-                HorizontalAlignment="Stretch"
+        <Border VerticalAlignment="Center"
+                HorizontalAlignment="Center"
+                Width="310"
+                Margin="16"
                 Background="{DynamicResource AppSurfaceBrush}"
                 BorderBrush="{DynamicResource AppBorderBrush}"
-                BorderThickness="0,1,0,0"
-                CornerRadius="24,24,0,0"
-                Padding="24,16,24,24"
-                BoxShadow="0 -8 32 0 #50000000">
-          <StackPanel Spacing="14">
-            <!-- Fixed Header -->
-            <Grid ColumnDefinitions="*,Auto">
-              <TextBlock Grid.Column="0" Text="Select Due Date" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
-              <Button Grid.Column="1" Classes="ghost" Command="{Binding CloseMobileDueDateSheetCommand}" Padding="6">
-                <PathIcon Data="{StaticResource CloseIconData}" Width="14" Height="14"/>
-              </Button>
-            </Grid>
-
-            <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="440" Padding="0,0,8,0">
-              <StackPanel Spacing="12">
-                <!-- Presets List -->
-                <Button Classes="ghost" Command="{Binding SetDueDateLaterTodayCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="12,12">
-                  <StackPanel Orientation="Horizontal" Spacing="12">
-                    <PathIcon Data="{StaticResource CalendarIconData}" Width="16" Height="16" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                    <TextBlock Text="Today" FontSize="14" FontWeight="SemiBold"/>
-                  </StackPanel>
-                </Button>
-                <Button Classes="ghost" Command="{Binding SetDueDateTomorrowCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="12,12">
-                  <StackPanel Orientation="Horizontal" Spacing="12">
-                    <PathIcon Data="{StaticResource CalendarIconData}" Width="16" Height="16" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                    <TextBlock Text="Tomorrow" FontSize="14" FontWeight="SemiBold"/>
-                  </StackPanel>
-                </Button>
-                <Button Classes="ghost" Command="{Binding SetDueDateNextWeekCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="12,12">
-                  <StackPanel Orientation="Horizontal" Spacing="12">
-                    <PathIcon Data="{StaticResource CalendarIconData}" Width="16" Height="16" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                    <TextBlock Text="Next Week" FontSize="14" FontWeight="SemiBold"/>
-                  </StackPanel>
-                </Button>
-
-                <Separator Classes="divider" Margin="0,4"/>
-
-                <TextBlock Text="CUSTOM DATE" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-                <Border Background="{DynamicResource AppSurfaceElevatedBrush}"
-                        BorderBrush="{DynamicResource AppBorderBrush}"
-                        BorderThickness="1"
-                        CornerRadius="12"
-                        Padding="8"
-                        HorizontalAlignment="Center">
-                  <Calendar SelectedDate="{Binding NewTaskDueDate, Mode=TwoWay}"
-                            DisplayDateStart="{Binding MinDueDate}"
-                            HorizontalAlignment="Center"/>
-                </Border>
+                BorderThickness="1"
+                CornerRadius="8"
+                ClipToBounds="True"
+                BoxShadow="0 12 40 0 #A0000000">
+          <StackPanel Spacing="0">
+            <!-- Header Banner -->
+            <Border Background="{DynamicResource AppSurfaceElevatedBrush}" Padding="16,10,16,12">
+              <StackPanel Spacing="2">
+                <TextBlock Text="{Binding DueDateHeaderYear}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                <TextBlock Text="{Binding DueDateHeaderMainText}" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}" TextWrapping="Wrap"/>
               </StackPanel>
-            </ScrollViewer>
+            </Border>
 
-            <Grid ColumnDefinitions="*,Auto" Margin="0,8,0,0">
-              <Button Grid.Column="0" Classes="outline" Command="{Binding ClearDueDateCommand}" HorizontalAlignment="Left">
-                <TextBlock Text="Clear Date" FontSize="12"/>
-              </Button>
-              <Button Grid.Column="1" Classes="primary" Command="{Binding CloseMobileDueDateSheetCommand}" Padding="20,8" CornerRadius="16">
-                <TextBlock Text="Done" FontSize="13" FontWeight="Bold"/>
-              </Button>
-            </Grid>
+            <!-- Calendar Picker -->
+            <Border Padding="4,4" MinHeight="260" HorizontalAlignment="Center" VerticalAlignment="Center">
+              <Calendar SelectedDate="{Binding NewTaskDueDate, Mode=TwoWay}"
+                        DisplayDateStart="{Binding MinDueDate}"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="0"
+                        Margin="0"
+                        HorizontalAlignment="Center"/>
+            </Border>
+
+            <Separator Classes="divider" Margin="0"/>
+
+            <!-- Action Buttons Footer -->
+            <Border Padding="12,8" Background="{DynamicResource AppSurfaceBrush}">
+              <Grid ColumnDefinitions="*,Auto">
+                <Button Grid.Column="0" Classes="ghost" Command="{Binding ClearDueDateCommand}" HorizontalAlignment="Left" Padding="8,6">
+                  <TextBlock Text="CLEAR" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                </Button>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                  <Button Classes="ghost" Command="{Binding CloseMobileDueDateSheetCommand}" Padding="8,6">
+                    <TextBlock Text="CANCEL" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                  </Button>
+                  <Button Classes="ghost" Command="{Binding CloseMobileDueDateSheetCommand}" Padding="8,6">
+                    <TextBlock Text="SAVE" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                  </Button>
+                </StackPanel>
+              </Grid>
+            </Border>
           </StackPanel>
         </Border>
       </Panel>
     </Border>
 
     <!-- ══════════════════════════════════════════════════════
-         MOBILE REMINDER SELECTION BOTTOM SHEET
+         MOBILE REMINDER SELECTION FLOATING DIALOG
     ══════════════════════════════════════════════════════ -->
     <Border IsVisible="{Binding IsMobileReminderSheetOpen}"
-            Background="#90000000"
+            Background="#A0000000"
             ZIndex="2100">
       <Panel>
         <Border Background="Transparent" PointerPressed="OnMobileReminderBackgroundPressed"/>
 
-        <Border VerticalAlignment="Bottom"
-                HorizontalAlignment="Stretch"
+        <Border VerticalAlignment="Center"
+                HorizontalAlignment="Center"
+                Width="310"
+                Margin="16"
                 Background="{DynamicResource AppSurfaceBrush}"
                 BorderBrush="{DynamicResource AppBorderBrush}"
-                BorderThickness="0,1,0,0"
-                CornerRadius="24,24,0,0"
-                Padding="24,16,24,24"
-                BoxShadow="0 -8 32 0 #50000000">
-          <StackPanel Spacing="14">
-            <!-- Fixed Header -->
-            <Grid ColumnDefinitions="*,Auto">
-              <TextBlock Grid.Column="0" Text="Set Reminder" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
-              <Button Grid.Column="1" Classes="ghost" Command="{Binding CloseMobileReminderSheetCommand}" Padding="6">
-                <PathIcon Data="{StaticResource CloseIconData}" Width="14" Height="14"/>
+                BorderThickness="1"
+                CornerRadius="8"
+                ClipToBounds="True"
+                BoxShadow="0 12 40 0 #A0000000">
+          <StackPanel Spacing="0">
+            <!-- 1. Tabs Header (DATE | TIME) -->
+            <Grid ColumnDefinitions="*,*" Background="{DynamicResource AppSurfaceElevatedBrush}">
+              <!-- DATE Tab -->
+              <Button Grid.Column="0"
+                      Classes="ghost"
+                      Command="{Binding SelectReminderDateTabCommand}"
+                      HorizontalAlignment="Stretch"
+                      HorizontalContentAlignment="Stretch"
+                      Padding="0"
+                      CornerRadius="0">
+                <Grid RowDefinitions="Auto,Auto" HorizontalAlignment="Stretch" Margin="0,10,0,0">
+                  <TextBlock Grid.Row="0"
+                             Text="DATE"
+                             FontSize="12"
+                             FontWeight="Bold"
+                             HorizontalAlignment="Center"
+                             Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                  <Border Grid.Row="1"
+                          Height="2"
+                          Width="44"
+                          Margin="0,6,0,0"
+                          HorizontalAlignment="Center"
+                          Background="{DynamicResource AppPrimaryBrush}"
+                          IsVisible="{Binding IsReminderDateTabSelected}"/>
+                </Grid>
+              </Button>
+
+              <!-- TIME Tab -->
+              <Button Grid.Column="1"
+                      Classes="ghost"
+                      Command="{Binding SelectReminderTimeTabCommand}"
+                      HorizontalAlignment="Stretch"
+                      HorizontalContentAlignment="Stretch"
+                      Padding="0"
+                      CornerRadius="0">
+                <Grid RowDefinitions="Auto,Auto" HorizontalAlignment="Stretch" Margin="0,10,0,0">
+                  <TextBlock Grid.Row="0"
+                             Text="TIME"
+                             FontSize="12"
+                             FontWeight="Bold"
+                             HorizontalAlignment="Center"
+                             Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                  <Border Grid.Row="1"
+                          Height="2"
+                          Width="44"
+                          Margin="0,6,0,0"
+                          HorizontalAlignment="Center"
+                          Background="{DynamicResource AppPrimaryBrush}"
+                          IsVisible="{Binding IsReminderTimeTabSelected}"/>
+                </Grid>
               </Button>
             </Grid>
 
-            <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="420" Padding="0,0,8,0">
-              <StackPanel Spacing="12">
-                <!-- Presets -->
-                <Button Classes="ghost" Command="{Binding SetReminderLaterTodayCommand}" IsEnabled="{Binding IsReminderLaterTodayEnabled}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="12,12">
-                  <StackPanel Orientation="Horizontal" Spacing="12">
-                    <PathIcon Data="{StaticResource BellIconData}" Width="16" Height="16" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                    <TextBlock Text="{Binding ReminderLaterTodayText}" FontSize="14" FontWeight="SemiBold"/>
-                  </StackPanel>
-                </Button>
-                <Button Classes="ghost" Command="{Binding SetReminderTomorrowMorningCommand}" IsEnabled="{Binding IsReminderTomorrowMorningEnabled}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="12,12">
-                  <StackPanel Orientation="Horizontal" Spacing="12">
-                    <PathIcon Data="{StaticResource BellIconData}" Width="16" Height="16" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                    <TextBlock Text="Tomorrow Morning (09:00)" FontSize="14" FontWeight="SemiBold"/>
-                  </StackPanel>
-                </Button>
-                <Button Classes="ghost" Command="{Binding SetReminderNextWeekCommand}" IsEnabled="{Binding IsReminderNextWeekEnabled}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="12,12">
-                  <StackPanel Orientation="Horizontal" Spacing="12">
-                    <PathIcon Data="{StaticResource BellIconData}" Width="16" Height="16" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                    <TextBlock Text="Next Week (09:00)" FontSize="14" FontWeight="SemiBold"/>
-                  </StackPanel>
-                </Button>
-
-                <Separator Classes="divider" Margin="0,4"/>
-
-                <TextBlock Text="CUSTOM DATE &amp; TIME" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-                <StackPanel Spacing="10">
-                  <StackPanel Spacing="4">
-                    <TextBlock Text="Date" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-                    <CalendarDatePicker SelectedDate="{Binding NewTaskReminderDate, Mode=TwoWay}"
-                                        DisplayDateStart="{Binding MinDueDate}"
-                                        DisplayDateEnd="{Binding NewTaskDueDate}"
-                                        PlaceholderText="Choose reminder date…"
-                                        HorizontalAlignment="Stretch"/>
-                  </StackPanel>
-                  <StackPanel Spacing="4">
-                    <TextBlock Text="Time" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-                    <TimePicker Classes="no-clock"
-                                SelectedTime="{Binding NewTaskReminderTime, Mode=TwoWay}"
-                                ClockIdentifier="24HourClock"
-                                HorizontalAlignment="Stretch"/>
-                  </StackPanel>
-                </StackPanel>
+            <!-- 2. Big Date/Time Header Banner -->
+            <Border Background="{DynamicResource AppSurfaceElevatedBrush}" Padding="16,10,16,12">
+              <StackPanel Spacing="2">
+                <TextBlock Text="{Binding ReminderHeaderYear}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                <TextBlock Text="{Binding ReminderHeaderMainText}" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}" TextWrapping="Wrap"/>
               </StackPanel>
-            </ScrollViewer>
+            </Border>
 
-            <Grid ColumnDefinitions="*,Auto" Margin="0,8,0,0">
-              <Button Grid.Column="0" Classes="outline" Command="{Binding ClearReminderCommand}" HorizontalAlignment="Left">
-                <TextBlock Text="Clear Reminder" FontSize="12"/>
-              </Button>
-              <Button Grid.Column="1" Classes="primary" Command="{Binding CloseMobileReminderSheetCommand}" Padding="20,8" CornerRadius="16">
-                <TextBlock Text="Done" FontSize="13" FontWeight="Bold"/>
-              </Button>
-            </Grid>
+            <!-- 3. Tab Contents -->
+            <!-- DATE Tab Content -->
+            <Border IsVisible="{Binding IsReminderDateTabSelected}" Padding="4,4" MinHeight="260" HorizontalAlignment="Center" VerticalAlignment="Center">
+              <Calendar SelectedDate="{Binding NewTaskReminderDate, Mode=TwoWay}"
+                        DisplayDateStart="{Binding MinDueDate}"
+                        DisplayDateEnd="{Binding NewTaskDueDate}"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="0"
+                        Margin="0"
+                        HorizontalAlignment="Center"/>
+            </Border>
+
+            <!-- TIME Tab Content -->
+            <Border IsVisible="{Binding IsReminderTimeTabSelected}" Padding="14,12" MinHeight="260">
+              <StackPanel Spacing="10" VerticalAlignment="Center">
+                <TextBlock Text="TIME PRESETS" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                <UniformGrid Columns="2" Rows="2">
+                  <Button Classes="ghost"
+                          Command="{Binding SetReminderPresetMorningCommand}"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Stretch"
+                          Margin="3"
+                          Padding="8,10"
+                          Background="{DynamicResource AppSurfaceElevatedBrush}"
+                          BorderBrush="{DynamicResource AppBorderBrush}"
+                          BorderThickness="1"
+                          CornerRadius="8">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2">
+                      <TextBlock Text="09:00" FontSize="13" FontWeight="Bold" HorizontalAlignment="Center" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                      <TextBlock Text="Morning" FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                    </StackPanel>
+                  </Button>
+
+                  <Button Classes="ghost"
+                          Command="{Binding SetReminderPresetAfternoonCommand}"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Stretch"
+                          Margin="3"
+                          Padding="8,10"
+                          Background="{DynamicResource AppSurfaceElevatedBrush}"
+                          BorderBrush="{DynamicResource AppBorderBrush}"
+                          BorderThickness="1"
+                          CornerRadius="8">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2">
+                      <TextBlock Text="13:00" FontSize="13" FontWeight="Bold" HorizontalAlignment="Center" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                      <TextBlock Text="Afternoon" FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                    </StackPanel>
+                  </Button>
+
+                  <Button Classes="ghost"
+                          Command="{Binding SetReminderPresetEveningCommand}"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Stretch"
+                          Margin="3"
+                          Padding="8,10"
+                          Background="{DynamicResource AppSurfaceElevatedBrush}"
+                          BorderBrush="{DynamicResource AppBorderBrush}"
+                          BorderThickness="1"
+                          CornerRadius="8">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2">
+                      <TextBlock Text="17:00" FontSize="13" FontWeight="Bold" HorizontalAlignment="Center" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                      <TextBlock Text="Evening" FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                    </StackPanel>
+                  </Button>
+
+                  <Button Classes="ghost"
+                          Command="{Binding SetReminderPresetNightCommand}"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Stretch"
+                          Margin="3"
+                          Padding="8,10"
+                          Background="{DynamicResource AppSurfaceElevatedBrush}"
+                          BorderBrush="{DynamicResource AppBorderBrush}"
+                          BorderThickness="1"
+                          CornerRadius="8">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2">
+                      <TextBlock Text="20:00" FontSize="13" FontWeight="Bold" HorizontalAlignment="Center" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                      <TextBlock Text="Night" FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                    </StackPanel>
+                  </Button>
+                </UniformGrid>
+
+                <Separator Classes="divider" Margin="0,2"/>
+
+                <TextBlock Text="CUSTOM TIME" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                <TimePicker Classes="no-clock"
+                            SelectedTime="{Binding NewTaskReminderTime, Mode=TwoWay}"
+                            ClockIdentifier="24HourClock"
+                            HorizontalAlignment="Stretch"/>
+              </StackPanel>
+            </Border>
+
+            <Separator Classes="divider" Margin="0"/>
+
+            <!-- 4. Footer Action Buttons (CANCEL / SAVE) -->
+            <Border Padding="12,8" Background="{DynamicResource AppSurfaceBrush}">
+              <Grid ColumnDefinitions="*,Auto">
+                <Button Grid.Column="0" Classes="ghost" Command="{Binding ClearReminderCommand}" HorizontalAlignment="Left" Padding="8,6">
+                  <TextBlock Text="CLEAR" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                </Button>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                  <Button Classes="ghost" Command="{Binding CloseMobileReminderSheetCommand}" Padding="8,6">
+                    <TextBlock Text="CANCEL" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                  </Button>
+                  <Button Classes="ghost" Command="{Binding CloseMobileReminderSheetCommand}" Padding="8,6">
+                    <TextBlock Text="SAVE" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                  </Button>
+                </StackPanel>
+              </Grid>
+            </Border>
           </StackPanel>
         </Border>
       </Panel>
