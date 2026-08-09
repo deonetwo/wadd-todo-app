@@ -119,18 +119,31 @@
                     BorderThickness="1"
                     CornerRadius="8"
                     Padding="14,12">
-              <Grid ColumnDefinitions="Auto,*,Auto">
-                <Border Grid.Column="0" Width="36" Height="36" CornerRadius="18" Background="{DynamicResource AppPrimaryBrush}" Margin="0,0,12,0">
+              <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                <Border Grid.Column="0" Width="36" Height="36" CornerRadius="18" Background="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center">
                   <TextBlock Text="G" FontSize="18" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
-                <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
-                  <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding GoogleUserEmail}" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
-                    <Border Background="{DynamicResource AppAccentTintBrush}" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding GoogleUserEmail}"
+                             FontWeight="SemiBold"
+                             FontSize="14"
+                             Foreground="{DynamicResource AppTextPrimaryBrush}"
+                             TextTrimming="CharacterEllipsis"
+                             VerticalAlignment="Center"/>
+                  <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding GoogleUserName}"
+                               Classes="small"
+                               Foreground="{DynamicResource AppTextSecondaryBrush}"
+                               TextTrimming="CharacterEllipsis"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,0"/>
+                    <Border Background="{DynamicResource AppAccentTintBrush}"
+                            CornerRadius="4"
+                            Padding="6,2"
+                            VerticalAlignment="Center">
                       <TextBlock Text="Connected" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
                     </Border>
-                  </StackPanel>
-                  <TextBlock Text="{Binding GoogleUserName}" Classes="small" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                  </WrapPanel>
                 </StackPanel>
 
                 <Button Grid.Column="2"
@@ -161,6 +174,7 @@
             <TextBlock Text="Export To Excel" Classes="heading"/>
             <TextBlock Text="Export all your tasks, due dates, and priorities to an Excel (.xlsx) file."
                        Classes="small"
+                       TextWrapping="Wrap"
                        Foreground="{DynamicResource AppTextSecondaryBrush}"/>
           </StackPanel>
 
@@ -183,17 +197,17 @@
                    Width="40" Height="40" Margin="0,0,16,12" VerticalAlignment="Center"/>
             <StackPanel Grid.Row="0" Grid.Column="1" VerticalAlignment="Center">
               <TextBlock Text="Wadd ToDo" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
-              <TextBlock Text="Version 1.0.0 (.NET 10 + Avalonia UI 11)" Classes="small" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              <TextBlock Text="Version 1.0.0 (.NET 10 + Avalonia UI 11)" Classes="small" TextWrapping="Wrap" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
             </StackPanel>
 
             <TextBlock Grid.Row="1" Grid.Column="0" Text="Developer:" Classes="small" FontWeight="SemiBold" Margin="0,0,16,6"/>
-            <TextBlock Grid.Row="1" Grid.Column="1" Text="Dewanto (Wadd Software Engineering)" Classes="small" Margin="0,0,0,6"/>
+            <TextBlock Grid.Row="1" Grid.Column="1" Text="Dewanto (Wadd Software Engineering)" Classes="small" TextWrapping="Wrap" Margin="0,0,0,6"/>
 
             <TextBlock Grid.Row="2" Grid.Column="0" Text="Platforms:" Classes="small" FontWeight="SemiBold" Margin="0,0,16,6"/>
-            <TextBlock Grid.Row="2" Grid.Column="1" Text="Windows (x64/Arm64) &amp; Android (min API 21+)" Classes="small" Margin="0,0,0,6"/>
+            <TextBlock Grid.Row="2" Grid.Column="1" Text="Windows (x64/Arm64) &amp; Android (min API 21+)" Classes="small" TextWrapping="Wrap" Margin="0,0,0,6"/>
 
             <TextBlock Grid.Row="3" Grid.Column="0" Text="Copyright:" Classes="small" FontWeight="SemiBold" Margin="0,0,16,0"/>
-            <TextBlock Grid.Row="3" Grid.Column="1" Text="© 2026 Wadd Application. All rights reserved." Classes="small"/>
+            <TextBlock Grid.Row="3" Grid.Column="1" Text="© 2026 Wadd Application. All rights reserved." Classes="small" TextWrapping="Wrap"/>
           </Grid>
         </StackPanel>
       </Border>
