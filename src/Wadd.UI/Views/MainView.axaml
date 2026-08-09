@@ -522,7 +522,8 @@
     <!-- ══════════════════════════════════════════════════════
          MOBILE FLOATING TASK COMPOSER MODAL (Bottom Sheet)
     ══════════════════════════════════════════════════════ -->
-    <Border IsVisible="{Binding IsMobileTaskComposerOpen}"
+    <Border x:Name="MobileTaskComposerPanel"
+            IsVisible="{Binding IsMobileTaskComposerOpen}"
             Background="#90000000"
             ZIndex="2000">
       <Panel>
@@ -558,7 +559,8 @@
             <TextBlock Text="New Task" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
 
             <!-- Task Title Input -->
-            <TextBox Classes="composer"
+            <TextBox x:Name="MobileTaskTitleInput"
+                     Classes="composer"
                      PlaceholderText="What do you need to do?"
                      Text="{Binding NewTaskTitle, Mode=TwoWay}"
                      FontSize="18"

@@ -3,6 +3,7 @@ using Android.App;
 using Android.Content.PM;
 using Android.OS;
 using Android.Runtime;
+using Android.Views;
 using Avalonia;
 using Avalonia.Android;
 using Wadd.UI;
@@ -20,7 +21,7 @@ public class AndroidApplication : AvaloniaAndroidApplication<App>
     protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
     {
         return base.CustomizeAppBuilder(builder)
-            .WithInterFont();
+        .WithInterFont();
     }
 }
 
@@ -29,6 +30,7 @@ public class AndroidApplication : AvaloniaAndroidApplication<App>
     Theme = "@style/MainTheme",
     Icon = "@drawable/icon",
     MainLauncher = true,
+    WindowSoftInputMode = SoftInput.AdjustResize | SoftInput.StateHidden,
     ConfigurationChanges = ConfigChanges.Orientation | ConfigChanges.ScreenSize | ConfigChanges.UiMode)]
 public class MainActivity : AvaloniaMainActivity
 {

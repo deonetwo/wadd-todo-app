@@ -1,5 +1,8 @@
+using System;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Threading;
 using Wadd.UI.ViewModels;
 
 namespace Wadd.UI.Views;
@@ -12,6 +15,13 @@ public partial class MainView : UserControl
     {
         InitializeComponent();
         SizeChanged += OnMainViewSizeChanged;
+        MobileTaskComposerPanel.PropertyChanged += (s, e) =>
+        {
+            if (e.Property == IsVisibleProperty && e.NewValue is true)
+            {
+                Dispatcher.UIThread.Post(() => MobileTaskTitleInput.Focus(), DispatcherPriority.Render);
+            }
+        };
     }
 
     private void OnMainViewSizeChanged(object? sender, SizeChangedEventArgs e)
