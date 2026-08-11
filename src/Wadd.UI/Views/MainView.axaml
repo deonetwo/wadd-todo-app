@@ -140,6 +140,13 @@
               </Grid>
             </ListBoxItem>
 
+            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Tags Management">
+              <Grid ColumnDefinitions="56,*" Height="44">
+                <PathIcon Grid.Column="0" Data="{StaticResource TagIconData}" Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="Tags" FontSize="14" VerticalAlignment="Center"/>
+              </Grid>
+            </ListBoxItem>
+
             <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Settings">
               <Grid ColumnDefinitions="56,*" Height="44">
                 <PathIcon Grid.Column="0" Data="{StaticResource SettingsIconData}" Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -264,7 +271,10 @@
         <!-- ═══ TAB 3: CALENDAR VIEW ═══ -->
         <views:CalendarView IsVisible="{Binding IsCalendarView}"/>
 
-        <!-- ═══ TAB 4: SETTINGS VIEW ═══ -->
+        <!-- ═══ TAB 4: TAGS MANAGEMENT VIEW ═══ -->
+        <views:TagsManagementView IsVisible="{Binding IsTagsView}"/>
+
+        <!-- ═══ TAB 5: SETTINGS VIEW ═══ -->
         <views:SettingsView IsVisible="{Binding IsSettingsView}"/>
 
         <!-- ═══ SMALL POST-SYNC PROMPT DIALOG ═══ -->
@@ -375,6 +385,9 @@
         <!-- Compact Calendar View -->
         <views:CalendarView IsVisible="{Binding IsCalendarView}"/>
 
+        <!-- Compact Tags Management View -->
+        <views:TagsManagementView IsVisible="{Binding IsTagsView}"/>
+
         <!-- Compact Settings View -->
         <views:SettingsView IsVisible="{Binding IsSettingsView}"/>
 
@@ -460,6 +473,12 @@
                 </ListBoxItem>
                 <ListBoxItem Classes="side-menu-item">
                   <StackPanel Orientation="Horizontal" Spacing="12">
+                    <PathIcon Data="{StaticResource TagIconData}" Width="17" Height="17"/>
+                    <TextBlock Text="Tags" VerticalAlignment="Center"/>
+                  </StackPanel>
+                </ListBoxItem>
+                <ListBoxItem Classes="side-menu-item">
+                  <StackPanel Orientation="Horizontal" Spacing="12">
                     <PathIcon Data="{StaticResource SettingsIconData}" Width="17" Height="17"/>
                     <TextBlock Text="Settings" VerticalAlignment="Center"/>
                   </StackPanel>
@@ -471,50 +490,48 @@
 
       </Panel>
 
-      <!-- ── Bottom Tab Bar ── -->
+      <!-- ── Bottom Tab Bar (5 Tabs) ── -->
       <Border Grid.Row="1"
               Background="{DynamicResource AppSurfaceBrush}"
               BorderBrush="{DynamicResource AppBorderBrush}"
-              BorderThickness="0,1,0,0">
-        <ListBox Background="Transparent"
-                 BorderThickness="0"
-                 SelectedIndex="{Binding SelectedNavIndex}">
-          <ListBox.ItemsPanel>
-            <ItemsPanelTemplate>
-              <UniformGrid Rows="1"/>
-            </ItemsPanelTemplate>
-          </ListBox.ItemsPanel>
-          <ListBoxItem Classes="tab-item">
+              BorderThickness="0,1,0,0"
+              Height="56">
+        <UniformGrid Columns="5">
+          <Button Classes="tab-btn" Command="{Binding OpenTasksViewCommand}" Classes.active="{Binding IsTasksView}">
             <StackPanel Spacing="4" HorizontalAlignment="Center">
               <PathIcon Data="{StaticResource CheckListIconData}" Width="18" Height="18" HorizontalAlignment="Center"/>
               <TextBlock Text="Tasks" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
             </StackPanel>
-          </ListBoxItem>
-          <ListBoxItem Classes="tab-item">
+          </Button>
+
+          <Button Classes="tab-btn" Command="{Binding OpenCompletedViewCommand}" Classes.active="{Binding IsCompletedView}">
             <StackPanel Spacing="4" HorizontalAlignment="Center">
               <PathIcon Data="{StaticResource CheckIconData}" Width="16" Height="16" HorizontalAlignment="Center"/>
               <TextBlock Text="Done" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
             </StackPanel>
-          </ListBoxItem>
-          <ListBoxItem Classes="tab-item">
+          </Button>
+
+          <Button Classes="tab-btn" Command="{Binding OpenRecurringViewCommand}" Classes.active="{Binding IsRecurringView}">
             <StackPanel Spacing="4" HorizontalAlignment="Center">
               <PathIcon Data="{StaticResource RepeatIconData}" Width="16" Height="16" HorizontalAlignment="Center"/>
               <TextBlock Text="Repeat" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
             </StackPanel>
-          </ListBoxItem>
-          <ListBoxItem Classes="tab-item">
+          </Button>
+
+          <Button Classes="tab-btn" Command="{Binding OpenCalendarViewCommand}" Classes.active="{Binding IsCalendarView}">
             <StackPanel Spacing="4" HorizontalAlignment="Center">
               <PathIcon Data="{StaticResource CalendarIconData}" Width="18" Height="18" HorizontalAlignment="Center"/>
               <TextBlock Text="Calendar" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
             </StackPanel>
-          </ListBoxItem>
-          <ListBoxItem Classes="tab-item">
+          </Button>
+
+          <Button Classes="tab-btn" Command="{Binding ToggleMobileMoreSheetCommand}" Classes.active="{Binding IsMoreActive}" ToolTip.Tip="More Options">
             <StackPanel Spacing="4" HorizontalAlignment="Center">
-              <PathIcon Data="{StaticResource SettingsIconData}" Width="18" Height="18" HorizontalAlignment="Center"/>
-              <TextBlock Text="Settings" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
+              <PathIcon Data="{StaticResource MoreHorizontalIconData}" Width="18" Height="18" HorizontalAlignment="Center"/>
+              <TextBlock Text="More" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
             </StackPanel>
-          </ListBoxItem>
-        </ListBox>
+          </Button>
+        </UniformGrid>
       </Border>
 
     </Grid>
@@ -633,13 +650,41 @@
                   </Button>
                 </StackPanel>
               </Border>
+
+              <!-- Selected Category Chips -->
+              <ItemsControl ItemsSource="{Binding NewTaskCategories}" IsVisible="{Binding HasNewTaskCategories}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <WrapPanel Orientation="Horizontal"/>
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <Border Background="{DynamicResource AppPrimaryBrush}"
+                            BorderBrush="{DynamicResource AppPrimaryBrush}"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="7,3"
+                            Margin="0,0,5,5">
+                      <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                        <PathIcon Data="{StaticResource TagIconData}" Width="10" Height="10" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding}" FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                        <Button Command="{Binding $parent[UserControl].DataContext.RemoveNewTaskCategoryCommand}" CommandParameter="{Binding}" Classes="ghost" Padding="0" Width="14" Height="14" VerticalAlignment="Center" VerticalContentAlignment="Center">
+                          <PathIcon Data="{StaticResource CloseIconData}" Width="9" Height="9" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+                      </StackPanel>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
             </WrapPanel>
 
-            <!-- Bottom Action Row: Date, Reminder, Repeat buttons -->
-            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+            <!-- Bottom Action Row: Date, Reminder, Repeat, Category buttons (Wraps cleanly on narrow screens) -->
+            <WrapPanel Orientation="Horizontal" Margin="0,8,0,0">
               <Button Classes="outline"
                       Command="{Binding OpenMobileDueDateSheetCommand}"
                       Padding="12,7"
+                      Margin="0,0,8,8"
                       CornerRadius="16"
                       ToolTip.Tip="Set due date">
                 <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
@@ -651,6 +696,7 @@
               <Button Classes="outline"
                       Command="{Binding OpenMobileReminderSheetCommand}"
                       Padding="12,7"
+                      Margin="0,0,8,8"
                       CornerRadius="16"
                       ToolTip.Tip="Set reminder">
                 <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
@@ -662,6 +708,7 @@
               <Button Classes="outline"
                       Command="{Binding OpenMobileRepeatSheetCommand}"
                       Padding="12,7"
+                      Margin="0,0,8,8"
                       CornerRadius="16"
                       ToolTip.Tip="Set recurrence">
                 <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
@@ -669,7 +716,19 @@
                   <TextBlock Text="Repeat" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                 </StackPanel>
               </Button>
-            </StackPanel>
+
+              <Button Classes="outline"
+                      Command="{Binding OpenMobileCategorySheetCommand}"
+                      Padding="12,7"
+                      Margin="0,0,8,8"
+                      CornerRadius="16"
+                      ToolTip.Tip="Set category">
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                  <PathIcon Data="{StaticResource TagIconData}" Width="13" Height="13" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <TextBlock Text="Category" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                </StackPanel>
+              </Button>
+            </WrapPanel>
 
             <!-- Save Task Button Row (New Line, Right Aligned) -->
             <Button Classes="primary"
@@ -1057,6 +1116,261 @@
                 <TextBlock Text="Done" FontSize="13" FontWeight="Bold"/>
               </Button>
             </Grid>
+          </StackPanel>
+        </Border>
+      </Panel>
+    </Border>
+
+    <!-- ══════════════════════════════════════════════════════
+         MOBILE CATEGORY SELECTION FLOATING DIALOG
+    ══════════════════════════════════════════════════════ -->
+    <Border IsVisible="{Binding IsMobileCategorySheetOpen}"
+            Background="#A0000000"
+            ZIndex="2100">
+      <Panel>
+        <Border Background="Transparent" PointerPressed="OnMobileCategoryBackgroundPressed"/>
+
+        <Border VerticalAlignment="Center"
+                HorizontalAlignment="Center"
+                Width="310"
+                Margin="16"
+                Background="{DynamicResource AppSurfaceBrush}"
+                BorderBrush="{DynamicResource AppBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="12"
+                ClipToBounds="True"
+                BoxShadow="0 12 40 0 #A0000000">
+          <StackPanel Spacing="0">
+            <!-- Header Banner -->
+            <Border Background="{DynamicResource AppSurfaceElevatedBrush}" Padding="16,12,16,14">
+              <StackPanel Spacing="2">
+                <TextBlock Text="SELECT CATEGORY TAG" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                <TextBlock Text="Assign tags to task" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+              </StackPanel>
+            </Border>
+
+            <!-- Category List -->
+            <Border Padding="16,12" MinHeight="140" MaxHeight="260">
+              <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="8">
+                  <TextBlock Text="No tags created yet."
+                             IsVisible="{Binding !HasExistingCategories}"
+                             FontSize="13"
+                             Foreground="{DynamicResource AppTextSecondaryBrush}"
+                             Margin="4,8"/>
+
+                  <ItemsControl ItemsSource="{Binding ExistingCategories}" IsVisible="{Binding HasExistingCategories}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Button Classes="ghost"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Left"
+                                Padding="10,8"
+                                Command="{Binding $parent[UserControl].DataContext.AddNewTaskCategoryCommand}"
+                                CommandParameter="{Binding}">
+                          <StackPanel Orientation="Horizontal" Spacing="8">
+                            <PathIcon Data="{StaticResource TagIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding}" Foreground="{DynamicResource AppTextPrimaryBrush}" FontSize="13" FontWeight="SemiBold"/>
+                          </StackPanel>
+                        </Button>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+
+                  <Separator Classes="divider" Margin="0,4"/>
+
+                  <Button Classes="ghost"
+                          Command="{Binding OpenTagsViewCommand}"
+                          Foreground="{DynamicResource AppPrimaryBrush}"
+                          FontWeight="SemiBold"
+                          HorizontalAlignment="Stretch"
+                          HorizontalContentAlignment="Left"
+                          Padding="10,8">
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                      <PathIcon Data="{StaticResource SettingsIconData}" Width="12" Height="12"/>
+                      <TextBlock Text="Manage Tags..." FontSize="12"/>
+                    </StackPanel>
+                  </Button>
+                </StackPanel>
+              </ScrollViewer>
+            </Border>
+
+            <Separator Classes="divider" Margin="0"/>
+
+            <!-- Action Buttons Footer -->
+            <Border Padding="12,8" Background="{DynamicResource AppSurfaceBrush}">
+              <Button Classes="ghost" Command="{Binding CloseMobileCategorySheetCommand}" HorizontalAlignment="Right" Padding="12,6">
+                <TextBlock Text="CLOSE" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+              </Button>
+            </Border>
+          </StackPanel>
+        </Border>
+      </Panel>
+    </Border>
+
+    <!-- ══════════════════════════════════════════════════════
+         MOBILE MORE MENU SHEET MODAL (Bottom Sheet)
+    ══════════════════════════════════════════════════════ -->
+    <Border x:Name="MobileMoreSheetPanel"
+            IsVisible="{Binding IsMobileMoreSheetOpen}"
+            Background="#90000000"
+            ZIndex="2100">
+      <Panel>
+        <!-- Background Scrim (Tapping closes modal) -->
+        <Border Background="Transparent" PointerPressed="OnMobileMoreSheetBackgroundPressed"/>
+
+        <Border VerticalAlignment="Bottom"
+                HorizontalAlignment="Stretch"
+                Background="{DynamicResource AppSurfaceBrush}"
+                BorderBrush="{DynamicResource AppBorderBrush}"
+                BorderThickness="0,1,0,0"
+                CornerRadius="24,24,0,0"
+                Padding="24,20"
+                BoxShadow="0 -8 32 0 #50000000">
+          <StackPanel Spacing="16">
+
+            <!-- Drag Handle & Close Row -->
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Grid.Column="0" Spacing="4">
+                <Border Width="36" Height="4"
+                        CornerRadius="2"
+                        Background="{DynamicResource AppTextSecondaryBrush}"
+                        Opacity="0.4"
+                        HorizontalAlignment="Left"
+                        Margin="0,0,0,4"/>
+                <TextBlock Text="MORE OPTIONS" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+              </StackPanel>
+              <Button Grid.Column="1"
+                      Classes="icon-btn"
+                      Command="{Binding CloseMobileMoreSheetCommand}"
+                      ToolTip.Tip="Close options">
+                <PathIcon Data="{StaticResource CloseIconData}" Width="14" Height="14"/>
+              </Button>
+            </Grid>
+
+            <!-- Sheet Menu Actions -->
+            <StackPanel Spacing="8">
+
+              <!-- Tags Management -->
+              <Button Classes="outline"
+                      Command="{Binding OpenTagsViewCommand}"
+                      HorizontalAlignment="Stretch"
+                      HorizontalContentAlignment="Left"
+                      Padding="14,12"
+                      CornerRadius="12">
+                <Grid ColumnDefinitions="Auto,*">
+                  <PathIcon Grid.Column="0" Data="{StaticResource TagIconData}" Width="18" Height="18" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <StackPanel Grid.Column="1" Spacing="2" Margin="12,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="Tags Management" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                    <TextBlock Text="Create, rename, or delete category tags" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                  </StackPanel>
+                </Grid>
+              </Button>
+
+              <!-- Settings -->
+              <Button Classes="outline"
+                      Command="{Binding OpenSettingsCommand}"
+                      HorizontalAlignment="Stretch"
+                      HorizontalContentAlignment="Left"
+                      Padding="14,12"
+                      CornerRadius="12">
+                <Grid ColumnDefinitions="Auto,*">
+                  <PathIcon Grid.Column="0" Data="{StaticResource SettingsIconData}" Width="18" Height="18" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <StackPanel Grid.Column="1" Spacing="2" Margin="12,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="Settings" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                    <TextBlock Text="Theme, Cloud Sync, and app preferences" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                  </StackPanel>
+                </Grid>
+              </Button>
+
+            </StackPanel>
+
+          </StackPanel>
+        </Border>
+      </Panel>
+    </Border>
+
+    <!-- ══════════════════════════════════════════════════════
+         MOBILE TAG FILTER SELECTION FLOATING DIALOG
+    ══════════════════════════════════════════════════════ -->
+    <Border IsVisible="{Binding IsMobileTagFilterSheetOpen}"
+            Background="#A0000000"
+            ZIndex="2150">
+      <Panel>
+        <Border Background="Transparent" PointerPressed="OnMobileTagFilterBackgroundPressed"/>
+
+        <Border VerticalAlignment="Center"
+                HorizontalAlignment="Center"
+                Width="310"
+                Margin="16"
+                Background="{DynamicResource AppSurfaceBrush}"
+                BorderBrush="{DynamicResource AppBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="12"
+                ClipToBounds="True"
+                BoxShadow="0 12 40 0 #A0000000">
+          <StackPanel Spacing="0">
+            <!-- Header Banner -->
+            <Border Background="{DynamicResource AppSurfaceElevatedBrush}" Padding="16,12,16,14">
+              <StackPanel Spacing="2">
+                <TextBlock Text="FILTER BY TAG" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                <TextBlock Text="{Binding CategoryFilterButtonText}" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}" TextWrapping="Wrap"/>
+              </StackPanel>
+            </Border>
+
+            <!-- Tags List with Checkboxes -->
+            <Border Padding="16,12" MinHeight="140" MaxHeight="260">
+              <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="10">
+                  <ItemsControl ItemsSource="{Binding CategoryFilterOptions}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <CheckBox Content="{Binding Name}"
+                                  IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                  Margin="0,4"
+                                  FontSize="13"
+                                  FontWeight="Medium"/>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+
+                  <Separator Classes="divider" Margin="0,4"/>
+
+                  <Button Classes="ghost"
+                          Command="{Binding OpenTagsViewCommand}"
+                          Foreground="{DynamicResource AppPrimaryBrush}"
+                          FontWeight="SemiBold"
+                          HorizontalAlignment="Stretch"
+                          HorizontalContentAlignment="Left"
+                          Padding="0,4">
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                      <PathIcon Data="{StaticResource SettingsIconData}" Width="12" Height="12"/>
+                      <TextBlock Text="Manage Tags..." FontSize="12"/>
+                    </StackPanel>
+                  </Button>
+                </StackPanel>
+              </ScrollViewer>
+            </Border>
+
+            <Separator Classes="divider" Margin="0"/>
+
+            <!-- Action Buttons Footer -->
+            <Border Padding="12,8" Background="{DynamicResource AppSurfaceBrush}">
+              <Grid ColumnDefinitions="*,Auto">
+                <Button Grid.Column="0" Classes="ghost" Command="{Binding ClearTagFilterCommand}" HorizontalAlignment="Left" Padding="8,6">
+                  <TextBlock Text="CLEAR" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                </Button>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                  <Button Classes="ghost" Command="{Binding CloseMobileTagFilterSheetCommand}" Padding="8,6">
+                    <TextBlock Text="CANCEL" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                  </Button>
+                  <Button Classes="ghost" Command="{Binding CloseMobileTagFilterSheetCommand}" Padding="8,6">
+                    <TextBlock Text="SAVE" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                  </Button>
+                </StackPanel>
+              </Grid>
+            </Border>
           </StackPanel>
         </Border>
       </Panel>

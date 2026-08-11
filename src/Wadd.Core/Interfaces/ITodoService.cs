@@ -23,4 +23,14 @@ public interface ITodoService
     Task<Dictionary<string, string>> GetAllDateNotesAsync(CancellationToken cancellationToken = default);
     Task SaveDateNoteAsync(DateTime date, string noteText, CancellationToken cancellationToken = default);
     Task DeleteDateNoteAsync(DateTime date, CancellationToken cancellationToken = default);
+
+    // Category Management
+    Task<bool> RenameCategoryAsync(string oldCategory, string newCategory, CancellationToken cancellationToken = default);
+    Task<bool> DeleteCategoryAsync(string categoryName, CancellationToken cancellationToken = default);
+
+    // Standalone Custom Tags Management
+    Task<Dictionary<string, DateTime>> GetCustomTagsAsync(CancellationToken cancellationToken = default);
+    Task SaveCustomTagAsync(string name, DateTime? createdAt = null, CancellationToken cancellationToken = default);
+    Task DeleteCustomTagAsync(string name, CancellationToken cancellationToken = default);
+    Task RenameCustomTagAsync(string oldName, string newName, CancellationToken cancellationToken = default);
 }

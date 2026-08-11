@@ -65,4 +65,22 @@ public partial class MainView : UserControl
         if (DataContext is MainViewModel vm)
             vm.CloseMobileRepeatSheetCommand.Execute(null);
     }
+
+    private void OnMobileCategoryBackgroundPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.CloseMobileCategorySheetCommand.Execute(null);
+    }
+
+    private void OnMobileMoreSheetBackgroundPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.CloseMobileMoreSheetCommand.Execute(null);
+    }
+
+    private void OnMobileTagFilterBackgroundPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.CloseMobileTagFilterSheetCommand.Execute(null);
+    }
 }

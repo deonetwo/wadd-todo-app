@@ -157,6 +157,36 @@ public partial class TodoItemViewModel : ViewModelBase
 
     public string RecurrenceFormatted => Wadd.Core.Helpers.RecurrenceHelper.FormatRecurrenceText(Model.IsRecurring, Model.RecurrenceType, Model.CustomRecurrenceInterval, Model.CustomRecurrenceUnit, Model.CustomWeeklyDays);
 
+    public string? Category
+    {
+        get => Model.Category;
+        set
+        {
+            if (Model.Category != value)
+            {
+                Model.Category = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(HasCategory));
+                OnPropertyChanged(nameof(Categories));
+                OnPropertyChanged(nameof(HasCategories));
+            }
+        }
+    }
+
+    public bool HasCategory => !string.IsNullOrWhiteSpace(Model.Category);
+
+    public List<string> Categories => Model.CategoriesList;
+
+    public bool HasCategories => Categories.Count > 0;
+
+    public IEnumerable<string> DisplayCategories => Categories.Take(2);
+
+    public bool HasOverflowCategories => Categories.Count > 2;
+
+    public string OverflowCategoryCountText => $"+{Categories.Count - 2}";
+
+    public string AllCategoriesToolTip => string.Join(", ", Categories);
+
     public TodoItemViewModel(TodoItem model)
     {
         _model = model ?? throw new ArgumentNullException(nameof(model));
@@ -187,5 +217,13 @@ public partial class TodoItemViewModel : ViewModelBase
         OnPropertyChanged(nameof(RecurrenceType));
         OnPropertyChanged(nameof(HasRecurrence));
         OnPropertyChanged(nameof(RecurrenceFormatted));
+        OnPropertyChanged(nameof(Category));
+        OnPropertyChanged(nameof(HasCategory));
+        OnPropertyChanged(nameof(Categories));
+        OnPropertyChanged(nameof(HasCategories));
+        OnPropertyChanged(nameof(DisplayCategories));
+        OnPropertyChanged(nameof(HasOverflowCategories));
+        OnPropertyChanged(nameof(OverflowCategoryCountText));
+        OnPropertyChanged(nameof(AllCategoriesToolTip));
     }
 }

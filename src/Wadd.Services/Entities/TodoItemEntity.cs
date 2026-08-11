@@ -44,6 +44,8 @@ public class TodoItemEntity
 
     public string? CustomWeeklyDays { get; set; }
 
+    public string? Category { get; set; }
+
     public TodoItem ToDomain()
     {
         return new TodoItem
@@ -64,7 +66,8 @@ public class TodoItemEntity
             RecurrenceType = RecurrenceType,
             CustomRecurrenceInterval = CustomRecurrenceInterval,
             CustomRecurrenceUnit = CustomRecurrenceUnit,
-            CustomWeeklyDays = CustomWeeklyDays
+            CustomWeeklyDays = CustomWeeklyDays,
+            Category = Category
         };
     }
 
@@ -89,7 +92,8 @@ public class TodoItemEntity
             RecurrenceType = item.RecurrenceType,
             CustomRecurrenceInterval = item.CustomRecurrenceInterval,
             CustomRecurrenceUnit = item.CustomRecurrenceUnit,
-            CustomWeeklyDays = item.CustomWeeklyDays
+            CustomWeeklyDays = item.CustomWeeklyDays,
+            Category = item.Category
         };
     }
 }

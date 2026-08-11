@@ -345,6 +345,32 @@
     <Setter Property="Foreground" Value="{DynamicResource AppPrimaryBrush}"/>
   </Style>
 
+  <!-- Bottom Tab Bar Button (5-tab explicit binding) -->
+  <Style Selector="Button.tab-btn">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppTextSecondaryBrush}"/>
+    <Setter Property="Padding" Value="0"/>
+    <Setter Property="Margin" Value="0"/>
+    <Setter Property="HorizontalAlignment" Value="Stretch"/>
+    <Setter Property="VerticalAlignment" Value="Stretch"/>
+    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="CornerRadius" Value="0"/>
+    <Setter Property="Cursor" Value="Hand"/>
+  </Style>
+  <Style Selector="Button.tab-btn:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtleBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
+  </Style>
+  <Style Selector="Button.tab-btn.active">
+    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryBrush}"/>
+  </Style>
+  <Style Selector="Button.tab-btn.active /template/ ContentPresenter">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryBrush}"/>
+  </Style>
+
   <!-- ══════════════ TASK ROW ══════════════ -->
 
   <!-- Modern Soft Rounded Task Row Card -->

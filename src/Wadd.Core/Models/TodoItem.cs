@@ -37,4 +37,12 @@ public class TodoItem
     public string? CustomRecurrenceUnit { get; set; }
 
     public string? CustomWeeklyDays { get; set; }
+
+    public string? Category { get; set; }
+
+    public List<string> CategoriesList => string.IsNullOrWhiteSpace(Category)
+        ? new List<string>()
+        : Category.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                  .Distinct(StringComparer.OrdinalIgnoreCase)
+                  .ToList();
 }

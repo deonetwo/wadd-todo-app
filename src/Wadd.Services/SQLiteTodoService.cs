@@ -70,6 +70,7 @@ public class SQLiteTodoService : ITodoService
                 await _database.CreateTableAsync<SyncLogEntity>();
                 await _database.CreateTableAsync<SyncConflictEntity>();
                 await _database.CreateTableAsync<DateNoteEntity>();
+                await _database.CreateTableAsync<CustomTagEntity>();
                 _isInitialized = true;
             }
         }
@@ -231,7 +232,8 @@ public class SQLiteTodoService : ITodoService
                 RecurrenceType = item.RecurrenceType,
                 CustomRecurrenceInterval = item.CustomRecurrenceInterval,
                 CustomRecurrenceUnit = item.CustomRecurrenceUnit,
-                CustomWeeklyDays = item.CustomWeeklyDays
+                CustomWeeklyDays = item.CustomWeeklyDays,
+                Category = item.Category
             };
 
             DateTime activeDueDate = item.DueDate?.Date ?? DateTime.Today;
@@ -298,7 +300,8 @@ public class SQLiteTodoService : ITodoService
                 RecurrenceType = item.RecurrenceType,
                 CustomRecurrenceInterval = item.CustomRecurrenceInterval,
                 CustomRecurrenceUnit = item.CustomRecurrenceUnit,
-                CustomWeeklyDays = item.CustomWeeklyDays
+                CustomWeeklyDays = item.CustomWeeklyDays,
+                Category = item.Category
             };
 
             item.IsRecurring = false;
@@ -428,6 +431,128 @@ public class SQLiteTodoService : ITodoService
         if (existing != null)
         {
             await _database.DeleteAsync(existing);
+        }
+    }
+
+    public async Task<bool> RenameCategoryAsync(string oldCategory, string newCategory, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(oldCategory) || string.IsNullOrWhiteSpace(newCategory)) return false;
+        await EnsureInitializedAsync();
+
+        var oldName = oldCategory.Trim();
+        var newName = newCategory.Trim();
+        var allEntities = await _database.Table<TodoItemEntity>().ToListAsync();
+        bool updatedAny = false;
+
+        foreach (var entity in allEntities)
+        {
+            if (string.IsNullOrWhiteSpace(entity.Category)) continue;
+
+            var model = entity.ToDomain();
+            var categories = model.CategoriesList;
+            if (categories.Any(c => c.Equals(oldName, StringComparison.OrdinalIgnoreCase)))
+            {
+                var updatedList = categories
+                    .Select(c => c.Equals(oldName, StringComparison.OrdinalIgnoreCase) ? newName : c)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                entity.Category = updatedList.Count > 0 ? string.Join(", ", updatedList) : null;
+                await _database.UpdateAsync(entity);
+                updatedAny = true;
+            }
+        }
+
+        return updatedAny;
+    }
+
+    public async Task<bool> DeleteCategoryAsync(string categoryName, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(categoryName)) return false;
+        await EnsureInitializedAsync();
+
+        var targetName = categoryName.Trim();
+        var allEntities = await _database.Table<TodoItemEntity>().ToListAsync();
+        bool updatedAny = false;
+
+        foreach (var entity in allEntities)
+        {
+            if (string.IsNullOrWhiteSpace(entity.Category)) continue;
+
+            var model = entity.ToDomain();
+            var categories = model.CategoriesList;
+            if (categories.Any(c => c.Equals(targetName, StringComparison.OrdinalIgnoreCase)))
+            {
+                var updatedList = categories
+                    .Where(c => !c.Equals(targetName, StringComparison.OrdinalIgnoreCase))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                entity.Category = updatedList.Count > 0 ? string.Join(", ", updatedList) : null;
+                await _database.UpdateAsync(entity);
+                updatedAny = true;
+            }
+        }
+
+        await DeleteCustomTagAsync(targetName, cancellationToken);
+        return updatedAny;
+    }
+
+    public async Task<Dictionary<string, DateTime>> GetCustomTagsAsync(CancellationToken cancellationToken = default)
+    {
+        await EnsureInitializedAsync();
+        var list = await _database.Table<CustomTagEntity>().ToListAsync();
+        return list.ToDictionary(x => x.Name, x => x.CreatedAt, StringComparer.OrdinalIgnoreCase);
+    }
+
+    public async Task SaveCustomTagAsync(string name, DateTime? createdAt = null, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return;
+        await EnsureInitializedAsync();
+        var tag = name.Trim();
+        var existing = await _database.Table<CustomTagEntity>().FirstOrDefaultAsync(x => x.Name == tag);
+        if (existing == null)
+        {
+            await _database.InsertAsync(new CustomTagEntity
+            {
+                Name = tag,
+                CreatedAt = createdAt ?? DateTime.UtcNow
+            });
+        }
+    }
+
+    public async Task DeleteCustomTagAsync(string name, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return;
+        await EnsureInitializedAsync();
+        var tag = name.Trim();
+        var existing = await _database.Table<CustomTagEntity>().FirstOrDefaultAsync(x => x.Name == tag);
+        if (existing != null)
+        {
+            await _database.DeleteAsync(existing);
+        }
+    }
+
+    public async Task RenameCustomTagAsync(string oldName, string newName, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(oldName) || string.IsNullOrWhiteSpace(newName)) return;
+        await EnsureInitializedAsync();
+        var oldTag = oldName.Trim();
+        var newTag = newName.Trim();
+        var existing = await _database.Table<CustomTagEntity>().FirstOrDefaultAsync(x => x.Name == oldTag);
+        if (existing != null)
+        {
+            var created = existing.CreatedAt;
+            await _database.DeleteAsync(existing);
+            await _database.InsertOrReplaceAsync(new CustomTagEntity
+            {
+                Name = newTag,
+                CreatedAt = created
+            });
+        }
+        else
+        {
+            await SaveCustomTagAsync(newTag, DateTime.UtcNow, cancellationToken);
         }
     }
 }

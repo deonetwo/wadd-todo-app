@@ -20,7 +20,7 @@
     <StackPanel Classes="view-container" Classes.compact="{Binding IsCompact}" Spacing="0">
 
       <!-- Page Header -->
-      <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,24">
+      <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,16">
         <StackPanel Grid.Column="0" Spacing="4">
           <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
             <PathIcon Data="{StaticResource RepeatIconData}" Width="18" Height="18" Foreground="{DynamicResource AppPrimaryBrush}"/>
@@ -31,23 +31,90 @@
                      Foreground="{DynamicResource AppTextSecondaryBrush}"/>
         </StackPanel>
 
-        <!-- Count badge -->
-        <Border Grid.Column="1"
-                Background="{DynamicResource AppSurfaceElevatedBrush}"
-                CornerRadius="12"
-                Padding="12,6"
-                VerticalAlignment="Center">
-          <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-            <TextBlock Text="{Binding AllRecurringTodoItems.Count}"
-                       FontSize="14"
-                       FontWeight="Bold"
-                       Foreground="{DynamicResource AppPrimaryBrush}"/>
-            <TextBlock Text="repeating"
-                       FontSize="12"
-                       Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-          </StackPanel>
-        </Border>
+        <!-- Toolbar & Count badge -->
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+          <!-- Category Filter Dropdown Button (Desktop) -->
+          <Button Classes="outline"
+                  IsVisible="{Binding !$parent[UserControl].DataContext.IsCompact}"
+                  Padding="10,6"
+                  CornerRadius="8"
+                  Background="{DynamicResource AppSurfaceBrush}"
+                  BorderBrush="{DynamicResource AppBorderBrush}"
+                  ToolTip.Tip="Filter tasks by Tag">
+            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+              <PathIcon Data="{StaticResource TagIconData}" Width="13" Height="13" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+              <TextBlock Text="{Binding CategoryFilterButtonText}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+              <PathIcon Data="{StaticResource ChevronDownIconData}" Width="10" Height="10" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center" Margin="2,0,0,0"/>
+            </StackPanel>
+            <Button.Flyout>
+              <Flyout Placement="BottomEdgeAlignedLeft">
+                <StackPanel Spacing="6" Width="200">
+                  <TextBlock Text="FILTER BY TAG" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="4,2,0,4"/>
+                  <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding CategoryFilterOptions}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <CheckBox Content="{Binding Name}"
+                                    IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                    Margin="4,3"
+                                    FontSize="12"
+                                    FontWeight="Medium"/>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+                  <Separator Classes="divider" Margin="0,4"/>
+                  <Button Classes="ghost"
+                          Command="{Binding OpenTagsViewCommand}"
+                          CommandParameter="{Binding $parent[Button].Flyout}"
+                          x:CompileBindings="False"
+                          Foreground="{DynamicResource AppPrimaryBrush}"
+                          FontWeight="SemiBold"
+                          HorizontalAlignment="Stretch"
+                          HorizontalContentAlignment="Left">
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                      <PathIcon Data="{StaticResource SettingsIconData}" Width="12" Height="12"/>
+                      <TextBlock Text="Manage Tags..." FontSize="12"/>
+                    </StackPanel>
+                  </Button>
+                </StackPanel>
+              </Flyout>
+            </Button.Flyout>
+          </Button>
+
+          <Border Background="{DynamicResource AppSurfaceElevatedBrush}"
+                  CornerRadius="12"
+                  Padding="12,6"
+                  VerticalAlignment="Center">
+            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+              <TextBlock Text="{Binding AllRecurringTodoItems.Count}"
+                         FontSize="14"
+                         FontWeight="Bold"
+                         Foreground="{DynamicResource AppPrimaryBrush}"/>
+              <TextBlock Text="repeating"
+                         FontSize="12"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            </StackPanel>
+          </Border>
+        </StackPanel>
       </Grid>
+
+      <!-- Dedicated Tag Filter Row (Compact / Portrait mode) -->
+      <StackPanel IsVisible="{Binding IsCompact}" Margin="0,0,0,16" HorizontalAlignment="Left">
+        <Button Classes="outline"
+                Command="{Binding OpenMobileTagFilterSheetCommand}"
+                Padding="10,6"
+                CornerRadius="8"
+                Background="{DynamicResource AppSurfaceBrush}"
+                BorderBrush="{DynamicResource AppBorderBrush}"
+                ToolTip.Tip="Filter tasks by Tag">
+          <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <PathIcon Data="{StaticResource TagIconData}" Width="13" Height="13" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding CategoryFilterButtonText}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+            <PathIcon Data="{StaticResource ChevronDownIconData}" Width="10" Height="10" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center" Margin="2,0,0,0"/>
+          </StackPanel>
+        </Button>
+      </StackPanel>
 
       <!-- Recurring Task List -->
       <StackPanel IsVisible="{Binding HasAllRecurringTodoItems}">
@@ -111,7 +178,31 @@
                           <TextBlock Text="{Binding DueDateFormatted}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppPrimaryBrush}"/>
                         </StackPanel>
                       </Border>
+
                     </StackPanel>
+
+                    <!-- Category Badges (Dedicated Row) -->
+                    <ItemsControl ItemsSource="{Binding Categories}" IsVisible="{Binding HasCategories}" Margin="0,3,0,0">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Border Background="{DynamicResource AppPrimaryBrush}"
+                                  CornerRadius="4"
+                                  Padding="6,2"
+                                  Margin="0,0,4,3"
+                                  HorizontalAlignment="Left">
+                            <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                              <PathIcon Data="{StaticResource TagIconData}" Width="10" Height="10" Foreground="#FFFFFF"/>
+                              <TextBlock Text="{Binding}" FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF"/>
+                            </StackPanel>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                   </StackPanel>
 
                   <!-- Timestamp -->

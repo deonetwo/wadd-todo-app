@@ -193,6 +193,11 @@ public class ConflictResolutionEngine
             ? local.CustomWeeklyDays
             : (baseItem != null && local.CustomWeeklyDays == baseItem.CustomWeeklyDays ? cloud.CustomWeeklyDays : local.CustomWeeklyDays);
 
+        // Field 12: Category
+        target.Category = local.Category == cloud.Category
+            ? local.Category
+            : (baseItem != null && local.Category == baseItem.Category ? cloud.Category : local.Category);
+
         return result;
     }
 }

@@ -63,13 +63,61 @@
           </StackPanel>
         </StackPanel>
 
-        <!-- Toolbar -->
+        <!-- Toolbar (Desktop mode) -->
         <StackPanel Grid.Column="1"
-                    IsVisible="{Binding !IsCompact}"
                     Orientation="Horizontal"
                     Spacing="8"
                     VerticalAlignment="Bottom"
-                    Margin="0,0,0,4">
+                    Margin="0,0,0,4"
+                    IsVisible="{Binding !IsCompact}">
+          <!-- Category Filter Dropdown Button -->
+          <Button Classes="outline"
+                  Padding="10,6"
+                  CornerRadius="8"
+                  Background="{DynamicResource AppSurfaceBrush}"
+                  BorderBrush="{DynamicResource AppBorderBrush}"
+                  ToolTip.Tip="Filter tasks by Tag">
+            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+              <PathIcon Data="{StaticResource TagIconData}" Width="13" Height="13" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+              <TextBlock Text="{Binding CategoryFilterButtonText}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+              <PathIcon Data="{StaticResource ChevronDownIconData}" Width="10" Height="10" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center" Margin="2,0,0,0"/>
+            </StackPanel>
+            <Button.Flyout>
+              <Flyout Placement="BottomEdgeAlignedLeft">
+                <StackPanel Spacing="6" Width="200">
+                  <TextBlock Text="FILTER BY TAG" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="4,2,0,4"/>
+                  <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding CategoryFilterOptions}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <CheckBox Content="{Binding Name}"
+                                    IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                    Margin="4,3"
+                                    FontSize="12"
+                                    FontWeight="Medium"/>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+                  <Separator Classes="divider" Margin="0,4"/>
+                  <Button Classes="ghost"
+                          Command="{Binding OpenTagsViewCommand}"
+                          CommandParameter="{Binding $parent[Button].Flyout}"
+                          x:CompileBindings="False"
+                          Foreground="{DynamicResource AppPrimaryBrush}"
+                          FontWeight="SemiBold"
+                          HorizontalAlignment="Stretch"
+                          HorizontalContentAlignment="Left">
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                      <PathIcon Data="{StaticResource SettingsIconData}" Width="12" Height="12"/>
+                      <TextBlock Text="Manage Tags..." FontSize="12"/>
+                    </StackPanel>
+                  </Button>
+                </StackPanel>
+              </Flyout>
+            </Button.Flyout>
+          </Button>
+
           <Button Classes="outline"
                   Command="{Binding ExportToExcelCommand}"
                   ToolTip.Tip="Export tasks to Excel">
@@ -81,8 +129,25 @@
         </StackPanel>
       </Grid>
 
+      <!-- Dedicated Tag Filter Row (Compact / Portrait mode) -->
+      <StackPanel IsVisible="{Binding IsCompact}" Margin="0,12,0,0" HorizontalAlignment="Left">
+        <Button Classes="outline"
+                Command="{Binding OpenMobileTagFilterSheetCommand}"
+                Padding="10,6"
+                CornerRadius="8"
+                Background="{DynamicResource AppSurfaceBrush}"
+                BorderBrush="{DynamicResource AppBorderBrush}"
+                ToolTip.Tip="Filter tasks by Tag">
+          <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <PathIcon Data="{StaticResource TagIconData}" Width="13" Height="13" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding CategoryFilterButtonText}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+            <PathIcon Data="{StaticResource ChevronDownIconData}" Width="10" Height="10" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center" Margin="2,0,0,0"/>
+          </StackPanel>
+        </Button>
+      </StackPanel>
+
       <!-- Full-width divider -->
-      <Separator Classes="divider" Margin="0,24,0,32"/>
+      <Separator Classes="divider" Margin="0,20,0,24"/>
 
       <!-- ── Desktop Task Composer ── -->
       <StackPanel Spacing="0" Margin="0,0,0,40" IsVisible="{Binding !IsCompact}">
@@ -108,32 +173,29 @@
                   <PathIcon Data="{StaticResource BellIconData}" Width="16" Height="16"/>
                   <Button.Flyout>
                     <Flyout Placement="BottomEdgeAlignedRight">
-                      <StackPanel Spacing="8" Width="230">
+                      <StackPanel Spacing="6" Width="220">
                         <TextBlock Text="REMINDER PRESETS" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="2,0,0,2"/>
                         <Button Classes="ghost"
-                                Foreground="{DynamicResource AppTextPrimaryBrush}"
-                                FontWeight="SemiBold"
                                 HorizontalAlignment="Stretch"
                                 HorizontalContentAlignment="Left"
                                 Command="{Binding SetReminderLaterTodayCommand}"
-                                IsEnabled="{Binding IsReminderLaterTodayEnabled}"
-                                Content="{Binding ReminderLaterTodayText}"/>
+                                IsEnabled="{Binding IsReminderLaterTodayEnabled}">
+                          <TextBlock Text="{Binding ReminderLaterTodayText}" Foreground="{DynamicResource AppTextPrimaryBrush}" FontSize="13" FontWeight="SemiBold"/>
+                        </Button>
                         <Button Classes="ghost"
-                                Foreground="{DynamicResource AppTextPrimaryBrush}"
-                                FontWeight="SemiBold"
                                 HorizontalAlignment="Stretch"
                                 HorizontalContentAlignment="Left"
                                 Command="{Binding SetReminderTomorrowMorningCommand}"
-                                IsEnabled="{Binding IsReminderTomorrowMorningEnabled}"
-                                Content="Tomorrow Morning (09:00)"/>
+                                IsEnabled="{Binding IsReminderTomorrowMorningEnabled}">
+                          <TextBlock Text="Tomorrow Morning (09:00)" Foreground="{DynamicResource AppTextPrimaryBrush}" FontSize="13" FontWeight="SemiBold"/>
+                        </Button>
                         <Button Classes="ghost"
-                                Foreground="{DynamicResource AppTextPrimaryBrush}"
-                                FontWeight="SemiBold"
                                 HorizontalAlignment="Stretch"
                                 HorizontalContentAlignment="Left"
                                 Command="{Binding SetReminderNextWeekCommand}"
-                                IsEnabled="{Binding IsReminderNextWeekEnabled}"
-                                Content="Next Week (09:00)"/>
+                                IsEnabled="{Binding IsReminderNextWeekEnabled}">
+                          <TextBlock Text="Next Week (09:00)" Foreground="{DynamicResource AppTextPrimaryBrush}" FontSize="13" FontWeight="SemiBold"/>
+                        </Button>
 
                         <Separator Classes="divider" Margin="0,4"/>
 
@@ -159,31 +221,30 @@
                   <PathIcon Data="{StaticResource CalendarIconData}" Width="16" Height="16"/>
                   <Button.Flyout>
                     <Flyout Placement="BottomEdgeAlignedRight">
-                      <StackPanel Spacing="6" Width="210">
+                      <StackPanel Spacing="6" Width="220">
+                        <TextBlock Text="DUE DATE" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="2,0,0,2"/>
                         <Button Classes="ghost"
-                                Foreground="{DynamicResource AppTextPrimaryBrush}"
-                                FontWeight="SemiBold"
                                 HorizontalAlignment="Stretch"
                                 HorizontalContentAlignment="Left"
-                                Command="{Binding SetDueDateLaterTodayCommand}"
-                                Content="Today"/>
+                                Command="{Binding SetDueDateLaterTodayCommand}">
+                          <TextBlock Text="Today" Foreground="{DynamicResource AppTextPrimaryBrush}" FontSize="13" FontWeight="SemiBold"/>
+                        </Button>
                         <Button Classes="ghost"
-                                Foreground="{DynamicResource AppTextPrimaryBrush}"
-                                FontWeight="SemiBold"
                                 HorizontalAlignment="Stretch"
                                 HorizontalContentAlignment="Left"
-                                Command="{Binding SetDueDateTomorrowCommand}"
-                                Content="Tomorrow"/>
+                                Command="{Binding SetDueDateTomorrowCommand}">
+                          <TextBlock Text="Tomorrow" Foreground="{DynamicResource AppTextPrimaryBrush}" FontSize="13" FontWeight="SemiBold"/>
+                        </Button>
                         <Button Classes="ghost"
-                                Foreground="{DynamicResource AppTextPrimaryBrush}"
-                                FontWeight="SemiBold"
                                 HorizontalAlignment="Stretch"
                                 HorizontalContentAlignment="Left"
-                                Command="{Binding SetDueDateNextWeekCommand}"
-                                Content="Next Week"/>
+                                Command="{Binding SetDueDateNextWeekCommand}">
+                          <TextBlock Text="Next Week" Foreground="{DynamicResource AppTextPrimaryBrush}" FontSize="13" FontWeight="SemiBold"/>
+                        </Button>
 
                         <Separator Classes="divider" Margin="0,4"/>
 
+                        <TextBlock Text="CUSTOM DATE" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="2,0,0,2"/>
                         <CalendarDatePicker SelectedDate="{Binding NewTaskDueDate, Mode=TwoWay}"
                                             DisplayDateStart="{Binding MinDueDate}"
                                             PlaceholderText="Choose Date..."
@@ -200,61 +261,55 @@
                   <PathIcon Data="{StaticResource RepeatIconData}" Width="16" Height="16"/>
                   <Button.Flyout>
                     <Flyout Placement="BottomEdgeAlignedRight">
-                      <StackPanel Spacing="6" Width="230">
+                      <StackPanel Spacing="6" Width="220">
                         <TextBlock Text="REPEAT FREQUENCY" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="2,0,0,2"/>
 
                         <Button Classes="ghost"
-                                Foreground="{DynamicResource AppTextPrimaryBrush}"
-                                FontWeight="SemiBold"
                                 HorizontalAlignment="Stretch"
                                 HorizontalContentAlignment="Left"
                                 Command="{Binding SetRecurrenceTypeCommand}"
-                                CommandParameter="Daily"
-                                Content="Daily"/>
+                                CommandParameter="Daily">
+                          <TextBlock Text="Daily" Foreground="{DynamicResource AppTextPrimaryBrush}" FontSize="13" FontWeight="SemiBold"/>
+                        </Button>
                         <Button Classes="ghost"
-                                Foreground="{DynamicResource AppTextPrimaryBrush}"
-                                FontWeight="SemiBold"
                                 HorizontalAlignment="Stretch"
                                 HorizontalContentAlignment="Left"
                                 Command="{Binding SetRecurrenceTypeCommand}"
-                                CommandParameter="Weekdays"
-                                Content="Weekdays"/>
+                                CommandParameter="Weekdays">
+                          <TextBlock Text="Weekdays" Foreground="{DynamicResource AppTextPrimaryBrush}" FontSize="13" FontWeight="SemiBold"/>
+                        </Button>
                         <Button Classes="ghost"
-                                Foreground="{DynamicResource AppTextPrimaryBrush}"
-                                FontWeight="SemiBold"
                                 HorizontalAlignment="Stretch"
                                 HorizontalContentAlignment="Left"
                                 Command="{Binding SetRecurrenceTypeCommand}"
-                                CommandParameter="Weekly"
-                                Content="Weekly"/>
+                                CommandParameter="Weekly">
+                          <TextBlock Text="Weekly" Foreground="{DynamicResource AppTextPrimaryBrush}" FontSize="13" FontWeight="SemiBold"/>
+                        </Button>
                         <Button Classes="ghost"
-                                Foreground="{DynamicResource AppTextPrimaryBrush}"
-                                FontWeight="SemiBold"
                                 HorizontalAlignment="Stretch"
                                 HorizontalContentAlignment="Left"
                                 Command="{Binding SetRecurrenceTypeCommand}"
-                                CommandParameter="Monthly"
-                                Content="Monthly"/>
+                                CommandParameter="Monthly">
+                          <TextBlock Text="Monthly" Foreground="{DynamicResource AppTextPrimaryBrush}" FontSize="13" FontWeight="SemiBold"/>
+                        </Button>
                         <Button Classes="ghost"
-                                Foreground="{DynamicResource AppTextPrimaryBrush}"
-                                FontWeight="SemiBold"
                                 HorizontalAlignment="Stretch"
                                 HorizontalContentAlignment="Left"
                                 Command="{Binding SetRecurrenceTypeCommand}"
-                                CommandParameter="Yearly"
-                                Content="Yearly"/>
+                                CommandParameter="Yearly">
+                          <TextBlock Text="Yearly" Foreground="{DynamicResource AppTextPrimaryBrush}" FontSize="13" FontWeight="SemiBold"/>
+                        </Button>
 
                         <Separator Classes="divider" Margin="0,4"/>
 
                         <TextBlock Text="CUSTOM SCHEDULE" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="2,0,0,2"/>
                         <Button Classes="ghost"
-                                Foreground="{DynamicResource AppTextPrimaryBrush}"
-                                FontWeight="SemiBold"
                                 HorizontalAlignment="Stretch"
                                 HorizontalContentAlignment="Left"
                                 Command="{Binding SetRecurrenceTypeCommand}"
-                                CommandParameter="Custom"
-                                Content="Custom Pattern…"/>
+                                CommandParameter="Custom">
+                          <TextBlock Text="Custom Pattern…" Foreground="{DynamicResource AppTextPrimaryBrush}" FontSize="13" FontWeight="SemiBold"/>
+                        </Button>
 
                         <!-- Custom Recurrence Expansion -->
                         <StackPanel IsVisible="{Binding IsCustomRecurrenceVisible}" Spacing="8" Margin="0,4,0,0">
@@ -286,6 +341,55 @@
                             </UniformGrid>
                           </StackPanel>
                         </StackPanel>
+                      </StackPanel>
+                    </Flyout>
+                  </Button.Flyout>
+                </Button>
+
+                <!-- Category button (Tag) -->
+                <Button Classes="icon-btn"
+                        ToolTip.Tip="Set category"
+                        VerticalAlignment="Center">
+                  <PathIcon Data="{StaticResource TagIconData}" Width="16" Height="16"/>
+                  <Button.Flyout>
+                    <Flyout Placement="BottomEdgeAlignedRight">
+                      <StackPanel Spacing="6" Width="220">
+                        <TextBlock Text="TAGS" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="2,0,0,2"/>
+
+                        <TextBlock Text="No tags created yet."
+                                   IsVisible="{Binding !HasExistingCategories}"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                   Margin="2,2,0,2"/>
+
+                        <ScrollViewer IsVisible="{Binding HasExistingCategories}" MaxHeight="200" VerticalScrollBarVisibility="Auto">
+                          <ItemsControl ItemsSource="{Binding ExistingCategories}">
+                            <ItemsControl.ItemTemplate>
+                              <DataTemplate>
+                                <Button Classes="ghost"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Left"
+                                        Command="{Binding $parent[UserControl].DataContext.AddNewTaskCategoryCommand}"
+                                        CommandParameter="{Binding}">
+                                  <TextBlock Text="{Binding}" Foreground="{DynamicResource AppTextPrimaryBrush}" FontSize="13" FontWeight="SemiBold"/>
+                                </Button>
+                              </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                          </ItemsControl>
+                        </ScrollViewer>
+
+                        <Separator Classes="divider" Margin="0,4"/>
+                        <Button Classes="ghost"
+                                Command="{Binding OpenTagsViewCommand}"
+                                CommandParameter="{Binding $parent[Button].Flyout}"
+                                x:CompileBindings="False"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Left">
+                          <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                            <PathIcon Data="{StaticResource SettingsIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                            <TextBlock Text="Manage Tags..." Foreground="{DynamicResource AppPrimaryBrush}" FontSize="13" FontWeight="SemiBold"/>
+                          </StackPanel>
+                        </Button>
                       </StackPanel>
                     </Flyout>
                   </Button.Flyout>
@@ -333,8 +437,65 @@
                    Margin="2,6,0,0"
                    Opacity="0.6"/>
 
-        <!-- Selected Chips (Due Date & Reminder) -->
-        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,12,0,0">
+        <!-- Selected Chips (Category, Due Date & Reminder) -->
+        <WrapPanel Orientation="Horizontal" Margin="0,12,0,0">
+          <!-- Selected Category Chips -->
+          <ItemsControl ItemsSource="{Binding NewTaskCategories}" IsVisible="{Binding HasNewTaskCategories}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <WrapPanel Orientation="Horizontal"/>
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Background="{DynamicResource AppPrimaryBrush}"
+                        BorderBrush="{DynamicResource AppPrimaryBrush}"
+                        BorderThickness="1"
+                        CornerRadius="14"
+                        Padding="10,6"
+                        Margin="0,0,8,8"
+                        HorizontalAlignment="Left">
+                  <Grid ColumnDefinitions="Auto,Auto,Auto" VerticalAlignment="Center">
+                    <PathIcon Grid.Column="0"
+                              Data="{StaticResource TagIconData}"
+                              Width="13" Height="13"
+                              Foreground="#FFFFFF"
+                              VerticalAlignment="Center"
+                              Margin="0,0,8,0"/>
+
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding}"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               Foreground="#FFFFFF"
+                               VerticalAlignment="Center"
+                               Margin="0,0,10,0"/>
+
+                    <Button Grid.Column="2"
+                            Command="{Binding $parent[UserControl].DataContext.RemoveNewTaskCategoryCommand}"
+                            CommandParameter="{Binding}"
+                            ToolTip.Tip="Remove category"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Padding="0"
+                            Width="16" Height="16"
+                            MinWidth="16" MinHeight="16"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center"
+                            VerticalAlignment="Center"
+                            Cursor="Hand">
+                      <PathIcon Data="{StaticResource CloseIconData}"
+                                Width="10" Height="10"
+                                Foreground="#FFFFFF"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Center"/>
+                    </Button>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
           <!-- Selected Due Date Chip -->
           <Border IsVisible="{Binding HasNewTaskDueDate}"
                   Background="{DynamicResource AppAccentTintBrush}"
@@ -342,6 +503,7 @@
                   BorderThickness="1"
                   CornerRadius="14"
                   Padding="10,6"
+                  Margin="0,0,8,8"
                   HorizontalAlignment="Left">
             <Grid ColumnDefinitions="Auto,Auto,Auto" VerticalAlignment="Center">
               <PathIcon Grid.Column="0"
@@ -387,6 +549,7 @@
                   BorderThickness="1"
                   CornerRadius="14"
                   Padding="10,6"
+                  Margin="0,0,8,8"
                   HorizontalAlignment="Left">
             <Grid ColumnDefinitions="Auto,Auto,Auto" VerticalAlignment="Center">
               <PathIcon Grid.Column="0"
@@ -432,6 +595,7 @@
                   BorderThickness="1"
                   CornerRadius="14"
                   Padding="10,6"
+                  Margin="0,0,8,8"
                   HorizontalAlignment="Left">
             <Grid ColumnDefinitions="Auto,Auto,Auto" VerticalAlignment="Center">
               <PathIcon Grid.Column="0"
@@ -469,7 +633,7 @@
               </Button>
             </Grid>
           </Border>
-        </StackPanel>
+        </WrapPanel>
       </StackPanel>
 
       <!-- ── Section 1: Today Tasks (Top) ── -->
@@ -565,7 +729,31 @@
                           <TextBlock Text="{Binding RecurrenceFormatted}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppPrimaryBrush}"/>
                         </StackPanel>
                       </Border>
+
                     </StackPanel>
+
+                    <!-- Category Badges (Dedicated Row) -->
+                    <ItemsControl ItemsSource="{Binding Categories}" IsVisible="{Binding HasCategories}" Margin="0,3,0,0">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Border Background="{DynamicResource AppPrimaryBrush}"
+                                  CornerRadius="4"
+                                  Padding="6,2"
+                                  Margin="0,0,4,3"
+                                  HorizontalAlignment="Left">
+                            <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                              <PathIcon Data="{StaticResource TagIconData}" Width="10" Height="10" Foreground="#FFFFFF"/>
+                              <TextBlock Text="{Binding}" FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF"/>
+                            </StackPanel>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                   </StackPanel>
 
                   <!-- Timestamp -->
@@ -685,7 +873,31 @@
                           <TextBlock Text="{Binding RecurrenceFormatted}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppPrimaryBrush}"/>
                         </StackPanel>
                       </Border>
+
                     </StackPanel>
+
+                    <!-- Category Badges (Dedicated Row) -->
+                    <ItemsControl ItemsSource="{Binding Categories}" IsVisible="{Binding HasCategories}" Margin="0,3,0,0">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Border Background="{DynamicResource AppPrimaryBrush}"
+                                  CornerRadius="4"
+                                  Padding="6,2"
+                                  Margin="0,0,4,3"
+                                  HorizontalAlignment="Left">
+                            <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                              <PathIcon Data="{StaticResource TagIconData}" Width="10" Height="10" Foreground="#FFFFFF"/>
+                              <TextBlock Text="{Binding}" FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF"/>
+                            </StackPanel>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                   </StackPanel>
 
                   <!-- Timestamp -->

@@ -144,15 +144,16 @@ public class RecurrenceHelperTests
         var all1 = (await service.GetTodosAsync()).ToList();
         Assert.Equal(2, all1.Count); // Original completed + 1 new child
 
-        // 2. Toggle undone on original item
-        await service.ToggleCompleteAsync(item.Id);
+        // 2. Toggle undone on completed instance
+        var completedInstance = all1.First(x => x.IsCompleted);
+        await service.ToggleCompleteAsync(completedInstance.Id);
         var all2 = (await service.GetTodosAsync()).ToList();
-        Assert.Equal(2, all2.Count); // Still 2 items
+        Assert.Single(all2); // Completed instance deleted, active parent restored to Today
 
         // 3. Toggle done on original item again
         await service.ToggleCompleteAsync(item.Id);
         var all3 = (await service.GetTodosAsync()).ToList();
-        Assert.Equal(2, all3.Count); // NO duplicate child created! Still 2 items
+        Assert.Equal(2, all3.Count); // Spawns completed instance again, total 2 items
     }
 
     [Fact]

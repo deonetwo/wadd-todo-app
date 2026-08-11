@@ -25,6 +25,7 @@
 
 ## ✨ Key Features
 
+- **🏷️ Optional Task Categories & Tags Management**: Assign multi-tag category badges to tasks, filter views dynamically via toolbar category dropdowns, and manage tags globally (create, inline rename, delete) via a dedicated **Tags Management** view (`TagsManagementView.axaml`).
 - **📅 Calendar & Timeline View**: Interactive 42-cell month grid with micro status indicators, recurring habit occurrence calculations (`RecurrenceEvaluator`), overflow badges (`+X more`), and a toggleable Right Detail Sidebar panel.
 - **🎨 Dynamic Theme Engine**: Smooth Light / Dark mode switching using Semi.Avalonia design tokens.
 - **📐 Responsive Dual Layout**: Adaptive responsive UI supporting desktop multi-column view and compact mobile layout.
@@ -104,6 +105,7 @@ The `TodoItem` entity is mapped directly to SQLite:
 | `Id` | `Guid` | `[PrimaryKey]` | Unique identifier for each To-Do item |
 | `Title` | `string` | `NOT NULL` | Task title |
 | `Description` | `string` | `NULL` | Optional task description |
+| `Category` | `string?` | `TEXT` | Optional category tag assigned to task |
 | `IsCompleted` | `bool` | `INTEGER` (`0`/`1`) | Completion status |
 | `Priority` | `TodoPriority` | `INTEGER` | Priority level (`Low`, `Medium`, `High`, `Critical`) |
 | `CreatedAt` | `DateTime` | `DATETIME` | UTC timestamp when item was created |
@@ -137,11 +139,15 @@ Wadd provides local data export capabilities using `ExcelExportService` (impleme
 
 ### 1. How Excel Exports Work
 - **Service API**: `IExportService.ExportToExcelAsync(IEnumerable<TodoItem> items, string filePath, CancellationToken cancellationToken = default)`
-- **Column Mapping**: Formats exported items into 5 standardized columns:
+- **Column Mapping**: Formats exported items into standardized columns:
   - `ID`: Unique task identifier (`Guid`)
   - `Title`: Task title
   - `Description`: Task description
   - `Status`: Task completion status (`Completed` or `Pending`)
+  - `Due Date`: Scheduled due date timestamp
+  - `Reminder`: Scheduled reminder timestamp
+  - `Recurrence`: Formatted recurrence schedule description
+  - `Category`: Assigned task category tag
   - `Created Date`: Creation UTC timestamp formatted as `yyyy-MM-dd HH:mm:ss`
 - **Platform-Safe Access & Streaming**: Streams data directly to `.xlsx` files with a minimal memory footprint. Missing target directories are automatically created (`Directory.CreateDirectory`) prior to file writing, ensuring safe operation on all target OS platforms.
 

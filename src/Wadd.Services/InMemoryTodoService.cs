@@ -104,7 +104,8 @@ public class InMemoryTodoService : ITodoService
                 RecurrenceType = item.RecurrenceType,
                 CustomRecurrenceInterval = item.CustomRecurrenceInterval,
                 CustomRecurrenceUnit = item.CustomRecurrenceUnit,
-                CustomWeeklyDays = item.CustomWeeklyDays
+                CustomWeeklyDays = item.CustomWeeklyDays,
+                Category = item.Category
             };
 
             DateTime activeDueDate = item.DueDate?.Date ?? DateTime.Today;
@@ -193,6 +194,98 @@ public class InMemoryTodoService : ITodoService
     public Task DeleteDateNoteAsync(DateTime date, CancellationToken cancellationToken = default)
     {
         _dateNotes.TryRemove(date.ToString("yyyy-MM-dd"), out _);
+        return Task.CompletedTask;
+    }
+
+    public Task<bool> RenameCategoryAsync(string oldCategory, string newCategory, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(oldCategory) || string.IsNullOrWhiteSpace(newCategory)) return Task.FromResult(false);
+
+        var oldName = oldCategory.Trim();
+        var newName = newCategory.Trim();
+        bool updatedAny = false;
+
+        foreach (var item in _items)
+        {
+            if (string.IsNullOrWhiteSpace(item.Category)) continue;
+
+            var categories = item.CategoriesList;
+            if (categories.Any(c => c.Equals(oldName, StringComparison.OrdinalIgnoreCase)))
+            {
+                var updatedList = categories
+                    .Select(c => c.Equals(oldName, StringComparison.OrdinalIgnoreCase) ? newName : c)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                item.Category = updatedList.Count > 0 ? string.Join(", ", updatedList) : null;
+                item.UpdatedAt = DateTime.UtcNow;
+                updatedAny = true;
+            }
+        }
+
+        return Task.FromResult(updatedAny);
+    }
+
+    public Task<bool> DeleteCategoryAsync(string categoryName, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(categoryName)) return Task.FromResult(false);
+
+        var targetName = categoryName.Trim();
+        bool updatedAny = false;
+
+        foreach (var item in _items)
+        {
+            if (string.IsNullOrWhiteSpace(item.Category)) continue;
+
+            var categories = item.CategoriesList;
+            if (categories.Any(c => c.Equals(targetName, StringComparison.OrdinalIgnoreCase)))
+            {
+                var updatedList = categories
+                    .Where(c => !c.Equals(targetName, StringComparison.OrdinalIgnoreCase))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                item.Category = updatedList.Count > 0 ? string.Join(", ", updatedList) : null;
+                item.UpdatedAt = DateTime.UtcNow;
+                updatedAny = true;
+            }
+        }
+
+        return Task.FromResult(updatedAny);
+    }
+
+    private readonly ConcurrentDictionary<string, DateTime> _customTags = new(StringComparer.OrdinalIgnoreCase);
+
+    public Task<Dictionary<string, DateTime>> GetCustomTagsAsync(CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(new Dictionary<string, DateTime>(_customTags, StringComparer.OrdinalIgnoreCase));
+    }
+
+    public Task SaveCustomTagAsync(string name, DateTime? createdAt = null, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return Task.CompletedTask;
+        var tag = name.Trim();
+        _customTags[tag] = createdAt ?? DateTime.UtcNow;
+        return Task.CompletedTask;
+    }
+
+    public Task DeleteCustomTagAsync(string name, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return Task.CompletedTask;
+        _customTags.TryRemove(name.Trim(), out _);
+        return Task.CompletedTask;
+    }
+
+    public Task RenameCustomTagAsync(string oldName, string newName, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(oldName) || string.IsNullOrWhiteSpace(newName)) return Task.CompletedTask;
+        var oldTag = oldName.Trim();
+        var newTag = newName.Trim();
+
+        if (_customTags.TryRemove(oldTag, out var created))
+        {
+            _customTags[newTag] = created;
+        }
         return Task.CompletedTask;
     }
 }

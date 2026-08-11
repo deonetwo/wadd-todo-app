@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -72,6 +73,212 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty]
     private string _newTaskDescription = string.Empty;
+
+    [ObservableProperty]
+    private string _newTaskCategoryInput = string.Empty;
+
+    public ObservableCollection<string> NewTaskCategories { get; } = new();
+
+    public bool HasNewTaskCategories => NewTaskCategories.Count > 0;
+
+    [RelayCommand]
+    private void AddNewTaskCategory(string? category)
+    {
+        var tag = string.IsNullOrWhiteSpace(category) ? NewTaskCategoryInput : category;
+        if (string.IsNullOrWhiteSpace(tag)) return;
+
+        tag = tag.Trim();
+        if (!NewTaskCategories.Contains(tag, StringComparer.OrdinalIgnoreCase))
+        {
+            NewTaskCategories.Add(tag);
+            NewTaskCategoryInput = string.Empty;
+            OnPropertyChanged(nameof(HasNewTaskCategories));
+        }
+        IsMobileCategorySheetOpen = false;
+    }
+
+    [RelayCommand]
+    private void RemoveNewTaskCategory(string? category)
+    {
+        if (string.IsNullOrWhiteSpace(category)) return;
+        var existing = NewTaskCategories.FirstOrDefault(x => x.Equals(category, StringComparison.OrdinalIgnoreCase));
+        if (existing != null)
+        {
+            NewTaskCategories.Remove(existing);
+            OnPropertyChanged(nameof(HasNewTaskCategories));
+        }
+    }
+
+    [RelayCommand]
+    private void ClearNewTaskCategories()
+    {
+        NewTaskCategories.Clear();
+        NewTaskCategoryInput = string.Empty;
+        OnPropertyChanged(nameof(HasNewTaskCategories));
+    }
+
+    private bool _isUpdatingCategoryFilters;
+
+    public ObservableCollection<CategoryFilterOption> CategoryFilterOptions { get; } = new();
+
+    public ObservableCollection<string> ExistingCategories { get; } = new();
+    public bool HasExistingCategories => ExistingCategories.Count > 0;
+
+    public string CategoryFilterButtonText
+    {
+        get
+        {
+            var selected = CategoryFilterOptions.Where(o => o.IsSelected).Select(o => o.Name).ToList();
+            if (selected.Count == 0 || selected.Contains("All Categories", StringComparer.OrdinalIgnoreCase))
+            {
+                return "Tags";
+            }
+
+            if (selected.Count == 1)
+            {
+                return selected[0];
+            }
+
+            var joined = string.Join(", ", selected);
+            return joined.Length > 18 ? $"{selected.Count} Tags" : joined;
+        }
+    }
+
+    public ObservableCollection<TagItemViewModel> AllTags { get; } = new();
+
+    private readonly List<string> _customEmptyTags = new();
+    private readonly Dictionary<string, DateTime> _tagCreatedTimes = new(StringComparer.OrdinalIgnoreCase);
+
+    [ObservableProperty]
+    private string _newGlobalTagInput = string.Empty;
+
+    public void UpdateAvailableCategories()
+    {
+        var activeCategories = TodoItems
+            .SelectMany(x => x.Categories)
+            .Where(c => !string.IsNullOrWhiteSpace(c))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var combinedActiveAndCustom = activeCategories
+            .Concat(_customEmptyTags.Where(c => !activeCategories.Contains(c, StringComparer.OrdinalIgnoreCase)))
+            .ToList();
+
+        DateTime GetLatestTime(string cat)
+        {
+            var taskLatest = TodoItems
+                .Where(x => x.Categories.Contains(cat, StringComparer.OrdinalIgnoreCase))
+                .Select(x => x.CreatedAt)
+                .DefaultIfEmpty(DateTime.MinValue)
+                .Max();
+
+            var tagLatest = _tagCreatedTimes.TryGetValue(cat, out var dt) ? dt : DateTime.MinValue;
+            return taskLatest > tagLatest ? taskLatest : tagLatest;
+        }
+
+        var sortedCategories = combinedActiveAndCustom
+            .OrderByDescending(cat => GetLatestTime(cat))
+            .ThenBy(cat => cat)
+            .ToList();
+
+        ExistingCategories.Clear();
+        foreach (var cat in sortedCategories)
+        {
+            ExistingCategories.Add(cat);
+        }
+        OnPropertyChanged(nameof(HasExistingCategories));
+
+        AllTags.Clear();
+        foreach (var cat in sortedCategories)
+        {
+            int count = TodoItems.Count(x => x.Categories.Contains(cat, StringComparer.OrdinalIgnoreCase));
+            AllTags.Add(new TagItemViewModel(cat, count, RenameGlobalTagAsync, DeleteGlobalTagAsync));
+        }
+
+        var defaults = new List<string> { "All Categories", "Uncategorized" };
+        var combinedNames = defaults
+            .Concat(sortedCategories.Where(c => !defaults.Contains(c, StringComparer.OrdinalIgnoreCase)))
+            .ToList();
+
+        _isUpdatingCategoryFilters = true;
+        try
+        {
+            var existingMap = CategoryFilterOptions.ToDictionary(x => x.Name, x => x.IsSelected, StringComparer.OrdinalIgnoreCase);
+
+            CategoryFilterOptions.Clear();
+            foreach (var name in combinedNames)
+            {
+                bool isSel = existingMap.TryGetValue(name, out var wasSel) ? wasSel : name.Equals("All Categories", StringComparison.OrdinalIgnoreCase);
+                var opt = new CategoryFilterOption(name, isSel)
+                {
+                    OnSelectionChanged = OnCategoryOptionSelectionChanged
+                };
+                CategoryFilterOptions.Add(opt);
+            }
+
+            if (!CategoryFilterOptions.Any(o => o.IsSelected))
+            {
+                var allOpt = CategoryFilterOptions.FirstOrDefault(o => o.Name.Equals("All Categories", StringComparison.OrdinalIgnoreCase));
+                if (allOpt != null) allOpt.IsSelected = true;
+            }
+        }
+        finally
+        {
+            _isUpdatingCategoryFilters = false;
+        }
+
+        OnPropertyChanged(nameof(CategoryFilterButtonText));
+    }
+
+    private void OnCategoryOptionSelectionChanged(CategoryFilterOption changedOption)
+    {
+        if (_isUpdatingCategoryFilters) return;
+
+        _isUpdatingCategoryFilters = true;
+        try
+        {
+            if (changedOption.Name.Equals("All Categories", StringComparison.OrdinalIgnoreCase))
+            {
+                if (changedOption.IsSelected)
+                {
+                    foreach (var opt in CategoryFilterOptions.Where(o => !o.Name.Equals("All Categories", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        opt.IsSelected = false;
+                    }
+                }
+                else
+                {
+                    if (!CategoryFilterOptions.Any(o => o.IsSelected))
+                    {
+                        changedOption.IsSelected = true;
+                    }
+                }
+            }
+            else
+            {
+                if (changedOption.IsSelected)
+                {
+                    var allOpt = CategoryFilterOptions.FirstOrDefault(o => o.Name.Equals("All Categories", StringComparison.OrdinalIgnoreCase));
+                    if (allOpt != null) allOpt.IsSelected = false;
+                }
+                else
+                {
+                    if (!CategoryFilterOptions.Any(o => o.IsSelected))
+                    {
+                        var allOpt = CategoryFilterOptions.FirstOrDefault(o => o.Name.Equals("All Categories", StringComparison.OrdinalIgnoreCase));
+                        if (allOpt != null) allOpt.IsSelected = true;
+                    }
+                }
+            }
+        }
+        finally
+        {
+            _isUpdatingCategoryFilters = false;
+        }
+
+        OnPropertyChanged(nameof(CategoryFilterButtonText));
+        UpdateSubCollections();
+    }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasNewTaskDueDate))]
@@ -462,6 +669,7 @@ public partial class MainViewModel : ViewModelBase
         IsMobileDueDateSheetOpen = false;
         IsMobileReminderSheetOpen = false;
         IsMobileRepeatSheetOpen = false;
+        IsMobileCategorySheetOpen = false;
     }
 
     [RelayCommand]
@@ -500,6 +708,40 @@ public partial class MainViewModel : ViewModelBase
         IsMobileRepeatSheetOpen = false;
     }
 
+    [RelayCommand]
+    private void OpenMobileCategorySheet()
+    {
+        IsMobileCategorySheetOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseMobileCategorySheet()
+    {
+        IsMobileCategorySheetOpen = false;
+    }
+
+    [RelayCommand]
+    private void OpenMobileTagFilterSheet()
+    {
+        IsMobileTagFilterSheetOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseMobileTagFilterSheet()
+    {
+        IsMobileTagFilterSheetOpen = false;
+    }
+
+    [RelayCommand]
+    private void ClearTagFilter()
+    {
+        var allOpt = CategoryFilterOptions.FirstOrDefault(o => o.Name.Equals("All Categories", StringComparison.OrdinalIgnoreCase));
+        foreach (var opt in CategoryFilterOptions)
+        {
+            opt.IsSelected = (opt == allOpt);
+        }
+    }
+
     [ObservableProperty]
     private bool _isCompact;
 
@@ -517,6 +759,15 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty]
     private bool _isMobileRepeatSheetOpen;
+
+    [ObservableProperty]
+    private bool _isMobileCategorySheetOpen;
+
+    [ObservableProperty]
+    private bool _isMobileTagFilterSheetOpen;
+
+    [ObservableProperty]
+    private bool _isMobileMoreSheetOpen;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SidebarWidth))]
@@ -602,7 +853,10 @@ public partial class MainViewModel : ViewModelBase
     public bool IsCompletedView => SelectedNavIndex == 1;
     public bool IsRecurringView => SelectedNavIndex == 2;
     public bool IsCalendarView => SelectedNavIndex == 3;
-    public bool IsSettingsView => SelectedNavIndex == 4;
+    public bool IsTagsView => SelectedNavIndex == 4;
+    public bool IsSettingsView => SelectedNavIndex == 5;
+
+    public bool IsMoreActive => IsTagsView || IsSettingsView;
 
     partial void OnSelectedNavIndexChanged(int value)
     {
@@ -610,7 +864,9 @@ public partial class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsCompletedView));
         OnPropertyChanged(nameof(IsRecurringView));
         OnPropertyChanged(nameof(IsCalendarView));
+        OnPropertyChanged(nameof(IsTagsView));
         OnPropertyChanged(nameof(IsSettingsView));
+        OnPropertyChanged(nameof(IsMoreActive));
     }
 
     [ObservableProperty]
@@ -675,11 +931,36 @@ public partial class MainViewModel : ViewModelBase
         SelectedNavIndex = 3;
     }
 
+    private bool PassesCategoryFilter(TodoItemViewModel item)
+    {
+        var selectedOptions = CategoryFilterOptions.Where(o => o.IsSelected).Select(o => o.Name).ToList();
+        if (selectedOptions.Count == 0 || selectedOptions.Contains("All Categories", StringComparer.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        bool allowsUncategorized = selectedOptions.Contains("Uncategorized", StringComparer.OrdinalIgnoreCase);
+        var namedCategories = selectedOptions.Where(s => !s.Equals("All Categories", StringComparison.OrdinalIgnoreCase) && !s.Equals("Uncategorized", StringComparison.OrdinalIgnoreCase)).ToList();
+
+        if (allowsUncategorized && !item.HasCategories)
+        {
+            return true;
+        }
+
+        if (item.Categories.Any(c => namedCategories.Contains(c, StringComparer.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     private void UpdateSubCollections()
     {
         var today = DateTime.Today;
-        var activeItems = TodoItems.Where(x => !x.IsCompleted).ToList();
-        var completedItems = TodoItems.Where(x => x.IsCompleted).ToList();
+        var filteredItems = TodoItems.Where(PassesCategoryFilter).ToList();
+        var activeItems = filteredItems.Where(x => !x.IsCompleted).ToList();
+        var completedItems = filteredItems.Where(x => x.IsCompleted).ToList();
 
         // Today tasks: active tasks with DueDate <= today OR ReminderAt <= today OR without any dates
         var freshStandard = activeItems.Where(x =>
@@ -708,7 +989,7 @@ public partial class MainViewModel : ViewModelBase
             .ToList();
 
         // All recurring tasks
-        var freshAllRecurring = TodoItems.Where(x => x.IsRecurring).ToList();
+        var freshAllRecurring = filteredItems.Where(x => x.IsRecurring).ToList();
 
         SyncCollection(UpcomingTodoItems, freshUpcoming);
         SyncCollection(StandardTodoItems, freshStandard);
@@ -825,7 +1106,7 @@ public partial class MainViewModel : ViewModelBase
 
     private IEnumerable<TodoItem> GetFilteredTodoModels()
     {
-        var allModels = TodoItems.Select(x => x.Model).ToList();
+        var allModels = TodoItems.Where(PassesCategoryFilter).Select(x => x.Model).ToList();
         var recurringTitleToTypeMap = allModels
             .Where(t => t.IsRecurring && !string.IsNullOrWhiteSpace(t.RecurrenceType) && !t.RecurrenceType.Equals("None", StringComparison.OrdinalIgnoreCase))
             .GroupBy(t => t.Title.Trim().ToLowerInvariant())
@@ -972,9 +1253,9 @@ public partial class MainViewModel : ViewModelBase
         SelectedDayNoteText = day.NoteText;
         _isSelectingDay = false;
 
-        var tasksForDate = RecurrenceEvaluator.GetTasksForDate(day.Date, TodoItems.Select(x => x.Model)).ToList();
+        var tasksForDate = RecurrenceEvaluator.GetTasksForDate(day.Date, GetFilteredTodoModels()).ToList();
         var freshSelectedTasks = TodoItems
-            .Where(x => tasksForDate.Any(t => t.Id == x.Id))
+            .Where(x => PassesCategoryFilter(x) && tasksForDate.Any(t => t.Id == x.Id))
             .Select(x => new TodoItemViewModel(x.Model) { ContextDate = day.Date })
             .ToList();
 
@@ -1311,6 +1592,7 @@ public partial class MainViewModel : ViewModelBase
         {
             var itemsList = (await _todoService.GetTodosAsync()).ToList();
             var notesDict = await _todoService.GetAllDateNotesAsync();
+            var customTagsDict = await _todoService.GetCustomTagsAsync();
 
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
@@ -1318,6 +1600,16 @@ public partial class MainViewModel : ViewModelBase
                 foreach (var kvp in notesDict)
                 {
                     _dateNotes[kvp.Key] = kvp.Value;
+                }
+
+                _customEmptyTags.Clear();
+                foreach (var kvp in customTagsDict)
+                {
+                    if (!_customEmptyTags.Contains(kvp.Key, StringComparer.OrdinalIgnoreCase))
+                    {
+                        _customEmptyTags.Add(kvp.Key);
+                    }
+                    _tagCreatedTimes[kvp.Key] = kvp.Value;
                 }
 
                 var existingDict = TodoItems.GroupBy(vm => vm.Id).ToDictionary(g => g.Key, g => g.First());
@@ -1352,6 +1644,7 @@ public partial class MainViewModel : ViewModelBase
                 }
 
                 UpdateSubCollections();
+                UpdateAvailableCategories();
                 GenerateCalendarGrid();
                 LastUpdatedAt = DateTime.Now;
                 StatusMessage = $"Loaded {TodoItems.Count} tasks from local database.";
@@ -1455,10 +1748,15 @@ public partial class MainViewModel : ViewModelBase
         try
         {
             var initialDueDate = NewTaskDueDate?.Date ?? DateTime.Today;
+            var cat = NewTaskCategories.Count > 0
+                ? string.Join(", ", NewTaskCategories)
+                : (string.IsNullOrWhiteSpace(NewTaskCategoryInput) ? null : NewTaskCategoryInput.Trim());
+
             var newItem = new TodoItem
             {
                 Title = NewTaskTitle.Trim(),
                 Description = NewTaskDescription.Trim(),
+                Category = cat,
                 IsCompleted = false,
                 Priority = TodoPriority.Medium,
                 CreatedAt = DateTime.UtcNow,
@@ -1480,6 +1778,9 @@ public partial class MainViewModel : ViewModelBase
             {
                 NewTaskTitle = string.Empty;
                 NewTaskDescription = string.Empty;
+                NewTaskCategoryInput = string.Empty;
+                NewTaskCategories.Clear();
+                OnPropertyChanged(nameof(HasNewTaskCategories));
                 NewTaskDueDate = null;
                 NewTaskReminderDate = null;
                 NewTaskReminderTime = null;
@@ -1646,9 +1947,95 @@ public partial class MainViewModel : ViewModelBase
     private Task SyncAsync() => SyncNowAsync();
 
     [RelayCommand]
-    private void OpenSettings()
+    private void OpenTasksView() => SelectedNavIndex = 0;
+
+    [RelayCommand]
+    private void OpenCompletedView() => SelectedNavIndex = 1;
+
+    [RelayCommand]
+    private void OpenRecurringView() => SelectedNavIndex = 2;
+
+    [RelayCommand]
+    private void OpenCalendarView() => SelectedNavIndex = 3;
+
+    [RelayCommand]
+    private void OpenTagsView(object? parameter = null)
     {
-        SelectedNavIndex = 3;
+        SelectedNavIndex = 4;
+        IsMobileMoreSheetOpen = false;
+        IsMobileTagFilterSheetOpen = false;
+
+        if (parameter is Flyout flyout)
+        {
+            flyout.Hide();
+        }
+    }
+
+    [RelayCommand]
+    private void OpenSettings(object? parameter = null)
+    {
+        SelectedNavIndex = 5;
+        IsMobileMoreSheetOpen = false;
+
+        if (parameter is Flyout flyout)
+        {
+            flyout.Hide();
+        }
+    }
+
+    [RelayCommand]
+    private void ToggleMobileMoreSheet() => IsMobileMoreSheetOpen = !IsMobileMoreSheetOpen;
+
+    [RelayCommand]
+    private void CloseMobileMoreSheet() => IsMobileMoreSheetOpen = false;
+
+    [RelayCommand]
+    private async Task CreateNewGlobalTagAsync()
+    {
+        if (string.IsNullOrWhiteSpace(NewGlobalTagInput)) return;
+        var tag = NewGlobalTagInput.Trim();
+        if (!_customEmptyTags.Contains(tag, StringComparer.OrdinalIgnoreCase))
+        {
+            var created = DateTime.UtcNow;
+            _customEmptyTags.Insert(0, tag);
+            _tagCreatedTimes[tag] = created;
+            NewGlobalTagInput = string.Empty;
+            await _todoService.SaveCustomTagAsync(tag, created);
+            UpdateAvailableCategories();
+        }
+    }
+
+    private async Task RenameGlobalTagAsync(string oldName, string newName)
+    {
+        if (string.IsNullOrWhiteSpace(oldName) || string.IsNullOrWhiteSpace(newName)) return;
+        var oldTag = oldName.Trim();
+        var newTag = newName.Trim();
+
+        var prevTime = _tagCreatedTimes.TryGetValue(oldTag, out var t) ? t : DateTime.UtcNow;
+        _tagCreatedTimes.Remove(oldTag);
+        _tagCreatedTimes[newTag] = prevTime;
+
+        _customEmptyTags.RemoveAll(x => x.Equals(oldTag, StringComparison.OrdinalIgnoreCase));
+        if (!_customEmptyTags.Contains(newTag, StringComparer.OrdinalIgnoreCase))
+        {
+            _customEmptyTags.Insert(0, newTag);
+        }
+
+        await _todoService.RenameCustomTagAsync(oldTag, newTag);
+        await _todoService.RenameCategoryAsync(oldTag, newTag);
+        await LoadTodoItemsAsync();
+    }
+
+    private async Task DeleteGlobalTagAsync(string tagName)
+    {
+        if (string.IsNullOrWhiteSpace(tagName)) return;
+        var tag = tagName.Trim();
+
+        _tagCreatedTimes.Remove(tag);
+        _customEmptyTags.RemoveAll(x => x.Equals(tag, StringComparison.OrdinalIgnoreCase));
+        await _todoService.DeleteCustomTagAsync(tag);
+        await _todoService.DeleteCategoryAsync(tag);
+        await LoadTodoItemsAsync();
     }
 
     [RelayCommand]
@@ -1734,5 +2121,26 @@ public partial class NotificationBubbleItem : ObservableObject
     {
         Message = message;
         Timestamp = DateTime.Now.ToString("HH:mm");
+    }
+}
+
+public partial class CategoryFilterOption : ObservableObject
+{
+    public string Name { get; }
+
+    [ObservableProperty]
+    private bool _isSelected;
+
+    public Action<CategoryFilterOption>? OnSelectionChanged { get; set; }
+
+    public CategoryFilterOption(string name, bool isSelected = false)
+    {
+        Name = name;
+        _isSelected = isSelected;
+    }
+
+    partial void OnIsSelectedChanged(bool value)
+    {
+        OnSelectionChanged?.Invoke(this);
     }
 }
