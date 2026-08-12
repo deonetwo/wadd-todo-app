@@ -103,6 +103,13 @@
               </Grid>
             </ListBoxItem>
 
+            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Search">
+              <Grid ColumnDefinitions="56,*" Height="44">
+                <PathIcon Grid.Column="0" Data="{StaticResource SearchIconData}" Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="Search" FontSize="14" VerticalAlignment="Center"/>
+              </Grid>
+            </ListBoxItem>
+
             <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Completed Tasks">
               <Grid ColumnDefinitions="56,*,Auto" Height="44">
                 <PathIcon Grid.Column="0" Data="{StaticResource CheckIconData}" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -262,20 +269,31 @@
         <!-- ═══ TAB 0: TASKS VIEW ═══ -->
         <views:TasksView IsVisible="{Binding IsTasksView}"/>
 
-        <!-- ═══ TAB 1: COMPLETED TASKS VIEW ═══ -->
+        <!-- ═══ TAB 1: SEARCH VIEW ═══ -->
+        <views:SearchView IsVisible="{Binding IsSearchView}"/>
+
+        <!-- ═══ TAB 2: COMPLETED TASKS VIEW ═══ -->
         <views:CompletedTasksView IsVisible="{Binding IsCompletedView}"/>
 
-        <!-- ═══ TAB 2: RECURRING TASKS VIEW ═══ -->
+        <!-- ═══ TAB 3: RECURRING TASKS VIEW ═══ -->
         <views:RecurringTasksView IsVisible="{Binding IsRecurringView}"/>
 
-        <!-- ═══ TAB 3: CALENDAR VIEW ═══ -->
+        <!-- ═══ TAB 4: CALENDAR VIEW ═══ -->
         <views:CalendarView IsVisible="{Binding IsCalendarView}"/>
 
-        <!-- ═══ TAB 4: TAGS MANAGEMENT VIEW ═══ -->
+        <!-- ═══ TAB 5: TAGS MANAGEMENT VIEW ═══ -->
         <views:TagsManagementView IsVisible="{Binding IsTagsView}"/>
 
-        <!-- ═══ TAB 5: SETTINGS VIEW ═══ -->
+        <!-- ═══ TAB 6: SETTINGS VIEW ═══ -->
         <views:SettingsView IsVisible="{Binding IsSettingsView}"/>
+
+        <!-- ═══ TASK DETAIL DRAWER OVERLAY (Desktop) ═══ -->
+        <Grid IsVisible="{Binding IsDetailDrawerOpen}" ZIndex="800">
+          <Border Background="#50000000"/>
+          <views:TaskDetailDrawer Width="420"
+                                  HorizontalAlignment="Right"
+                                  VerticalAlignment="Stretch"/>
+        </Grid>
 
         <!-- ═══ SMALL POST-SYNC PROMPT DIALOG ═══ -->
         <Border IsVisible="{Binding IsReviewPromptVisible}"
@@ -376,6 +394,9 @@
         <!-- Compact Tasks View -->
         <views:TasksView IsVisible="{Binding IsTasksView}"/>
 
+        <!-- Compact Search View -->
+        <views:SearchView IsVisible="{Binding IsSearchView}"/>
+
         <!-- Compact Completed View -->
         <views:CompletedTasksView IsVisible="{Binding IsCompletedView}"/>
 
@@ -390,6 +411,14 @@
 
         <!-- Compact Settings View -->
         <views:SettingsView IsVisible="{Binding IsSettingsView}"/>
+
+        <!-- ═══ TASK DETAIL DRAWER OVERLAY (Compact) ═══ -->
+        <Grid IsVisible="{Binding IsDetailDrawerOpen}" ZIndex="800">
+          <Border Background="#70000000"/>
+          <views:TaskDetailDrawer HorizontalAlignment="Stretch"
+                                  VerticalAlignment="Stretch"
+                                  Margin="12,24,12,12"/>
+        </Grid>
 
         <!-- Floating Historical Status Toast Stack (Compact) -->
         <ItemsControl ItemsSource="{Binding StatusNotifications}"
@@ -455,6 +484,12 @@
                 </ListBoxItem>
                 <ListBoxItem Classes="side-menu-item">
                   <StackPanel Orientation="Horizontal" Spacing="12">
+                    <PathIcon Data="{StaticResource SearchIconData}" Width="17" Height="17"/>
+                    <TextBlock Text="Search" VerticalAlignment="Center"/>
+                  </StackPanel>
+                </ListBoxItem>
+                <ListBoxItem Classes="side-menu-item">
+                  <StackPanel Orientation="Horizontal" Spacing="12">
                     <PathIcon Data="{StaticResource CheckIconData}" Width="15" Height="15"/>
                     <TextBlock Text="Completed" VerticalAlignment="Center"/>
                   </StackPanel>
@@ -504,17 +539,17 @@
             </StackPanel>
           </Button>
 
+          <Button Classes="tab-btn" Command="{Binding OpenSearchViewCommand}" Classes.active="{Binding IsSearchView}">
+            <StackPanel Spacing="4" HorizontalAlignment="Center">
+              <PathIcon Data="{StaticResource SearchIconData}" Width="18" Height="18" HorizontalAlignment="Center"/>
+              <TextBlock Text="Search" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+
           <Button Classes="tab-btn" Command="{Binding OpenCompletedViewCommand}" Classes.active="{Binding IsCompletedView}">
             <StackPanel Spacing="4" HorizontalAlignment="Center">
               <PathIcon Data="{StaticResource CheckIconData}" Width="16" Height="16" HorizontalAlignment="Center"/>
               <TextBlock Text="Done" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
-            </StackPanel>
-          </Button>
-
-          <Button Classes="tab-btn" Command="{Binding OpenRecurringViewCommand}" Classes.active="{Binding IsRecurringView}">
-            <StackPanel Spacing="4" HorizontalAlignment="Center">
-              <PathIcon Data="{StaticResource RepeatIconData}" Width="16" Height="16" HorizontalAlignment="Center"/>
-              <TextBlock Text="Repeat" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
             </StackPanel>
           </Button>
 
@@ -582,7 +617,8 @@
                      Text="{Binding NewTaskTitle, Mode=TwoWay}"
                      FontSize="18"
                      FontWeight="SemiBold"
-                     Padding="0,6">
+                     MinHeight="40"
+                     Padding="14,8">
               <TextBox.KeyBindings>
                 <KeyBinding Gesture="Enter" Command="{Binding AddTaskCommand}"/>
               </TextBox.KeyBindings>
@@ -593,7 +629,8 @@
                      PlaceholderText="Add details or context… (optional)"
                      Text="{Binding NewTaskDescription, Mode=TwoWay}"
                      FontSize="13"
-                     Padding="0,4"
+                     Padding="14,6"
+                     MinHeight="32"
                      AcceptsReturn="True"
                      MaxHeight="80"
                      TextWrapping="Wrap"/>

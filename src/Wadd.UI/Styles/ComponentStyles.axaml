@@ -138,6 +138,65 @@
     <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
   </Style>
 
+  <!-- Add Note Button: No round background highlight, text & icon hover color transition only -->
+  <Style Selector="Button.add-note-btn">
+    <Setter Property="Background"              Value="Transparent"/>
+    <Setter Property="Foreground"              Value="{DynamicResource AppTextSecondaryBrush}"/>
+    <Setter Property="BorderThickness"         Value="0"/>
+    <Setter Property="CornerRadius"            Value="0"/>
+    <Setter Property="Padding"                 Value="0"/>
+    <Setter Property="FontSize"                Value="12"/>
+    <Setter Property="Cursor"                  Value="Hand"/>
+  </Style>
+  <Style Selector="Button.add-note-btn /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="BorderThickness" Value="0"/>
+  </Style>
+  <Style Selector="Button.add-note-btn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent"/>
+  </Style>
+  <Style Selector="Button.add-note-btn:pointerover TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryBrush}"/>
+  </Style>
+  <Style Selector="Button.add-note-btn:pointerover PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryBrush}"/>
+  </Style>
+  <Style Selector="Button.add-note-btn:focus /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent"/>
+  </Style>
+  <Style Selector="Button.add-note-btn:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent"/>
+  </Style>
+
+  <!-- Task Row Content Button: Transparent container for task details click without nested hover highlight -->
+  <Style Selector="Button.task-row-btn">
+    <Setter Property="Background"              Value="Transparent"/>
+    <Setter Property="Foreground"              Value="{DynamicResource AppTextPrimaryBrush}"/>
+    <Setter Property="BorderThickness"         Value="0"/>
+    <Setter Property="CornerRadius"            Value="0"/>
+    <Setter Property="Padding"                 Value="0"/>
+    <Setter Property="Cursor"                  Value="Hand"/>
+    <Setter Property="HorizontalAlignment"     Value="Stretch"/>
+    <Setter Property="HorizontalContentAlignment" Value="Left"/>
+    <Setter Property="VerticalAlignment"       Value="Center"/>
+  </Style>
+  <Style Selector="Button.task-row-btn /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="BorderThickness" Value="0"/>
+  </Style>
+  <Style Selector="Button.task-row-btn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent"/>
+  </Style>
+  <Style Selector="Button.task-row-btn:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent"/>
+  </Style>
+  <Style Selector="Button.task-row-btn:focus /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent"/>
+  </Style>
+  <Style Selector="Button.task-row-btn:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent"/>
+  </Style>
+
   <!-- Icon button: square, no border, subtle hover -->
   <Style Selector="Button.icon-btn">
     <Setter Property="Background"      Value="Transparent"/>
@@ -193,9 +252,10 @@
     <Setter Property="BorderBrush"     Value="{DynamicResource AppBorderBrush}"/>
     <Setter Property="BorderThickness" Value="0,0,0,1.5"/>
     <Setter Property="CornerRadius"    Value="0"/>
-    <Setter Property="Padding"         Value="0,8"/>
+    <Setter Property="Padding"         Value="14,10"/>
     <Setter Property="FontSize"        Value="16"/>
     <Setter Property="FontWeight"      Value="Normal"/>
+    <Setter Property="MinHeight"       Value="42"/>
     <Setter Property="SelectionBrush"  Value="{DynamicResource AppPrimaryBrush}"/>
   </Style>
   <Style Selector="TextBox.composer /template/ Border#PART_BorderElement">
@@ -220,6 +280,47 @@
     <Setter Property="Background" Value="Transparent"/>
   </Style>
 
+  <!-- Search composer input: editorial underline only, no rounded corners -->
+  <Style Selector="TextBox.search-composer">
+    <Setter Property="Background"      Value="Transparent"/>
+    <Setter Property="Foreground"      Value="{DynamicResource AppTextPrimaryBrush}"/>
+    <Setter Property="BorderBrush"     Value="{DynamicResource AppBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="0,0,0,1.5"/>
+    <Setter Property="CornerRadius"    Value="0"/>
+    <Setter Property="Padding"         Value="14,10"/>
+    <Setter Property="FontSize"        Value="20"/>
+    <Setter Property="FontWeight"      Value="Medium"/>
+    <Setter Property="MinHeight"       Value="44"/>
+    <Setter Property="SelectionBrush"  Value="{DynamicResource AppPrimaryBrush}"/>
+  </Style>
+  <Style Selector="TextBox.search-composer /template/ Border#PART_BorderElement">
+    <Setter Property="Background" Value="Transparent"/>
+  </Style>
+  <Style Selector="TextBox.search-composer:focus /template/ Border#PART_BorderElement">
+    <Setter Property="BorderBrush"     Value="{DynamicResource AppPrimaryBrush}"/>
+    <Setter Property="BorderThickness" Value="0,0,0,1.5"/>
+    <Setter Property="Background"      Value="Transparent"/>
+  </Style>
+  <Style Selector="TextBox.search-composer:pointerover /template/ Border#PART_BorderElement">
+    <Setter Property="BorderBrush" Value="{DynamicResource AppTextSecondaryBrush}"/>
+    <Setter Property="Background"  Value="Transparent"/>
+  </Style>
+  <Style Selector="TextBox.search-composer /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent"/>
+  </Style>
+  <Style Selector="TextBox.search-composer:focus /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent"/>
+  </Style>
+  <Style Selector="TextBox.search-composer:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent"/>
+  </Style>
+  <Style Selector="TextBox.composer /template/ Button#PART_ClearButton">
+    <Setter Property="IsVisible" Value="False"/>
+  </Style>
+  <Style Selector="TextBox.search-composer /template/ Button#PART_ClearButton">
+    <Setter Property="IsVisible" Value="False"/>
+  </Style>
+
   <!-- Standard styled input: for settings, URL fields -->
   <Style Selector="TextBox.styled">
     <Setter Property="Background"      Value="{DynamicResource AppSurfaceElevatedBrush}"/>
@@ -227,8 +328,9 @@
     <Setter Property="BorderBrush"     Value="{DynamicResource AppBorderBrush}"/>
     <Setter Property="BorderThickness" Value="1"/>
     <Setter Property="CornerRadius"    Value="8"/>
-    <Setter Property="Padding"         Value="13,10"/>
+    <Setter Property="Padding"         Value="14,10"/>
     <Setter Property="FontSize"        Value="13"/>
+    <Setter Property="MinHeight"       Value="40"/>
     <Setter Property="SelectionBrush"  Value="{DynamicResource AppPrimaryBrush}"/>
   </Style>
   <Style Selector="TextBox.styled:pointerover /template/ Border#PART_BorderElement">

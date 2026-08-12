@@ -78,6 +78,24 @@
                        FontWeight="SemiBold"
                        Foreground="{DynamicResource AppPrimaryBrush}"/>
           </StackPanel>
+
+          <Separator Classes="divider" Margin="0,4"/>
+
+          <!-- Task Note Previews Preference -->
+          <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+            <StackPanel Grid.Column="0" Spacing="4">
+              <TextBlock Text="Show Note Previews in Task List" Classes="heading"/>
+              <TextBlock Text="Display up to 2 lines of notes under task titles in task lists."
+                         Classes="small"
+                         TextWrapping="Wrap"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1"
+                          IsChecked="{Binding ShowNotePreviewsInList, Mode=TwoWay}"
+                          OnContent=""
+                          OffContent=""
+                          VerticalAlignment="Center"/>
+          </Grid>
         </StackPanel>
       </Border>
 

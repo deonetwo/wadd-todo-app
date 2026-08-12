@@ -132,79 +132,92 @@
                             ToolTip.Tip="Uncheck to restore task"/>
 
                   <!-- Task metadata -->
-                  <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding Title}"
-                               Classes="body-bold task-title"
-                               FontSize="14"
-                               TextWrapping="Wrap"/>
-                    <TextBlock Text="{Binding Description}"
-                               Classes="small"
-                               IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                               TextWrapping="Wrap"/>
-                    
-                    <!-- Badges (Due Date, Reminder & Repeat) -->
-                    <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,0">
-                      <!-- Due Date Badge -->
-                      <Border IsVisible="{Binding HasDueDate}"
-                              Background="{DynamicResource AppPrimarySubtleBrush}"
-                              CornerRadius="4"
-                              Padding="6,2"
-                              HorizontalAlignment="Left">
-                        <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                          <PathIcon Data="{StaticResource CalendarIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                          <TextBlock Text="{Binding DueDateFormatted}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                        </StackPanel>
-                      </Border>
+                  <Button Grid.Column="1"
+                          Classes="task-row-btn"
+                          Command="{Binding $parent[UserControl].DataContext.OpenDetailDrawerCommand}"
+                          CommandParameter="{Binding}"
+                          Padding="0"
+                          HorizontalAlignment="Stretch"
+                          HorizontalContentAlignment="Left"
+                          VerticalAlignment="Center"
+                          Background="Transparent"
+                          BorderThickness="0"
+                          Cursor="Hand"
+                          ToolTip.Tip="Click to open task details &amp; notes">
+                    <StackPanel Spacing="3" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Title}"
+                                 Classes="body-bold task-title"
+                                 FontSize="14"
+                                 TextWrapping="Wrap"/>
+                      <TextBlock Text="{Binding Description}"
+                                 Classes="small"
+                                 IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                 TextWrapping="Wrap"/>
+                      
+                      <!-- Badges (Due Date, Reminder & Repeat) -->
+                      <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,0">
+                        <!-- Due Date Badge -->
+                        <Border IsVisible="{Binding HasDueDate}"
+                                Background="{DynamicResource AppPrimarySubtleBrush}"
+                                CornerRadius="4"
+                                Padding="6,2"
+                                HorizontalAlignment="Left">
+                          <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                            <PathIcon Data="{StaticResource CalendarIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                            <TextBlock Text="{Binding DueDateFormatted}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                          </StackPanel>
+                        </Border>
 
-                      <!-- Reminder Badge -->
-                      <Border IsVisible="{Binding HasReminder}"
-                              Background="{DynamicResource AppPrimarySubtleBrush}"
-                              CornerRadius="4"
-                              Padding="6,2"
-                              HorizontalAlignment="Left">
-                        <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                          <PathIcon Data="{StaticResource BellIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                          <TextBlock Text="{Binding ReminderAtFormatted}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                        </StackPanel>
-                      </Border>
+                        <!-- Reminder Badge -->
+                        <Border IsVisible="{Binding HasReminder}"
+                                Background="{DynamicResource AppPrimarySubtleBrush}"
+                                CornerRadius="4"
+                                Padding="6,2"
+                                HorizontalAlignment="Left">
+                          <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                            <PathIcon Data="{StaticResource BellIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                            <TextBlock Text="{Binding ReminderAtFormatted}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                          </StackPanel>
+                        </Border>
 
-                      <!-- Repeat Badge -->
-                      <Border IsVisible="{Binding HasRecurrence}"
-                              Background="{DynamicResource AppPrimarySubtleBrush}"
-                              CornerRadius="4"
-                              Padding="6,2"
-                              HorizontalAlignment="Left">
-                        <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                          <PathIcon Data="{StaticResource RepeatIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                          <TextBlock Text="{Binding RecurrenceFormatted}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                        </StackPanel>
-                      </Border>
+                        <!-- Repeat Badge -->
+                        <Border IsVisible="{Binding HasRecurrence}"
+                                Background="{DynamicResource AppPrimarySubtleBrush}"
+                                CornerRadius="4"
+                                Padding="6,2"
+                                HorizontalAlignment="Left">
+                          <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                            <PathIcon Data="{StaticResource RepeatIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                            <TextBlock Text="{Binding RecurrenceFormatted}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                          </StackPanel>
+                        </Border>
 
+                      </StackPanel>
+
+                      <!-- Category Badges (Dedicated Row) -->
+                      <ItemsControl ItemsSource="{Binding Categories}" IsVisible="{Binding HasCategories}" Margin="0,3,0,0">
+                        <ItemsControl.ItemsPanel>
+                          <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"/>
+                          </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate>
+                            <Border Background="{DynamicResource AppPrimaryBrush}"
+                                    CornerRadius="4"
+                                    Padding="6,2"
+                                    Margin="0,0,4,3"
+                                    HorizontalAlignment="Left">
+                              <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                <PathIcon Data="{StaticResource TagIconData}" Width="10" Height="10" Foreground="#FFFFFF"/>
+                                <TextBlock Text="{Binding}" FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF"/>
+                              </StackPanel>
+                            </Border>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
                     </StackPanel>
-
-                    <!-- Category Badges (Dedicated Row) -->
-                    <ItemsControl ItemsSource="{Binding Categories}" IsVisible="{Binding HasCategories}" Margin="0,3,0,0">
-                      <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                          <WrapPanel Orientation="Horizontal"/>
-                        </ItemsPanelTemplate>
-                      </ItemsControl.ItemsPanel>
-                      <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                          <Border Background="{DynamicResource AppPrimaryBrush}"
-                                  CornerRadius="4"
-                                  Padding="6,2"
-                                  Margin="0,0,4,3"
-                                  HorizontalAlignment="Left">
-                            <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                              <PathIcon Data="{StaticResource TagIconData}" Width="10" Height="10" Foreground="#FFFFFF"/>
-                              <TextBlock Text="{Binding}" FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF"/>
-                            </StackPanel>
-                          </Border>
-                        </DataTemplate>
-                      </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                  </StackPanel>
+                  </Button>
 
                   <!-- Completed Timestamp -->
                   <TextBlock Grid.Column="2"

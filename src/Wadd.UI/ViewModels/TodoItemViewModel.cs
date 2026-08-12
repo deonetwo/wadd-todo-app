@@ -36,7 +36,21 @@ public partial class TodoItemViewModel : ViewModelBase
             {
                 Model.Description = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(HasDescription));
+                OnPropertyChanged(nameof(DescriptionPreview));
             }
+        }
+    }
+
+    public bool HasDescription => !string.IsNullOrWhiteSpace(Description);
+
+    public string DescriptionPreview
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(Description)) return string.Empty;
+            var lines = Description.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+            return string.Join(" ", lines);
         }
     }
 
@@ -155,6 +169,8 @@ public partial class TodoItemViewModel : ViewModelBase
 
     public bool HasRecurrence => Model.IsRecurring && !string.IsNullOrWhiteSpace(Model.RecurrenceType) && !Model.RecurrenceType.Equals("None", StringComparison.OrdinalIgnoreCase);
 
+    public bool HasAnyBadges => HasDueDate || HasReminder || HasRecurrence;
+
     public string RecurrenceFormatted => Wadd.Core.Helpers.RecurrenceHelper.FormatRecurrenceText(Model.IsRecurring, Model.RecurrenceType, Model.CustomRecurrenceInterval, Model.CustomRecurrenceUnit, Model.CustomWeeklyDays);
 
     public string? Category
@@ -198,6 +214,8 @@ public partial class TodoItemViewModel : ViewModelBase
         Model = newModel;
         OnPropertyChanged(nameof(Title));
         OnPropertyChanged(nameof(Description));
+        OnPropertyChanged(nameof(HasDescription));
+        OnPropertyChanged(nameof(DescriptionPreview));
         OnPropertyChanged(nameof(IsCompleted));
         OnPropertyChanged(nameof(Priority));
         OnPropertyChanged(nameof(DueDate));

@@ -530,12 +530,25 @@
                                             Command="{Binding $parent[UserControl].DataContext.ToggleTodoCommand}"
                                             CommandParameter="{Binding}"/>
 
-                                  <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding Title}"
-                                               Classes="body-bold task-title"
-                                               FontSize="12"
-                                               TextWrapping="Wrap"/>
-                                  </StackPanel>
+                                  <Button Grid.Column="1"
+                                          Classes="task-row-btn"
+                                          Command="{Binding $parent[UserControl].DataContext.OpenDetailDrawerCommand}"
+                                          CommandParameter="{Binding}"
+                                          Padding="0"
+                                          HorizontalAlignment="Stretch"
+                                          HorizontalContentAlignment="Left"
+                                          VerticalAlignment="Center"
+                                          Background="Transparent"
+                                          BorderThickness="0"
+                                          Cursor="Hand"
+                                          ToolTip.Tip="Click to open task details &amp; notes">
+                                    <StackPanel Spacing="2" VerticalAlignment="Center">
+                                      <TextBlock Text="{Binding Title}"
+                                                 Classes="body-bold task-title"
+                                                 FontSize="12"
+                                                 TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                  </Button>
                                 </Grid>
                               </Border>
                             </DataTemplate>
@@ -664,49 +677,61 @@
                                     CommandParameter="{Binding}"/>
 
                           <!-- Task Info -->
-                          <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding Title}"
-                                       Classes="body-bold task-title"
-                                       FontSize="13"
-                                       TextWrapping="Wrap"/>
-                            <TextBlock Text="{Binding Description}"
-                                       Classes="small"
-                                       IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                       TextWrapping="Wrap"/>
+                          <Button Grid.Column="1"
+                                  Classes="task-row-btn"
+                                  Command="{Binding $parent[UserControl].DataContext.OpenDetailDrawerCommand}"
+                                  CommandParameter="{Binding}"
+                                  Padding="0"
+                                  HorizontalAlignment="Stretch"
+                                  HorizontalContentAlignment="Left"
+                                  VerticalAlignment="Center"
+                                  Background="Transparent"
+                                  BorderThickness="0"
+                                  Cursor="Hand"
+                                  ToolTip.Tip="Click to open task details &amp; notes">
+                            <StackPanel Spacing="3" VerticalAlignment="Center">
+                              <TextBlock Text="{Binding Title}"
+                                         Classes="body-bold task-title"
+                                         FontSize="13"
+                                         TextWrapping="Wrap"/>
+                              <TextBlock Text="{Binding Description}"
+                                         Classes="small"
+                                         IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                         TextWrapping="Wrap"/>
 
-                            <!-- Badges -->
-                            <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,0">
-                              <!-- Overdue Date Badge -->
-                              <Border IsVisible="{Binding IsOverdue}"
-                                      Background="{DynamicResource AppAccentDangerSubtleBrush}"
-                                      CornerRadius="4"
-                                      Padding="4,1">
-                                <StackPanel Orientation="Horizontal" Spacing="4">
-                                  <PathIcon Data="{StaticResource CalendarIconData}" Width="9" Height="9" Foreground="{DynamicResource AppAccentDangerBrush}"/>
-                                  <TextBlock Text="{Binding ContextDueDateFormatted}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppAccentDangerBrush}"/>
-                                </StackPanel>
-                              </Border>
+                              <!-- Badges -->
+                              <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,0">
+                                <!-- Overdue Date Badge -->
+                                <Border IsVisible="{Binding IsOverdue}"
+                                        Background="{DynamicResource AppAccentDangerSubtleBrush}"
+                                        CornerRadius="4"
+                                        Padding="4,1">
+                                  <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <PathIcon Data="{StaticResource CalendarIconData}" Width="9" Height="9" Foreground="{DynamicResource AppAccentDangerBrush}"/>
+                                    <TextBlock Text="{Binding ContextDueDateFormatted}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppAccentDangerBrush}"/>
+                                  </StackPanel>
+                                </Border>
 
-                              <!-- Normal Due Date Badge -->
-                              <Border IsVisible="{Binding HasDueDateOnly}"
-                                      Background="{DynamicResource AppPrimarySubtleBrush}"
-                                      CornerRadius="4"
-                                      Padding="4,1">
-                                <StackPanel Orientation="Horizontal" Spacing="4">
-                                  <PathIcon Data="{StaticResource CalendarIconData}" Width="9" Height="9" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                                  <TextBlock Text="{Binding ContextDueDateFormatted}" FontSize="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                                </StackPanel>
-                              </Border>
+                                <!-- Normal Due Date Badge -->
+                                <Border IsVisible="{Binding HasDueDateOnly}"
+                                        Background="{DynamicResource AppPrimarySubtleBrush}"
+                                        CornerRadius="4"
+                                        Padding="4,1">
+                                  <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <PathIcon Data="{StaticResource CalendarIconData}" Width="9" Height="9" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                                    <TextBlock Text="{Binding ContextDueDateFormatted}" FontSize="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                                  </StackPanel>
+                                </Border>
 
-                              <Border IsVisible="{Binding HasRecurrence}"
-                                      Background="{DynamicResource AppAccentTintBrush}"
-                                      CornerRadius="4"
-                                      Padding="4,1">
-                                <StackPanel Orientation="Horizontal" Spacing="4">
-                                  <PathIcon Data="{StaticResource RepeatIconData}" Width="9" Height="9" Foreground="{DynamicResource AppAccentBrush}"/>
-                                  <TextBlock Text="{Binding RecurrenceFormatted}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AppAccentBrush}"/>
-                                </StackPanel>
-                              </Border>
+                                <Border IsVisible="{Binding HasRecurrence}"
+                                        Background="{DynamicResource AppAccentTintBrush}"
+                                        CornerRadius="4"
+                                        Padding="4,1">
+                                  <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <PathIcon Data="{StaticResource RepeatIconData}" Width="9" Height="9" Foreground="{DynamicResource AppAccentBrush}"/>
+                                    <TextBlock Text="{Binding RecurrenceFormatted}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AppAccentBrush}"/>
+                                  </StackPanel>
+                                </Border>
 
                               </StackPanel>
 
@@ -732,6 +757,7 @@
                                 </ItemsControl.ItemTemplate>
                               </ItemsControl>
                             </StackPanel>
+                          </Button>
 
                           <!-- Delete -->
                           <Button Grid.Column="2"
@@ -761,7 +787,9 @@
                          MaxHeight="100"
                          FontSize="12"
                          CornerRadius="6"
-                         Padding="10,8"
+                         Padding="14,10"
+                         VerticalContentAlignment="Top"
+                         HorizontalContentAlignment="Left"
                          Classes="styled"/>
               </StackPanel>
             </Border>

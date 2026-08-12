@@ -69,6 +69,73 @@ public partial class MainViewModel : ViewModelBase
     private string _currentThemeLabel = "System Default";
 
     [ObservableProperty]
+    private string _searchQuery = string.Empty;
+
+    partial void OnSearchQueryChanged(string value)
+    {
+        UpdateSubCollections();
+        UpdateSearchResults();
+    }
+
+    [ObservableProperty]
+    private bool _showNotePreviewsInList = true;
+
+    [ObservableProperty]
+    private bool _isNoteComposerExpanded;
+
+    [RelayCommand]
+    private void ToggleNoteComposer()
+    {
+        IsNoteComposerExpanded = !IsNoteComposerExpanded;
+    }
+
+    [RelayCommand]
+    private void ExpandNoteComposer()
+    {
+        IsNoteComposerExpanded = true;
+    }
+
+    [ObservableProperty]
+    private TodoItemViewModel? _selectedDetailTask;
+
+    [ObservableProperty]
+    private bool _isDetailDrawerOpen;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsNotePreviewMode))]
+    private bool _isNoteEditMode = true;
+
+    public bool IsNotePreviewMode
+    {
+        get => !IsNoteEditMode;
+        set => IsNoteEditMode = !value;
+    }
+
+    [RelayCommand]
+    private void OpenDetailDrawer(TodoItemViewModel? item)
+    {
+        if (item == null) return;
+        IsNoteEditMode = true;
+        SelectedDetailTask = item;
+        IsDetailDrawerOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseDetailDrawer()
+    {
+        IsDetailDrawerOpen = false;
+        SelectedDetailTask = null;
+    }
+
+    [RelayCommand]
+    private async Task SaveDetailTaskAsync()
+    {
+        if (SelectedDetailTask == null) return;
+        await _todoService.UpdateTodoAsync(SelectedDetailTask.Model);
+        UpdateSubCollections();
+    }
+
+    [ObservableProperty]
     private string _newTaskTitle = string.Empty;
 
     [ObservableProperty]
@@ -850,17 +917,19 @@ public partial class MainViewModel : ViewModelBase
     private int _selectedNavIndex = 0;
 
     public bool IsTasksView => SelectedNavIndex == 0;
-    public bool IsCompletedView => SelectedNavIndex == 1;
-    public bool IsRecurringView => SelectedNavIndex == 2;
-    public bool IsCalendarView => SelectedNavIndex == 3;
-    public bool IsTagsView => SelectedNavIndex == 4;
-    public bool IsSettingsView => SelectedNavIndex == 5;
+    public bool IsSearchView => SelectedNavIndex == 1;
+    public bool IsCompletedView => SelectedNavIndex == 2;
+    public bool IsRecurringView => SelectedNavIndex == 3;
+    public bool IsCalendarView => SelectedNavIndex == 4;
+    public bool IsTagsView => SelectedNavIndex == 5;
+    public bool IsSettingsView => SelectedNavIndex == 6;
 
     public bool IsMoreActive => IsTagsView || IsSettingsView;
 
     partial void OnSelectedNavIndexChanged(int value)
     {
         OnPropertyChanged(nameof(IsTasksView));
+        OnPropertyChanged(nameof(IsSearchView));
         OnPropertyChanged(nameof(IsCompletedView));
         OnPropertyChanged(nameof(IsRecurringView));
         OnPropertyChanged(nameof(IsCalendarView));
@@ -888,6 +957,37 @@ public partial class MainViewModel : ViewModelBase
     public ObservableCollection<TodoItemViewModel> CompletedHistoryTodoItems { get; } = new();
 
     public ObservableCollection<TodoItemViewModel> AllRecurringTodoItems { get; } = new();
+
+    public ObservableCollection<TodoItemViewModel> SearchResultsTodoItems { get; } = new();
+
+    public bool HasSearchResults => SearchResultsTodoItems.Count > 0;
+
+    [ObservableProperty]
+    private string _searchStatusFilter = "All";
+
+    partial void OnSearchStatusFilterChanged(string value)
+    {
+        UpdateSearchResults();
+    }
+
+    [RelayCommand]
+    private void SetSearchStatusFilter(string? filter)
+    {
+        if (string.IsNullOrWhiteSpace(filter)) return;
+        SearchStatusFilter = filter;
+    }
+
+    [RelayCommand]
+    private void ClearSearchQuery()
+    {
+        SearchQuery = string.Empty;
+    }
+
+    [RelayCommand]
+    private void ExecuteSearch()
+    {
+        UpdateSearchResults();
+    }
 
     public bool HasUpcomingTodoItems => UpcomingTodoItems.Count > 0;
 
@@ -920,15 +1020,23 @@ public partial class MainViewModel : ViewModelBase
     private void ToggleCompletedTodayExpanded() => IsCompletedTodayExpanded = !IsCompletedTodayExpanded;
 
     [RelayCommand]
-    private void NavigateToRecurringView()
-    {
-        SelectedNavIndex = 2;
-    }
+    private void NavigateToRecurringView() => SelectedNavIndex = 3;
 
     [RelayCommand]
-    private void NavigateToCalendarView()
+    private void NavigateToCalendarView() => SelectedNavIndex = 4;
+
+    private bool PassesSearchAndCategoryFilter(TodoItemViewModel item)
     {
-        SelectedNavIndex = 3;
+        if (!string.IsNullOrWhiteSpace(SearchQuery))
+        {
+            var q = SearchQuery.Trim();
+            bool matchesTitle = item.Title.Contains(q, StringComparison.OrdinalIgnoreCase);
+            bool matchesDesc = item.HasDescription && item.Description.Contains(q, StringComparison.OrdinalIgnoreCase);
+            bool matchesTag = item.Categories.Any(c => c.Contains(q, StringComparison.OrdinalIgnoreCase));
+            if (!matchesTitle && !matchesDesc && !matchesTag) return false;
+        }
+
+        return PassesCategoryFilter(item);
     }
 
     private bool PassesCategoryFilter(TodoItemViewModel item)
@@ -958,7 +1066,7 @@ public partial class MainViewModel : ViewModelBase
     private void UpdateSubCollections()
     {
         var today = DateTime.Today;
-        var filteredItems = TodoItems.Where(PassesCategoryFilter).ToList();
+        var filteredItems = TodoItems.Where(PassesSearchAndCategoryFilter).ToList();
         var activeItems = filteredItems.Where(x => !x.IsCompleted).ToList();
         var completedItems = filteredItems.Where(x => x.IsCompleted).ToList();
 
@@ -1005,6 +1113,38 @@ public partial class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasAllRecurringTodoItems));
 
         GenerateCalendarGrid();
+        UpdateSearchResults();
+    }
+
+    private void UpdateSearchResults()
+    {
+        var q = SearchQuery?.Trim() ?? string.Empty;
+        var filtered = TodoItems.Where(PassesCategoryFilter).ToList();
+
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            filtered = filtered.Where(x =>
+                x.Title.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                (x.HasDescription && x.Description.Contains(q, StringComparison.OrdinalIgnoreCase)) ||
+                x.Categories.Any(c => c.Contains(q, StringComparison.OrdinalIgnoreCase))
+            ).ToList();
+        }
+
+        if (SearchStatusFilter == "Active")
+        {
+            filtered = filtered.Where(x => !x.IsCompleted).ToList();
+        }
+        else if (SearchStatusFilter == "Completed")
+        {
+            filtered = filtered.Where(x => x.IsCompleted).ToList();
+        }
+        else if (SearchStatusFilter == "WithNotes")
+        {
+            filtered = filtered.Where(x => x.HasDescription).ToList();
+        }
+
+        SyncCollection(SearchResultsTodoItems, filtered);
+        OnPropertyChanged(nameof(HasSearchResults));
     }
 
     #region Calendar View Logic
@@ -1106,7 +1246,7 @@ public partial class MainViewModel : ViewModelBase
 
     private IEnumerable<TodoItem> GetFilteredTodoModels()
     {
-        var allModels = TodoItems.Where(PassesCategoryFilter).Select(x => x.Model).ToList();
+        var allModels = TodoItems.Where(PassesSearchAndCategoryFilter).Select(x => x.Model).ToList();
         var recurringTitleToTypeMap = allModels
             .Where(t => t.IsRecurring && !string.IsNullOrWhiteSpace(t.RecurrenceType) && !t.RecurrenceType.Equals("None", StringComparison.OrdinalIgnoreCase))
             .GroupBy(t => t.Title.Trim().ToLowerInvariant())
@@ -1950,18 +2090,21 @@ public partial class MainViewModel : ViewModelBase
     private void OpenTasksView() => SelectedNavIndex = 0;
 
     [RelayCommand]
-    private void OpenCompletedView() => SelectedNavIndex = 1;
+    private void OpenSearchView() => SelectedNavIndex = 1;
 
     [RelayCommand]
-    private void OpenRecurringView() => SelectedNavIndex = 2;
+    private void OpenCompletedView() => SelectedNavIndex = 2;
 
     [RelayCommand]
-    private void OpenCalendarView() => SelectedNavIndex = 3;
+    private void OpenRecurringView() => SelectedNavIndex = 3;
+
+    [RelayCommand]
+    private void OpenCalendarView() => SelectedNavIndex = 4;
 
     [RelayCommand]
     private void OpenTagsView(object? parameter = null)
     {
-        SelectedNavIndex = 4;
+        SelectedNavIndex = 5;
         IsMobileMoreSheetOpen = false;
         IsMobileTagFilterSheetOpen = false;
 
@@ -1974,7 +2117,7 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private void OpenSettings(object? parameter = null)
     {
-        SelectedNavIndex = 5;
+        SelectedNavIndex = 6;
         IsMobileMoreSheetOpen = false;
 
         if (parameter is Flyout flyout)
