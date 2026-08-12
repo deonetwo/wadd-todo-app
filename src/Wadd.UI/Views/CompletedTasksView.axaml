@@ -26,7 +26,7 @@
             <PathIcon Data="{StaticResource CheckListIconData}" Width="18" Height="18" Foreground="{DynamicResource AppPrimaryBrush}"/>
             <TextBlock Text="Completed History" Classes="display"/>
           </StackPanel>
-          <TextBlock Text="Archive of tasks completed before today."
+          <TextBlock Text="Archive of all completed tasks."
                      Classes="small"
                      Foreground="{DynamicResource AppTextSecondaryBrush}"/>
         </StackPanel>

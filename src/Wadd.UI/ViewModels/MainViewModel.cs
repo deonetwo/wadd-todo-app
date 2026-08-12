@@ -1092,8 +1092,7 @@ public partial class MainViewModel : ViewModelBase
             .OrderByDescending(x => x.CompletedAt ?? DateTime.MinValue)
             .ToList();
         var freshCompletedHistory = completedItems
-            .Where(x => x.CompletedAt.HasValue && x.CompletedAt.Value.ToLocalTime().Date < today)
-            .OrderByDescending(x => x.CompletedAt)
+            .OrderByDescending(x => x.CompletedAt ?? DateTime.MinValue)
             .ToList();
 
         // All recurring tasks
