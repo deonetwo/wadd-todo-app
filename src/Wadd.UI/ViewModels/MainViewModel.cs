@@ -917,14 +917,14 @@ public partial class MainViewModel : ViewModelBase
     private int _selectedNavIndex = 0;
 
     public bool IsTasksView => SelectedNavIndex == 0;
-    public bool IsSearchView => SelectedNavIndex == 1;
+    public bool IsRecurringView => SelectedNavIndex == 1;
     public bool IsCompletedView => SelectedNavIndex == 2;
-    public bool IsRecurringView => SelectedNavIndex == 3;
-    public bool IsCalendarView => SelectedNavIndex == 4;
+    public bool IsCalendarView => SelectedNavIndex == 3;
+    public bool IsSearchView => SelectedNavIndex == 4;
     public bool IsTagsView => SelectedNavIndex == 5;
     public bool IsSettingsView => SelectedNavIndex == 6;
 
-    public bool IsMoreActive => IsTagsView || IsSettingsView;
+    public bool IsMoreActive => IsSearchView || IsTagsView || IsSettingsView;
 
     partial void OnSelectedNavIndexChanged(int value)
     {
@@ -1020,10 +1020,10 @@ public partial class MainViewModel : ViewModelBase
     private void ToggleCompletedTodayExpanded() => IsCompletedTodayExpanded = !IsCompletedTodayExpanded;
 
     [RelayCommand]
-    private void NavigateToRecurringView() => SelectedNavIndex = 3;
+    private void NavigateToRecurringView() => SelectedNavIndex = 1;
 
     [RelayCommand]
-    private void NavigateToCalendarView() => SelectedNavIndex = 4;
+    private void NavigateToCalendarView() => SelectedNavIndex = 3;
 
     private bool PassesSearchAndCategoryFilter(TodoItemViewModel item)
     {
@@ -2090,16 +2090,25 @@ public partial class MainViewModel : ViewModelBase
     private void OpenTasksView() => SelectedNavIndex = 0;
 
     [RelayCommand]
-    private void OpenSearchView() => SelectedNavIndex = 1;
+    private void OpenRecurringView() => SelectedNavIndex = 1;
 
     [RelayCommand]
     private void OpenCompletedView() => SelectedNavIndex = 2;
 
     [RelayCommand]
-    private void OpenRecurringView() => SelectedNavIndex = 3;
+    private void OpenCalendarView() => SelectedNavIndex = 3;
 
     [RelayCommand]
-    private void OpenCalendarView() => SelectedNavIndex = 4;
+    private void OpenSearchView(object? parameter = null)
+    {
+        SelectedNavIndex = 4;
+        IsMobileMoreSheetOpen = false;
+
+        if (parameter is Flyout flyout)
+        {
+            flyout.Hide();
+        }
+    }
 
     [RelayCommand]
     private void OpenTagsView(object? parameter = null)

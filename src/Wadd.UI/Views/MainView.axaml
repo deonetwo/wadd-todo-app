@@ -88,6 +88,7 @@
                    SelectedIndex="{Binding SelectedNavIndex}"
                    Padding="4,4">
 
+            <!-- Index 0: Tasks -->
             <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Tasks">
               <Grid ColumnDefinitions="56,*,Auto" Height="44">
                 <PathIcon Grid.Column="0" Data="{StaticResource CheckListIconData}" Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -103,28 +104,7 @@
               </Grid>
             </ListBoxItem>
 
-            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Search">
-              <Grid ColumnDefinitions="56,*" Height="44">
-                <PathIcon Grid.Column="0" Data="{StaticResource SearchIconData}" Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="1" Text="Search" FontSize="14" VerticalAlignment="Center"/>
-              </Grid>
-            </ListBoxItem>
-
-            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Completed Tasks">
-              <Grid ColumnDefinitions="56,*,Auto" Height="44">
-                <PathIcon Grid.Column="0" Data="{StaticResource CheckIconData}" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="1" Text="Completed" FontSize="14" VerticalAlignment="Center"/>
-                <Border Grid.Column="2"
-                        Background="{DynamicResource AppSurfaceElevatedBrush}"
-                        CornerRadius="10"
-                        Padding="7,2"
-                        Margin="0,0,10,0"
-                        VerticalAlignment="Center">
-                  <TextBlock Text="{Binding CompletedHistoryTodoItems.Count}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-                </Border>
-              </Grid>
-            </ListBoxItem>
-
+            <!-- Index 1: Repeating Tasks -->
             <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Repeating Tasks">
               <Grid ColumnDefinitions="56,*,Auto" Height="44">
                 <PathIcon Grid.Column="0" Data="{StaticResource RepeatIconData}" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -140,6 +120,23 @@
               </Grid>
             </ListBoxItem>
 
+            <!-- Index 2: Completed Tasks -->
+            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Completed Tasks">
+              <Grid ColumnDefinitions="56,*,Auto" Height="44">
+                <PathIcon Grid.Column="0" Data="{StaticResource CheckIconData}" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="Completed" FontSize="14" VerticalAlignment="Center"/>
+                <Border Grid.Column="2"
+                        Background="{DynamicResource AppSurfaceElevatedBrush}"
+                        CornerRadius="10"
+                        Padding="7,2"
+                        Margin="0,0,10,0"
+                        VerticalAlignment="Center">
+                  <TextBlock Text="{Binding CompletedHistoryTodoItems.Count}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                </Border>
+              </Grid>
+            </ListBoxItem>
+
+            <!-- Index 3: Calendar -->
             <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Calendar">
               <Grid ColumnDefinitions="56,*" Height="44">
                 <PathIcon Grid.Column="0" Data="{StaticResource CalendarIconData}" Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -147,6 +144,15 @@
               </Grid>
             </ListBoxItem>
 
+            <!-- Index 4: Search -->
+            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Search">
+              <Grid ColumnDefinitions="56,*" Height="44">
+                <PathIcon Grid.Column="0" Data="{StaticResource SearchIconData}" Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="Search" FontSize="14" VerticalAlignment="Center"/>
+              </Grid>
+            </ListBoxItem>
+
+            <!-- Index 5: Tags Management -->
             <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Tags Management">
               <Grid ColumnDefinitions="56,*" Height="44">
                 <PathIcon Grid.Column="0" Data="{StaticResource TagIconData}" Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -154,6 +160,7 @@
               </Grid>
             </ListBoxItem>
 
+            <!-- Index 6: Settings -->
             <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Settings">
               <Grid ColumnDefinitions="56,*" Height="44">
                 <PathIcon Grid.Column="0" Data="{StaticResource SettingsIconData}" Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -484,8 +491,8 @@
                 </ListBoxItem>
                 <ListBoxItem Classes="side-menu-item">
                   <StackPanel Orientation="Horizontal" Spacing="12">
-                    <PathIcon Data="{StaticResource SearchIconData}" Width="17" Height="17"/>
-                    <TextBlock Text="Search" VerticalAlignment="Center"/>
+                    <PathIcon Data="{StaticResource RepeatIconData}" Width="15" Height="15"/>
+                    <TextBlock Text="Recurring" VerticalAlignment="Center"/>
                   </StackPanel>
                 </ListBoxItem>
                 <ListBoxItem Classes="side-menu-item">
@@ -496,14 +503,14 @@
                 </ListBoxItem>
                 <ListBoxItem Classes="side-menu-item">
                   <StackPanel Orientation="Horizontal" Spacing="12">
-                    <PathIcon Data="{StaticResource RepeatIconData}" Width="15" Height="15"/>
-                    <TextBlock Text="Recurring" VerticalAlignment="Center"/>
+                    <PathIcon Data="{StaticResource CalendarIconData}" Width="17" Height="17"/>
+                    <TextBlock Text="Calendar" VerticalAlignment="Center"/>
                   </StackPanel>
                 </ListBoxItem>
                 <ListBoxItem Classes="side-menu-item">
                   <StackPanel Orientation="Horizontal" Spacing="12">
-                    <PathIcon Data="{StaticResource CalendarIconData}" Width="17" Height="17"/>
-                    <TextBlock Text="Calendar" VerticalAlignment="Center"/>
+                    <PathIcon Data="{StaticResource SearchIconData}" Width="17" Height="17"/>
+                    <TextBlock Text="Search" VerticalAlignment="Center"/>
                   </StackPanel>
                 </ListBoxItem>
                 <ListBoxItem Classes="side-menu-item">
@@ -539,10 +546,10 @@
             </StackPanel>
           </Button>
 
-          <Button Classes="tab-btn" Command="{Binding OpenSearchViewCommand}" Classes.active="{Binding IsSearchView}">
+          <Button Classes="tab-btn" Command="{Binding OpenRecurringViewCommand}" Classes.active="{Binding IsRecurringView}">
             <StackPanel Spacing="4" HorizontalAlignment="Center">
-              <PathIcon Data="{StaticResource SearchIconData}" Width="18" Height="18" HorizontalAlignment="Center"/>
-              <TextBlock Text="Search" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
+              <PathIcon Data="{StaticResource RepeatIconData}" Width="18" Height="18" HorizontalAlignment="Center"/>
+              <TextBlock Text="Repeating" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
             </StackPanel>
           </Button>
 
@@ -1287,6 +1294,22 @@
 
             <!-- Sheet Menu Actions -->
             <StackPanel Spacing="8">
+
+              <!-- Search Tasks -->
+              <Button Classes="outline"
+                      Command="{Binding OpenSearchViewCommand}"
+                      HorizontalAlignment="Stretch"
+                      HorizontalContentAlignment="Left"
+                      Padding="14,12"
+                      CornerRadius="12">
+                <Grid ColumnDefinitions="Auto,*">
+                  <PathIcon Grid.Column="0" Data="{StaticResource SearchIconData}" Width="18" Height="18" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <StackPanel Grid.Column="1" Spacing="2" Margin="12,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="Search Tasks" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                    <TextBlock Text="Search by keywords, notes, or tags" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                  </StackPanel>
+                </Grid>
+              </Button>
 
               <!-- Tags Management -->
               <Button Classes="outline"
