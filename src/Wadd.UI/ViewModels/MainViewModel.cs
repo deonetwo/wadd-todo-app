@@ -917,8 +917,8 @@ public partial class MainViewModel : ViewModelBase
     private int _selectedNavIndex = 0;
 
     public bool IsTasksView => SelectedNavIndex == 0;
-    public bool IsRecurringView => SelectedNavIndex == 1;
-    public bool IsCompletedView => SelectedNavIndex == 2;
+    public bool IsCompletedView => SelectedNavIndex == 1;
+    public bool IsRecurringView => SelectedNavIndex == 2;
     public bool IsCalendarView => SelectedNavIndex == 3;
     public bool IsSearchView => SelectedNavIndex == 4;
     public bool IsTagsView => SelectedNavIndex == 5;
@@ -1020,7 +1020,7 @@ public partial class MainViewModel : ViewModelBase
     private void ToggleCompletedTodayExpanded() => IsCompletedTodayExpanded = !IsCompletedTodayExpanded;
 
     [RelayCommand]
-    private void NavigateToRecurringView() => SelectedNavIndex = 1;
+    private void NavigateToRecurringView() => SelectedNavIndex = 2;
 
     [RelayCommand]
     private void NavigateToCalendarView() => SelectedNavIndex = 3;
@@ -2089,10 +2089,10 @@ public partial class MainViewModel : ViewModelBase
     private void OpenTasksView() => SelectedNavIndex = 0;
 
     [RelayCommand]
-    private void OpenRecurringView() => SelectedNavIndex = 1;
+    private void OpenCompletedView() => SelectedNavIndex = 1;
 
     [RelayCommand]
-    private void OpenCompletedView() => SelectedNavIndex = 2;
+    private void OpenRecurringView() => SelectedNavIndex = 2;
 
     [RelayCommand]
     private void OpenCalendarView() => SelectedNavIndex = 3;

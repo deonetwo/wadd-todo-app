@@ -104,23 +104,7 @@
               </Grid>
             </ListBoxItem>
 
-            <!-- Index 1: Repeating Tasks -->
-            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Repeating Tasks">
-              <Grid ColumnDefinitions="56,*,Auto" Height="44">
-                <PathIcon Grid.Column="0" Data="{StaticResource RepeatIconData}" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="1" Text="Repeating" FontSize="14" VerticalAlignment="Center"/>
-                <Border Grid.Column="2"
-                        Background="{DynamicResource AppSurfaceElevatedBrush}"
-                        CornerRadius="10"
-                        Padding="7,2"
-                        Margin="0,0,10,0"
-                        VerticalAlignment="Center">
-                  <TextBlock Text="{Binding AllRecurringTodoItems.Count}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-                </Border>
-              </Grid>
-            </ListBoxItem>
-
-            <!-- Index 2: Completed Tasks -->
+            <!-- Index 1: Completed Tasks -->
             <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Completed Tasks">
               <Grid ColumnDefinitions="56,*,Auto" Height="44">
                 <PathIcon Grid.Column="0" Data="{StaticResource CheckIconData}" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -132,6 +116,22 @@
                         Margin="0,0,10,0"
                         VerticalAlignment="Center">
                   <TextBlock Text="{Binding CompletedHistoryTodoItems.Count}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                </Border>
+              </Grid>
+            </ListBoxItem>
+
+            <!-- Index 2: Repeating Tasks -->
+            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Repeating Tasks">
+              <Grid ColumnDefinitions="56,*,Auto" Height="44">
+                <PathIcon Grid.Column="0" Data="{StaticResource RepeatIconData}" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="Repeating" FontSize="14" VerticalAlignment="Center"/>
+                <Border Grid.Column="2"
+                        Background="{DynamicResource AppSurfaceElevatedBrush}"
+                        CornerRadius="10"
+                        Padding="7,2"
+                        Margin="0,0,10,0"
+                        VerticalAlignment="Center">
+                  <TextBlock Text="{Binding AllRecurringTodoItems.Count}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
                 </Border>
               </Grid>
             </ListBoxItem>
@@ -491,14 +491,14 @@
                 </ListBoxItem>
                 <ListBoxItem Classes="side-menu-item">
                   <StackPanel Orientation="Horizontal" Spacing="12">
-                    <PathIcon Data="{StaticResource RepeatIconData}" Width="15" Height="15"/>
-                    <TextBlock Text="Recurring" VerticalAlignment="Center"/>
+                    <PathIcon Data="{StaticResource CheckIconData}" Width="15" Height="15"/>
+                    <TextBlock Text="Completed" VerticalAlignment="Center"/>
                   </StackPanel>
                 </ListBoxItem>
                 <ListBoxItem Classes="side-menu-item">
                   <StackPanel Orientation="Horizontal" Spacing="12">
-                    <PathIcon Data="{StaticResource CheckIconData}" Width="15" Height="15"/>
-                    <TextBlock Text="Completed" VerticalAlignment="Center"/>
+                    <PathIcon Data="{StaticResource RepeatIconData}" Width="15" Height="15"/>
+                    <TextBlock Text="Recurring" VerticalAlignment="Center"/>
                   </StackPanel>
                 </ListBoxItem>
                 <ListBoxItem Classes="side-menu-item">
@@ -546,17 +546,17 @@
             </StackPanel>
           </Button>
 
-          <Button Classes="tab-btn" Command="{Binding OpenRecurringViewCommand}" Classes.active="{Binding IsRecurringView}">
-            <StackPanel Spacing="4" HorizontalAlignment="Center">
-              <PathIcon Data="{StaticResource RepeatIconData}" Width="18" Height="18" HorizontalAlignment="Center"/>
-              <TextBlock Text="Repeating" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
-            </StackPanel>
-          </Button>
-
           <Button Classes="tab-btn" Command="{Binding OpenCompletedViewCommand}" Classes.active="{Binding IsCompletedView}">
             <StackPanel Spacing="4" HorizontalAlignment="Center">
               <PathIcon Data="{StaticResource CheckIconData}" Width="16" Height="16" HorizontalAlignment="Center"/>
               <TextBlock Text="Done" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+
+          <Button Classes="tab-btn" Command="{Binding OpenRecurringViewCommand}" Classes.active="{Binding IsRecurringView}">
+            <StackPanel Spacing="4" HorizontalAlignment="Center">
+              <PathIcon Data="{StaticResource RepeatIconData}" Width="18" Height="18" HorizontalAlignment="Center"/>
+              <TextBlock Text="Repeating" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
             </StackPanel>
           </Button>
 
