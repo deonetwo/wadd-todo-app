@@ -138,13 +138,13 @@
     <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
   </Style>
 
-  <!-- Add Note Button: No round background highlight, text & icon hover color transition only -->
+  <!-- Add Note Button: Subtle pill background highlight & primary teal color on hover -->
   <Style Selector="Button.add-note-btn">
     <Setter Property="Background"              Value="Transparent"/>
     <Setter Property="Foreground"              Value="{DynamicResource AppTextSecondaryBrush}"/>
     <Setter Property="BorderThickness"         Value="0"/>
-    <Setter Property="CornerRadius"            Value="0"/>
-    <Setter Property="Padding"                 Value="0"/>
+    <Setter Property="CornerRadius"            Value="6"/>
+    <Setter Property="Padding"                 Value="8,4"/>
     <Setter Property="FontSize"                Value="12"/>
     <Setter Property="Cursor"                  Value="Hand"/>
   </Style>
@@ -153,7 +153,7 @@
     <Setter Property="BorderThickness" Value="0"/>
   </Style>
   <Style Selector="Button.add-note-btn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Background" Value="{DynamicResource AppPrimarySubtleBrush}"/>
   </Style>
   <Style Selector="Button.add-note-btn:pointerover TextBlock">
     <Setter Property="Foreground" Value="{DynamicResource AppPrimaryBrush}"/>
@@ -165,7 +165,7 @@
     <Setter Property="Background" Value="Transparent"/>
   </Style>
   <Style Selector="Button.add-note-btn:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Background" Value="{DynamicResource AppPrimarySubtleBrush}"/>
   </Style>
 
   <!-- Task Row Content Button: Transparent container for task details click without nested hover highlight -->

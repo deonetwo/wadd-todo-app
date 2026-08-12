@@ -37,10 +37,17 @@
           BorderThickness="1,0,0,0"
           BoxShadow="-4 0 20 0 #40000000">
 
-    <Grid RowDefinitions="Auto,*,Auto" Margin="20,16">
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="16,10,16,14">
+      <!-- ── Mobile Drag Handle Pill ── -->
+      <Border Grid.Row="0"
+              Width="36" Height="4"
+              CornerRadius="2"
+              Background="{DynamicResource AppBorderBrush}"
+              HorizontalAlignment="Center"
+              Margin="0,0,0,10"/>
 
       <!-- ── Drawer Header ── -->
-      <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,16">
+      <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,14">
         <CheckBox Grid.Column="0"
                   Classes="task-checkbox"
                   IsChecked="{Binding SelectedDetailTask.IsCompleted, Mode=OneWay}"
@@ -65,8 +72,8 @@
       </Grid>
 
       <!-- ── Drawer Content ScrollViewer ── -->
-      <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-        <StackPanel Spacing="20" IsVisible="{Binding SelectedDetailTask, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="0,0,4,16">
+        <StackPanel Spacing="20" Margin="0,0,0,16" IsVisible="{Binding SelectedDetailTask, Converter={x:Static ObjectConverters.IsNotNull}}">
 
           <!-- 1. Task Title Editor -->
           <StackPanel Spacing="4">
@@ -79,63 +86,24 @@
                      PlaceholderText="Task title..."/>
           </StackPanel>
 
-          <!-- 2. Note / Description Editor & Markdown Preview -->
+          <!-- 2. Note / Description Editor -->
           <StackPanel Spacing="8">
-            <Grid ColumnDefinitions="*,Auto">
-              <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                <PathIcon Data="{StaticResource NoteIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                <TextBlock Text="NOTE &amp; DESCRIPTION" Classes="micro" Foreground="{DynamicResource AppPrimaryBrush}"/>
-              </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+              <PathIcon Data="{StaticResource NoteIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}"/>
+              <TextBlock Text="NOTE &amp; DESCRIPTION" Classes="micro" Foreground="{DynamicResource AppPrimaryBrush}"/>
+            </StackPanel>
 
-              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
-                <RadioButton Content="Edit"
-                             IsChecked="{Binding IsNoteEditMode, Mode=TwoWay}"
-                             FontSize="11"
-                             Padding="6,2"
-                             x:Name="EditNoteRadio"/>
-                <RadioButton Content="Preview"
-                             IsChecked="{Binding IsNotePreviewMode, Mode=TwoWay}"
-                             FontSize="11"
-                             Padding="6,2"
-                             x:Name="PreviewNoteRadio"/>
-              </StackPanel>
-            </Grid>
-
-            <!-- Edit Mode Multiline TextBox -->
+            <!-- Direct Multiline Note Editor -->
             <TextBox Classes="detail-note"
-                     IsVisible="{Binding IsNoteEditMode}"
                      Text="{Binding SelectedDetailTask.Description, Mode=TwoWay}"
-                     PlaceholderText="Add optional notes, sub-steps, or references... (Markdown supported)"
+                     PlaceholderText="Add optional notes, sub-steps, or links..."
                      AcceptsReturn="True"
                      TextWrapping="Wrap"
-                     MinHeight="140"
+                     MinHeight="120"
                      MaxHeight="320"
                      FontSize="13"
                      VerticalContentAlignment="Top"
                      HorizontalContentAlignment="Left"/>
-
-            <!-- Markdown Preview Mode -->
-            <Border IsVisible="{Binding IsNotePreviewMode}"
-                    Background="{DynamicResource AppSurfaceElevatedBrush}"
-                    BorderBrush="{DynamicResource AppBorderBrush}"
-                    BorderThickness="1"
-                    CornerRadius="8"
-                    Padding="14"
-                    MinHeight="140">
-              <Panel>
-                <controls:MarkdownTextBlock MarkdownText="{Binding SelectedDetailTask.Description}"
-                                            IsVisible="{Binding SelectedDetailTask.HasDescription}"
-                                            FontSize="13"
-                                            TextWrapping="Wrap"/>
-                <TextBlock Text="No note content to preview."
-                           IsVisible="{Binding !SelectedDetailTask.HasDescription}"
-                           FontSize="12"
-                           FontStyle="Italic"
-                           Foreground="{DynamicResource AppTextSecondaryBrush}"
-                           VerticalAlignment="Center"
-                           HorizontalAlignment="Center"/>
-              </Panel>
-            </Border>
           </StackPanel>
 
           <!-- Divider -->
@@ -147,46 +115,64 @@
 
             <!-- Due Date Badge & Action -->
             <Grid ColumnDefinitions="Auto,*" MinHeight="24">
-              <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Width="110">
+              <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Width="95">
                 <PathIcon Data="{StaticResource CalendarIconData}" Width="14" Height="14" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
                 <TextBlock Text="Due Date" FontSize="13" FontWeight="Medium" VerticalAlignment="Center"/>
               </StackPanel>
-              <TextBlock Grid.Column="1"
-                         Text="{Binding SelectedDetailTask.DueDateFormatted, FallbackValue='No due date'}"
-                         FontSize="13"
-                         Foreground="{DynamicResource AppTextPrimaryBrush}"
-                         VerticalAlignment="Center"/>
+              <Panel Grid.Column="1" VerticalAlignment="Center">
+                <TextBlock Text="{Binding SelectedDetailTask.DueDateFormatted}"
+                           IsVisible="{Binding SelectedDetailTask.HasDueDate}"
+                           FontSize="13"
+                           Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                <TextBlock Text="No due date"
+                           IsVisible="{Binding !SelectedDetailTask.HasDueDate}"
+                           FontSize="13"
+                           FontStyle="Italic"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </Panel>
             </Grid>
 
             <!-- Reminder Badge -->
             <Grid ColumnDefinitions="Auto,*" MinHeight="24">
-              <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Width="110">
+              <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Width="95">
                 <PathIcon Data="{StaticResource BellIconData}" Width="14" Height="14" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
                 <TextBlock Text="Reminder" FontSize="13" FontWeight="Medium" VerticalAlignment="Center"/>
               </StackPanel>
-              <TextBlock Grid.Column="1"
-                         Text="{Binding SelectedDetailTask.ReminderAtFormatted, FallbackValue='No reminder'}"
-                         FontSize="13"
-                         Foreground="{DynamicResource AppTextPrimaryBrush}"
-                         VerticalAlignment="Center"/>
+              <Panel Grid.Column="1" VerticalAlignment="Center">
+                <TextBlock Text="{Binding SelectedDetailTask.ReminderAtFormatted}"
+                           IsVisible="{Binding SelectedDetailTask.HasReminder}"
+                           FontSize="13"
+                           Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                <TextBlock Text="No reminder set"
+                           IsVisible="{Binding !SelectedDetailTask.HasReminder}"
+                           FontSize="13"
+                           FontStyle="Italic"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </Panel>
             </Grid>
 
             <!-- Recurrence Badge -->
             <Grid ColumnDefinitions="Auto,*" MinHeight="24">
-              <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Width="110">
+              <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Width="95">
                 <PathIcon Data="{StaticResource RepeatIconData}" Width="14" Height="14" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
                 <TextBlock Text="Repeat" FontSize="13" FontWeight="Medium" VerticalAlignment="Center"/>
               </StackPanel>
-              <TextBlock Grid.Column="1"
-                         Text="{Binding SelectedDetailTask.RecurrenceFormatted, FallbackValue='None'}"
-                         FontSize="13"
-                         Foreground="{DynamicResource AppTextPrimaryBrush}"
-                         VerticalAlignment="Center"/>
+              <Panel Grid.Column="1" VerticalAlignment="Center">
+                <TextBlock Text="{Binding SelectedDetailTask.RecurrenceFormatted}"
+                           IsVisible="{Binding SelectedDetailTask.HasRecurrence}"
+                           FontSize="13"
+                           Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                <TextBlock Text="Does not repeat"
+                           IsVisible="{Binding !SelectedDetailTask.HasRecurrence}"
+                           FontSize="13"
+                           FontStyle="Italic"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </Panel>
             </Grid>
 
             <!-- Tags / Categories -->
             <Grid ColumnDefinitions="Auto,*" MinHeight="24">
-              <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top" Height="20" Width="110">
+              <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top" Height="20" Width="95">
                 <PathIcon Data="{StaticResource TagIconData}" Width="14" Height="14" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
                 <TextBlock Text="Tags" FontSize="13" FontWeight="Medium" VerticalAlignment="Center"/>
               </StackPanel>
@@ -203,7 +189,7 @@
                       <Border Background="{DynamicResource AppPrimaryBrush}"
                               CornerRadius="4"
                               Padding="8,3"
-                              Margin="0,0,6,5"
+                              Margin="0,0,6,6"
                               VerticalAlignment="Top">
                         <TextBlock Text="{Binding}" FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center"/>
                       </Border>
@@ -214,7 +200,8 @@
                 <TextBlock Text="No tags assigned"
                            IsVisible="{Binding !SelectedDetailTask.HasCategories}"
                            FontSize="13"
-                           Foreground="{DynamicResource AppTextPrimaryBrush}"
+                           FontStyle="Italic"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"
                            VerticalAlignment="Center"/>
               </Panel>
             </Grid>
@@ -224,7 +211,7 @@
       </ScrollViewer>
 
       <!-- ── Drawer Footer ── -->
-      <Border Grid.Row="2" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="0,1,0,0" Padding="0,12,0,0" Margin="0,12,0,0">
+      <Border Grid.Row="3" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="0,1,0,0" Padding="0,12,0,0" Margin="0,12,0,0">
         <Grid ColumnDefinitions="*,Auto">
           <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
             <TextBlock Text="{Binding SelectedDetailTask.CreatedAt, StringFormat='Created {0:MMM d, yyyy}'}"

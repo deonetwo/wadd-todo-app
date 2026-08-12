@@ -426,13 +426,13 @@
         <Button Classes="add-note-btn"
                 IsVisible="{Binding !IsNoteComposerExpanded}"
                 Command="{Binding ExpandNoteComposerCommand}"
-                Margin="14,8,0,0"
-                Padding="0"
+                Margin="10,6,0,0"
+                Padding="8,5"
                 HorizontalAlignment="Left"
                 ToolTip.Tip="Add optional note (Tab from title)">
           <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-            <PathIcon Data="{StaticResource NoteIconData}" Width="12" Height="12" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-            <TextBlock Text="+ Add optional note" FontSize="12" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            <PathIcon Data="{StaticResource NoteIconData}" Width="12" Height="12"/>
+            <TextBlock Text="+ Add optional note" FontSize="12"/>
           </StackPanel>
         </Button>
 

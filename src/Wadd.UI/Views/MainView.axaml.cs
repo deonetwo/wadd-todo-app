@@ -89,4 +89,10 @@ public partial class MainView : UserControl
         if (DataContext is MainViewModel vm)
             vm.CloseTasksLayoutPickerCommand.Execute(null);
     }
+
+    private void OnMobileDetailDrawerBackgroundPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.CloseDetailDrawerCommand.Execute(null);
+    }
 }

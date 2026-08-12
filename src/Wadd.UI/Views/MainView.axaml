@@ -419,13 +419,26 @@
         <!-- Compact Settings View -->
         <views:SettingsView IsVisible="{Binding IsSettingsView}"/>
 
-        <!-- ═══ TASK DETAIL DRAWER OVERLAY (Compact) ═══ -->
-        <Grid IsVisible="{Binding IsDetailDrawerOpen}" ZIndex="800">
-          <Border Background="#70000000"/>
-          <views:TaskDetailDrawer HorizontalAlignment="Stretch"
-                                  VerticalAlignment="Stretch"
-                                  Margin="12,24,12,12"/>
-        </Grid>
+        <!-- ═══ TASK DETAIL DRAWER OVERLAY (Compact Bottom Sheet - Bottom-Docked) ═══ -->
+        <Border IsVisible="{Binding IsDetailDrawerOpen}" ZIndex="900" Background="#90000000">
+          <Grid RowDefinitions="*,Auto">
+            <!-- Dismiss backdrop overlay -->
+            <Border Grid.Row="0" Background="Transparent" PointerPressed="OnMobileDetailDrawerBackgroundPressed"/>
+
+            <!-- Bottom Sheet Container (Sticks flush to bottom edge) -->
+            <Border Grid.Row="1"
+                    Background="{DynamicResource AppSurfaceBrush}"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    BorderThickness="0,1,0,0"
+                    CornerRadius="20,20,0,0"
+                    MaxHeight="620"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Bottom"
+                    ClipToBounds="True">
+              <views:TaskDetailDrawer HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+            </Border>
+          </Grid>
+        </Border>
 
         <!-- Floating Historical Status Toast Stack (Compact) -->
         <ItemsControl ItemsSource="{Binding StatusNotifications}"
@@ -644,58 +657,58 @@
 
             <!-- Active Chips Preview Row -->
             <WrapPanel Orientation="Horizontal" Margin="0,4,0,4">
-              <!-- Selected Due Date Chip -->
+              <!-- Selected Due Date Chip (Matches action buttons 1:1) -->
               <Border IsVisible="{Binding HasNewTaskDueDate}"
                       Background="{DynamicResource AppPrimarySubtleBrush}"
                       BorderBrush="{DynamicResource AppPrimaryBrush}"
                       BorderThickness="1"
-                      CornerRadius="10"
-                      Padding="7,3"
-                      Margin="0,0,5,5">
-                <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                  <PathIcon Data="{StaticResource CalendarIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
-                  <TextBlock Text="{Binding NewTaskDueDateFormatted}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
-                  <Button Command="{Binding ClearDueDateCommand}" Classes="ghost" Padding="0" Width="14" Height="14" VerticalAlignment="Center" VerticalContentAlignment="Center">
+                      CornerRadius="16"
+                      Padding="10,6"
+                      Margin="0,0,8,8">
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                  <PathIcon Data="{StaticResource CalendarIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <TextBlock Text="{Binding NewTaskDueDateFormatted}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <Button Command="{Binding ClearDueDateCommand}" Classes="ghost" Padding="0" Width="14" Height="14" MinWidth="0" MinHeight="0" VerticalAlignment="Center" VerticalContentAlignment="Center">
                     <PathIcon Data="{StaticResource CloseIconData}" Width="9" Height="9" Foreground="{DynamicResource AppPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                   </Button>
                 </StackPanel>
               </Border>
 
-              <!-- Selected Reminder Chip -->
+              <!-- Selected Reminder Chip (Matches action buttons 1:1) -->
               <Border IsVisible="{Binding HasNewTaskReminder}"
                       Background="{DynamicResource AppPrimarySubtleBrush}"
                       BorderBrush="{DynamicResource AppPrimaryBrush}"
                       BorderThickness="1"
-                      CornerRadius="10"
-                      Padding="7,3"
-                      Margin="0,0,5,5">
-                <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                  <PathIcon Data="{StaticResource BellIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
-                  <TextBlock Text="{Binding NewTaskReminderFormatted}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
-                  <Button Command="{Binding ClearReminderCommand}" Classes="ghost" Padding="0" Width="14" Height="14" VerticalAlignment="Center" VerticalContentAlignment="Center">
+                      CornerRadius="16"
+                      Padding="10,6"
+                      Margin="0,0,8,8">
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                  <PathIcon Data="{StaticResource BellIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <TextBlock Text="{Binding NewTaskReminderFormatted}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <Button Command="{Binding ClearReminderCommand}" Classes="ghost" Padding="0" Width="14" Height="14" MinWidth="0" MinHeight="0" VerticalAlignment="Center" VerticalContentAlignment="Center">
                     <PathIcon Data="{StaticResource CloseIconData}" Width="9" Height="9" Foreground="{DynamicResource AppPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                   </Button>
                 </StackPanel>
               </Border>
 
-              <!-- Selected Recurrence Chip -->
+              <!-- Selected Recurrence Chip (Matches action buttons 1:1) -->
               <Border IsVisible="{Binding HasNewTaskRecurrence}"
                       Background="{DynamicResource AppPrimarySubtleBrush}"
                       BorderBrush="{DynamicResource AppPrimaryBrush}"
                       BorderThickness="1"
-                      CornerRadius="10"
-                      Padding="7,3"
-                      Margin="0,0,5,5">
-                <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                  <PathIcon Data="{StaticResource RepeatIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
-                  <TextBlock Text="{Binding NewTaskRecurrenceFormatted}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
-                  <Button Command="{Binding ClearRecurrenceCommand}" Classes="ghost" Padding="0" Width="14" Height="14" VerticalAlignment="Center" VerticalContentAlignment="Center">
+                      CornerRadius="16"
+                      Padding="10,6"
+                      Margin="0,0,8,8">
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                  <PathIcon Data="{StaticResource RepeatIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <TextBlock Text="{Binding NewTaskRecurrenceFormatted}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <Button Command="{Binding ClearRecurrenceCommand}" Classes="ghost" Padding="0" Width="14" Height="14" MinWidth="0" MinHeight="0" VerticalAlignment="Center" VerticalContentAlignment="Center">
                     <PathIcon Data="{StaticResource CloseIconData}" Width="9" Height="9" Foreground="{DynamicResource AppPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                   </Button>
                 </StackPanel>
               </Border>
 
-              <!-- Selected Category Chips -->
+              <!-- Selected Category Chips (Matches action buttons 1:1) -->
               <ItemsControl ItemsSource="{Binding NewTaskCategories}" IsVisible="{Binding HasNewTaskCategories}">
                 <ItemsControl.ItemsPanel>
                   <ItemsPanelTemplate>
@@ -707,13 +720,13 @@
                     <Border Background="{DynamicResource AppPrimaryBrush}"
                             BorderBrush="{DynamicResource AppPrimaryBrush}"
                             BorderThickness="1"
-                            CornerRadius="10"
-                            Padding="7,3"
-                            Margin="0,0,5,5">
-                      <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                        <PathIcon Data="{StaticResource TagIconData}" Width="10" Height="10" Foreground="#FFFFFF" VerticalAlignment="Center"/>
-                        <TextBlock Text="{Binding}" FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center"/>
-                        <Button Command="{Binding $parent[UserControl].DataContext.RemoveNewTaskCategoryCommand}" CommandParameter="{Binding}" Classes="ghost" Padding="0" Width="14" Height="14" VerticalAlignment="Center" VerticalContentAlignment="Center">
+                            CornerRadius="16"
+                            Padding="10,6"
+                            Margin="0,0,8,8">
+                      <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <PathIcon Data="{StaticResource TagIconData}" Width="12" Height="12" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding}" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                        <Button Command="{Binding $parent[UserControl].DataContext.RemoveNewTaskCategoryCommand}" CommandParameter="{Binding}" Classes="ghost" Padding="0" Width="14" Height="14" MinWidth="0" MinHeight="0" VerticalAlignment="Center" VerticalContentAlignment="Center">
                           <PathIcon Data="{StaticResource CloseIconData}" Width="9" Height="9" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Button>
                       </StackPanel>
