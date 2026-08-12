@@ -655,8 +655,11 @@
         </WrapPanel>
       </StackPanel>
 
-      <!-- ── Section 1: Today Tasks (Top) ── -->
-      <StackPanel IsVisible="{Binding HasTodayTodoItems}" Margin="0,0,0,32">
+      <!-- ── Dynamic Section Container (Layout Swappable) ── -->
+      <Grid RowDefinitions="Auto,Auto,Auto" Margin="0,16,0,0">
+
+        <!-- ── Section 1: Today Tasks ── -->
+        <StackPanel Grid.Row="{Binding TodayTasksGridRow}" IsVisible="{Binding HasTodayTodoItems}" Margin="0,0,0,32">
         <Button Classes="ghost"
                 Command="{Binding ToggleTodayTasksExpandedCommand}"
                 HorizontalAlignment="Left"
@@ -827,8 +830,8 @@
         </ItemsControl>
       </StackPanel>
 
-      <!-- ── Section 2: Completed Today ── -->
-      <StackPanel IsVisible="{Binding HasCompletedTodayTodoItems}" Margin="0,0,0,32">
+        <!-- ── Section 2: Completed Today ── -->
+        <StackPanel Grid.Row="{Binding CompletedTodayGridRow}" IsVisible="{Binding IsCompletedTodaySectionVisible}" Margin="0,0,0,32">
         <Button Classes="ghost"
                 Command="{Binding ToggleCompletedTodayExpandedCommand}"
                 HorizontalAlignment="Left"
@@ -963,8 +966,8 @@
         </ItemsControl>
       </StackPanel>
 
-      <!-- ── Section 3: Upcoming Tasks (Capped at 5, below Completed Today) ── -->
-      <StackPanel IsVisible="{Binding HasUpcomingTodoItems}" Margin="0,0,0,32">
+        <!-- ── Section 3: Upcoming Tasks (Capped at 5) ── -->
+        <StackPanel Grid.Row="{Binding UpcomingTasksGridRow}" IsVisible="{Binding IsUpcomingSectionVisible}" Margin="0,0,0,32">
         <Button Classes="ghost"
                 Command="{Binding ToggleUpcomingTasksExpandedCommand}"
                 HorizontalAlignment="Left"
@@ -1198,6 +1201,7 @@
           </Button>
         </StackPanel>
       </StackPanel>
+      </Grid>
 
       <!-- Empty state -->
       <StackPanel IsVisible="{Binding !TodoItems.Count}"

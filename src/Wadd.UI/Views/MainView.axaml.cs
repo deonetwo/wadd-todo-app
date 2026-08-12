@@ -83,4 +83,10 @@ public partial class MainView : UserControl
         if (DataContext is MainViewModel vm)
             vm.CloseMobileTagFilterSheetCommand.Execute(null);
     }
+
+    private void OnTasksLayoutPickerBackgroundPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.CloseTasksLayoutPickerCommand.Execute(null);
+    }
 }

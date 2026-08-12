@@ -649,6 +649,7 @@
   <Style Selector="Separator.divider">
     <Setter Property="Background" Value="{DynamicResource AppBorderBrush}"/>
     <Setter Property="Height"     Value="1"/>
+    <Setter Property="Opacity"    Value="0.4"/>
     <Setter Property="Margin"     Value="0"/>
   </Style>
 
@@ -701,6 +702,77 @@
     <Setter Property="CornerRadius" Value="6"/>
     <Setter Property="Padding" Value="8,5"/>
     <Setter Property="FontSize" Value="12"/>
+  </Style>
+
+  <!-- ══════════════ MODERN COMBOBOX STYLING ══════════════ -->
+  <Style Selector="ComboBox">
+    <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtleBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="Padding" Value="14,10"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
+    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+  </Style>
+
+  <Style Selector="ComboBox:pointerover">
+    <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryBrush}"/>
+    <Setter Property="Background" Value="{DynamicResource AppSurfaceElevatedBrush}"/>
+  </Style>
+
+  <Style Selector="ComboBox:focus">
+    <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryBrush}"/>
+  </Style>
+
+  <!-- Popup Box styling -->
+  <Style Selector="ComboBox /template/ Popup#PART_Popup > Border">
+    <Setter Property="Background" Value="{DynamicResource AppSurfaceElevatedBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="Padding" Value="4"/>
+  </Style>
+
+  <!-- ComboBoxItem base styling -->
+  <Style Selector="ComboBoxItem">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Padding" Value="12,10"/>
+    <Setter Property="CornerRadius" Value="6"/>
+    <Setter Property="Margin" Value="2,1"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
+  </Style>
+
+  <!-- Hover State (PointerOver) -->
+  <Style Selector="ComboBoxItem:pointerover">
+    <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtleBrush}"/>
+  </Style>
+  <Style Selector="ComboBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtleBrush}"/>
+  </Style>
+  <Style Selector="ComboBoxItem:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtleBrush}"/>
+  </Style>
+
+  <!-- Selected State -->
+  <Style Selector="ComboBoxItem:selected">
+    <Setter Property="Background" Value="{DynamicResource AppMenuSelectedBrush}"/>
+  </Style>
+  <Style Selector="ComboBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AppMenuSelectedBrush}"/>
+  </Style>
+  <Style Selector="ComboBoxItem:selected /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AppMenuSelectedBrush}"/>
+  </Style>
+
+  <!-- Selected + Hover State -->
+  <Style Selector="ComboBoxItem:selected:pointerover">
+    <Setter Property="Background" Value="{DynamicResource AppMenuSelectedBrush}"/>
+  </Style>
+  <Style Selector="ComboBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AppMenuSelectedBrush}"/>
+  </Style>
+  <Style Selector="ComboBoxItem:selected:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AppMenuSelectedBrush}"/>
   </Style>
 
 </Styles>

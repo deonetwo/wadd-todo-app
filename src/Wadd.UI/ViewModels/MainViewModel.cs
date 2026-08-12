@@ -1,3 +1,4 @@
+using System.IO;
 using System.Collections.ObjectModel;
 using Avalonia;
 using Avalonia.Controls;
@@ -79,6 +80,119 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty]
     private bool _showNotePreviewsInList = true;
+
+    partial void OnShowNotePreviewsInListChanged(bool value)
+    {
+        SaveUserSettings();
+    }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsStandardTasksLayout))]
+    [NotifyPropertyChangedFor(nameof(IsFocusTasksLayout))]
+    [NotifyPropertyChangedFor(nameof(IsCompletedFirstTasksLayout))]
+    [NotifyPropertyChangedFor(nameof(IsTodayCompletedOnlyTasksLayout))]
+    [NotifyPropertyChangedFor(nameof(IsTodayUpcomingOnlyTasksLayout))]
+    [NotifyPropertyChangedFor(nameof(TodayTasksGridRow))]
+    [NotifyPropertyChangedFor(nameof(CompletedTodayGridRow))]
+    [NotifyPropertyChangedFor(nameof(UpcomingTasksGridRow))]
+    [NotifyPropertyChangedFor(nameof(ShowUpcomingSection))]
+    [NotifyPropertyChangedFor(nameof(ShowCompletedTodaySection))]
+    [NotifyPropertyChangedFor(nameof(IsCompletedTodaySectionVisible))]
+    [NotifyPropertyChangedFor(nameof(IsUpcomingSectionVisible))]
+    private string _tasksViewLayout = "Standard";
+
+    partial void OnTasksViewLayoutChanged(string value)
+    {
+        SaveUserSettings();
+    }
+
+    public List<TasksLayoutOption> TasksLayoutOptions { get; } = new()
+    {
+        new TasksLayoutOption { Id = "Standard", Name = "Standard (Today → Completed → Upcoming)", Description = "Shows Today, Completed Today, and Upcoming tasks" },
+        new TasksLayoutOption { Id = "Focus", Name = "Focus (Today → Upcoming → Completed)", Description = "Shows Today, Upcoming, and Completed tasks at bottom" },
+        new TasksLayoutOption { Id = "CompletedFirst", Name = "Log First (Completed → Today → Upcoming)", Description = "Shows Completed Today at top, then Today and Upcoming" },
+        new TasksLayoutOption { Id = "TodayCompletedOnly", Name = "Today & Completed Only", Description = "Shows Today Tasks and Completed Today (Hides Upcoming)" },
+        new TasksLayoutOption { Id = "TodayUpcomingOnly", Name = "Today & Upcoming Only", Description = "Shows Today Tasks and Upcoming Tasks (Hides Completed)" }
+    };
+
+    [ObservableProperty]
+    private TasksLayoutOption? _selectedTasksLayoutOption;
+
+    [ObservableProperty]
+    private bool _isTasksLayoutPickerSheetOpen;
+
+    [RelayCommand]
+    private void OpenTasksLayoutPicker()
+    {
+        IsTasksLayoutPickerSheetOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseTasksLayoutPicker()
+    {
+        IsTasksLayoutPickerSheetOpen = false;
+    }
+
+    [RelayCommand]
+    private void SelectTasksLayoutOption(TasksLayoutOption? option)
+    {
+        if (option != null)
+        {
+            SelectedTasksLayoutOption = option;
+            IsTasksLayoutPickerSheetOpen = false;
+        }
+    }
+
+    partial void OnSelectedTasksLayoutOptionChanged(TasksLayoutOption? value)
+    {
+        if (value != null && !string.IsNullOrWhiteSpace(value.Id))
+        {
+            TasksViewLayout = value.Id;
+        }
+    }
+
+    public bool IsStandardTasksLayout => TasksViewLayout == "Standard";
+    public bool IsFocusTasksLayout => TasksViewLayout == "Focus";
+    public bool IsCompletedFirstTasksLayout => TasksViewLayout == "CompletedFirst";
+    public bool IsTodayCompletedOnlyTasksLayout => TasksViewLayout == "TodayCompletedOnly";
+    public bool IsTodayUpcomingOnlyTasksLayout => TasksViewLayout == "TodayUpcomingOnly";
+
+    public int TodayTasksGridRow => TasksViewLayout switch
+    {
+        "CompletedFirst" => 1,
+        _ => 0
+    };
+
+    public int CompletedTodayGridRow => TasksViewLayout switch
+    {
+        "Focus" => 2,
+        "CompletedFirst" => 0,
+        _ => 1
+    };
+
+    public int UpcomingTasksGridRow => TasksViewLayout switch
+    {
+        "Focus" => 1,
+        "CompletedFirst" => 2,
+        "TodayUpcomingOnly" => 1,
+        _ => 2
+    };
+
+    public bool ShowUpcomingSection => TasksViewLayout != "TodayCompletedOnly";
+    public bool ShowCompletedTodaySection => TasksViewLayout != "TodayUpcomingOnly";
+
+    public bool IsCompletedTodaySectionVisible => HasCompletedTodayTodoItems && ShowCompletedTodaySection;
+    public bool IsUpcomingSectionVisible => HasUpcomingTodoItems && ShowUpcomingSection;
+
+    [RelayCommand]
+    private void SetTasksViewLayout(string layout)
+    {
+        if (!string.IsNullOrWhiteSpace(layout))
+        {
+            TasksViewLayout = layout;
+            SelectedTasksLayoutOption = TasksLayoutOptions.FirstOrDefault(x => x.Id == layout) ?? TasksLayoutOptions[0];
+        }
+    }
 
     [ObservableProperty]
     private bool _isNoteComposerExpanded;
@@ -1110,6 +1224,8 @@ public partial class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasCompletedTodayTodoItems));
         OnPropertyChanged(nameof(HasCompletedHistoryTodoItems));
         OnPropertyChanged(nameof(HasAllRecurringTodoItems));
+        OnPropertyChanged(nameof(IsCompletedTodaySectionVisible));
+        OnPropertyChanged(nameof(IsUpcomingSectionVisible));
 
         GenerateCalendarGrid();
         UpdateSearchResults();
@@ -1588,6 +1704,8 @@ public partial class MainViewModel : ViewModelBase
         _themeService = themeService ?? throw new ArgumentNullException(nameof(themeService));
         _syncService = syncService ?? throw new ArgumentNullException(nameof(syncService));
         _exportService = exportService ?? throw new ArgumentNullException(nameof(exportService));
+        _selectedTasksLayoutOption = TasksLayoutOptions[0];
+        LoadUserSettings();
 
         IConflictRepository conflictRepo;
         if (_todoService is SQLiteTodoService sqliteSvc)
@@ -2250,11 +2368,12 @@ public partial class MainViewModel : ViewModelBase
 
     private void UpdateThemeLabel()
     {
+        var resolved = IsDarkMode ? "Dark" : "Light";
         CurrentThemeLabel = CurrentThemeMode switch
         {
-            ThemeMode.Light => "Light Mode",
-            ThemeMode.Dark => "Dark Mode",
-            _ => "System Default"
+            ThemeMode.Light => "Light",
+            ThemeMode.Dark => "Dark",
+            _ => $"System — {resolved}"
         };
         OnPropertyChanged(nameof(IsDarkMode));
     }
@@ -2294,4 +2413,59 @@ public partial class CategoryFilterOption : ObservableObject
     {
         OnSelectionChanged?.Invoke(this);
     }
+}
+
+public class AppSettingsData
+{
+    public string TasksViewLayout { get; set; } = "Standard";
+    public bool ShowNotePreviewsInList { get; set; } = true;
+}
+
+public partial class MainViewModel
+{
+    private void LoadUserSettings()
+    {
+        try
+        {
+            var filePath = Wadd.Core.Helpers.AppDataHelper.GetWaddFilePath("app_settings.json");
+            if (File.Exists(filePath))
+            {
+                var json = File.ReadAllText(filePath);
+                var settings = System.Text.Json.JsonSerializer.Deserialize<AppSettingsData>(json);
+                if (settings != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(settings.TasksViewLayout))
+                    {
+                        TasksViewLayout = settings.TasksViewLayout;
+                        SelectedTasksLayoutOption = TasksLayoutOptions.FirstOrDefault(x => x.Id == settings.TasksViewLayout) ?? TasksLayoutOptions[0];
+                    }
+                    ShowNotePreviewsInList = settings.ShowNotePreviewsInList;
+                }
+            }
+        }
+        catch { }
+    }
+
+    private void SaveUserSettings()
+    {
+        try
+        {
+            var filePath = Wadd.Core.Helpers.AppDataHelper.GetWaddFilePath("app_settings.json");
+            var settings = new AppSettingsData
+            {
+                TasksViewLayout = TasksViewLayout,
+                ShowNotePreviewsInList = ShowNotePreviewsInList
+            };
+            var json = System.Text.Json.JsonSerializer.Serialize(settings, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(filePath, json);
+        }
+        catch { }
+    }
+}
+
+public class TasksLayoutOption
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
 }

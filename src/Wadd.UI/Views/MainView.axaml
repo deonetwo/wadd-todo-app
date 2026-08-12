@@ -91,7 +91,7 @@
             <!-- Index 0: Tasks -->
             <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Tasks">
               <Grid ColumnDefinitions="56,*,Auto" Height="44">
-                <PathIcon Grid.Column="0" Data="{StaticResource CheckListIconData}" Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <PathIcon Grid.Column="0" Data="{StaticResource CheckListIconData}" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 <TextBlock Grid.Column="1" Text="Tasks" FontSize="14" VerticalAlignment="Center"/>
                 <Border Grid.Column="2"
                         Background="{DynamicResource AppSurfaceElevatedBrush}"
@@ -107,7 +107,7 @@
             <!-- Index 1: Completed Tasks -->
             <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Completed Tasks">
               <Grid ColumnDefinitions="56,*,Auto" Height="44">
-                <PathIcon Grid.Column="0" Data="{StaticResource CheckIconData}" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <PathIcon Grid.Column="0" Data="{StaticResource CheckIconData}" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 <TextBlock Grid.Column="1" Text="Completed" FontSize="14" VerticalAlignment="Center"/>
                 <Border Grid.Column="2"
                         Background="{DynamicResource AppSurfaceElevatedBrush}"
@@ -123,7 +123,7 @@
             <!-- Index 2: Repeating Tasks -->
             <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Repeating Tasks">
               <Grid ColumnDefinitions="56,*,Auto" Height="44">
-                <PathIcon Grid.Column="0" Data="{StaticResource RepeatIconData}" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <PathIcon Grid.Column="0" Data="{StaticResource RepeatIconData}" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 <TextBlock Grid.Column="1" Text="Repeating" FontSize="14" VerticalAlignment="Center"/>
                 <Border Grid.Column="2"
                         Background="{DynamicResource AppSurfaceElevatedBrush}"
@@ -139,7 +139,7 @@
             <!-- Index 3: Calendar -->
             <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Calendar">
               <Grid ColumnDefinitions="56,*" Height="44">
-                <PathIcon Grid.Column="0" Data="{StaticResource CalendarIconData}" Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <PathIcon Grid.Column="0" Data="{StaticResource CalendarIconData}" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 <TextBlock Grid.Column="1" Text="Calendar" FontSize="14" VerticalAlignment="Center"/>
               </Grid>
             </ListBoxItem>
@@ -147,7 +147,7 @@
             <!-- Index 4: Search -->
             <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Search">
               <Grid ColumnDefinitions="56,*" Height="44">
-                <PathIcon Grid.Column="0" Data="{StaticResource SearchIconData}" Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <PathIcon Grid.Column="0" Data="{StaticResource SearchIconData}" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 <TextBlock Grid.Column="1" Text="Search" FontSize="14" VerticalAlignment="Center"/>
               </Grid>
             </ListBoxItem>
@@ -155,7 +155,7 @@
             <!-- Index 5: Tags Management -->
             <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Tags Management">
               <Grid ColumnDefinitions="56,*" Height="44">
-                <PathIcon Grid.Column="0" Data="{StaticResource TagIconData}" Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <PathIcon Grid.Column="0" Data="{StaticResource TagIconData}" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 <TextBlock Grid.Column="1" Text="Tags" FontSize="14" VerticalAlignment="Center"/>
               </Grid>
             </ListBoxItem>
@@ -163,7 +163,7 @@
             <!-- Index 6: Settings -->
             <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Settings">
               <Grid ColumnDefinitions="56,*" Height="44">
-                <PathIcon Grid.Column="0" Data="{StaticResource SettingsIconData}" Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <PathIcon Grid.Column="0" Data="{StaticResource SettingsIconData}" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 <TextBlock Grid.Column="1" Text="Settings" FontSize="14" VerticalAlignment="Center"/>
               </Grid>
             </ListBoxItem>
@@ -1434,6 +1434,83 @@
           </StackPanel>
         </Border>
       </Panel>
+    </Border>
+
+    <!-- My Tasks Layout Picker Bottom Sheet Modal (Mobile/Portrait UX Best Practice) -->
+    <Border x:Name="TasksLayoutPickerSheetPanel"
+            IsVisible="{Binding IsTasksLayoutPickerSheetOpen}"
+            ZIndex="1100"
+            Background="#A0000000">
+      <Grid RowDefinitions="*,Auto">
+        <!-- Dismiss Backdrop Overlay -->
+        <Border Grid.Row="0" Background="Transparent" PointerPressed="OnTasksLayoutPickerBackgroundPressed"/>
+
+        <!-- Bottom Sheet Card Container -->
+        <Border Grid.Row="1"
+                Background="{DynamicResource AppSurfaceElevatedBrush}"
+                BorderBrush="{DynamicResource AppBorderBrush}"
+                BorderThickness="0,1,0,0"
+                CornerRadius="20,20,0,0"
+                Padding="20,16,20,24"
+                MaxWidth="560"
+                HorizontalAlignment="Stretch">
+          <StackPanel Spacing="16">
+            <!-- Sheet Drag Pill -->
+            <Border Width="36" Height="4" CornerRadius="2" Background="{DynamicResource AppBorderBrush}" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+
+            <!-- Sheet Header -->
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Grid.Column="0" Spacing="2">
+                <TextBlock Text="My Tasks Layout Mode" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                <TextBlock Text="Choose which sections appear and how they are arranged on My Tasks." FontSize="12" Foreground="{DynamicResource AppTextSecondaryBrush}" TextWrapping="Wrap"/>
+              </StackPanel>
+              <Button Grid.Column="1"
+                      Classes="ghost"
+                      Command="{Binding CloseTasksLayoutPickerCommand}"
+                      Padding="6"
+                      VerticalAlignment="Top">
+                <PathIcon Data="{StaticResource CloseIconData}" Width="14" Height="14" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </Button>
+            </Grid>
+
+            <Separator Classes="divider" Margin="0,2"/>
+
+            <!-- Layout Option Cards List -->
+            <ItemsControl ItemsSource="{Binding TasksLayoutOptions}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:TasksLayoutOption">
+                  <Button Classes="ghost"
+                          Command="{Binding $parent[ItemsControl].((vm:MainViewModel)DataContext).SelectTasksLayoutOptionCommand}"
+                          CommandParameter="{Binding}"
+                          HorizontalAlignment="Stretch"
+                          HorizontalContentAlignment="Stretch"
+                          Padding="14,12"
+                          Margin="0,0,0,8"
+                          CornerRadius="10"
+                          Background="{DynamicResource AppSurfaceSubtleBrush}"
+                          BorderBrush="{DynamicResource AppBorderBrush}"
+                          BorderThickness="1">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                      <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                        <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" TextWrapping="Wrap"/>
+                      </StackPanel>
+
+                      <!-- Checkmark for selected option -->
+                      <PathIcon Grid.Column="1"
+                                Data="{StaticResource CheckIconData}"
+                                Width="16" Height="16"
+                                Foreground="{DynamicResource AppPrimaryBrush}"
+                                VerticalAlignment="Center"
+                                IsVisible="{Binding $parent[ItemsControl].((vm:MainViewModel)DataContext).TasksViewLayout, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={Binding Id}}"/>
+                    </Grid>
+                  </Button>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+      </Grid>
     </Border>
 
   </Panel>
