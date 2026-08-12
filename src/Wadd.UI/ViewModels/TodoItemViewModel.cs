@@ -50,7 +50,7 @@ public partial class TodoItemViewModel : ViewModelBase
         {
             if (string.IsNullOrWhiteSpace(Description)) return string.Empty;
             var lines = Description.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
-            return string.Join(" ", lines);
+            return lines.Length > 0 ? lines[0].Trim() : string.Empty;
         }
     }
 

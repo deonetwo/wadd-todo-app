@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Wadd.UI.ViewModels;assembly=Wadd.UI"
+             xmlns:controls="clr-namespace:Wadd.UI.Controls;assembly=Wadd.UI"
              mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="700"
              x:Class="Wadd.UI.Views.RecurringTasksView"
              x:DataType="vm:MainViewModel">
@@ -148,10 +149,16 @@
                                  Classes="body-bold task-title"
                                  FontSize="14"
                                  TextWrapping="Wrap"/>
-                      <TextBlock Text="{Binding Description}"
-                                 Classes="small"
-                                 IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                 TextWrapping="Wrap"/>
+                      <!-- Note preview in list view: single-line preview with ellipsis -->
+                      <Panel IsVisible="{Binding HasDescription}" IsHitTestVisible="False">
+                        <controls:MarkdownTextBlock MarkdownText="{Binding DescriptionPreview}"
+                                                     IsVisible="{Binding $parent[UserControl].DataContext.ShowNotePreviewsInList}"
+                                                     FontSize="12"
+                                                     Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                                     Opacity="0.85"
+                                                     MaxLines="1"
+                                                     TextTrimming="CharacterEllipsis"/>
+                      </Panel>
                       <!-- Badges (Recurring Pattern & Next Due Date) -->
                       <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,0">
                         <!-- Recurrence Pattern Badge -->

@@ -723,7 +723,7 @@
                                                     FontSize="12"
                                                     Foreground="{DynamicResource AppTextSecondaryBrush}"
                                                     Opacity="0.85"
-                                                    MaxLines="2"
+                                                    MaxLines="1"
                                                     TextTrimming="CharacterEllipsis"/>
                       </Panel>
                       <!-- Badges (Due Date, Reminder & Recurrence) -->
@@ -895,7 +895,7 @@
                                                     FontSize="12"
                                                     Foreground="{DynamicResource AppTextSecondaryBrush}"
                                                     Opacity="0.85"
-                                                    MaxLines="2"
+                                                    MaxLines="1"
                                                     TextTrimming="CharacterEllipsis"/>
                       </Panel>
                       <!-- Badges (Due Date, Reminder, Recurrence) -->
@@ -1131,7 +1131,7 @@
                                                     FontSize="12"
                                                     Foreground="{DynamicResource AppTextSecondaryBrush}"
                                                     Opacity="0.85"
-                                                    MaxLines="2"
+                                                    MaxLines="1"
                                                     TextTrimming="CharacterEllipsis"/>
                       </Panel>
                       <!-- Badges (Due Date, Reminder, Repeat) -->
