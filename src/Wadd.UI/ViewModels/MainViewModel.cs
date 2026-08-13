@@ -924,6 +924,293 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [ObservableProperty]
+    private string _completedDateFilterPreset = "All";
+
+    [ObservableProperty]
+    private DateTime? _completedDateFilterStartDate;
+
+    [ObservableProperty]
+    private DateTime? _completedDateFilterEndDate;
+
+    [ObservableProperty]
+    private bool _isMobileCompletedDateFilterSheetOpen;
+
+    partial void OnCompletedDateFilterPresetChanged(string value)
+    {
+        ApplyCompletedDatePreset(value);
+        NotifyCompletedDateFilterProperties();
+        UpdateSubCollections();
+    }
+
+    partial void OnCompletedDateFilterStartDateChanged(DateTime? value)
+    {
+        if (value.HasValue && CompletedDateFilterEndDate.HasValue && value.Value.Date > CompletedDateFilterEndDate.Value.Date)
+        {
+            CompletedDateFilterEndDate = value.Value.Date;
+        }
+
+        if (CompletedDateFilterPreset != "Custom" && value.HasValue)
+        {
+            _completedDateFilterPreset = "Custom";
+            OnPropertyChanged(nameof(CompletedDateFilterPreset));
+        }
+        NotifyCompletedDateFilterProperties();
+        UpdateSubCollections();
+    }
+
+    partial void OnCompletedDateFilterEndDateChanged(DateTime? value)
+    {
+        if (value.HasValue && CompletedDateFilterStartDate.HasValue && value.Value.Date < CompletedDateFilterStartDate.Value.Date)
+        {
+            CompletedDateFilterStartDate = value.Value.Date;
+        }
+
+        if (CompletedDateFilterPreset != "Custom" && value.HasValue)
+        {
+            _completedDateFilterPreset = "Custom";
+            OnPropertyChanged(nameof(CompletedDateFilterPreset));
+        }
+        NotifyCompletedDateFilterProperties();
+        UpdateSubCollections();
+    }
+
+    [RelayCommand]
+    private void SetCompletedStartDate(string? option)
+    {
+        var today = DateTime.Today;
+        switch (option)
+        {
+            case "Today":
+                CompletedDateFilterStartDate = today;
+                break;
+            case "7DaysAgo":
+                CompletedDateFilterStartDate = today.AddDays(-6);
+                break;
+            case "30DaysAgo":
+                CompletedDateFilterStartDate = today.AddDays(-29);
+                break;
+            case "FirstOfMonth":
+                CompletedDateFilterStartDate = new DateTime(today.Year, today.Month, 1);
+                break;
+        }
+    }
+
+    [RelayCommand]
+    private void SetCompletedEndDate(string? option)
+    {
+        var today = DateTime.Today;
+        switch (option)
+        {
+            case "Today":
+                CompletedDateFilterEndDate = today;
+                break;
+            case "Yesterday":
+                CompletedDateFilterEndDate = today.AddDays(-1);
+                break;
+        }
+    }
+
+    [ObservableProperty]
+    private string _selectedCompletedDateTab = "Start";
+
+    public bool IsCompletedDateStartTabActive => SelectedCompletedDateTab == "Start";
+
+    [RelayCommand]
+    private void SelectCompletedDateTab(string? tab)
+    {
+        if (string.IsNullOrWhiteSpace(tab)) return;
+        SelectedCompletedDateTab = tab;
+        OnPropertyChanged(nameof(IsCompletedDateStartTabActive));
+    }
+
+    public string CompletedDateHeaderYear => (CompletedDateFilterStartDate ?? DateTime.Today).ToString("yyyy");
+    public string CompletedDateHeaderMainText => CompletedDateFilterButtonText;
+
+    public string CompletedDateFilterStartDateFormatted => CompletedDateFilterStartDate.HasValue ? CompletedDateFilterStartDate.Value.ToString("ddd, MMM d") : "Any Date";
+    public string CompletedDateFilterEndDateFormatted => CompletedDateFilterEndDate.HasValue ? CompletedDateFilterEndDate.Value.ToString("ddd, MMM d") : "Any Date";
+
+    private void NotifyCompletedDateFilterProperties()
+    {
+        OnPropertyChanged(nameof(CompletedDateFilterButtonText));
+        OnPropertyChanged(nameof(CompletedDateHeaderYear));
+        OnPropertyChanged(nameof(CompletedDateHeaderMainText));
+        OnPropertyChanged(nameof(CompletedDateFilterStartDateFormatted));
+        OnPropertyChanged(nameof(CompletedDateFilterEndDateFormatted));
+        OnPropertyChanged(nameof(IsCompletedDateFilterActive));
+        OnPropertyChanged(nameof(IsAnyCompletedFilterActive));
+        OnPropertyChanged(nameof(CompletedDateFilterStartDateOffset));
+        OnPropertyChanged(nameof(CompletedDateFilterEndDateOffset));
+    }
+
+    public DateTimeOffset? CompletedDateFilterStartDateOffset
+    {
+        get => CompletedDateFilterStartDate.HasValue ? new DateTimeOffset(DateTime.SpecifyKind(CompletedDateFilterStartDate.Value, DateTimeKind.Local)) : null;
+        set
+        {
+            if (value.HasValue)
+            {
+                CompletedDateFilterStartDate = value.Value.LocalDateTime.Date;
+            }
+            else
+            {
+                CompletedDateFilterStartDate = null;
+            }
+        }
+    }
+
+    public DateTimeOffset? CompletedDateFilterEndDateOffset
+    {
+        get => CompletedDateFilterEndDate.HasValue ? new DateTimeOffset(DateTime.SpecifyKind(CompletedDateFilterEndDate.Value, DateTimeKind.Local)) : null;
+        set
+        {
+            if (value.HasValue)
+            {
+                CompletedDateFilterEndDate = value.Value.LocalDateTime.Date;
+            }
+            else
+            {
+                CompletedDateFilterEndDate = null;
+            }
+        }
+    }
+
+    private void ApplyCompletedDatePreset(string preset)
+    {
+        var today = DateTime.Today;
+        switch (preset)
+        {
+            case "Today":
+                CompletedDateFilterStartDate = today;
+                CompletedDateFilterEndDate = today;
+                break;
+            case "Yesterday":
+                CompletedDateFilterStartDate = today.AddDays(-1);
+                CompletedDateFilterEndDate = today.AddDays(-1);
+                break;
+            case "7Days":
+                CompletedDateFilterStartDate = today.AddDays(-6);
+                CompletedDateFilterEndDate = today;
+                break;
+            case "30Days":
+                CompletedDateFilterStartDate = today.AddDays(-29);
+                CompletedDateFilterEndDate = today;
+                break;
+            case "ThisMonth":
+                CompletedDateFilterStartDate = new DateTime(today.Year, today.Month, 1);
+                CompletedDateFilterEndDate = new DateTime(today.Year, today.Month, DateTime.DaysInMonth(today.Year, today.Month));
+                break;
+            case "Custom":
+                break;
+            case "All":
+            default:
+                CompletedDateFilterStartDate = null;
+                CompletedDateFilterEndDate = null;
+                break;
+        }
+    }
+
+    public bool IsCompletedDateFilterActive => CompletedDateFilterPreset != "All" || CompletedDateFilterStartDate.HasValue || CompletedDateFilterEndDate.HasValue;
+
+    public bool IsAnyCompletedFilterActive => IsCompletedDateFilterActive || (CategoryFilterOptions != null && CategoryFilterOptions.Any(o => o.IsSelected && !o.Name.Equals("All Categories", StringComparison.OrdinalIgnoreCase)));
+
+    public string CompletedDateFilterButtonText
+    {
+        get
+        {
+            return CompletedDateFilterPreset switch
+            {
+                "Today" => "Completed: Today",
+                "Yesterday" => "Completed: Yesterday",
+                "7Days" => "Last 7 Days",
+                "30Days" => "Last 30 Days",
+                "ThisMonth" => "This Month",
+                "Custom" => GetCustomDateFilterText(),
+                _ => "All Time"
+            };
+        }
+    }
+
+    private string GetCustomDateFilterText()
+    {
+        if (CompletedDateFilterStartDate.HasValue && CompletedDateFilterEndDate.HasValue)
+        {
+            if (CompletedDateFilterStartDate.Value.Date == CompletedDateFilterEndDate.Value.Date)
+            {
+                return $"{CompletedDateFilterStartDate.Value:MMM d, yyyy}";
+            }
+            return $"{CompletedDateFilterStartDate.Value:MMM d} - {CompletedDateFilterEndDate.Value:MMM d}";
+        }
+        if (CompletedDateFilterStartDate.HasValue)
+        {
+            return $"From {CompletedDateFilterStartDate.Value:MMM d}";
+        }
+        if (CompletedDateFilterEndDate.HasValue)
+        {
+            return $"Until {CompletedDateFilterEndDate.Value:MMM d}";
+        }
+        return "Custom Range";
+    }
+
+    [RelayCommand]
+    private void SetCompletedDateFilterPreset(string? preset)
+    {
+        if (string.IsNullOrWhiteSpace(preset)) return;
+        CompletedDateFilterPreset = preset;
+    }
+
+    [RelayCommand]
+    private void ClearCompletedDateFilter()
+    {
+        CompletedDateFilterPreset = "All";
+    }
+
+    [RelayCommand]
+    private void ClearAllCompletedFilters()
+    {
+        ClearCompletedDateFilter();
+        ClearTagFilter();
+    }
+
+    [RelayCommand]
+    private void OpenMobileCompletedDateFilterSheet()
+    {
+        IsMobileCompletedDateFilterSheetOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseMobileCompletedDateFilterSheet()
+    {
+        IsMobileCompletedDateFilterSheetOpen = false;
+    }
+
+    private bool PassesCompletedDateFilter(TodoItemViewModel item)
+    {
+        if (CompletedDateFilterPreset == "All" && !CompletedDateFilterStartDate.HasValue && !CompletedDateFilterEndDate.HasValue)
+        {
+            return true;
+        }
+
+        if (!item.CompletedAt.HasValue)
+        {
+            return false;
+        }
+
+        var localCompletedDate = item.CompletedAt.Value.ToLocalTime().Date;
+
+        if (CompletedDateFilterStartDate.HasValue && localCompletedDate < CompletedDateFilterStartDate.Value.Date)
+        {
+            return false;
+        }
+
+        if (CompletedDateFilterEndDate.HasValue && localCompletedDate > CompletedDateFilterEndDate.Value.Date)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    [ObservableProperty]
     private bool _isCompact;
 
     [ObservableProperty]
@@ -1206,6 +1493,7 @@ public partial class MainViewModel : ViewModelBase
             .OrderByDescending(x => x.CompletedAt ?? DateTime.MinValue)
             .ToList();
         var freshCompletedHistory = completedItems
+            .Where(PassesCompletedDateFilter)
             .OrderByDescending(x => x.CompletedAt ?? DateTime.MinValue)
             .ToList();
 

@@ -20,8 +20,8 @@
   <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
     <StackPanel Classes="view-container" Classes.compact="{Binding IsCompact}" Spacing="0">
 
-      <!-- Page Header -->
-      <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,16">
+      <!-- Page Header (Desktop) -->
+      <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,16" IsVisible="{Binding !IsCompact}">
         <StackPanel Grid.Column="0" Spacing="4">
           <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
             <PathIcon Data="{StaticResource CheckListIconData}" Width="18" Height="18" Foreground="{DynamicResource AppPrimaryBrush}"/>
@@ -34,9 +34,74 @@
 
         <!-- Toolbar & Count badge -->
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+          <!-- Date Range Filter Dropdown Button (Desktop) -->
+          <Button Classes="outline"
+                  Padding="10,6"
+                  CornerRadius="8"
+                  Background="{DynamicResource AppSurfaceBrush}"
+                  BorderBrush="{DynamicResource AppBorderBrush}"
+                  ToolTip.Tip="Filter tasks by Completed Date">
+            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+              <PathIcon Data="{StaticResource CalendarIconData}" Width="13" Height="13" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+              <TextBlock Text="{Binding CompletedDateFilterButtonText}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+              <PathIcon Data="{StaticResource ChevronDownIconData}" Width="10" Height="10" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center" Margin="2,0,0,0"/>
+            </StackPanel>
+            <Button.Flyout>
+              <Flyout Placement="BottomEdgeAlignedLeft">
+                <StackPanel Spacing="6" Width="240">
+                  <TextBlock Text="FILTER BY COMPLETED DATE" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="4,2,0,4"/>
+
+                  <Button Classes="ghost" Command="{Binding SetCompletedDateFilterPresetCommand}" CommandParameter="All" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
+                    <TextBlock Text="All Time" FontSize="12"/>
+                  </Button>
+                  <Button Classes="ghost" Command="{Binding SetCompletedDateFilterPresetCommand}" CommandParameter="Today" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
+                    <TextBlock Text="Today" FontSize="12"/>
+                  </Button>
+                  <Button Classes="ghost" Command="{Binding SetCompletedDateFilterPresetCommand}" CommandParameter="Yesterday" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
+                    <TextBlock Text="Yesterday" FontSize="12"/>
+                  </Button>
+                  <Button Classes="ghost" Command="{Binding SetCompletedDateFilterPresetCommand}" CommandParameter="7Days" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
+                    <TextBlock Text="Last 7 Days" FontSize="12"/>
+                  </Button>
+                  <Button Classes="ghost" Command="{Binding SetCompletedDateFilterPresetCommand}" CommandParameter="30Days" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
+                    <TextBlock Text="Last 30 Days" FontSize="12"/>
+                  </Button>
+                  <Button Classes="ghost" Command="{Binding SetCompletedDateFilterPresetCommand}" CommandParameter="ThisMonth" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
+                    <TextBlock Text="This Month" FontSize="12"/>
+                  </Button>
+
+                  <Separator Classes="divider" Margin="0,4"/>
+
+                  <TextBlock Text="CUSTOM RANGE" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="4,2,0,2"/>
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="From:" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                    <CalendarDatePicker SelectedDate="{Binding CompletedDateFilterStartDate, Mode=TwoWay}"
+                                        DisplayDateEnd="{Binding CompletedDateFilterEndDate}"
+                                        PlaceholderText="Start Date..."
+                                        HorizontalAlignment="Stretch"/>
+                    <TextBlock Text="To:" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                    <CalendarDatePicker SelectedDate="{Binding CompletedDateFilterEndDate, Mode=TwoWay}"
+                                        DisplayDateStart="{Binding CompletedDateFilterStartDate}"
+                                        PlaceholderText="End Date..."
+                                        HorizontalAlignment="Stretch"/>
+                  </StackPanel>
+
+                  <Separator Classes="divider" Margin="0,4"/>
+
+                  <Button Classes="ghost"
+                          Command="{Binding ClearCompletedDateFilterCommand}"
+                          Foreground="{DynamicResource AppTextSecondaryBrush}"
+                          HorizontalAlignment="Stretch"
+                          HorizontalContentAlignment="Center">
+                    <TextBlock Text="Reset Date Filter" FontSize="12" FontWeight="SemiBold"/>
+                  </Button>
+                </StackPanel>
+              </Flyout>
+            </Button.Flyout>
+          </Button>
+
           <!-- Category Filter Dropdown Button (Desktop) -->
           <Button Classes="outline"
-                  IsVisible="{Binding !$parent[UserControl].DataContext.IsCompact}"
                   Padding="10,6"
                   CornerRadius="8"
                   Background="{DynamicResource AppSurfaceBrush}"
@@ -83,6 +148,7 @@
             </Button.Flyout>
           </Button>
 
+          <!-- Count Badge -->
           <Border Background="{DynamicResource AppSurfaceElevatedBrush}"
                   CornerRadius="12"
                   Padding="12,6"
@@ -100,21 +166,75 @@
         </StackPanel>
       </Grid>
 
-      <!-- Dedicated Tag Filter Row (Compact / Portrait mode) -->
-      <StackPanel IsVisible="{Binding IsCompact}" Margin="0,0,0,16" HorizontalAlignment="Left">
-        <Button Classes="outline"
-                Command="{Binding OpenMobileTagFilterSheetCommand}"
-                Padding="10,6"
-                CornerRadius="8"
-                Background="{DynamicResource AppSurfaceBrush}"
-                BorderBrush="{DynamicResource AppBorderBrush}"
-                ToolTip.Tip="Filter tasks by Tag">
-          <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-            <PathIcon Data="{StaticResource TagIconData}" Width="13" Height="13" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
-            <TextBlock Text="{Binding CategoryFilterButtonText}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-            <PathIcon Data="{StaticResource ChevronDownIconData}" Width="10" Height="10" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center" Margin="2,0,0,0"/>
+      <!-- Page Header & Filter Bar (Mobile / Portrait Mode) -->
+      <StackPanel IsVisible="{Binding IsCompact}" Margin="0,0,0,16" Spacing="12">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Grid.Column="0" Spacing="2">
+            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+              <PathIcon Data="{StaticResource CheckListIconData}" Width="16" Height="16" Foreground="{DynamicResource AppPrimaryBrush}"/>
+              <TextBlock Text="Completed History" Classes="heading" FontSize="20"/>
+            </StackPanel>
+            <TextBlock Text="Archive of completed tasks" Classes="small" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
           </StackPanel>
-        </Button>
+
+          <!-- Count Badge (Mobile Header) -->
+          <Border Grid.Column="1"
+                  Background="{DynamicResource AppSurfaceElevatedBrush}"
+                  CornerRadius="12"
+                  Padding="10,4"
+                  VerticalAlignment="Center">
+            <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+              <TextBlock Text="{Binding CompletedHistoryTodoItems.Count}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+              <TextBlock Text="done" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            </StackPanel>
+          </Border>
+        </Grid>
+
+        <!-- Mobile Filter Chips Bar -->
+        <WrapPanel Orientation="Horizontal" Margin="0,2,0,0">
+          <!-- Date Filter Chip (Mobile) -->
+          <Button Classes="outline"
+                  Command="{Binding OpenMobileCompletedDateFilterSheetCommand}"
+                  Padding="10,6"
+                  Margin="0,0,6,6"
+                  CornerRadius="8"
+                  Background="{DynamicResource AppSurfaceBrush}"
+                  BorderBrush="{DynamicResource AppBorderBrush}">
+            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+              <PathIcon Data="{StaticResource CalendarIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+              <TextBlock Text="{Binding CompletedDateFilterButtonText}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+              <PathIcon Data="{StaticResource ChevronDownIconData}" Width="9" Height="9" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+
+          <!-- Tag Filter Chip (Mobile) -->
+          <Button Classes="outline"
+                  Command="{Binding OpenMobileTagFilterSheetCommand}"
+                  Padding="10,6"
+                  Margin="0,0,6,6"
+                  CornerRadius="8"
+                  Background="{DynamicResource AppSurfaceBrush}"
+                  BorderBrush="{DynamicResource AppBorderBrush}">
+            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+              <PathIcon Data="{StaticResource TagIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+              <TextBlock Text="{Binding CategoryFilterButtonText}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+              <PathIcon Data="{StaticResource ChevronDownIconData}" Width="9" Height="9" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+
+          <!-- Clear Filters Button (Mobile) -->
+          <Button Classes="ghost"
+                  IsVisible="{Binding IsAnyCompletedFilterActive}"
+                  Command="{Binding ClearAllCompletedFiltersCommand}"
+                  Padding="8,6"
+                  Margin="0,0,0,6"
+                  ToolTip.Tip="Reset all filters">
+            <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+              <PathIcon Data="{StaticResource CloseIconData}" Width="10" Height="10" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              <TextBlock Text="Clear" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            </StackPanel>
+          </Button>
+        </WrapPanel>
       </StackPanel>
 
       <!-- Task History List -->
@@ -162,12 +282,13 @@
                       </Panel>
                       
                       <!-- Badges (Due Date, Reminder & Repeat) -->
-                      <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,0">
+                      <WrapPanel Orientation="Horizontal" Margin="0,2,0,0">
                         <!-- Due Date Badge -->
                         <Border IsVisible="{Binding HasDueDate}"
                                 Background="{DynamicResource AppPrimarySubtleBrush}"
                                 CornerRadius="4"
                                 Padding="6,2"
+                                Margin="0,0,4,3"
                                 HorizontalAlignment="Left">
                           <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
                             <PathIcon Data="{StaticResource CalendarIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
@@ -180,6 +301,7 @@
                                 Background="{DynamicResource AppPrimarySubtleBrush}"
                                 CornerRadius="4"
                                 Padding="6,2"
+                                Margin="0,0,4,3"
                                 HorizontalAlignment="Left">
                           <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
                             <PathIcon Data="{StaticResource BellIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
@@ -192,17 +314,17 @@
                                 Background="{DynamicResource AppPrimarySubtleBrush}"
                                 CornerRadius="4"
                                 Padding="6,2"
+                                Margin="0,0,4,3"
                                 HorizontalAlignment="Left">
                           <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
                             <PathIcon Data="{StaticResource RepeatIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
                             <TextBlock Text="{Binding RecurrenceFormatted}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppPrimaryBrush}"/>
                           </StackPanel>
                         </Border>
-
-                      </StackPanel>
+                      </WrapPanel>
 
                       <!-- Category Badges (Dedicated Row) -->
-                      <ItemsControl ItemsSource="{Binding Categories}" IsVisible="{Binding HasCategories}" Margin="0,3,0,0">
+                      <ItemsControl ItemsSource="{Binding Categories}" IsVisible="{Binding HasCategories}" Margin="0,2,0,0">
                         <ItemsControl.ItemsPanel>
                           <ItemsPanelTemplate>
                             <WrapPanel Orientation="Horizontal"/>
@@ -223,10 +345,22 @@
                           </DataTemplate>
                         </ItemsControl.ItemTemplate>
                       </ItemsControl>
+
+                      <!-- Mobile Completed Timestamp Badge (Portrait mode) -->
+                      <StackPanel Orientation="Horizontal"
+                                  Spacing="4"
+                                  Margin="0,3,0,0"
+                                  IsVisible="{Binding $parent[UserControl].DataContext.IsCompact}">
+                        <PathIcon Data="{StaticResource CheckListIconData}" Width="10" Height="10" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding CompletedAtFormatted}"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                   VerticalAlignment="Center"/>
+                      </StackPanel>
                     </StackPanel>
                   </Button>
 
-                  <!-- Completed Timestamp -->
+                  <!-- Completed Timestamp (Desktop mode) -->
                   <TextBlock Grid.Column="2"
                              Text="{Binding CompletedAtFormatted}"
                              IsVisible="{Binding !$parent[UserControl].DataContext.IsCompact}"
@@ -253,19 +387,38 @@
       <!-- Empty state -->
       <StackPanel IsVisible="{Binding !CompletedHistoryTodoItems.Count}"
                   HorizontalAlignment="Center"
-                  Margin="0,72,0,0"
+                  Margin="0,48,0,0"
                   Spacing="14">
         <PathIcon Data="{StaticResource CheckListIconData}"
-                  Width="40" Height="40"
+                  Width="44" Height="44"
                   Foreground="{DynamicResource AppBorderBrush}"
                   HorizontalAlignment="Center"/>
-        <TextBlock Text="No archived completed tasks"
+        <TextBlock Text="No completed tasks found"
                    Classes="heading"
                    HorizontalAlignment="Center"
                    Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-        <TextBlock Text="Tasks completed on previous days will appear here automatically."
+        <TextBlock Text="Try selecting a different date range or tag filter."
+                   IsVisible="{Binding IsAnyCompletedFilterActive}"
                    Classes="small"
-                   HorizontalAlignment="Center"/>
+                   HorizontalAlignment="Center"
+                   Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+        <TextBlock Text="Tasks completed on previous days will appear here automatically."
+                   IsVisible="{Binding !IsAnyCompletedFilterActive}"
+                   Classes="small"
+                   HorizontalAlignment="Center"
+                   Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+
+        <Button Classes="outline"
+                IsVisible="{Binding IsAnyCompletedFilterActive}"
+                Command="{Binding ClearAllCompletedFiltersCommand}"
+                HorizontalAlignment="Center"
+                Margin="0,4,0,0"
+                Padding="12,6">
+          <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+            <PathIcon Data="{StaticResource CloseIconData}" Width="11" Height="11"/>
+            <TextBlock Text="Clear All Filters" FontSize="12" FontWeight="SemiBold"/>
+          </StackPanel>
+        </Button>
       </StackPanel>
 
     </StackPanel>
