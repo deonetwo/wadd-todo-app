@@ -5,6 +5,7 @@
              xmlns:vm="clr-namespace:Wadd.UI.ViewModels;assembly=Wadd.UI"
              xmlns:models="clr-namespace:Wadd.Core.Models;assembly=Wadd.Core"
              xmlns:views="clr-namespace:Wadd.UI.Views;assembly=Wadd.UI"
+             xmlns:controls="clr-namespace:Wadd.UI.Controls;assembly=Wadd.UI"
              mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="760"
              x:Class="Wadd.UI.Views.MainView"
              x:DataType="vm:MainViewModel"
@@ -1035,10 +1036,8 @@
                 <Separator Classes="divider" Margin="0,2"/>
 
                 <TextBlock Text="CUSTOM TIME" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-                <TimePicker Classes="no-clock"
-                            SelectedTime="{Binding NewTaskReminderTime, Mode=TwoWay}"
-                            ClockIdentifier="24HourClock"
-                            HorizontalAlignment="Stretch"/>
+                <controls:ClockTimePicker SelectedTime="{Binding NewTaskReminderTime, Mode=TwoWay}"
+                                          HorizontalAlignment="Stretch"/>
               </StackPanel>
             </Border>
 

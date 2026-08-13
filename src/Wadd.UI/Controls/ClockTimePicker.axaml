@@ -1,0 +1,144 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="220" d:DesignHeight="32"
+             x:Class="Wadd.UI.Controls.ClockTimePicker">
+
+    <UserControl.Styles>
+        <Style Selector="Button.picker-header-btn">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="4,2"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+        <Style Selector="Button.picker-header-btn:hover">
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceElevatedBrush}"/>
+        </Style>
+
+        <Style Selector="Button.time-picker-trigger">
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="Background" Value="{DynamicResource CalendarDatePickerBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource CalendarDatePickerBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.time-picker-trigger:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceElevatedBrush}"/>
+        </Style>
+        <Style Selector="FlyoutPresenter.time-picker-flyout">
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="MinWidth" Value="0"/>
+            <Setter Property="MinHeight" Value="0"/>
+        </Style>
+        <Style Selector="FlyoutPresenter.time-picker-flyout /template/ Border">
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="10"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Panel>
+        <!-- Main Trigger Input Box & Button (Styled to match CalendarDatePicker 1:1) -->
+        <Button x:Name="TriggerButton"
+                Classes="time-picker-trigger">
+            <Grid ColumnDefinitions="*,Auto">
+                <!-- Selected Time Text (Left-aligned to match CalendarDatePicker) -->
+                <TextBlock x:Name="TimeDisplayTextBlock"
+                           Grid.Column="0"
+                           Text="12:00"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource CalendarDatePickerForeground}"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Left"/>
+
+                <!-- Clock Icon (Cleanly embedded without separate border box) -->
+                <PathIcon Grid.Column="1"
+                          Data="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z"
+                          Width="15"
+                          Height="15"
+                          Foreground="{DynamicResource CalendarDatePickerIconForeground}"
+                          HorizontalAlignment="Right"
+                          VerticalAlignment="Center"
+                          Margin="6,0,0,0"/>
+            </Grid>
+
+            <!-- Popup Flyout -->
+            <Button.Flyout>
+                <Flyout Placement="BottomEdgeAlignedRight" ShowMode="Standard" FlyoutPresenterClasses="time-picker-flyout">
+                    <Border Width="240"
+                            Padding="12,12,12,16"
+                            Background="{DynamicResource CalendarBackground}"
+                            BorderThickness="0"
+                            CornerRadius="10"
+                            BoxShadow="0 8 32 0 #30000000">
+                        <StackPanel Spacing="10" HorizontalAlignment="Center">
+                            <!-- Digital Time Display Header (HH : MM) -->
+                            <StackPanel Orientation="Horizontal"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Spacing="4">
+                                <!-- Hours Header Button -->
+                                <Button x:Name="HourHeaderButton"
+                                        Classes="picker-header-btn"
+                                        Click="OnHourHeaderClicked">
+                                    <TextBlock x:Name="HourHeaderTextBlock"
+                                               Text="12"
+                                               FontSize="28"
+                                               FontWeight="Bold"
+                                               Foreground="{DynamicResource AppPrimaryBrush}"/>
+                                </Button>
+
+                                <TextBlock Text=":"
+                                           FontSize="28"
+                                           FontWeight="Bold"
+                                           Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                           VerticalAlignment="Center"/>
+
+                                <!-- Minutes Header Button -->
+                                <Button x:Name="MinuteHeaderButton"
+                                        Classes="picker-header-btn"
+                                        Click="OnMinuteHeaderClicked">
+                                    <TextBlock x:Name="MinuteHeaderTextBlock"
+                                               Text="00"
+                                               FontSize="28"
+                                               FontWeight="Bold"
+                                               Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                                </Button>
+                            </StackPanel>
+
+                            <Separator Classes="divider" Margin="0,0,0,4"/>
+
+                            <!-- Clock Dial Container -->
+                            <Border x:Name="ClockContainer"
+                                    Width="200"
+                                    Height="200"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    CornerRadius="100"
+                                    ClipToBounds="True"
+                                    PointerPressed="OnClockPointerPressed"
+                                    PointerMoved="OnClockPointerMoved"
+                                    PointerReleased="OnClockPointerReleased">
+                                <Canvas x:Name="ClockCanvas"
+                                        Width="200"
+                                        Height="200"/>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                </Flyout>
+            </Button.Flyout>
+        </Button>
+    </Panel>
+</UserControl>
