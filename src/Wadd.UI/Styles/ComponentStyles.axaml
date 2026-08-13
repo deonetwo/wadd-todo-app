@@ -857,15 +857,60 @@
     <Setter Property="Background" Value="{DynamicResource AppMenuSelectedBrush}"/>
   </Style>
 
-  <!-- Selected + Hover State -->
-  <Style Selector="ComboBoxItem:selected:pointerover">
-    <Setter Property="Background" Value="{DynamicResource AppMenuSelectedBrush}"/>
+  <!-- ══════════════ TOGGLESWITCH BRAND COLOR STYLING ══════════════ -->
+  <Style Selector="ToggleSwitch">
+    <Setter Property="OnContent" Value=""/>
+    <Setter Property="OffContent" Value=""/>
+    <Style.Resources>
+      <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="{DynamicResource AppPrimaryColor}" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="{DynamicResource AppPrimaryHoverColor}" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="{DynamicResource AppPrimaryHoverColor}" />
+      <SolidColorBrush x:Key="ToggleSwitchContainerFillOn" Color="{DynamicResource AppPrimaryColor}" />
+      <SolidColorBrush x:Key="ToggleSwitchContainerFillOnPointerOver" Color="{DynamicResource AppPrimaryHoverColor}" />
+      <SolidColorBrush x:Key="ToggleSwitchContainerFillOnPressed" Color="{DynamicResource AppPrimaryHoverColor}" />
+      <SolidColorBrush x:Key="SemiToggleSwitchContainerFillOn" Color="{DynamicResource AppPrimaryColor}" />
+      <SolidColorBrush x:Key="SemiToggleSwitchContainerFillOnPointerOver" Color="{DynamicResource AppPrimaryHoverColor}" />
+      <SolidColorBrush x:Key="SemiToggleSwitchContainerFillOnPressed" Color="{DynamicResource AppPrimaryHoverColor}" />
+      <SolidColorBrush x:Key="SemiColorSuccess" Color="{DynamicResource AppPrimaryColor}" />
+      <SolidColorBrush x:Key="SemiColorSuccessPointerOver" Color="{DynamicResource AppPrimaryHoverColor}" />
+    </Style.Resources>
   </Style>
-  <Style Selector="ComboBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Background" Value="{DynamicResource AppMenuSelectedBrush}"/>
+
+  <!-- Track Container Background (Checked & Hover states) -->
+  <Style Selector="ToggleSwitch:checked /template/ Border">
+    <Setter Property="Background" Value="{DynamicResource AppPrimaryBrush}"/>
   </Style>
-  <Style Selector="ComboBoxItem:selected:pointerover /template/ ContentPresenter">
-    <Setter Property="Background" Value="{DynamicResource AppMenuSelectedBrush}"/>
+  <Style Selector="ToggleSwitch:checked:pointerover /template/ Border">
+    <Setter Property="Background" Value="{DynamicResource AppPrimaryHoverBrush}"/>
+  </Style>
+  <Style Selector="ToggleSwitch:checked /template/ Rectangle">
+    <Setter Property="Fill" Value="{DynamicResource AppPrimaryBrush}"/>
+  </Style>
+  <Style Selector="ToggleSwitch:checked:pointerover /template/ Rectangle">
+    <Setter Property="Fill" Value="{DynamicResource AppPrimaryHoverBrush}"/>
+  </Style>
+
+  <!-- Preserve White Inner Circle Knob across all states -->
+  <Style Selector="ToggleSwitch /template/ Canvas Border">
+    <Setter Property="Background" Value="#FFFFFF"/>
+  </Style>
+  <Style Selector="ToggleSwitch:checked /template/ Canvas Border">
+    <Setter Property="Background" Value="#FFFFFF"/>
+  </Style>
+  <Style Selector="ToggleSwitch:checked:pointerover /template/ Canvas Border">
+    <Setter Property="Background" Value="#FFFFFF"/>
+  </Style>
+  <Style Selector="ToggleSwitch /template/ ContentPresenter#PART_Knob">
+    <Setter Property="Background" Value="#FFFFFF"/>
+  </Style>
+  <Style Selector="ToggleSwitch:checked /template/ ContentPresenter#PART_Knob">
+    <Setter Property="Background" Value="#FFFFFF"/>
+  </Style>
+  <Style Selector="ToggleSwitch /template/ Ellipse">
+    <Setter Property="Fill" Value="#FFFFFF"/>
+  </Style>
+  <Style Selector="ToggleSwitch:checked /template/ Ellipse">
+    <Setter Property="Fill" Value="#FFFFFF"/>
   </Style>
 
 </Styles>
