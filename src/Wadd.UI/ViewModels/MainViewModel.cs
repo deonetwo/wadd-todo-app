@@ -2703,51 +2703,27 @@ public partial class CategoryFilterOption : ObservableObject
     }
 }
 
-public class AppSettingsData
-{
-    public string TasksViewLayout { get; set; } = "Standard";
-    public bool ShowNotePreviewsInList { get; set; } = true;
-}
-
 public partial class MainViewModel
 {
     private void LoadUserSettings()
     {
-        try
+        var settings = AppSettingsHelper.LoadSettings();
+        if (!string.IsNullOrWhiteSpace(settings.TasksViewLayout))
         {
-            var filePath = Wadd.Core.Helpers.AppDataHelper.GetWaddFilePath("app_settings.json");
-            if (File.Exists(filePath))
-            {
-                var json = File.ReadAllText(filePath);
-                var settings = System.Text.Json.JsonSerializer.Deserialize<AppSettingsData>(json);
-                if (settings != null)
-                {
-                    if (!string.IsNullOrWhiteSpace(settings.TasksViewLayout))
-                    {
-                        TasksViewLayout = settings.TasksViewLayout;
-                        SelectedTasksLayoutOption = TasksLayoutOptions.FirstOrDefault(x => x.Id == settings.TasksViewLayout) ?? TasksLayoutOptions[0];
-                    }
-                    ShowNotePreviewsInList = settings.ShowNotePreviewsInList;
-                }
-            }
+            TasksViewLayout = settings.TasksViewLayout;
+            SelectedTasksLayoutOption = TasksLayoutOptions.FirstOrDefault(x => x.Id == settings.TasksViewLayout) ?? TasksLayoutOptions[0];
         }
-        catch { }
+        ShowNotePreviewsInList = settings.ShowNotePreviewsInList;
+        _themeService.SetTheme(settings.ThemeMode);
     }
 
-    private void SaveUserSettings()
+    public void SaveUserSettings()
     {
-        try
-        {
-            var filePath = Wadd.Core.Helpers.AppDataHelper.GetWaddFilePath("app_settings.json");
-            var settings = new AppSettingsData
-            {
-                TasksViewLayout = TasksViewLayout,
-                ShowNotePreviewsInList = ShowNotePreviewsInList
-            };
-            var json = System.Text.Json.JsonSerializer.Serialize(settings, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(filePath, json);
-        }
-        catch { }
+        var settings = AppSettingsHelper.LoadSettings();
+        settings.TasksViewLayout = TasksViewLayout;
+        settings.ShowNotePreviewsInList = ShowNotePreviewsInList;
+        settings.ThemeMode = _themeService.CurrentTheme;
+        AppSettingsHelper.SaveSettings(settings);
     }
 }
 

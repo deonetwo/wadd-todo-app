@@ -46,10 +46,14 @@ public partial class App : Application
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.MainWindow = new MainWindow
+            var mainWindow = new MainWindow
             {
                 DataContext = mainViewModel
             };
+            mainWindow.Closing += (s, e) => SaveThemeAndSettings();
+            desktop.MainWindow = mainWindow;
+            desktop.ShutdownRequested += (s, e) => SaveThemeAndSettings();
+            desktop.Exit += (s, e) => SaveThemeAndSettings();
         }
         else if (ApplicationLifetime is ISingleViewApplicationLifetime singleView)
         {
@@ -59,6 +63,18 @@ public partial class App : Application
             };
         }
 
+        AppDomain.CurrentDomain.ProcessExit += (s, e) => SaveThemeAndSettings();
+
         base.OnFrameworkInitializationCompleted();
+    }
+
+    public static void SaveThemeAndSettings()
+    {
+        try
+        {
+            var themeService = Services?.GetService<Wadd.Core.Interfaces.IThemeService>();
+            themeService?.SaveTheme();
+        }
+        catch { }
     }
 }

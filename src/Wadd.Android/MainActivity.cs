@@ -133,4 +133,22 @@ public class MainActivity : AvaloniaMainActivity
             });
         }
     }
+
+    protected override void OnPause()
+    {
+        base.OnPause();
+        App.SaveThemeAndSettings();
+    }
+
+    protected override void OnStop()
+    {
+        base.OnStop();
+        App.SaveThemeAndSettings();
+    }
+
+    protected override void OnDestroy()
+    {
+        base.OnDestroy();
+        App.SaveThemeAndSettings();
+    }
 }
