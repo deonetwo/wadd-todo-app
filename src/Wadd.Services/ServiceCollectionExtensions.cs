@@ -14,6 +14,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISyncLogRepository>(sp => ((SQLiteTodoService)sp.GetRequiredService<ITodoService>()).SyncLogRepository);
         services.AddSingleton<IConflictRepository>(sp => new SQLiteConflictRepository(((SQLiteTodoService)sp.GetRequiredService<ITodoService>()).DatabaseConnection));
         services.AddSingleton<IThemeService, ThemeService>();
+        services.AddSingleton<INativeGoogleAuthService, DesktopNativeGoogleAuthService>();
         services.AddSingleton<ISyncService, GoogleDriveSyncService>();
         services.AddSingleton<IExportService, ExcelExportService>();
         services.AddSingleton<ITracingService, TracingService>();

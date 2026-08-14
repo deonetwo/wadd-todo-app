@@ -27,6 +27,17 @@ public partial class App : Application
     {
         var collection = new ServiceCollection();
         collection.AddWaddServices();
+
+        if (OperatingSystem.IsAndroid())
+        {
+            var androidAuthType = Type.GetType("Wadd.Android.AndroidGoogleAuthService, Wadd.Android")
+                                  ?? System.Reflection.Assembly.GetEntryAssembly()?.GetType("Wadd.Android.AndroidGoogleAuthService");
+            if (androidAuthType != null)
+            {
+                collection.AddSingleton(typeof(Wadd.Core.Interfaces.INativeGoogleAuthService), androidAuthType);
+            }
+        }
+
         collection.AddTransient<MainViewModel>();
 
         Services = collection.BuildServiceProvider();

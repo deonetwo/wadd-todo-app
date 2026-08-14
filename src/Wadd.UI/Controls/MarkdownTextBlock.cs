@@ -148,6 +148,22 @@ public class MarkdownTextBlock : SelectableTextBlock
                 if (Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
                     (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
                 {
+                    Avalonia.Controls.TopLevel? topLevel = null;
+                    if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+                    {
+                        topLevel = Avalonia.Controls.TopLevel.GetTopLevel(desktop.MainWindow);
+                    }
+                    else if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.ISingleViewApplicationLifetime singleView)
+                    {
+                        topLevel = Avalonia.Controls.TopLevel.GetTopLevel(singleView.MainView);
+                    }
+
+                    if (topLevel?.Launcher != null)
+                    {
+                        topLevel.Launcher.LaunchUriAsync(uri);
+                        return;
+                    }
+
                     Process.Start(new ProcessStartInfo
                     {
                         FileName = uri.ToString(),

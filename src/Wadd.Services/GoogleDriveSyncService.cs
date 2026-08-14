@@ -25,6 +25,7 @@ public class GoogleDriveSyncService : ISyncService
     private readonly IDeviceService _deviceService;
     private readonly ConflictResolutionEngine _conflictEngine;
     private readonly HttpClient _httpClient;
+    private readonly INativeGoogleAuthService? _nativeAuthService;
     private UserAuthRecord? _authRecord;
     private readonly string _authFilePath;
 
@@ -133,10 +134,12 @@ public class GoogleDriveSyncService : ISyncService
         ISyncLogRepository? syncLogRepository = null,
         IConflictRepository? conflictRepository = null,
         IDeviceService? deviceService = null,
-        ConflictResolutionEngine? conflictEngine = null)
+        ConflictResolutionEngine? conflictEngine = null,
+        INativeGoogleAuthService? nativeAuthService = null)
     {
         _todoService = todoService ?? throw new ArgumentNullException(nameof(todoService));
         _httpClient = httpClient ?? new HttpClient();
+        _nativeAuthService = nativeAuthService;
 
         if (_todoService is SQLiteTodoService sqliteService)
         {
@@ -250,6 +253,40 @@ public class GoogleDriveSyncService : ISyncService
         if (string.IsNullOrWhiteSpace(GoogleClientId))
         {
             throw new InvalidOperationException("Google Client ID is missing. Please set GOOGLE_CLIENT_ID environment variable or paste it in Settings.");
+        }
+
+        if (_nativeAuthService != null && _nativeAuthService.IsSupported)
+        {
+            var nativeResult = await _nativeAuthService.SignInAsync(GoogleClientId, cancellationToken);
+            if (nativeResult.IsSuccess && !string.IsNullOrWhiteSpace(nativeResult.IdToken))
+            {
+                var fbSession = await ExchangeGoogleIdTokenWithFirebaseAsync(nativeResult.IdToken, nativeResult.AccessToken ?? string.Empty, "http://localhost:5001/", cancellationToken);
+
+                _authRecord = new UserAuthRecord
+                {
+                    IsSignedIn = true,
+                    UserEmail = !string.IsNullOrWhiteSpace(fbSession.Email) ? fbSession.Email : (nativeResult.Email ?? string.Empty),
+                    UserName = !string.IsNullOrWhiteSpace(fbSession.DisplayName) ? fbSession.DisplayName : (nativeResult.DisplayName ?? string.Empty),
+                    GoogleClientId = GoogleClientId,
+                    FirebaseApiKey = FirebaseApiKey,
+                    FirebaseProjectId = FirebaseProjectId,
+                    AccessToken = nativeResult.AccessToken ?? string.Empty,
+                    RefreshToken = string.Empty,
+                    FirebaseIdToken = fbSession.FirebaseIdToken,
+                    FirebaseRefreshToken = fbSession.FirebaseRefreshToken,
+                    FirebaseLocalId = fbSession.LocalId,
+                    AuthenticatedAt = DateTime.UtcNow
+                };
+
+                SaveAuthRecord();
+                return true;
+            }
+
+            if (!string.IsNullOrWhiteSpace(nativeResult.ErrorMessage))
+            {
+                Trace.WriteLine($"[ERROR] Native Google Sign-In failed: {nativeResult.ErrorMessage}");
+                throw new InvalidOperationException($"Native Google Sign-In failed: {nativeResult.ErrorMessage}");
+            }
         }
 
         var localRedirectUri = "http://localhost:5001/";
@@ -544,6 +581,22 @@ public class GoogleDriveSyncService : ISyncService
 
     private async Task<bool> TryRefreshTokenAsync(CancellationToken cancellationToken)
     {
+        if (_nativeAuthService != null && _nativeAuthService.IsSupported)
+        {
+            try
+            {
+                var nativeResult = await _nativeAuthService.SignInAsync(GoogleClientId, cancellationToken);
+                if (nativeResult.IsSuccess && !string.IsNullOrWhiteSpace(nativeResult.AccessToken))
+                {
+                    _authRecord ??= new UserAuthRecord();
+                    _authRecord.AccessToken = nativeResult.AccessToken;
+                    SaveAuthRecord();
+                    return true;
+                }
+            }
+            catch { }
+        }
+
         if (_authRecord == null || string.IsNullOrWhiteSpace(_authRecord.RefreshToken)) return false;
 
         try
@@ -614,19 +667,60 @@ public class GoogleDriveSyncService : ISyncService
     {
         try
         {
+            Avalonia.Controls.TopLevel? topLevel = null;
+
             if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
             {
-                var topLevel = Avalonia.Controls.TopLevel.GetTopLevel(desktop.MainWindow);
-                if (topLevel?.Launcher != null)
-                {
-                    topLevel.Launcher.LaunchUriAsync(new Uri(url));
-                    return;
-                }
+                topLevel = Avalonia.Controls.TopLevel.GetTopLevel(desktop.MainWindow);
+            }
+            else if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.ISingleViewApplicationLifetime singleView)
+            {
+                topLevel = Avalonia.Controls.TopLevel.GetTopLevel(singleView.MainView);
+            }
+
+            if (topLevel?.Launcher != null)
+            {
+                topLevel.Launcher.LaunchUriAsync(new Uri(url));
+                return;
             }
         }
         catch (Exception ex)
         {
             Trace.WriteLine($"[WARN] Avalonia TopLevel.Launcher failed, falling back to process launcher: {ex.Message}");
+        }
+
+        if (OperatingSystem.IsAndroid())
+        {
+            try
+            {
+                var appClass = Type.GetType("Android.App.Application, Mono.Android");
+                var contextProp = appClass?.GetProperty("Context", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                var context = contextProp?.GetValue(null);
+
+                var intentClass = Type.GetType("Android.Content.Intent, Mono.Android");
+                var uriClass = Type.GetType("Android.Net.Uri, Mono.Android");
+
+                var parseMethod = uriClass?.GetMethod("Parse", new[] { typeof(string) });
+                var uriObj = parseMethod?.Invoke(null, new object[] { url });
+
+                var actionView = intentClass?.GetField("ActionView")?.GetValue(null);
+                var intent = Activator.CreateInstance(intentClass!, new object[] { actionView!, uriObj! });
+
+                var addFlagsMethod = intentClass?.GetMethod("AddFlags");
+                var flagNewTask = intentClass?.GetField("FlagsNewTask")?.GetValue(null);
+                if (addFlagsMethod != null && flagNewTask != null)
+                {
+                    addFlagsMethod.Invoke(intent, new object[] { flagNewTask });
+                }
+
+                var startActivityMethod = context?.GetType().GetMethod("StartActivity", new[] { intentClass! });
+                startActivityMethod?.Invoke(context, new object[] { intent! });
+                return;
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"[WARN] Native Android intent launch failed: {ex.Message}");
+            }
         }
 
         try
