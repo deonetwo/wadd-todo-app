@@ -12,6 +12,7 @@
     <ApplicationTitle>Wadd</ApplicationTitle>
     <EmbedAssembliesIntoApk Condition="'$(Configuration)' == 'Debug'">true</EmbedAssembliesIntoApk>
     <RuntimeIdentifiers Condition="'$(Configuration)' != 'Debug'">android-arm;android-arm64;android-x86;android-x64</RuntimeIdentifiers>
+
   </PropertyGroup>
 
   <!-- Size optimizations for Release configuration -->

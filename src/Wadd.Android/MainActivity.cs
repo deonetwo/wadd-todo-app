@@ -59,6 +59,20 @@ public class MainActivity : AvaloniaMainActivity
         HandleIntent(intent);
     }
 
+    protected override void OnResume()
+    {
+        base.OnResume();
+        try
+        {
+            TodayTasksWidgetProvider.TriggerRefresh(this);
+            Wadd.Core.Helpers.WaddDatabaseNotifier.NotifyDataChanged();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Trace.WriteLine($"Error refreshing widget on resume: {ex.Message}");
+        }
+    }
+
     private void HandleIntent(global::Android.Content.Intent? intent)
     {
         if (intent?.DataString != null && intent.DataString.StartsWith("com.wadd.todoapp://oauth2redirect"))

@@ -2032,11 +2032,22 @@ public partial class MainViewModel : ViewModelBase
         };
 
         UpdateGoogleAuthState();
+        CheckAndUpdateCurrentDate();
         _ = LoadTodoItemsAsync();
 
-        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
+        WaddDatabaseNotifier.DataChanged += async (_, _) =>
+        {
+            await Dispatcher.UIThread.InvokeAsync(async () =>
+            {
+                CheckAndUpdateCurrentDate();
+                await LoadTodoItemsAsync();
+            });
+        };
+
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(15) };
         timer.Tick += (_, _) =>
         {
+            CheckAndUpdateCurrentDate();
             OnPropertyChanged(nameof(LastUpdatedFormatted));
             OnPropertyChanged(nameof(ReminderLaterTodayText));
             OnPropertyChanged(nameof(IsReminderLaterTodayEnabled));
@@ -2044,6 +2055,26 @@ public partial class MainViewModel : ViewModelBase
             OnPropertyChanged(nameof(IsReminderNextWeekEnabled));
         };
         timer.Start();
+    }
+
+    private DateTime _lastRecordedDate = DateTime.Today;
+
+    public void CheckAndUpdateCurrentDate()
+    {
+        var today = DateTime.Today;
+        CurrentDateFormatted = DateTime.Now.ToString("dddd, MMMM d").ToUpperInvariant();
+        CurrentDateFull = DateTime.Now.ToString("dddd, MMMM d, yyyy");
+        OnPropertyChanged(nameof(MinDueDate));
+        OnPropertyChanged(nameof(DueDateHeaderYear));
+        OnPropertyChanged(nameof(DueDateHeaderMainText));
+
+        if (today != _lastRecordedDate)
+        {
+            _lastRecordedDate = today;
+            UpdateSubCollections();
+            UpdateAvailableCategories();
+            GenerateCalendarGrid();
+        }
     }
 
     [RelayCommand]
