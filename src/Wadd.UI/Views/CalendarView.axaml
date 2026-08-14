@@ -475,25 +475,24 @@
                           Padding="14,12"
                           HorizontalAlignment="Stretch">
                     <Grid ColumnDefinitions="Auto,*">
-                      <!-- Left Date Pillar (Compact Auto Column, no empty gap) -->
-                      <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Top" Margin="0,2,12,0" MinWidth="46">
+                      <!-- Left Date Pillar (Fixed 46px Column Width for clean vertical task alignment) -->
+                      <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Top" Margin="0,2,12,0" Width="46" HorizontalAlignment="Left">
                         <TextBlock Text="{Binding DayOfWeekShortText}"
                                    FontSize="11"
                                    FontWeight="Bold"
                                    Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                          <TextBlock Text="{Binding DayNumberText}"
-                                     FontSize="20"
-                                     FontWeight="Bold"
-                                     Foreground="{DynamicResource AppTextPrimaryBrush}"/>
-                          <Border IsVisible="{Binding IsToday}"
-                                  Background="{DynamicResource AppPrimaryBrush}"
-                                  CornerRadius="8"
-                                  Padding="5,1"
-                                  VerticalAlignment="Center">
-                            <TextBlock Text="TODAY" FontSize="9" FontWeight="Bold" Foreground="#FFFFFF"/>
-                          </Border>
-                        </StackPanel>
+                        <TextBlock Text="{Binding DayNumberText}"
+                                   FontSize="20"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                        <Border IsVisible="{Binding IsToday}"
+                                Background="{DynamicResource AppPrimaryBrush}"
+                                CornerRadius="6"
+                                Padding="4,1"
+                                HorizontalAlignment="Left"
+                                Margin="0,1,0,0">
+                          <TextBlock Text="TODAY" FontSize="8.5" FontWeight="Bold" Foreground="#FFFFFF"/>
+                        </Border>
                       </StackPanel>
 
                       <!-- Right Day Tasks Agenda Stream -->
