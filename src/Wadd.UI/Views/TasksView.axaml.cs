@@ -18,11 +18,19 @@ public partial class TasksView : UserControl
         {
             if (DataContext is MainViewModel vm)
             {
-                if (vm.LoadTodoItemsCommand.CanExecute(null))
+                if (vm.IsGoogleSignedIn && vm.SyncNowCommand.CanExecute(null))
+                {
+                    await vm.SyncNowCommand.ExecuteAsync(null);
+                }
+                else if (vm.LoadTodoItemsCommand.CanExecute(null))
                 {
                     await vm.LoadTodoItemsCommand.ExecuteAsync(null);
                 }
             }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Trace.WriteLine($"Error during pull-to-refresh: {ex.Message}");
         }
         finally
         {

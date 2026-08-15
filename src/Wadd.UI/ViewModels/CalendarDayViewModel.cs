@@ -5,7 +5,11 @@ namespace Wadd.UI.ViewModels;
 
 public partial class CalendarDayViewModel : ViewModelBase
 {
-    public DateTime Date { get; }
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DayNumberText))]
+    [NotifyPropertyChangedFor(nameof(DayOfWeekShortText))]
+    [NotifyPropertyChangedFor(nameof(FullDateText))]
+    private DateTime _date;
 
     public string DayNumberText => Date.Day.ToString();
 

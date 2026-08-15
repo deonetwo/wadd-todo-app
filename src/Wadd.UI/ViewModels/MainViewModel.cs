@@ -1857,6 +1857,8 @@ public partial class MainViewModel : ViewModelBase
         IsSidebarOpen = false;
     }
 
+    private int _calendarGridVersion = 0;
+
     public void GenerateCalendarGrid()
     {
         CurrentMonthYearText = CurrentCalendarDate.ToString("MMMM yyyy");
@@ -1872,64 +1874,103 @@ public partial class MainViewModel : ViewModelBase
             _isUpdatingCalendarPickers = false;
         }
 
-        var firstDayOfMonth = new DateTime(CurrentCalendarDate.Year, CurrentCalendarDate.Month, 1);
-        int offsetDays = (int)firstDayOfMonth.DayOfWeek; // Sunday = 0
-        var gridStartDate = firstDayOfMonth.AddDays(-offsetDays);
+        var currentVersion = ++_calendarGridVersion;
+        var currentCalendarDate = CurrentCalendarDate;
+        var filteredModels = GetFilteredTodoModels().ToList();
+        var vmDict = TodoItems.GroupBy(x => x.Id).ToDictionary(g => g.Key, g => g.First());
+        var notesSnapshot = new Dictionary<string, string>(_dateNotes);
+        var selectedDate = SelectedDay?.Date;
 
-        var freshDays = new List<CalendarDayViewModel>();
-        for (int i = 0; i < 42; i++)
+        Task.Run(() =>
         {
-            var dayDate = gridStartDate.AddDays(i);
-            bool isCurrentMonth = dayDate.Month == CurrentCalendarDate.Month;
-            bool isToday = dayDate.Date == DateTime.Today;
+            var firstDayOfMonth = new DateTime(currentCalendarDate.Year, currentCalendarDate.Month, 1);
+            int offsetDays = (int)firstDayOfMonth.DayOfWeek;
+            var gridStartDate = firstDayOfMonth.AddDays(-offsetDays);
+            var today = DateTime.Today;
 
-            var dayVm = new CalendarDayViewModel(dayDate, isCurrentMonth, isToday);
-            if (_dateNotes.TryGetValue(dayDate.ToString("yyyy-MM-dd"), out var noteText))
+            var freshDays = new List<CalendarDayViewModel>(42);
+            for (int i = 0; i < 42; i++)
             {
-                dayVm.NoteText = noteText;
-            }
+                var dayDate = gridStartDate.AddDays(i);
+                bool isCurrentMonth = dayDate.Month == currentCalendarDate.Month;
+                bool isToday = dayDate.Date == today;
 
-            var matchingModels = RecurrenceEvaluator.GetTasksForDate(dayDate, GetFilteredTodoModels()).ToList();
-            var matchingVms = TodoItems.Where(x => matchingModels.Any(m => m.Id == x.Id)).ToList();
-
-            foreach (var vm in matchingVms)
-            {
-                var contextualVm = new TodoItemViewModel(vm.Model)
+                var dayVm = new CalendarDayViewModel(dayDate, isCurrentMonth, isToday);
+                if (notesSnapshot.TryGetValue(dayDate.ToString("yyyy-MM-dd"), out var noteText))
                 {
-                    ContextDate = dayDate
-                };
-                dayVm.DayTasks.Add(contextualVm);
-            }
-            dayVm.RefreshComputedProperties();
+                    dayVm.NoteText = noteText;
+                }
 
-            if (SelectedDay != null && dayVm.Date.Date == SelectedDay.Date.Date)
+                var matchingModels = RecurrenceEvaluator.GetTasksForDate(dayDate, filteredModels);
+                foreach (var m in matchingModels)
+                {
+                    if (vmDict.TryGetValue(m.Id, out var vm))
+                    {
+                        var contextualVm = new TodoItemViewModel(m)
+                        {
+                            ContextDate = dayDate
+                        };
+                        dayVm.DayTasks.Add(contextualVm);
+                    }
+                }
+                dayVm.RefreshComputedProperties();
+
+                if (selectedDate.HasValue && dayVm.Date.Date == selectedDate.Value.Date)
+                {
+                    dayVm.IsSelected = true;
+                }
+
+                freshDays.Add(dayVm);
+            }
+
+            Dispatcher.UIThread.Post(() =>
             {
-                dayVm.IsSelected = true;
-            }
+                if (currentVersion != _calendarGridVersion) return;
 
-            freshDays.Add(dayVm);
-        }
+                if (CalendarDays.Count == 42)
+                {
+                    for (int i = 0; i < 42; i++)
+                    {
+                        var target = CalendarDays[i];
+                        var source = freshDays[i];
 
-        CalendarDays.Clear();
-        foreach (var d in freshDays)
-        {
-            CalendarDays.Add(d);
-        }
+                        target.Date = source.Date;
+                        target.IsCurrentMonth = source.IsCurrentMonth;
+                        target.IsToday = source.IsToday;
+                        target.IsSelected = source.IsSelected;
+                        target.NoteText = source.NoteText;
+                        target.DayTasks.Clear();
+                        foreach (var task in source.DayTasks)
+                        {
+                            target.DayTasks.Add(task);
+                        }
+                        target.RefreshComputedProperties();
+                    }
+                }
+                else
+                {
+                    CalendarDays.Clear();
+                    foreach (var d in freshDays)
+                    {
+                        CalendarDays.Add(d);
+                    }
+                }
 
-        if (SelectedDay != null)
-        {
-            var updatedSelectedDay = CalendarDays.FirstOrDefault(x => x.Date.Date == SelectedDay.Date.Date);
-            if (updatedSelectedDay != null)
-            {
-                var tasksForDate = RecurrenceEvaluator.GetTasksForDate(updatedSelectedDay.Date, GetFilteredTodoModels()).ToList();
-                var freshSelectedTasks = TodoItems
-                    .Where(x => tasksForDate.Any(t => t.Id == x.Id))
-                    .Select(x => new TodoItemViewModel(x.Model) { ContextDate = updatedSelectedDay.Date })
-                    .ToList();
-                SyncCollection(SelectedDateTasks, freshSelectedTasks);
-                OnPropertyChanged(nameof(HasSelectedDateTasks));
-            }
-        }
+                if (SelectedDay != null)
+                {
+                    var updatedSelectedDay = CalendarDays.FirstOrDefault(x => x.Date.Date == SelectedDay.Date.Date);
+                    if (updatedSelectedDay != null)
+                    {
+                        var tasksForDate = RecurrenceEvaluator.GetTasksForDate(updatedSelectedDay.Date, filteredModels);
+                        var freshSelectedTasks = tasksForDate
+                            .Select(m => new TodoItemViewModel(m) { ContextDate = updatedSelectedDay.Date })
+                            .ToList();
+                        SyncCollection(SelectedDateTasks, freshSelectedTasks);
+                        OnPropertyChanged(nameof(HasSelectedDateTasks));
+                    }
+                }
+            });
+        });
     }
 
     #endregion
@@ -2535,6 +2576,11 @@ public partial class MainViewModel : ViewModelBase
     {
         IsMobileMoreSheetOpen = false;
         IsMobileTagFilterSheetOpen = false;
+        IsMobileCategorySheetOpen = false;
+        IsMobileDueDateSheetOpen = false;
+        IsMobileReminderSheetOpen = false;
+        IsMobileRepeatSheetOpen = false;
+        IsMobileCompletedDateFilterSheetOpen = false;
         IsMobileTaskComposerOpen = false;
         IsDetailDrawerOpen = false;
     }
