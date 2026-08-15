@@ -235,14 +235,14 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                           <DataTemplate>
-                            <Border Background="{DynamicResource AppPrimaryBrush}"
+                            <Border Background="{DynamicResource AppTagBackgroundBrush}"
                                     CornerRadius="4"
                                     Padding="6,2"
                                     Margin="0,0,4,3"
                                     HorizontalAlignment="Left">
                               <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                                <PathIcon Data="{StaticResource TagIconData}" Width="10" Height="10" Foreground="#F8FAFC"/>
-                                <TextBlock Text="{Binding}" FontSize="11" FontWeight="SemiBold" Foreground="#F8FAFC"/>
+                                <PathIcon Data="{StaticResource TagIconData}" Width="10" Height="10" Foreground="{DynamicResource AppTagForegroundBrush}"/>
+                                <TextBlock Text="{Binding}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTagForegroundBrush}"/>
                               </StackPanel>
                             </Border>
                           </DataTemplate>

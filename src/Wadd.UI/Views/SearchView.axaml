@@ -84,7 +84,7 @@
                   <Border Width="20" Height="20" CornerRadius="10" Background="#33FFFFFF" VerticalAlignment="Center">
                     <PathIcon Data="{StaticResource SearchIconData}"
                               Width="10" Height="10"
-                              Foreground="#F8FAFC"
+                              Foreground="#F0FDFA"
                               HorizontalAlignment="Center"
                               VerticalAlignment="Center"/>
                   </Border>
@@ -95,7 +95,7 @@
                 <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" IsVisible="{Binding IsCompact}">
                   <PathIcon Data="{StaticResource SearchIconData}"
                             Width="14" Height="14"
-                            Foreground="#F8FAFC"
+                            Foreground="#F0FDFA"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"/>
                   <TextBlock Text="Search" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
@@ -256,14 +256,14 @@
                           </ItemsControl.ItemsPanel>
                           <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                              <Border Background="{DynamicResource AppPrimaryBrush}"
+                              <Border Background="{DynamicResource AppTagBackgroundBrush}"
                                       CornerRadius="4"
                                       Padding="6,2"
                                       Margin="0,0,4,3"
                                       HorizontalAlignment="Left">
                                 <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                                  <PathIcon Data="{StaticResource TagIconData}" Width="10" Height="10" Foreground="#F8FAFC"/>
-                                  <TextBlock Text="{Binding}" FontSize="11" FontWeight="SemiBold" Foreground="#F8FAFC"/>
+                                  <PathIcon Data="{StaticResource TagIconData}" Width="10" Height="10" Foreground="{DynamicResource AppTagForegroundBrush}"/>
+                                  <TextBlock Text="{Binding}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTagForegroundBrush}"/>
                                 </StackPanel>
                               </Border>
                             </DataTemplate>

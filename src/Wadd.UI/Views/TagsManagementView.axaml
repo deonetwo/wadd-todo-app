@@ -69,9 +69,8 @@
             </TextBox>
 
             <Button Grid.Column="1"
-                    Classes="primary"
+                    Classes="composer-add"
                     Command="{Binding CreateNewGlobalTagCommand}"
-                    Padding="16,10"
                     VerticalAlignment="Center">
               <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                 <PathIcon Data="{StaticResource PlusIconData}" Width="12" Height="12"/>
@@ -121,13 +120,13 @@
                                 IsVisible="{Binding !IsEditing}"
                                 VerticalAlignment="Center">
                       <!-- Filled Tag Badge -->
-                      <Border Background="{DynamicResource AppPrimaryBrush}"
+                      <Border Background="{DynamicResource AppTagBackgroundBrush}"
                               CornerRadius="8"
                               Padding="10,5"
                               VerticalAlignment="Center">
                         <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                          <PathIcon Data="{StaticResource TagIconData}" Width="11" Height="11" Foreground="#F8FAFC"/>
-                          <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="Bold" Foreground="#F8FAFC"/>
+                          <PathIcon Data="{StaticResource TagIconData}" Width="11" Height="11" Foreground="{DynamicResource AppTagForegroundBrush}"/>
+                          <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppTagForegroundBrush}"/>
                         </StackPanel>
                       </Border>
 

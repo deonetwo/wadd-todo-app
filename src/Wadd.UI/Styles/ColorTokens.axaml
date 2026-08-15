@@ -19,7 +19,7 @@
       <Color x:Key="AppPrimaryColor">#0D9488</Color>
       <Color x:Key="AppPrimaryHoverColor">#0F766E</Color>
       <!-- Typography -->
-      <Color x:Key="AppTextPrimaryColor">#0F172A</Color>
+      <Color x:Key="AppTextPrimaryColor">#0F292B</Color>
       <Color x:Key="AppTextSecondaryColor">#526E74</Color>
       <!-- Structure -->
       <Color x:Key="AppBorderColor">#CFE3E5</Color>
@@ -52,6 +52,8 @@
       <SolidColorBrush x:Key="AppNavStripBrush"        Color="{StaticResource AppNavStripColor}"/>
       <SolidColorBrush x:Key="AppAccentBrush"          Color="{StaticResource AppPrimaryColor}"/>
       <SolidColorBrush x:Key="AppPrimarySubtleBrush"   Color="#1514B8A6"/>
+      <SolidColorBrush x:Key="AppTagBackgroundBrush"   Color="{StaticResource AppPrimaryColor}"/>
+      <SolidColorBrush x:Key="AppTagForegroundBrush"   Color="#F0FDFA"/>
     </ResourceDictionary>
 
     <!-- ───── DARK THEME ───── -->
@@ -98,6 +100,8 @@
       <SolidColorBrush x:Key="AppNavStripBrush"        Color="{StaticResource AppNavStripColor}"/>
       <SolidColorBrush x:Key="AppAccentBrush"          Color="{StaticResource AppPrimaryColor}"/>
       <SolidColorBrush x:Key="AppPrimarySubtleBrush"   Color="#2614B8A6"/>
+      <SolidColorBrush x:Key="AppTagBackgroundBrush"   Color="#143438"/>
+      <SolidColorBrush x:Key="AppTagForegroundBrush"   Color="#2DD4BF"/>
     </ResourceDictionary>
 
   </ResourceDictionary.ThemeDictionaries>

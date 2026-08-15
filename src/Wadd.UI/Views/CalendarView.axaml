@@ -393,7 +393,7 @@
                           <TextBlock Text="TODAY"
                                      FontSize="9"
                                      FontWeight="Bold"
-                                     Foreground="#F8FAFC"/>
+                                     Foreground="#F0FDFA"/>
                         </Border>
                       </Grid>
 
@@ -504,7 +504,7 @@
                                 Padding="4,1"
                                 HorizontalAlignment="Left"
                                 Margin="0,1,0,0">
-                          <TextBlock Text="TODAY" FontSize="8.5" FontWeight="Bold" Foreground="#F8FAFC"/>
+                          <TextBlock Text="TODAY" FontSize="8.5" FontWeight="Bold" Foreground="#F0FDFA"/>
                         </Border>
                       </StackPanel>
 
@@ -763,13 +763,13 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                   <DataTemplate>
-                                    <Border Background="{DynamicResource AppPrimaryBrush}"
+                                    <Border Background="{DynamicResource AppTagBackgroundBrush}"
                                             CornerRadius="4"
                                             Padding="4,1"
                                             Margin="0,0,3,2">
                                       <StackPanel Orientation="Horizontal" Spacing="4">
-                                        <PathIcon Data="{StaticResource TagIconData}" Width="9" Height="9" Foreground="#F8FAFC"/>
-                                        <TextBlock Text="{Binding}" FontSize="10" FontWeight="SemiBold" Foreground="#F8FAFC"/>
+                                        <PathIcon Data="{StaticResource TagIconData}" Width="9" Height="9" Foreground="{DynamicResource AppTagForegroundBrush}"/>
+                                        <TextBlock Text="{Binding}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AppTagForegroundBrush}"/>
                                       </StackPanel>
                                     </Border>
                                   </DataTemplate>
