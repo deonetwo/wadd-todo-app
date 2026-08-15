@@ -23,6 +23,10 @@ public partial class MainViewModel : ViewModelBase
     private readonly ISyncService _syncService;
     private readonly IExportService _exportService;
 
+    private int _periodicSyncTicks;
+    private bool _initialSyncCompleted;
+    private DispatcherTimer? _autoSyncDebounceTimer;
+
     [ObservableProperty]
     private string _title = "Wadd - ToDo Application";
 
@@ -2082,6 +2086,7 @@ public partial class MainViewModel : ViewModelBase
             {
                 CheckAndUpdateCurrentDate();
                 await LoadTodoItemsAsync();
+                RequestDebouncedAutoSync();
             });
         };
 
@@ -2094,6 +2099,16 @@ public partial class MainViewModel : ViewModelBase
             OnPropertyChanged(nameof(IsReminderLaterTodayEnabled));
             OnPropertyChanged(nameof(IsReminderTomorrowMorningEnabled));
             OnPropertyChanged(nameof(IsReminderNextWeekEnabled));
+
+            _periodicSyncTicks++;
+            if (_periodicSyncTicks >= 20) // Every 5 minutes (20 * 15s)
+            {
+                _periodicSyncTicks = 0;
+                if (IsGoogleSignedIn && !IsSyncing)
+                {
+                    _ = TriggerAutoSyncAsync();
+                }
+            }
         };
         timer.Start();
     }
@@ -2265,6 +2280,12 @@ public partial class MainViewModel : ViewModelBase
                 GenerateCalendarGrid();
                 LastUpdatedAt = DateTime.Now;
                 StatusMessage = $"Loaded {TodoItems.Count} {(TodoItems.Count == 1 ? "task" : "tasks")} from device.";
+
+                if (!_initialSyncCompleted && IsGoogleSignedIn)
+                {
+                    _initialSyncCompleted = true;
+                    _ = TriggerAutoSyncAsync();
+                }
             });
         }
         catch (Exception ex)
@@ -2571,6 +2592,55 @@ public partial class MainViewModel : ViewModelBase
 
     [RelayCommand]
     private Task SyncAsync() => SyncNowAsync();
+
+    private void RequestDebouncedAutoSync()
+    {
+        if (!IsGoogleSignedIn) return;
+
+        if (_autoSyncDebounceTimer == null)
+        {
+            _autoSyncDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+            _autoSyncDebounceTimer.Tick += async (_, _) =>
+            {
+                _autoSyncDebounceTimer?.Stop();
+                if (IsGoogleSignedIn && !IsSyncing)
+                {
+                    await TriggerAutoSyncAsync();
+                }
+            };
+        }
+        _autoSyncDebounceTimer.Stop();
+        _autoSyncDebounceTimer.Start();
+    }
+
+    private async Task TriggerAutoSyncAsync()
+    {
+        if (IsSyncing || !IsGoogleSignedIn) return;
+        try
+        {
+            IsSyncing = true;
+            var success = await _syncService.SyncAsync();
+            if (success)
+            {
+                LastUpdatedAt = DateTime.Now;
+                await LoadTodoItemsAsync();
+
+                if (HasUnresolvedConflicts)
+                {
+                    StatusMessage = $"{UnresolvedConflictCount} task update(s) require your review.";
+                    IsReviewPromptVisible = true;
+                }
+            }
+        }
+        catch
+        {
+            // Silent error handling for background auto sync
+        }
+        finally
+        {
+            IsSyncing = false;
+        }
+    }
 
     private void CloseAllOverlays()
     {
