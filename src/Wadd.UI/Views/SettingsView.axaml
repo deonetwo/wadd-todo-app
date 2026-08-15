@@ -190,7 +190,7 @@
             </Button>
             <Grid ColumnDefinitions="Auto,*" Margin="0,2,0,0">
               <TextBlock Grid.Column="0" Text="🔒" FontSize="12" VerticalAlignment="Top" Margin="0,1,6,0"/>
-              <TextBlock Grid.Column="1" Text="Your task database is safely backed up to your personal Google Drive." Classes="small" TextWrapping="Wrap" VerticalAlignment="Center"/>
+              <TextBlock Grid.Column="1" Text="Your tasks are safely backed up to your personal Google Drive." Classes="small" TextWrapping="Wrap" VerticalAlignment="Center"/>
             </Grid>
           </StackPanel>
 

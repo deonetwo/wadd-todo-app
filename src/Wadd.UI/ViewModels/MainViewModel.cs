@@ -38,11 +38,11 @@ public partial class MainViewModel : ViewModelBase
     public ObservableCollection<NotificationBubbleItem> StatusNotifications { get; } = new();
 
     [ObservableProperty]
-    private string _statusMessage = "Ready (Local Mode)";
+    private string _statusMessage = "Ready";
 
     partial void OnStatusMessageChanged(string value)
     {
-        if (string.IsNullOrWhiteSpace(value) || value == "Ready (Local Mode)")
+        if (string.IsNullOrWhiteSpace(value) || value == "Ready")
             return;
 
         var notif = new NotificationBubbleItem(value);
@@ -1262,7 +1262,7 @@ public partial class MainViewModel : ViewModelBase
         {
             if (IsSyncing) return "Syncing with cloud…";
             if (IsGoogleSignedIn) return "Synced with Google Drive";
-            return "Saved to local storage";
+            return "Saved on device";
         }
     }
 
@@ -1274,7 +1274,7 @@ public partial class MainViewModel : ViewModelBase
     {
         get
         {
-            if (!LastUpdatedAt.HasValue) return "Local Storage Mode";
+            if (!LastUpdatedAt.HasValue) return "Saved on device";
             var now = DateTime.Now;
             var diff = now - LastUpdatedAt.Value;
             if (diff.TotalSeconds < 60) return "Updated just now";
@@ -2264,7 +2264,7 @@ public partial class MainViewModel : ViewModelBase
                 UpdateAvailableCategories();
                 GenerateCalendarGrid();
                 LastUpdatedAt = DateTime.Now;
-                StatusMessage = $"Loaded {TodoItems.Count} tasks from local database.";
+                StatusMessage = $"Loaded {TodoItems.Count} {(TodoItems.Count == 1 ? "task" : "tasks")} from device.";
             });
         }
         catch (Exception ex)
@@ -2488,7 +2488,7 @@ public partial class MainViewModel : ViewModelBase
             var models = TodoItems.Select(vm => vm.Model).ToList();
             await _exportService.ExportToExcelAsync(models, filePath);
 
-            StatusMessage = $"[Export Success] Exported {models.Count} tasks to: {filePath}";
+            StatusMessage = $"Exported {models.Count} {(models.Count == 1 ? "task" : "tasks")} successfully to {Path.GetFileName(filePath)}";
         }
         catch (Exception ex)
         {
@@ -2506,7 +2506,7 @@ public partial class MainViewModel : ViewModelBase
             UpdateGoogleAuthState();
             if (success)
             {
-                StatusMessage = $"Signed in as {GoogleUserEmail}. Connected to private Google Drive.";
+                StatusMessage = $"Signed in as {GoogleUserEmail}. Connected to Google Drive.";
             }
         }
         catch (Exception ex)

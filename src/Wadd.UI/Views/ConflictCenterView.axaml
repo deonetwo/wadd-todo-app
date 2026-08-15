@@ -49,10 +49,10 @@
                   <Border Padding="12,10" Margin="0,2" CornerRadius="8" Background="{DynamicResource AppSurfaceBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
                     <StackPanel Spacing="4">
                       <Grid ColumnDefinitions="*,Auto">
-                        <TextBlock Grid.Column="0" Text="{Binding TableName}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                        <TextBlock Grid.Column="0" Text="{Binding DisplayType}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
                         <TextBlock Grid.Column="1" Text="CONFLICT" FontSize="9" FontWeight="Bold" Foreground="#EF4444"/>
                       </Grid>
-                      <TextBlock Text="{Binding RecordId, StringFormat='Record ID: {0}'}" FontSize="10" Foreground="{DynamicResource AppTextSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
+                      <TextBlock Text="{Binding DisplayTitle}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" TextTrimming="CharacterEllipsis"/>
                       <TextBlock Text="{Binding LocalUpdatedAt, StringFormat='Local: {0:MMM d, h:mm tt}'}" FontSize="10" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
                       <TextBlock Text="{Binding CloudUpdatedAt, StringFormat='Cloud: {0:MMM d, h:mm tt}'}" FontSize="10" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
                     </StackPanel>

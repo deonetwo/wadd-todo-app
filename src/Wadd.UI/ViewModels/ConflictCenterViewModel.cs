@@ -41,6 +41,8 @@ public partial class SyncConflictItemViewModel : ObservableObject
     public Guid Id => Model.Id;
     public string TableName => Model.TableName;
     public Guid RecordId => Model.RecordId;
+    public string DisplayType => TableName switch { "TodoItemEntity" => "Task", "DateNoteEntity" => "Note", _ => "Item" };
+    public string DisplayTitle => !string.IsNullOrWhiteSpace(LocalItem?.Title) ? LocalItem.Title : (!string.IsNullOrWhiteSpace(CloudItem?.Title) ? CloudItem.Title : "Task");
     public DateTime LocalUpdatedAt => Model.LocalUpdatedAt;
     public DateTime CloudUpdatedAt => Model.CloudUpdatedAt;
     public string OriginatingDeviceId => Model.OriginatingDeviceId;
@@ -182,7 +184,7 @@ public partial class ConflictCenterViewModel : ViewModelBase
             var json = JsonSerializer.Serialize(itemVm.LocalItem);
             await _conflictRepository.ResolveConflictAsync(itemVm.Id, ConflictResolutionType.KeepLocal, json);
 
-            StatusMessage = "Resolved conflict: Kept local version.";
+            StatusMessage = "Resolved conflict: Kept device version.";
             await LoadConflictsAsync();
         }
         catch (Exception ex)
@@ -274,7 +276,7 @@ public partial class ConflictCenterViewModel : ViewModelBase
             var json = JsonSerializer.Serialize(merged);
             await _conflictRepository.ResolveConflictAsync(itemVm.Id, ConflictResolutionType.ManualMerge, json);
 
-            StatusMessage = "Resolved conflict: Custom field merge applied.";
+            StatusMessage = "Resolved conflict: Applied custom selection.";
             await LoadConflictsAsync();
         }
         catch (Exception ex)

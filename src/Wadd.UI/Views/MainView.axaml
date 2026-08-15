@@ -217,7 +217,7 @@
               <Grid ColumnDefinitions="*,Auto">
                 <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
                   <TextBlock Text="STORAGE &amp; SYNC" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                  <TextBlock Text="Local Storage Mode" IsVisible="{Binding !IsGoogleSignedIn}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                  <TextBlock Text="Saved on Device" IsVisible="{Binding !IsGoogleSignedIn}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
                   <TextBlock Text="{Binding GoogleUserEmail}" IsVisible="{Binding IsGoogleSignedIn}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppTextPrimaryBrush}" TextTrimming="CharacterEllipsis"/>
                   <TextBlock Text="{Binding LastUpdatedFormatted}" FontSize="10" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
                 </StackPanel>
