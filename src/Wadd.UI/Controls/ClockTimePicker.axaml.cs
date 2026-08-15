@@ -30,6 +30,7 @@ public partial class ClockTimePicker : UserControl
     public ClockTimePicker()
     {
         InitializeComponent();
+        ActualThemeVariantChanged += (_, _) => UpdateUI();
     }
 
     protected override void OnInitialized()
@@ -117,7 +118,7 @@ public partial class ClockTimePicker : UserControl
         double cx = 100;
         double cy = 100;
         var primaryBrush = GetThemeBrush("AppPrimaryBrush", Brushes.Teal);
-        var textPrimaryBrush = GetThemeBrush("AppTextPrimaryBrush", Brushes.White);
+        var textPrimaryBrush = GetThemeBrush("AppTextPrimaryBrush", Brushes.Black);
 
         double rHand;
         double handAngleDeg;

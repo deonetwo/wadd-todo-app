@@ -103,6 +103,9 @@ public partial class TodoItemViewModel : ViewModelBase
     partial void OnContextDateChanged(DateTime? value)
     {
         OnPropertyChanged(nameof(ContextDueDateFormatted));
+        OnPropertyChanged(nameof(IsOverdue));
+        OnPropertyChanged(nameof(HasDueDateOnly));
+        OnPropertyChanged(nameof(IsDueToday));
     }
 
     public string ContextDueDateFormatted
@@ -121,9 +124,25 @@ public partial class TodoItemViewModel : ViewModelBase
         }
     }
 
-    public bool IsOverdue => Model.DueDate.HasValue && Model.DueDate.Value.Date < DateTime.Today && !Model.IsCompleted;
-    public bool HasDueDateOnly => Model.DueDate.HasValue && !IsOverdue;
-    public bool IsDueToday => Model.DueDate.HasValue && Model.DueDate.Value.Date == DateTime.Today;
+    public bool IsOverdue
+    {
+        get
+        {
+            var targetDate = ContextDate?.Date ?? Model.DueDate?.Date;
+            return targetDate.HasValue && targetDate.Value < DateTime.Today && !Model.IsCompleted;
+        }
+    }
+
+    public bool HasDueDateOnly => (ContextDate.HasValue || Model.DueDate.HasValue) && !IsOverdue;
+
+    public bool IsDueToday
+    {
+        get
+        {
+            var targetDate = ContextDate?.Date ?? Model.DueDate?.Date;
+            return targetDate.HasValue && targetDate.Value == DateTime.Today;
+        }
+    }
 
     public DateTime? ReminderAt => Model.ReminderAt;
 

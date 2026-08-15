@@ -2407,6 +2407,15 @@ public partial class MainViewModel : ViewModelBase
         try
         {
             await _todoService.DeleteTodoAsync(itemVm.Id);
+
+            if (SelectedDetailTask?.Id == itemVm.Id)
+            {
+                SelectedDetailTask = null;
+                IsDetailDrawerOpen = false;
+            }
+
+            CloseAllOverlays();
+
             await LoadTodoItemsAsync();
         }
         catch (Exception ex)
@@ -2522,23 +2531,47 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private Task SyncAsync() => SyncNowAsync();
 
-    [RelayCommand]
-    private void OpenTasksView() => SelectedNavIndex = 0;
+    private void CloseAllOverlays()
+    {
+        IsMobileMoreSheetOpen = false;
+        IsMobileTagFilterSheetOpen = false;
+        IsMobileTaskComposerOpen = false;
+        IsDetailDrawerOpen = false;
+    }
 
     [RelayCommand]
-    private void OpenCompletedView() => SelectedNavIndex = 1;
+    private void OpenTasksView()
+    {
+        SelectedNavIndex = 0;
+        CloseAllOverlays();
+    }
 
     [RelayCommand]
-    private void OpenRecurringView() => SelectedNavIndex = 2;
+    private void OpenCompletedView()
+    {
+        SelectedNavIndex = 1;
+        CloseAllOverlays();
+    }
 
     [RelayCommand]
-    private void OpenCalendarView() => SelectedNavIndex = 3;
+    private void OpenRecurringView()
+    {
+        SelectedNavIndex = 2;
+        CloseAllOverlays();
+    }
+
+    [RelayCommand]
+    private void OpenCalendarView()
+    {
+        SelectedNavIndex = 3;
+        CloseAllOverlays();
+    }
 
     [RelayCommand]
     private void OpenSearchView(object? parameter = null)
     {
         SelectedNavIndex = 4;
-        IsMobileMoreSheetOpen = false;
+        CloseAllOverlays();
 
         if (parameter is Flyout flyout)
         {
@@ -2550,8 +2583,7 @@ public partial class MainViewModel : ViewModelBase
     private void OpenTagsView(object? parameter = null)
     {
         SelectedNavIndex = 5;
-        IsMobileMoreSheetOpen = false;
-        IsMobileTagFilterSheetOpen = false;
+        CloseAllOverlays();
 
         if (parameter is Flyout flyout)
         {
@@ -2563,7 +2595,7 @@ public partial class MainViewModel : ViewModelBase
     private void OpenSettings(object? parameter = null)
     {
         SelectedNavIndex = 6;
-        IsMobileMoreSheetOpen = false;
+        CloseAllOverlays();
 
         if (parameter is Flyout flyout)
         {

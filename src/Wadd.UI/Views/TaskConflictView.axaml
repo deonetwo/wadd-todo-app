@@ -25,7 +25,7 @@
         </ControlTemplate>
       </Setter>
       <Setter Property="Background" Value="{DynamicResource AppSurfaceElevatedBrush}"/>
-      <Setter Property="BorderBrush" Value="#334155"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="HorizontalAlignment" Value="Stretch"/>
       <Setter Property="Cursor" Value="Hand"/>
@@ -33,15 +33,15 @@
 
     <!-- Hover State (:pointerover) -->
     <Style Selector="RadioButton.card:pointerover /template/ Border#CardBorder">
-      <Setter Property="BorderBrush" Value="#475569"/>
-      <Setter Property="Background" Value="#1E293B"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryHoverBrush}"/>
+      <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtleBrush}"/>
     </Style>
 
     <!-- Selected / Checked State with Green Accent Border & Subtle Background Tint -->
     <Style Selector="RadioButton.card:checked /template/ Border#CardBorder">
-      <Setter Property="BorderBrush" Value="#10B981"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryBrush}"/>
       <Setter Property="BorderThickness" Value="2"/>
-      <Setter Property="Background" Value="#0F2922"/>
+      <Setter Property="Background" Value="{DynamicResource AppAccentTintBrush}"/>
     </Style>
   </UserControl.Styles>
 

@@ -1237,6 +1237,8 @@
 
                   <Button Classes="ghost"
                           Command="{Binding OpenTagsViewCommand}"
+                          CommandParameter="{Binding $parent[Button].Flyout}"
+                          x:CompileBindings="False"
                           Foreground="{DynamicResource AppPrimaryBrush}"
                           FontWeight="SemiBold"
                           HorizontalAlignment="Stretch"
@@ -1410,6 +1412,8 @@
 
                   <Button Classes="ghost"
                           Command="{Binding OpenTagsViewCommand}"
+                          CommandParameter="{Binding $parent[Button].Flyout}"
+                          x:CompileBindings="False"
                           Foreground="{DynamicResource AppPrimaryBrush}"
                           FontWeight="SemiBold"
                           HorizontalAlignment="Stretch"
