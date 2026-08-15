@@ -10,7 +10,7 @@
   <!-- Primary: terracotta fill, white text -->
   <Style Selector="Button.primary">
     <Setter Property="Background"              Value="{DynamicResource AppPrimaryBrush}"/>
-    <Setter Property="Foreground"              Value="#FFFFFF"/>
+    <Setter Property="Foreground"              Value="#F8FAFC"/>
     <Setter Property="BorderThickness"         Value="0"/>
     <Setter Property="CornerRadius"            Value="8"/>
     <Setter Property="Padding"                 Value="16,9"/>
@@ -24,9 +24,21 @@
       </Transitions>
     </Setter>
   </Style>
+  <Style Selector="Button.primary TextBlock">
+    <Setter Property="Foreground" Value="#F8FAFC"/>
+  </Style>
+  <Style Selector="Button.primary PathIcon">
+    <Setter Property="Foreground" Value="#F8FAFC"/>
+  </Style>
   <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource AppPrimaryHoverBrush}"/>
-    <Setter Property="Foreground"  Value="#FFFFFF"/>
+    <Setter Property="Foreground"  Value="#F8FAFC"/>
+  </Style>
+  <Style Selector="Button.primary:pointerover TextBlock">
+    <Setter Property="Foreground" Value="#F8FAFC"/>
+  </Style>
+  <Style Selector="Button.primary:pointerover PathIcon">
+    <Setter Property="Foreground" Value="#F8FAFC"/>
   </Style>
   <Style Selector="Button.primary:pressed">
     <Setter Property="RenderTransform" Value="scale(0.96)"/>
@@ -41,7 +53,7 @@
         <GradientStop Color="#10B981" Offset="1.0"/>
       </LinearGradientBrush>
     </Setter>
-    <Setter Property="Foreground"              Value="#FFFFFF"/>
+    <Setter Property="Foreground"              Value="#F8FAFC"/>
     <Setter Property="BorderThickness"         Value="0"/>
     <Setter Property="CornerRadius"            Value="20"/>
     <Setter Property="Padding"                 Value="18,10"/>
@@ -54,6 +66,12 @@
         <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="CubicEaseOut"/>
       </Transitions>
     </Setter>
+  </Style>
+  <Style Selector="Button.composer-add TextBlock">
+    <Setter Property="Foreground" Value="#F8FAFC"/>
+  </Style>
+  <Style Selector="Button.composer-add PathIcon">
+    <Setter Property="Foreground" Value="#F8FAFC"/>
   </Style>
   <Style Selector="Button.composer-add /template/ ContentPresenter">
     <Setter Property="CornerRadius" Value="20"/>
@@ -74,7 +92,7 @@
         <GradientStop Color="#059669" Offset="1.0"/>
       </LinearGradientBrush>
     </Setter>
-    <Setter Property="Foreground" Value="#FFFFFF"/>
+    <Setter Property="Foreground" Value="#F8FAFC"/>
     <Setter Property="BoxShadow"  Value="0 6 18 0 #5010B981"/>
   </Style>
   <Style Selector="Button.composer-add:pressed">
@@ -447,6 +465,60 @@
     <Setter Property="Foreground" Value="{DynamicResource AppPrimaryBrush}"/>
   </Style>
 
+  <!-- Global Filter Toggle Button Pill Style (Modern Soft-Tinted Pill) -->
+  <Style Selector="ToggleButton.filter-pill">
+    <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppTextSecondaryBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="FontSize" Value="11"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Padding" Value="12,5"/>
+    <Setter Property="CornerRadius" Value="14"/>
+    <Setter Property="Cursor" Value="Hand"/>
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.15"/>
+        <BrushTransition Property="Foreground" Duration="0:0:0.15"/>
+        <BrushTransition Property="BorderBrush" Duration="0:0:0.15"/>
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <!-- Pointerover Unchecked -->
+  <Style Selector="ToggleButton.filter-pill:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AppSurfaceElevatedBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}"/>
+  </Style>
+
+  <!-- Checked State (Active Soft-Tinted Pill) -->
+  <Style Selector="ToggleButton.filter-pill:checked /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AppAccentTintBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryBrush}"/>
+  </Style>
+  <Style Selector="ToggleButton.filter-pill:checked TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryBrush}"/>
+    <Setter Property="FontWeight" Value="Bold"/>
+  </Style>
+  <Style Selector="ToggleButton.filter-pill:checked PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryBrush}"/>
+  </Style>
+
+  <!-- Checked State Hover -->
+  <Style Selector="ToggleButton.filter-pill:checked:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtleBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryHoverBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryHoverBrush}"/>
+  </Style>
+  <Style Selector="ToggleButton.filter-pill:checked:pointerover TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryHoverBrush}"/>
+  </Style>
+  <Style Selector="ToggleButton.filter-pill:checked:pointerover PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryHoverBrush}"/>
+  </Style>
+
   <!-- Bottom Tab Bar Button (5-tab explicit binding) -->
   <Style Selector="Button.tab-btn">
     <Setter Property="Background" Value="Transparent"/>
@@ -538,7 +610,7 @@
           <PathIcon x:Name="CheckIcon"
                     Data="{StaticResource CheckIconData}"
                     Width="11" Height="11"
-                    Foreground="#FFFFFF"
+                    Foreground="#F8FAFC"
                     Opacity="0"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center">
@@ -578,11 +650,11 @@
     <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryBrush}"/>
   </Style>
   <Style Selector="CheckBox.task-checkbox:checked /template/ PathIcon#CheckIcon">
-    <Setter Property="Foreground" Value="#FFFFFF"/>
+    <Setter Property="Foreground" Value="#F8FAFC"/>
     <Setter Property="Opacity" Value="1"/>
   </Style>
   <Style Selector="CheckBox.task-checkbox:checked:pointerover /template/ PathIcon#CheckIcon">
-    <Setter Property="Foreground" Value="#FFFFFF"/>
+    <Setter Property="Foreground" Value="#F8FAFC"/>
     <Setter Property="Opacity" Value="1"/>
   </Style>
 
@@ -695,12 +767,14 @@
 
   <!-- Make CalendarDatePicker act as a click-only button (like ClockTimePicker) -->
   <Style Selector="CalendarDatePicker">
+    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
     <Setter Property="Cursor" Value="Hand"/>
     <Setter Property="Focusable" Value="False"/>
   </Style>
 
   <!-- Strip internal borders, focus elements, and separate backgrounds from TextBox -->
   <Style Selector="CalendarDatePicker /template/ TextBox">
+    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
     <Setter Property="IsReadOnly" Value="True"/>
     <Setter Property="Focusable" Value="False"/>
     <Setter Property="Cursor" Value="Hand"/>
@@ -890,27 +964,27 @@
     <Setter Property="Fill" Value="{DynamicResource AppPrimaryHoverBrush}"/>
   </Style>
 
-  <!-- Preserve White Inner Circle Knob across all states -->
+  <!-- Preserve Off-White Inner Circle Knob across all states -->
   <Style Selector="ToggleSwitch /template/ Canvas Border">
-    <Setter Property="Background" Value="#FFFFFF"/>
+    <Setter Property="Background" Value="#F8FAFC"/>
   </Style>
   <Style Selector="ToggleSwitch:checked /template/ Canvas Border">
-    <Setter Property="Background" Value="#FFFFFF"/>
+    <Setter Property="Background" Value="#F8FAFC"/>
   </Style>
   <Style Selector="ToggleSwitch:checked:pointerover /template/ Canvas Border">
-    <Setter Property="Background" Value="#FFFFFF"/>
+    <Setter Property="Background" Value="#F8FAFC"/>
   </Style>
   <Style Selector="ToggleSwitch /template/ ContentPresenter#PART_Knob">
-    <Setter Property="Background" Value="#FFFFFF"/>
+    <Setter Property="Background" Value="#F8FAFC"/>
   </Style>
   <Style Selector="ToggleSwitch:checked /template/ ContentPresenter#PART_Knob">
-    <Setter Property="Background" Value="#FFFFFF"/>
+    <Setter Property="Background" Value="#F8FAFC"/>
   </Style>
   <Style Selector="ToggleSwitch /template/ Ellipse">
-    <Setter Property="Fill" Value="#FFFFFF"/>
+    <Setter Property="Fill" Value="#F8FAFC"/>
   </Style>
   <Style Selector="ToggleSwitch:checked /template/ Ellipse">
-    <Setter Property="Fill" Value="#FFFFFF"/>
+    <Setter Property="Fill" Value="#F8FAFC"/>
   </Style>
 
 </Styles>

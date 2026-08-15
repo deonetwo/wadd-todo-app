@@ -8,6 +8,7 @@
         x:Class="Wadd.UI.Views.TaskReviewWizardWindow"
         x:DataType="vm:TaskReviewWizardViewModel"
         Title="Task Review"
+        Icon="avares://Wadd.UI/Assets/logo.ico"
         Width="480" Height="520"
         MinWidth="420" MinHeight="480"
         WindowStartupLocation="CenterOwner"

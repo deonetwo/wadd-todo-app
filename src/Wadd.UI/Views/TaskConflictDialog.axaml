@@ -7,6 +7,7 @@
         x:Class="Wadd.UI.Views.TaskConflictDialog"
         x:DataType="vm:TaskConflictViewModel"
         Title="Task Review &amp; Conflict Resolution"
+        Icon="avares://Wadd.UI/Assets/logo.ico"
         Width="460" Height="550"
         MinWidth="420" MinHeight="500"
         WindowStartupLocation="CenterOwner"

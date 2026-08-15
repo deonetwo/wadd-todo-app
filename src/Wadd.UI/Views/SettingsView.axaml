@@ -182,7 +182,7 @@
                     HorizontalAlignment="Left"
                     ToolTip.Tip="Sign in with your Google Account">
               <StackPanel Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">
-                <Border Width="20" Height="20" CornerRadius="10" Background="#FFFFFF" VerticalAlignment="Center">
+                <Border Width="20" Height="20" CornerRadius="10" Background="#F8FAFC" VerticalAlignment="Center">
                   <TextBlock Text="G" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
                 <TextBlock Text="Connect Google Drive Account" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/>
@@ -203,7 +203,7 @@
                     Padding="14,12">
               <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
                 <Border Grid.Column="0" Width="36" Height="36" CornerRadius="18" Background="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center">
-                  <TextBlock Text="G" FontSize="18" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                  <TextBlock Text="G" FontSize="18" FontWeight="Bold" Foreground="#F8FAFC" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
                 <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
                   <TextBlock Text="{Binding GoogleUserEmail}"

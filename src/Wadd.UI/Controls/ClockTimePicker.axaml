@@ -58,8 +58,8 @@
                            Grid.Column="0"
                            Text="12:00"
                            FontSize="14"
-                           FontWeight="SemiBold"
-                           Foreground="{DynamicResource CalendarDatePickerForeground}"
+                           FontWeight="Normal"
+                           Foreground="{DynamicResource AppTextPrimaryBrush}"
                            VerticalAlignment="Center"
                            HorizontalAlignment="Left"/>
 

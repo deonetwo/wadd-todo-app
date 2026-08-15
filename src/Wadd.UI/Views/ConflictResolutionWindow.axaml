@@ -8,6 +8,7 @@
         x:Class="Wadd.UI.Views.ConflictResolutionWindow"
         x:DataType="vm:ConflictResolutionViewModel"
         Title="Review Task Changes"
+        Icon="avares://Wadd.UI/Assets/logo.ico"
         Width="1080" Height="720"
         MinWidth="880" MinHeight="580"
         WindowStartupLocation="CenterOwner"

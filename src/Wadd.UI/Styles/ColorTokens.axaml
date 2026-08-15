@@ -12,7 +12,7 @@
     <ResourceDictionary x:Key="Light">
       <!-- Surfaces -->
       <Color x:Key="AppBackgroundColor">#F3F8F8</Color>
-      <Color x:Key="AppSurfaceColor">#FFFFFF</Color>
+      <Color x:Key="AppSurfaceColor">#FAFCFC</Color>
       <Color x:Key="AppSurfaceElevatedColor">#E7F1F2</Color>
       <Color x:Key="AppSurfaceSubtleColor">#DDECEE</Color>
       <!-- Primary brand: rich ocean teal -->

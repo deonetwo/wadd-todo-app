@@ -338,8 +338,8 @@
                                     Margin="0,0,4,3"
                                     HorizontalAlignment="Left">
                               <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                                <PathIcon Data="{StaticResource TagIconData}" Width="10" Height="10" Foreground="#FFFFFF"/>
-                                <TextBlock Text="{Binding}" FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF"/>
+                                <PathIcon Data="{StaticResource TagIconData}" Width="10" Height="10" Foreground="#F8FAFC"/>
+                                <TextBlock Text="{Binding}" FontSize="11" FontWeight="SemiBold" Foreground="#F8FAFC"/>
                               </StackPanel>
                             </Border>
                           </DataTemplate>

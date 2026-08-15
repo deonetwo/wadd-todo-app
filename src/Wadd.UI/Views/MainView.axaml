@@ -725,10 +725,10 @@
                             Padding="10,6"
                             Margin="0,0,8,8">
                       <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                        <PathIcon Data="{StaticResource TagIconData}" Width="12" Height="12" Foreground="#FFFFFF" VerticalAlignment="Center"/>
-                        <TextBlock Text="{Binding}" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                        <PathIcon Data="{StaticResource TagIconData}" Width="12" Height="12" Foreground="#F8FAFC" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding}" FontSize="12" FontWeight="SemiBold" Foreground="#F8FAFC" VerticalAlignment="Center"/>
                         <Button Command="{Binding $parent[UserControl].DataContext.RemoveNewTaskCategoryCommand}" CommandParameter="{Binding}" Classes="ghost" Padding="0" Width="14" Height="14" MinWidth="0" MinHeight="0" VerticalAlignment="Center" VerticalContentAlignment="Center">
-                          <PathIcon Data="{StaticResource CloseIconData}" Width="9" Height="9" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                          <PathIcon Data="{StaticResource CloseIconData}" Width="9" Height="9" Foreground="#F8FAFC" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Button>
                       </StackPanel>
                     </Border>
@@ -796,7 +796,7 @@
                     Padding="22,10"
                     CornerRadius="20">
               <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                <PathIcon Data="{StaticResource PlusIconData}" Width="13" Height="13" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                <PathIcon Data="{StaticResource PlusIconData}" Width="13" Height="13" Foreground="#F8FAFC" VerticalAlignment="Center"/>
                 <TextBlock Text="Add Task" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
               </StackPanel>
             </Button>
