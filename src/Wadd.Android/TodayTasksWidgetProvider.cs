@@ -264,6 +264,19 @@ public class TodayTasksWidgetProvider : AppWidgetProvider
                             entity.CompletedAt = willBeCompleted ? DateTime.UtcNow : null;
                             entity.UpdatedAt = DateTime.UtcNow;
                             conn.Update(entity);
+
+                            conn.CreateTable<Wadd.Services.Entities.SyncLogEntity>();
+                            var syncLog = new Wadd.Services.Entities.SyncLogEntity
+                            {
+                                Id = Guid.NewGuid(),
+                                TableName = "TodoItem",
+                                RecordId = entity.Id,
+                                Operation = (int)Wadd.Core.Models.SyncOperation.Update,
+                                Timestamp = DateTime.UtcNow,
+                                Synced = false,
+                                PayloadJson = System.Text.Json.JsonSerializer.Serialize(entity.ToDomain())
+                            };
+                            conn.Insert(syncLog);
                         }
                     }
 

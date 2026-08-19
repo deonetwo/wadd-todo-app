@@ -1350,6 +1350,24 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     private int _selectedNavIndex = 0;
 
+    [ObservableProperty]
+    private bool _hasLoadedCompletedView;
+
+    [ObservableProperty]
+    private bool _hasLoadedRecurringView;
+
+    [ObservableProperty]
+    private bool _hasLoadedCalendarView;
+
+    [ObservableProperty]
+    private bool _hasLoadedSearchView;
+
+    [ObservableProperty]
+    private bool _hasLoadedTagsView;
+
+    [ObservableProperty]
+    private bool _hasLoadedSettingsView;
+
     public bool IsTasksView => SelectedNavIndex == 0;
     public bool IsCompletedView => SelectedNavIndex == 1;
     public bool IsRecurringView => SelectedNavIndex == 2;
@@ -1362,6 +1380,13 @@ public partial class MainViewModel : ViewModelBase
 
     partial void OnSelectedNavIndexChanged(int value)
     {
+        if (value == 1 && !HasLoadedCompletedView) HasLoadedCompletedView = true;
+        if (value == 2 && !HasLoadedRecurringView) HasLoadedRecurringView = true;
+        if (value == 3 && !HasLoadedCalendarView) HasLoadedCalendarView = true;
+        if (value == 4 && !HasLoadedSearchView) HasLoadedSearchView = true;
+        if (value == 5 && !HasLoadedTagsView) HasLoadedTagsView = true;
+        if (value == 6 && !HasLoadedSettingsView) HasLoadedSettingsView = true;
+
         OnPropertyChanged(nameof(IsTasksView));
         OnPropertyChanged(nameof(IsSearchView));
         OnPropertyChanged(nameof(IsCompletedView));

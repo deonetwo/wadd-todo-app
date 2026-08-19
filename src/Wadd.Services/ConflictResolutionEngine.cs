@@ -34,27 +34,39 @@ public class ConflictResolutionEngine
         long localTicks = localUpdated.ToUniversalTime().Ticks;
         long remoteTicks = remoteUpdated.ToUniversalTime().Ticks;
 
+        TodoItem result;
         if (remoteTicks > localTicks)
         {
-            return Clone(remote);
+            result = Clone(remote);
         }
-        if (localTicks > remoteTicks)
+        else if (localTicks > remoteTicks)
         {
-            return Clone(local);
+            result = Clone(local);
         }
-
-        // Tie-breaker when timestamps are identical
-        if (local.IsDeleted != remote.IsDeleted)
+        else if (local.IsDeleted != remote.IsDeleted)
         {
-            return local.IsDeleted ? Clone(local) : Clone(remote);
+            result = local.IsDeleted ? Clone(local) : Clone(remote);
+        }
+        else
+        {
+            string localKey = local.Title + (local.Description ?? "") + (local.Category ?? "");
+            string remoteKey = remote.Title + (remote.Description ?? "") + (remote.Category ?? "");
+
+            result = string.Compare(localKey, remoteKey, StringComparison.Ordinal) >= 0
+                ? Clone(local)
+                : Clone(remote);
         }
 
-        string localKey = local.Title + (local.Description ?? "") + (local.Category ?? "");
-        string remoteKey = remote.Title + (remote.Description ?? "") + (remote.Category ?? "");
+        if (result.IsCompleted)
+        {
+            result.CompletedAt ??= result.UpdatedAt ?? DateTime.UtcNow;
+        }
+        else
+        {
+            result.CompletedAt = null;
+        }
 
-        return string.Compare(localKey, remoteKey, StringComparison.Ordinal) >= 0
-            ? Clone(local)
-            : Clone(remote);
+        return result;
     }
 
     public FieldMergeResult<TodoItem> MergeTodoItems(TodoItem local, TodoItem cloud, TodoItem? baseItem)
@@ -114,6 +126,7 @@ public class ConflictResolutionEngine
         MergeProperty(nameof(TodoItem.Title), x => x.Title, (x, v) => x.Title = v);
         MergeProperty(nameof(TodoItem.Description), x => x.Description, (x, v) => x.Description = v);
         MergeProperty(nameof(TodoItem.IsCompleted), x => x.IsCompleted, (x, v) => x.IsCompleted = v);
+        MergeProperty(nameof(TodoItem.CompletedAt), x => x.CompletedAt, (x, v) => x.CompletedAt = v);
         MergeProperty(nameof(TodoItem.Priority), x => x.Priority, (x, v) => x.Priority = v);
         MergeProperty(nameof(TodoItem.DueDate), x => x.DueDate, (x, v) => x.DueDate = v);
         MergeProperty(nameof(TodoItem.ReminderAt), x => x.ReminderAt, (x, v) => x.ReminderAt = v);
@@ -126,6 +139,15 @@ public class ConflictResolutionEngine
 
         result.MergedItem.Id = local.Id;
         result.MergedItem.UpdatedAt = DateTime.UtcNow;
+
+        if (result.MergedItem.IsCompleted)
+        {
+            result.MergedItem.CompletedAt ??= result.MergedItem.UpdatedAt ?? DateTime.UtcNow;
+        }
+        else
+        {
+            result.MergedItem.CompletedAt = null;
+        }
 
         return result;
     }

@@ -62,6 +62,15 @@ public partial class TodoItemViewModel : ViewModelBase
             if (Model.IsCompleted != value)
             {
                 Model.IsCompleted = value;
+                if (value)
+                {
+                    Model.CompletedAt ??= DateTime.UtcNow;
+                }
+                else
+                {
+                    Model.CompletedAt = null;
+                }
+
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(DueDateFormatted));
                 OnPropertyChanged(nameof(ContextDueDateFormatted));

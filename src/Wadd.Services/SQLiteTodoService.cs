@@ -343,6 +343,15 @@ public class SQLiteTodoService : ITodoService
     public async Task DirectUpsertFromSyncAsync(TodoItem item, CancellationToken cancellationToken = default)
     {
         await EnsureInitializedAsync();
+        if (item.IsCompleted)
+        {
+            item.CompletedAt ??= item.UpdatedAt ?? DateTime.UtcNow;
+        }
+        else
+        {
+            item.CompletedAt = null;
+        }
+
         var existing = await _database.Table<TodoItemEntity>().FirstOrDefaultAsync(x => x.Id == item.Id);
         var entity = TodoItemEntity.FromDomain(item);
 

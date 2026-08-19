@@ -278,22 +278,46 @@
         <views:TasksView IsVisible="{Binding IsTasksView}"/>
 
         <!-- ═══ TAB 1: SEARCH VIEW ═══ -->
-        <views:SearchView IsVisible="{Binding IsSearchView}"/>
+        <Panel IsVisible="{Binding IsSearchView}">
+          <ContentControl IsVisible="{Binding HasLoadedSearchView}">
+            <views:SearchView/>
+          </ContentControl>
+        </Panel>
 
         <!-- ═══ TAB 2: COMPLETED TASKS VIEW ═══ -->
-        <views:CompletedTasksView IsVisible="{Binding IsCompletedView}"/>
+        <Panel IsVisible="{Binding IsCompletedView}">
+          <ContentControl IsVisible="{Binding HasLoadedCompletedView}">
+            <views:CompletedTasksView/>
+          </ContentControl>
+        </Panel>
 
         <!-- ═══ TAB 3: RECURRING TASKS VIEW ═══ -->
-        <views:RecurringTasksView IsVisible="{Binding IsRecurringView}"/>
+        <Panel IsVisible="{Binding IsRecurringView}">
+          <ContentControl IsVisible="{Binding HasLoadedRecurringView}">
+            <views:RecurringTasksView/>
+          </ContentControl>
+        </Panel>
 
         <!-- ═══ TAB 4: CALENDAR VIEW ═══ -->
-        <views:CalendarView IsVisible="{Binding IsCalendarView}"/>
+        <Panel IsVisible="{Binding IsCalendarView}">
+          <ContentControl IsVisible="{Binding HasLoadedCalendarView}">
+            <views:CalendarView/>
+          </ContentControl>
+        </Panel>
 
         <!-- ═══ TAB 5: TAGS MANAGEMENT VIEW ═══ -->
-        <views:TagsManagementView IsVisible="{Binding IsTagsView}"/>
+        <Panel IsVisible="{Binding IsTagsView}">
+          <ContentControl IsVisible="{Binding HasLoadedTagsView}">
+            <views:TagsManagementView/>
+          </ContentControl>
+        </Panel>
 
         <!-- ═══ TAB 6: SETTINGS VIEW ═══ -->
-        <views:SettingsView IsVisible="{Binding IsSettingsView}"/>
+        <Panel IsVisible="{Binding IsSettingsView}">
+          <ContentControl IsVisible="{Binding HasLoadedSettingsView}">
+            <views:SettingsView/>
+          </ContentControl>
+        </Panel>
 
         <!-- ═══ TASK DETAIL DRAWER OVERLAY (Desktop) ═══ -->
         <Grid IsVisible="{Binding IsDetailDrawerOpen}" ZIndex="800">
@@ -403,22 +427,46 @@
         <views:TasksView IsVisible="{Binding IsTasksView}"/>
 
         <!-- Compact Search View -->
-        <views:SearchView IsVisible="{Binding IsSearchView}"/>
+        <Panel IsVisible="{Binding IsSearchView}">
+          <ContentControl IsVisible="{Binding HasLoadedSearchView}">
+            <views:SearchView/>
+          </ContentControl>
+        </Panel>
 
         <!-- Compact Completed View -->
-        <views:CompletedTasksView IsVisible="{Binding IsCompletedView}"/>
+        <Panel IsVisible="{Binding IsCompletedView}">
+          <ContentControl IsVisible="{Binding HasLoadedCompletedView}">
+            <views:CompletedTasksView/>
+          </ContentControl>
+        </Panel>
 
         <!-- Compact Recurring View -->
-        <views:RecurringTasksView IsVisible="{Binding IsRecurringView}"/>
+        <Panel IsVisible="{Binding IsRecurringView}">
+          <ContentControl IsVisible="{Binding HasLoadedRecurringView}">
+            <views:RecurringTasksView/>
+          </ContentControl>
+        </Panel>
 
         <!-- Compact Calendar View -->
-        <views:CalendarView IsVisible="{Binding IsCalendarView}"/>
+        <Panel IsVisible="{Binding IsCalendarView}">
+          <ContentControl IsVisible="{Binding HasLoadedCalendarView}">
+            <views:CalendarView/>
+          </ContentControl>
+        </Panel>
 
         <!-- Compact Tags Management View -->
-        <views:TagsManagementView IsVisible="{Binding IsTagsView}"/>
+        <Panel IsVisible="{Binding IsTagsView}">
+          <ContentControl IsVisible="{Binding HasLoadedTagsView}">
+            <views:TagsManagementView/>
+          </ContentControl>
+        </Panel>
 
         <!-- Compact Settings View -->
-        <views:SettingsView IsVisible="{Binding IsSettingsView}"/>
+        <Panel IsVisible="{Binding IsSettingsView}">
+          <ContentControl IsVisible="{Binding HasLoadedSettingsView}">
+            <views:SettingsView/>
+          </ContentControl>
+        </Panel>
 
         <!-- ═══ TASK DETAIL DRAWER OVERLAY (Compact Bottom Sheet - Bottom-Docked) ═══ -->
         <Border IsVisible="{Binding IsDetailDrawerOpen}" ZIndex="900" Background="#90000000">
