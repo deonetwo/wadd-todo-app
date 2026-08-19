@@ -24,7 +24,7 @@ public class AndroidGoogleAuthService : INativeGoogleAuthService
 
         try
         {
-            var driveScope = new global::Android.Gms.Common.Apis.Scope("https://www.googleapis.com/auth/drive.file");
+            var driveScope = new global::Android.Gms.Common.Apis.Scope("https://www.googleapis.com/auth/drive.appdata");
             var gsoBuilder = new global::Android.Gms.Auth.Api.SignIn.GoogleSignInOptions.Builder(global::Android.Gms.Auth.Api.SignIn.GoogleSignInOptions.DefaultSignIn)
                 .RequestEmail()
                 .RequestScopes(driveScope);

@@ -4,6 +4,13 @@ namespace Wadd.Core.Helpers;
 
 public static class RecurrenceHelper
 {
+    public static Guid GenerateDeterministicRecurringId(Guid seriesId, DateTime nextDueDate)
+    {
+        string key = $"{seriesId:N}_{nextDueDate.Date:yyyy-MM-dd}";
+        byte[] hash = System.Security.Cryptography.MD5.HashData(System.Text.Encoding.UTF8.GetBytes(key));
+        return new Guid(hash);
+    }
+
     public static DateTime CalculateNextDueDate(TodoItem item, DateTime? fromDate = null)
     {
         ArgumentNullException.ThrowIfNull(item);

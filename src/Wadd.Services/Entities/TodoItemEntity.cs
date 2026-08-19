@@ -34,6 +34,10 @@ public class TodoItemEntity
     [Indexed]
     public bool IsDeleted { get; set; } = false;
 
+    public DateTime? DeletedAt { get; set; }
+
+    public Guid? SeriesId { get; set; }
+
     public bool IsRecurring { get; set; } = false;
 
     public string RecurrenceType { get; set; } = "None";
@@ -62,6 +66,8 @@ public class TodoItemEntity
             ReminderAt = ReminderAt,
             Version = Version,
             IsDeleted = IsDeleted,
+            DeletedAt = DeletedAt,
+            SeriesId = SeriesId,
             IsRecurring = IsRecurring,
             RecurrenceType = RecurrenceType,
             CustomRecurrenceInterval = CustomRecurrenceInterval,
@@ -88,6 +94,8 @@ public class TodoItemEntity
             ReminderAt = item.ReminderAt,
             Version = item.Version <= 0 ? 1 : item.Version,
             IsDeleted = item.IsDeleted,
+            DeletedAt = item.DeletedAt,
+            SeriesId = item.SeriesId,
             IsRecurring = item.IsRecurring,
             RecurrenceType = item.RecurrenceType,
             CustomRecurrenceInterval = item.CustomRecurrenceInterval,

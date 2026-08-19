@@ -164,4 +164,99 @@ public class SyncEngineTests
         await service.CloseAsync();
         try { File.Delete(_testDbPath); } catch { }
     }
+
+    [Fact]
+    public void MergeTask_NewerRemoteUpdatedAt_Wins()
+    {
+        var taskId = Guid.NewGuid();
+        var local = new TodoItem
+        {
+            Id = taskId,
+            Title = "Local Title",
+            UpdatedAt = new DateTime(2026, 8, 17, 10, 0, 0, DateTimeKind.Utc)
+        };
+        var remote = new TodoItem
+        {
+            Id = taskId,
+            Title = "Remote Title",
+            UpdatedAt = new DateTime(2026, 8, 17, 10, 5, 0, DateTimeKind.Utc)
+        };
+
+        var merged = ConflictResolutionEngine.MergeTask(local, remote);
+
+        Assert.Equal("Remote Title", merged.Title);
+        Assert.Equal(remote.UpdatedAt, merged.UpdatedAt);
+    }
+
+    [Fact]
+    public void MergeTask_TombstonePriority_WinsOnSameTimestamp()
+    {
+        var taskId = Guid.NewGuid();
+        var sameTime = new DateTime(2026, 8, 17, 12, 0, 0, DateTimeKind.Utc);
+
+        var local = new TodoItem
+        {
+            Id = taskId,
+            Title = "Active Item",
+            IsDeleted = false,
+            UpdatedAt = sameTime
+        };
+        var remote = new TodoItem
+        {
+            Id = taskId,
+            Title = "Active Item",
+            IsDeleted = true,
+            DeletedAt = sameTime,
+            UpdatedAt = sameTime
+        };
+
+        var merged = ConflictResolutionEngine.MergeTask(local, remote);
+
+        Assert.True(merged.IsDeleted);
+    }
+
+    [Fact]
+    public void MergeTask_RestoredTaskWithNewerTimestamp_WinsOverTombstone()
+    {
+        var taskId = Guid.NewGuid();
+        var deletedTime = new DateTime(2026, 8, 17, 12, 0, 0, DateTimeKind.Utc);
+        var restoredTime = new DateTime(2026, 8, 17, 12, 10, 0, DateTimeKind.Utc);
+
+        var remoteTombstone = new TodoItem
+        {
+            Id = taskId,
+            Title = "Deleted Item",
+            IsDeleted = true,
+            DeletedAt = deletedTime,
+            UpdatedAt = deletedTime
+        };
+
+        var localRestored = new TodoItem
+        {
+            Id = taskId,
+            Title = "Restored Item",
+            IsDeleted = false,
+            DeletedAt = null,
+            UpdatedAt = restoredTime
+        };
+
+        var merged = ConflictResolutionEngine.MergeTask(localRestored, remoteTombstone);
+
+        Assert.False(merged.IsDeleted);
+        Assert.Equal("Restored Item", merged.Title);
+        Assert.Equal(restoredTime, merged.UpdatedAt);
+    }
+
+    [Fact]
+    public void GenerateDeterministicRecurringId_SameSeriesAndDate_YieldsIdenticalGuid()
+    {
+        var seriesId = Guid.NewGuid();
+        var dueDate = new DateTime(2026, 8, 20, 0, 0, 0, DateTimeKind.Utc);
+
+        var id1 = Wadd.Core.Helpers.RecurrenceHelper.GenerateDeterministicRecurringId(seriesId, dueDate);
+        var id2 = Wadd.Core.Helpers.RecurrenceHelper.GenerateDeterministicRecurringId(seriesId, dueDate);
+
+        Assert.Equal(id1, id2);
+        Assert.NotEqual(Guid.Empty, id1);
+    }
 }

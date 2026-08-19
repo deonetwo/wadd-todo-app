@@ -28,6 +28,10 @@ public class TodoItem
 
     public bool IsDeleted { get; set; } = false;
 
+    public DateTime? DeletedAt { get; set; }
+
+    public Guid? SeriesId { get; set; }
+
     public bool IsRecurring { get; set; } = false;
 
     public string RecurrenceType { get; set; } = "None";

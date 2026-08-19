@@ -216,6 +216,27 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     private TodoItemViewModel? _selectedDetailTask;
 
+    partial void OnSelectedDetailTaskChanged(TodoItemViewModel? oldValue, TodoItemViewModel? newValue)
+    {
+        if (oldValue != null)
+        {
+            oldValue.PropertyChanged -= OnSelectedDetailTaskPropertyChanged;
+        }
+        if (newValue != null)
+        {
+            newValue.PropertyChanged += OnSelectedDetailTaskPropertyChanged;
+        }
+    }
+
+    private async void OnSelectedDetailTaskPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (SelectedDetailTask != null && (e.PropertyName == nameof(TodoItemViewModel.Description) || e.PropertyName == nameof(TodoItemViewModel.Title)))
+        {
+            await _todoService.UpdateTodoAsync(SelectedDetailTask.Model);
+            RequestDebouncedAutoSync();
+        }
+    }
+
     [ObservableProperty]
     private bool _isDetailDrawerOpen;
 
@@ -239,17 +260,25 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void CloseDetailDrawer()
+    private async Task CloseDetailDrawerAsync()
     {
+        if (SelectedDetailTask != null)
+        {
+            await _todoService.UpdateTodoAsync(SelectedDetailTask.Model);
+            RequestDebouncedAutoSync();
+        }
         IsDetailDrawerOpen = false;
         SelectedDetailTask = null;
     }
+
+    private void CloseDetailDrawer() => _ = CloseDetailDrawerAsync();
 
     [RelayCommand]
     private async Task SaveDetailTaskAsync()
     {
         if (SelectedDetailTask == null) return;
         await _todoService.UpdateTodoAsync(SelectedDetailTask.Model);
+        RequestDebouncedAutoSync();
         UpdateSubCollections();
     }
 
@@ -2557,6 +2586,11 @@ public partial class MainViewModel : ViewModelBase
         if (IsSyncing) return;
         try
         {
+            if (SelectedDetailTask != null)
+            {
+                await _todoService.UpdateTodoAsync(SelectedDetailTask.Model);
+            }
+
             IsSyncing = true;
             StatusMessage = "Syncing with Google Drive...";
             var success = await _syncService.SyncAsync();
@@ -2618,6 +2652,11 @@ public partial class MainViewModel : ViewModelBase
         if (IsSyncing || !IsGoogleSignedIn) return;
         try
         {
+            if (SelectedDetailTask != null)
+            {
+                await _todoService.UpdateTodoAsync(SelectedDetailTask.Model);
+            }
+
             IsSyncing = true;
             var success = await _syncService.SyncAsync();
             if (success)

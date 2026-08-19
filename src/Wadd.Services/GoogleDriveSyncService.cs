@@ -9,13 +9,7 @@ using Wadd.Core.Models;
 
 namespace Wadd.Services;
 
-public class CloudSyncMetadata
-{
-    public long LatestRevision { get; set; } = 1;
-    public int SchemaVersion { get; set; } = 1;
-    public DateTime LastSync { get; set; } = DateTime.UtcNow;
-    public List<DeviceMetadata> RegisteredDevices { get; set; } = new();
-}
+
 
 public class GoogleDriveSyncService : ISyncService
 {
@@ -29,10 +23,7 @@ public class GoogleDriveSyncService : ISyncService
     private UserAuthRecord? _authRecord;
     private readonly string _authFilePath;
 
-    private const string SyncFolderName = "Wadd ToDo Sync Data";
-    const string WarningFileName = "⚠️_WARNING_DO_NOT_DELETE_WADD_SYNC_FOLDER.txt";
-    private const string MetadataFileName = "wadd_cloud_metadata.json";
-    private const string LogsFileName = "wadd_sync_logs.json";
+
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -303,7 +294,7 @@ public class GoogleDriveSyncService : ISyncService
                           $"client_id={Uri.EscapeDataString(GoogleClientId)}&" +
                           $"redirect_uri={Uri.EscapeDataString(redirectUri)}&" +
                           $"response_type=id_token%20token&" +
-                          $"scope={Uri.EscapeDataString("openid email profile https://www.googleapis.com/auth/drive.file")}&" +
+                          $"scope={Uri.EscapeDataString("openid email profile https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file")}&" +
                           $"state={Uri.EscapeDataString(state)}&" +
                           $"nonce={Guid.NewGuid().ToString("N")}&" +
                           $"prompt=consent";
@@ -412,60 +403,6 @@ public class GoogleDriveSyncService : ISyncService
         response.OutputStream.Close();
     }
 
-    private async Task<(string AccessToken, string RefreshToken, string IdToken)> ExchangeCodeForTokensAsync(string code, string codeVerifier, string redirectUri, CancellationToken cancellationToken)
-    {
-        var tokenUrl = "https://oauth2.googleapis.com/token";
-        var dict = new Dictionary<string, string>
-        {
-            ["client_id"] = GoogleClientId,
-            ["code"] = code,
-            ["code_verifier"] = codeVerifier,
-            ["grant_type"] = "authorization_code",
-            ["redirect_uri"] = redirectUri
-        };
-
-        var clientSecret = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET")?.Trim();
-        if (!string.IsNullOrWhiteSpace(clientSecret))
-        {
-            dict["client_secret"] = clientSecret;
-        }
-
-        using var request = new HttpRequestMessage(HttpMethod.Post, tokenUrl)
-        {
-            Content = new FormUrlEncodedContent(dict)
-        };
-
-        var response = await _httpClient.SendAsync(request, cancellationToken);
-        var json = await response.Content.ReadAsStringAsync(cancellationToken);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            var clientId = GoogleClientId;
-            var maskedClientId = clientId.Length > 12 
-                ? $"{clientId[..6]}...{clientId[^6..]}" 
-                : (string.IsNullOrWhiteSpace(clientId) ? "[EMPTY]" : clientId);
-
-            var extraTip = json.Contains("client_secret", StringComparison.OrdinalIgnoreCase) || json.Contains("invalid_client", StringComparison.OrdinalIgnoreCase)
-                ? "\n\nTip: This error occurs if your Google Client ID was created as a 'Web application' in Google Cloud Console.\n" +
-                  "To fix this:\n" +
-                  "1. In Google Cloud Console (APIs & Services > Credentials), create an OAuth Client ID with Application Type = 'Desktop app', OR\n" +
-                  "2. Set GOOGLE_CLIENT_SECRET=\"GOCSPX-...\" in your .env file."
-                : "";
-
-            throw new InvalidOperationException(
-                $"Google OAuth token exchange failed ({response.StatusCode}).\n" +
-                $"Client ID Used: {maskedClientId}\n" +
-                $"Google Response: {json}{extraTip}");
-        }
-
-        using var doc = JsonDocument.Parse(json);
-        var root = doc.RootElement;
-        var accessToken = root.TryGetProperty("access_token", out var atProp) ? atProp.GetString() ?? string.Empty : string.Empty;
-        var refreshToken = root.TryGetProperty("refresh_token", out var rtProp) ? rtProp.GetString() ?? string.Empty : string.Empty;
-        var idToken = root.TryGetProperty("id_token", out var idProp) ? idProp.GetString() ?? string.Empty : string.Empty;
-
-        return (accessToken, refreshToken, idToken);
-    }
 
     private static void SendHtmlBridgePage(HttpListenerResponse response)
     {
@@ -639,29 +576,6 @@ public class GoogleDriveSyncService : ISyncService
         return false;
     }
 
-    private static string GenerateCryptoRandomString(int length)
-    {
-        byte[] randomBytes = new byte[length];
-        using (var rng = RandomNumberGenerator.Create())
-        {
-            rng.GetBytes(randomBytes);
-        }
-        return Convert.ToBase64String(randomBytes)
-            .Replace("+", "-")
-            .Replace("/", "_")
-            .Replace("=", "")
-            .Substring(0, length);
-    }
-
-    private static string CreateCodeChallenge(string codeVerifier)
-    {
-        using var sha256 = SHA256.Create();
-        var challengeBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(codeVerifier));
-        return Convert.ToBase64String(challengeBytes)
-            .Replace("+", "-")
-            .Replace("/", "_")
-            .Replace("=", "");
-    }
 
     private static void OpenBrowserUrl(string url)
     {
@@ -763,6 +677,27 @@ public class GoogleDriveSyncService : ISyncService
     //  OFFLINE-FIRST INCREMENTAL MULTI-DEVICE SYNCHRONIZATION ENGINE
     // =========================================================================
 
+    private readonly SemaphoreSlim _syncLock = new(1, 1);
+    private Timer? _debounceTimer;
+    private readonly HashSet<Guid> _pendingPushQueue = new();
+    private DateTime _lastSyncTimestampUtc = DateTime.MinValue;
+
+    public void EnqueueLocalMutation(Guid taskId)
+    {
+        lock (_pendingPushQueue)
+        {
+            _pendingPushQueue.Add(taskId);
+        }
+        _debounceTimer?.Dispose();
+        _debounceTimer = new Timer(_ =>
+        {
+            _ = Task.Run(async () =>
+            {
+                try { await SyncAsync(); } catch { }
+            });
+        }, null, 4000, Timeout.Infinite);
+    }
+
     public async Task<bool> SyncAsync(CancellationToken cancellationToken = default)
     {
         if (!IsSignedIn || _authRecord == null || string.IsNullOrWhiteSpace(_authRecord.AccessToken))
@@ -770,349 +705,334 @@ public class GoogleDriveSyncService : ISyncService
             throw new InvalidOperationException("Please sign in with Google in Settings to synchronize your data.");
         }
 
-        var token = _authRecord.AccessToken;
-
+        await _syncLock.WaitAsync(cancellationToken);
         try
         {
-            // 1. Ensure parent folder "Wadd ToDo Sync Data" exists on Google Drive
-            var folderId = await EnsureSyncFolderExistsAsync(token, cancellationToken);
+            var syncStartUtc = DateTime.UtcNow;
+            var token = _authRecord.AccessToken;
 
-            // 2. Ensure warning file exists inside folder
-            await EnsureWarningFileExistsAsync(token, folderId, cancellationToken);
+            // 1. Fetch full remote file metadata list from appDataFolder (1 single HTTP GET request ~150ms)
+            var remoteFiles = await ListAppDataFolderFilesAsync(token, cancellationToken);
+            var remoteFileMap = remoteFiles.ToDictionary(f => f.Name, f => f, StringComparer.OrdinalIgnoreCase);
 
-            // 3. Fetch remote metadata and remote sync logs
-            var metadataFileId = await FindFolderFileIdAsync(token, folderId, MetadataFileName, cancellationToken);
-            var logsFileId = await FindFolderFileIdAsync(token, folderId, LogsFileName, cancellationToken);
-
-            CloudSyncMetadata cloudMetadata = new();
-            if (!string.IsNullOrWhiteSpace(metadataFileId))
-            {
-                var metaJson = await DownloadFileContentAsync(token, metadataFileId, cancellationToken);
-                if (!string.IsNullOrWhiteSpace(metaJson))
-                {
-                    cloudMetadata = JsonSerializer.Deserialize<CloudSyncMetadata>(metaJson, JsonOptions) ?? new CloudSyncMetadata();
-                }
-            }
-
-            List<SyncLog> cloudLogs = new();
-            if (!string.IsNullOrWhiteSpace(logsFileId))
-            {
-                var logsJson = await DownloadFileContentAsync(token, logsFileId, cancellationToken);
-                if (!string.IsNullOrWhiteSpace(logsJson))
-                {
-                    cloudLogs = JsonSerializer.Deserialize<List<SyncLog>>(logsJson, JsonOptions) ?? new List<SyncLog>();
-                }
-            }
-
-            // Register current device metadata in cloud metadata
-            var deviceMeta = _deviceService.GetDeviceMetadata();
-            var existingDevIndex = cloudMetadata.RegisteredDevices.FindIndex(d => d.DeviceId == deviceMeta.DeviceId);
-            if (existingDevIndex >= 0)
-                cloudMetadata.RegisteredDevices[existingDevIndex] = deviceMeta;
-            else
-                cloudMetadata.RegisteredDevices.Add(deviceMeta);
-
-            // 4. Fetch local pending logs
-            var localPendingLogs = (await _syncLogRepository.GetPendingLogsAsync(cancellationToken)).ToList();
-
-            // 5. Build combined map of records modified locally or remotely
-            var recordIdsToProcess = new HashSet<Guid>();
-            foreach (var log in localPendingLogs) recordIdsToProcess.Add(log.RecordId);
-            foreach (var log in cloudLogs) recordIdsToProcess.Add(log.RecordId);
-
-            // Fetch all local items (including soft deleted)
-            var localItemsDict = new Dictionary<Guid, TodoItem>();
             var rawSqliteSvc = _todoService as SQLiteTodoService;
+            List<TodoItem> localTasksList = rawSqliteSvc != null
+                ? (await rawSqliteSvc.GetAllRawAsync(cancellationToken)).ToList()
+                : (await _todoService.GetTodosAsync(cancellationToken)).ToList();
+
+            var localTasksMap = localTasksList.GroupBy(x => x.Id).ToDictionary(g => g.Key, g => g.First());
+
+            // 2. Identify local tasks with pending un-synced edits
+            var pendingLocalTaskIds = new HashSet<Guid>();
+            lock (_pendingPushQueue)
+            {
+                foreach (var id in _pendingPushQueue) pendingLocalTaskIds.Add(id);
+                _pendingPushQueue.Clear();
+            }
 
             if (rawSqliteSvc != null)
             {
-                var allRaw = await rawSqliteSvc.GetAllRawAsync(cancellationToken);
-                localItemsDict = allRaw.GroupBy(x => x.Id).ToDictionary(g => g.Key, g => g.First());
-            }
-            else
-            {
-                var allItems = await _todoService.GetTodosAsync(cancellationToken);
-                localItemsDict = allItems.GroupBy(x => x.Id).ToDictionary(g => g.Key, g => g.First());
-            }
-
-            // Create dictionary of latest remote state per record ID by replaying cloud logs
-            var cloudItemsDict = ReplayLogsToSnapshot(cloudLogs);
-
-            // 6. Process each record for incremental sync & conflict detection
-            var mergedLogsToUpload = new List<SyncLog>(cloudLogs);
-            var logsToMarkSynced = new List<Guid>();
-
-            foreach (var log in localPendingLogs)
-            {
-                if (!mergedLogsToUpload.Any(l => l.Id == log.Id))
+                var pendingLogs = await _syncLogRepository.GetPendingLogsAsync(cancellationToken);
+                foreach (var log in pendingLogs)
                 {
-                    mergedLogsToUpload.Add(log);
+                    pendingLocalTaskIds.Add(log.RecordId);
                 }
-                logsToMarkSynced.Add(log.Id);
             }
 
-            foreach (var recordId in recordIdsToProcess)
-            {
-                bool hasLocal = localItemsDict.TryGetValue(recordId, out var localItem);
-                bool hasCloud = cloudItemsDict.TryGetValue(recordId, out var cloudItem);
+            // 3. Process remote updates in parallel (skip downloading tasks that have pending local edits)
+            var filesToDownload = remoteFiles
+                .Where(f => f.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                .Where(remoteFile =>
+                {
+                    string idStr = remoteFile.Name[..^5];
+                    if (!Guid.TryParse(idStr, out var taskId)) return false;
 
-                if (hasLocal && !hasCloud)
+                    // If user modified this task locally and hasn't pushed it, do NOT overwrite with old cloud file
+                    if (pendingLocalTaskIds.Contains(taskId)) return false;
+
+                    if (!localTasksMap.TryGetValue(taskId, out var localTask))
+                    {
+                        return true; // New task on cloud -> must download
+                    }
+
+                    if (!remoteFile.ModifiedTime.HasValue) return true;
+
+                    DateTime localUpdated = (localTask.UpdatedAt ?? localTask.CreatedAt).ToUniversalTime();
+                    DateTime remoteUpdated = remoteFile.ModifiedTime.Value.ToUniversalTime();
+
+                    return remoteUpdated > localUpdated.AddSeconds(1);
+                })
+                .ToList();
+
+            if (filesToDownload.Count > 0)
+            {
+                var downloadSemaphore = new SemaphoreSlim(8);
+                var remoteDownloadTasks = filesToDownload
+                    .Select(async remoteFile =>
+                    {
+                        string idStr = remoteFile.Name[..^5];
+                        if (!Guid.TryParse(idStr, out var taskId)) return null;
+
+                        await downloadSemaphore.WaitAsync(cancellationToken);
+                        try
+                        {
+                            var remoteContent = await DownloadAppDataFileAsync(token, remoteFile.Id, cancellationToken);
+                            if (string.IsNullOrWhiteSpace(remoteContent)) return null;
+
+                            var remoteTask = JsonSerializer.Deserialize<TodoItem>(remoteContent, JsonOptions);
+                            return remoteTask != null ? (taskId, remoteTask) : ((Guid taskId, TodoItem remoteTask)?)null;
+                        }
+                        catch
+                        {
+                            return null;
+                        }
+                        finally
+                        {
+                            downloadSemaphore.Release();
+                        }
+                    });
+
+                var remoteResults = await Task.WhenAll(remoteDownloadTasks);
+                foreach (var result in remoteResults)
                 {
-                    // Created locally, upload to cloud
-                    continue; 
-                }
-                else if (!hasLocal && hasCloud)
-                {
-                    // Created on remote device, download to local
+                    if (!result.HasValue) continue;
+                    var (taskId, remoteTask) = result.Value;
+
+                    localTasksMap.TryGetValue(taskId, out var localTask);
+                    var mergedTask = ConflictResolutionEngine.MergeTask(localTask, remoteTask);
+
                     if (rawSqliteSvc != null)
                     {
-                        await rawSqliteSvc.DirectUpsertFromSyncAsync(cloudItem!, cancellationToken);
+                        await rawSqliteSvc.DirectUpsertFromSyncAsync(mergedTask, cancellationToken);
                     }
                     else
                     {
-                        await _todoService.AddTodoAsync(cloudItem!, cancellationToken);
-                    }
-                }
-                else if (hasLocal && hasCloud)
-                {
-                    // Modified on both sides -> Conflict detection / Field merge
-                    var localMod = localItem!.UpdatedAt ?? localItem.CreatedAt;
-                    var cloudMod = cloudItem!.UpdatedAt ?? cloudItem.CreatedAt;
-
-                    if (localItem.Version > cloudItem.Version && localMod > cloudMod)
-                    {
-                        // Local is strictly newer
-                        continue;
-                    }
-                    else if (cloudItem.Version > localItem.Version && cloudMod > localMod)
-                    {
-                        // Cloud is strictly newer
-                        if (rawSqliteSvc != null)
-                        {
-                            await rawSqliteSvc.DirectUpsertFromSyncAsync(cloudItem, cancellationToken);
-                        }
-                    }
-                    else
-                    {
-                        // Independent changes -> Attempt Field-by-Field Merge
-                        var mergeResult = _conflictEngine.MergeTodoItems(localItem, cloudItem, null);
-                        if (!mergeResult.HasConflict)
-                        {
-                            // Auto-merge successful! Apply merged state locally and add to cloud logs
-                            if (rawSqliteSvc != null)
-                            {
-                                await rawSqliteSvc.DirectUpsertFromSyncAsync(mergeResult.MergedItem, cancellationToken);
-                            }
-
-                            var autoMergeLog = new SyncLog
-                            {
-                                Id = Guid.NewGuid(),
-                                TableName = "TodoItem",
-                                RecordId = mergeResult.MergedItem.Id,
-                                Operation = mergeResult.MergedItem.IsDeleted ? SyncOperation.Delete : SyncOperation.Update,
-                                PayloadJson = JsonSerializer.Serialize(mergeResult.MergedItem, JsonOptions),
-                                Timestamp = DateTime.UtcNow,
-                                DeviceId = _deviceService.GetDeviceId(),
-                                Synced = true
-                            };
-                            mergedLogsToUpload.Add(autoMergeLog);
-                        }
+                        if (localTask == null)
+                            await _todoService.AddTodoAsync(mergedTask, cancellationToken);
                         else
-                        {
-                            // Overlapping field conflict! Store in Conflict Repository for user resolution
-                            var conflict = new SyncConflict
-                            {
-                                Id = Guid.NewGuid(),
-                                TableName = "TodoItem",
-                                RecordId = recordId,
-                                LocalVersionJson = JsonSerializer.Serialize(localItem, JsonOptions),
-                                CloudVersionJson = JsonSerializer.Serialize(cloudItem, JsonOptions),
-                                LocalUpdatedAt = localItem.UpdatedAt ?? localItem.CreatedAt,
-                                CloudUpdatedAt = cloudItem.UpdatedAt ?? cloudItem.CreatedAt,
-                                OriginatingDeviceId = _deviceService.GetDeviceId(),
-                                ConflictingFieldsJson = JsonSerializer.Serialize(mergeResult.ConflictingFields, JsonOptions),
-                                CreatedAt = DateTime.UtcNow,
-                                Status = ConflictStatus.Unresolved
-                            };
+                            await _todoService.UpdateTodoAsync(mergedTask, cancellationToken);
+                    }
+                    localTasksMap[taskId] = mergedTask;
+                }
+            }
 
-                            await _conflictRepository.AddConflictAsync(conflict, cancellationToken);
-                        }
+            // 4. Determine tasks to push (Smart Filter)
+            var tasksToPush = new HashSet<Guid>(pendingLocalTaskIds);
+
+            // Add tasks missing from cloud or modified locally after cloud file modification time
+            foreach (var (taskId, localTask) in localTasksMap)
+            {
+                string fileName = $"{taskId}.json";
+                if (!remoteFileMap.TryGetValue(fileName, out var remoteFile))
+                {
+                    tasksToPush.Add(taskId); // Missing on cloud -> push
+                }
+                else if (remoteFile.ModifiedTime.HasValue)
+                {
+                    DateTime localUpdated = (localTask.UpdatedAt ?? localTask.CreatedAt).ToUniversalTime();
+                    DateTime remoteUpdated = remoteFile.ModifiedTime.Value.ToUniversalTime();
+
+                    if (localUpdated > remoteUpdated.AddSeconds(1))
+                    {
+                        tasksToPush.Add(taskId); // Local task is newer -> push
                     }
                 }
             }
 
-            // Mark local logs as synced
-            await _syncLogRepository.MarkLogsAsSyncedAsync(logsToMarkSynced, cancellationToken);
+            if (tasksToPush.Count > 0)
+            {
+                var fileIdMap = remoteFileMap.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Id, StringComparer.OrdinalIgnoreCase);
+                var uploadSemaphore = new SemaphoreSlim(8);
+                var uploadTasks = tasksToPush
+                    .Where(taskId => localTasksMap.ContainsKey(taskId))
+                    .Select(async taskId =>
+                    {
+                        var taskToUpload = localTasksMap[taskId];
+                        await uploadSemaphore.WaitAsync(cancellationToken);
+                        try
+                        {
+                            await UploadTaskToAppDataFolderAsync(token, taskToUpload, fileIdMap, cancellationToken);
+                        }
+                        finally
+                        {
+                            uploadSemaphore.Release();
+                        }
+                    });
 
-            // Update cloud metadata & sync logs inside "Wadd ToDo Sync Data" folder
-            cloudMetadata.LatestRevision = mergedLogsToUpload.Count;
-            cloudMetadata.LastSync = DateTime.UtcNow;
+                await Task.WhenAll(uploadTasks);
 
-            var updatedMetaJson = JsonSerializer.Serialize(cloudMetadata, JsonOptions);
-            var updatedLogsJson = JsonSerializer.Serialize(mergedLogsToUpload, JsonOptions);
+                if (_syncLogRepository != null)
+                {
+                    var pendingLogs = await _syncLogRepository.GetPendingLogsAsync(cancellationToken);
+                    var syncedLogIds = pendingLogs.Where(l => tasksToPush.Contains(l.RecordId)).Select(l => l.Id).ToList();
+                    if (syncedLogIds.Count > 0)
+                    {
+                        await _syncLogRepository.MarkLogsAsSyncedAsync(syncedLogIds, cancellationToken);
+                    }
+                }
+            }
 
-            if (!string.IsNullOrWhiteSpace(metadataFileId))
-                await UpdateGoogleDriveFileAsync(token, metadataFileId, updatedMetaJson, cancellationToken);
-            else
-                await CreateFileInFolderAsync(token, folderId, MetadataFileName, updatedMetaJson, cancellationToken);
-
-            if (!string.IsNullOrWhiteSpace(logsFileId))
-                await UpdateGoogleDriveFileAsync(token, logsFileId, updatedLogsJson, cancellationToken);
-            else
-                await CreateFileInFolderAsync(token, folderId, LogsFileName, updatedLogsJson, cancellationToken);
-
+            _lastSyncTimestampUtc = syncStartUtc;
             await RefreshConflictCountAsync(cancellationToken);
             return true;
         }
-        catch (HttpRequestException ex)
+        finally
         {
-            throw new InvalidOperationException($"Google Drive API request failed: {ex.Message}", ex);
-        }
-        catch (JsonException ex)
-        {
-            throw new InvalidOperationException($"Failed to parse JSON response from Google Drive: {ex.Message}", ex);
+            _syncLock.Release();
         }
     }
 
-    private static Dictionary<Guid, TodoItem> ReplayLogsToSnapshot(List<SyncLog> logs)
+    private record DriveFileItem(string Id, string Name, DateTime? ModifiedTime);
+
+    private async Task<List<DriveFileItem>> ListAppDataFolderFilesAsync(string token, CancellationToken cancellationToken)
     {
-        var dict = new Dictionary<Guid, TodoItem>();
-        foreach (var log in logs.OrderBy(l => l.Timestamp))
+        var result = new List<DriveFileItem>();
+        string query = "trashed = false";
+        string url = $"https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q={Uri.EscapeDataString(query)}&fields=files(id,name,modifiedTime)&pageSize=1000";
+
+        using var response = await SendWithRetryAsync(() => new HttpRequestMessage(HttpMethod.Get, url), cancellationToken);
+        await EnsureDriveSuccessAsync(response, "List AppData Folder Files");
+        if (response.IsSuccessStatusCode)
         {
-            if (string.IsNullOrWhiteSpace(log.PayloadJson)) continue;
-            try
+            var json = await response.Content.ReadAsStringAsync(cancellationToken);
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("files", out var filesArr))
             {
-                var item = JsonSerializer.Deserialize<TodoItem>(log.PayloadJson, JsonOptions);
-                if (item != null)
+                foreach (var file in filesArr.EnumerateArray())
                 {
-                    dict[item.Id] = item;
+                    var id = file.TryGetProperty("id", out var ip) ? ip.GetString() : null;
+                    var name = file.TryGetProperty("name", out var np) ? np.GetString() : null;
+                    DateTime? mod = null;
+                    if (file.TryGetProperty("modifiedTime", out var mp) && DateTime.TryParse(mp.GetString(), out var dt))
+                    {
+                        mod = dt.ToUniversalTime();
+                    }
+                    if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(name))
+                    {
+                        result.Add(new DriveFileItem(id, name, mod));
+                    }
                 }
             }
-            catch { }
         }
-        return dict;
+        return result;
     }
 
-    private async Task<string> EnsureSyncFolderExistsAsync(string accessToken, CancellationToken cancellationToken)
+    private async Task<string> DownloadAppDataFileAsync(string token, string fileId, CancellationToken cancellationToken)
     {
-        var searchUrl = $"https://www.googleapis.com/drive/v3/files?q=name%3D%27{Uri.EscapeDataString(SyncFolderName)}%27%20and%20mimeType%3D%27application%2Fvnd.google-apps.folder%27%20and%20trashed%3Dfalse&fields=files(id%2Cname)";
-        using var request = new HttpRequestMessage(HttpMethod.Get, searchUrl);
-        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-
-        var response = await _httpClient.SendAsync(request, cancellationToken);
-        await EnsureDriveSuccessAsync(response, "Search Sync Folder");
-
-        var json = await response.Content.ReadAsStringAsync(cancellationToken);
-        using var doc = JsonDocument.Parse(json);
-        if (doc.RootElement.TryGetProperty("files", out var filesArr) && filesArr.GetArrayLength() > 0)
+        string downloadUrl = $"https://www.googleapis.com/drive/v3/files/{fileId}?alt=media";
+        using var response = await SendWithRetryAsync(() => new HttpRequestMessage(HttpMethod.Get, downloadUrl), cancellationToken);
+        await EnsureDriveSuccessAsync(response, "Download AppData File");
+        if (response.IsSuccessStatusCode)
         {
-            var firstFile = filesArr[0];
-            if (firstFile.TryGetProperty("id", out var idProp) && !string.IsNullOrEmpty(idProp.GetString()))
+            return await response.Content.ReadAsStringAsync(cancellationToken);
+        }
+        return string.Empty;
+    }
+
+    private async Task UploadTaskToAppDataFolderAsync(string token, TodoItem task, Dictionary<string, string>? remoteFileMap, CancellationToken cancellationToken)
+    {
+        string fileName = $"{task.Id}.json";
+        string? existingFileId = null;
+        if (remoteFileMap != null)
+        {
+            remoteFileMap.TryGetValue(fileName, out existingFileId);
+        }
+        else
+        {
+            existingFileId = await FindAppDataFileIdByNameAsync(token, fileName, cancellationToken);
+        }
+
+        string payloadJson = JsonSerializer.Serialize(task, JsonOptions);
+
+        if (!string.IsNullOrWhiteSpace(existingFileId))
+        {
+            string uploadUrl = $"https://www.googleapis.com/upload/drive/v3/files/{existingFileId}?uploadType=media";
+            using var response = await SendWithRetryAsync(() => new HttpRequestMessage(HttpMethod.Patch, uploadUrl)
             {
-                return idProp.GetString()!;
+                Content = new StringContent(payloadJson, Encoding.UTF8, "application/json")
+            }, cancellationToken);
+            await EnsureDriveSuccessAsync(response, $"Update Task {task.Id} in AppData");
+        }
+        else
+        {
+            string uploadUrl = "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart";
+            var boundary = "---WaddTaskBoundary" + Guid.NewGuid().ToString("N");
+            var metadataJson = JsonSerializer.Serialize(new
+            {
+                name = fileName,
+                parents = new[] { "appDataFolder" }
+            });
+
+            using var response = await SendWithRetryAsync(() =>
+            {
+                var multipartContent = new MultipartContent("related", boundary);
+                multipartContent.Add(new StringContent(metadataJson, Encoding.UTF8, "application/json"));
+                multipartContent.Add(new StringContent(payloadJson, Encoding.UTF8, "application/json"));
+                return new HttpRequestMessage(HttpMethod.Post, uploadUrl) { Content = multipartContent };
+            }, cancellationToken);
+            await EnsureDriveSuccessAsync(response, $"Upload Task {task.Id} to AppData");
+        }
+    }
+
+    private async Task<string> FindAppDataFileIdByNameAsync(string token, string fileName, CancellationToken cancellationToken)
+    {
+        string safeFileName = fileName.Replace("'", "\\'");
+        string query = $"name = '{safeFileName}' and trashed = false";
+        string searchUrl = $"https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q={Uri.EscapeDataString(query)}&fields=files(id)";
+
+        using var response = await SendWithRetryAsync(() => new HttpRequestMessage(HttpMethod.Get, searchUrl), cancellationToken);
+        await EnsureDriveSuccessAsync(response, "Find AppData File");
+        if (response.IsSuccessStatusCode)
+        {
+            var json = await response.Content.ReadAsStringAsync(cancellationToken);
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("files", out var filesArr) && filesArr.GetArrayLength() > 0)
+            {
+                return filesArr[0].GetProperty("id").GetString() ?? string.Empty;
             }
         }
-
-        // Create folder if not found
-        var createUrl = "https://www.googleapis.com/drive/v3/files";
-        using var createReq = new HttpRequestMessage(HttpMethod.Post, createUrl);
-        createReq.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-        var folderMeta = JsonSerializer.Serialize(new
-        {
-            name = SyncFolderName,
-            mimeType = "application/vnd.google-apps.folder"
-        });
-        createReq.Content = new StringContent(folderMeta, Encoding.UTF8, "application/json");
-
-        var createResp = await _httpClient.SendAsync(createReq, cancellationToken);
-        await EnsureDriveSuccessAsync(createResp, "Create Sync Folder");
-
-        var createJson = await createResp.Content.ReadAsStringAsync(cancellationToken);
-        using var createDoc = JsonDocument.Parse(createJson);
-        if (createDoc.RootElement.TryGetProperty("id", out var newIdProp) && !string.IsNullOrEmpty(newIdProp.GetString()))
-        {
-            return newIdProp.GetString()!;
-        }
-        throw new InvalidOperationException($"Failed to create sync folder on Google Drive: {createJson}");
+        return string.Empty;
     }
 
-    private async Task EnsureWarningFileExistsAsync(string accessToken, string folderId, CancellationToken cancellationToken)
+    private async Task<HttpResponseMessage> SendWithRetryAsync(Func<HttpRequestMessage> createRequest, CancellationToken cancellationToken, int maxRetries = 5, int baseDelayMs = 1000)
     {
-        var fileId = await FindFolderFileIdAsync(accessToken, folderId, WarningFileName, cancellationToken);
-        if (string.IsNullOrWhiteSpace(fileId))
+        var random = new Random();
+        for (int attempt = 0; attempt < maxRetries; attempt++)
         {
-            var warningContent = "⚠️ WARNING: This folder contains synchronization data for Wadd To-Do Application.\nDo NOT delete or modify files inside this folder, as doing so will disconnect sync and may result in loss of un-synced data.";
-            await CreateFileInFolderAsync(accessToken, folderId, WarningFileName, warningContent, cancellationToken);
-        }
-    }
-
-    private async Task<string?> FindFolderFileIdAsync(string accessToken, string folderId, string fileName, CancellationToken cancellationToken)
-    {
-        var searchUrl = $"https://www.googleapis.com/drive/v3/files?q=name%3D%27{Uri.EscapeDataString(fileName)}%27%20and%20%27{folderId}%27%20in%20parents%20and%20trashed%3Dfalse&fields=files(id%2Cname)";
-        using var request = new HttpRequestMessage(HttpMethod.Get, searchUrl);
-        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-
-        var response = await _httpClient.SendAsync(request, cancellationToken);
-        await EnsureDriveSuccessAsync(response, $"Search {fileName}");
-
-        var json = await response.Content.ReadAsStringAsync(cancellationToken);
-        using var doc = JsonDocument.Parse(json);
-        if (doc.RootElement.TryGetProperty("files", out var filesArr) && filesArr.GetArrayLength() > 0)
-        {
-            var firstFile = filesArr[0];
-            if (firstFile.TryGetProperty("id", out var fileIdProp))
+            using var request = createRequest();
+            if (!string.IsNullOrWhiteSpace(_authRecord?.AccessToken))
             {
-                return fileIdProp.GetString();
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _authRecord.AccessToken);
             }
+
+            var response = await _httpClient.SendAsync(request, cancellationToken);
+            if (response.IsSuccessStatusCode)
+            {
+                return response;
+            }
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                if (await TryRefreshTokenAsync(cancellationToken))
+                {
+                    continue;
+                }
+            }
+
+            if (response.StatusCode == (HttpStatusCode)429 || (int)response.StatusCode >= 500)
+            {
+                if (attempt == maxRetries - 1) return response;
+                int jitter = random.Next(0, 200);
+                int delay = (int)(baseDelayMs * Math.Pow(2, attempt)) + jitter;
+                await Task.Delay(delay, cancellationToken);
+                continue;
+            }
+
+            return response;
         }
-
-        return null;
+        throw new InvalidOperationException("Google Drive request failed after retries.");
     }
 
-    private async Task<string> DownloadFileContentAsync(string accessToken, string fileId, CancellationToken cancellationToken)
-    {
-        var downloadUrl = $"https://www.googleapis.com/drive/v3/files/{fileId}?alt=media";
-        using var request = new HttpRequestMessage(HttpMethod.Get, downloadUrl);
-        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-
-        var response = await _httpClient.SendAsync(request, cancellationToken);
-        await EnsureDriveSuccessAsync(response, "Download File Content");
-
-        return await response.Content.ReadAsStringAsync(cancellationToken);
-    }
-
-    private async Task CreateFileInFolderAsync(string accessToken, string folderId, string fileName, string content, CancellationToken cancellationToken)
-    {
-        var uploadUrl = "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart";
-        using var request = new HttpRequestMessage(HttpMethod.Post, uploadUrl);
-        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-
-        var boundary = "---WaddBoundary" + Guid.NewGuid().ToString("N");
-        var multipartContent = new MultipartContent("related", boundary);
-
-        var metadataJson = JsonSerializer.Serialize(new
-        {
-            name = fileName,
-            parents = new[] { folderId }
-        });
-        multipartContent.Add(new StringContent(metadataJson, Encoding.UTF8, "application/json"));
-        multipartContent.Add(new StringContent(content, Encoding.UTF8, "application/json"));
-
-        request.Content = multipartContent;
-        var response = await _httpClient.SendAsync(request, cancellationToken);
-        await EnsureDriveSuccessAsync(response, $"Upload {fileName}");
-    }
-
-    private async Task UpdateGoogleDriveFileAsync(string accessToken, string fileId, string content, CancellationToken cancellationToken)
-    {
-        var uploadUrl = $"https://www.googleapis.com/upload/drive/v3/files/{fileId}?uploadType=media";
-        using var request = new HttpRequestMessage(HttpMethod.Patch, uploadUrl);
-        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-        request.Content = new StringContent(content, Encoding.UTF8, "application/json");
-
-        var response = await _httpClient.SendAsync(request, cancellationToken);
-        await EnsureDriveSuccessAsync(response, "Update File");
-    }
 
     private async Task EnsureDriveSuccessAsync(HttpResponseMessage response, string actionName)
     {

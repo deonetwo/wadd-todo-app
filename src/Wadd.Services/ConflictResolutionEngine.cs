@@ -18,186 +18,143 @@ public class ConflictResolutionEngine
         WriteIndented = false
     };
 
+    /// <summary>
+    /// Pure deterministic Last-Write-Wins (LWW) merge with Tombstone resolution.
+    /// </summary>
+    public static TodoItem MergeTask(TodoItem? local, TodoItem? remote)
+    {
+        if (local == null && remote == null)
+            throw new ArgumentException("Both local and remote tasks cannot be null.");
+        if (local == null) return Clone(remote!);
+        if (remote == null) return Clone(local!);
+
+        DateTime localUpdated = local.UpdatedAt ?? local.CreatedAt;
+        DateTime remoteUpdated = remote.UpdatedAt ?? remote.CreatedAt;
+
+        long localTicks = localUpdated.ToUniversalTime().Ticks;
+        long remoteTicks = remoteUpdated.ToUniversalTime().Ticks;
+
+        if (remoteTicks > localTicks)
+        {
+            return Clone(remote);
+        }
+        if (localTicks > remoteTicks)
+        {
+            return Clone(local);
+        }
+
+        // Tie-breaker when timestamps are identical
+        if (local.IsDeleted != remote.IsDeleted)
+        {
+            return local.IsDeleted ? Clone(local) : Clone(remote);
+        }
+
+        string localKey = local.Title + (local.Description ?? "") + (local.Category ?? "");
+        string remoteKey = remote.Title + (remote.Description ?? "") + (remote.Category ?? "");
+
+        return string.Compare(localKey, remoteKey, StringComparison.Ordinal) >= 0
+            ? Clone(local)
+            : Clone(remote);
+    }
+
     public FieldMergeResult<TodoItem> MergeTodoItems(TodoItem local, TodoItem cloud, TodoItem? baseItem)
     {
+        if (baseItem == null)
+        {
+            var mergedLww = MergeTask(local, cloud);
+            return new FieldMergeResult<TodoItem>
+            {
+                HasConflict = false,
+                MergedItem = mergedLww,
+                ConflictingFields = new List<string>()
+            };
+        }
+
         var result = new FieldMergeResult<TodoItem>
         {
-            MergedItem = new TodoItem
-            {
-                Id = local.Id,
-                CreatedAt = local.CreatedAt < cloud.CreatedAt ? local.CreatedAt : cloud.CreatedAt,
-                UpdatedAt = DateTime.UtcNow,
-                Version = Math.Max(local.Version, cloud.Version) + 1,
-                IsDeleted = local.IsDeleted || cloud.IsDeleted
-            }
+            MergedItem = Clone(baseItem)
         };
 
-        var target = result.MergedItem;
-
-        // If one is deleted, mark soft delete
-        if (local.IsDeleted != cloud.IsDeleted)
+        void MergeProperty<T>(string propertyName, Func<TodoItem, T> selector, Action<TodoItem, T> setter)
         {
-            // If baseItem is present, check who deleted it
-            if (baseItem != null)
+            T localVal = selector(local);
+            T cloudVal = selector(cloud);
+            T baseVal = selector(baseItem);
+
+            bool localChanged = !EqualityComparer<T>.Default.Equals(localVal, baseVal);
+            bool cloudChanged = !EqualityComparer<T>.Default.Equals(cloudVal, baseVal);
+
+            if (localChanged && cloudChanged)
             {
-                target.IsDeleted = local.IsDeleted ? local.IsDeleted : cloud.IsDeleted;
+                if (EqualityComparer<T>.Default.Equals(localVal, cloudVal))
+                {
+                    setter(result.MergedItem, localVal);
+                }
+                else
+                {
+                    result.HasConflict = true;
+                    result.ConflictingFields.Add(propertyName);
+                    setter(result.MergedItem, localVal);
+                }
+            }
+            else if (localChanged)
+            {
+                setter(result.MergedItem, localVal);
+            }
+            else if (cloudChanged)
+            {
+                setter(result.MergedItem, cloudVal);
             }
             else
             {
-                target.IsDeleted = local.IsDeleted || cloud.IsDeleted;
+                setter(result.MergedItem, baseVal);
             }
         }
 
-        // Field 1: Title
-        if (local.Title == cloud.Title)
-        {
-            target.Title = local.Title;
-        }
-        else if (baseItem != null && local.Title == baseItem.Title)
-        {
-            target.Title = cloud.Title;
-        }
-        else if (baseItem != null && cloud.Title == baseItem.Title)
-        {
-            target.Title = local.Title;
-        }
-        else
-        {
-            result.HasConflict = true;
-            result.ConflictingFields.Add(nameof(TodoItem.Title));
-            target.Title = local.Title; // fallback default
-        }
+        MergeProperty(nameof(TodoItem.Title), x => x.Title, (x, v) => x.Title = v);
+        MergeProperty(nameof(TodoItem.Description), x => x.Description, (x, v) => x.Description = v);
+        MergeProperty(nameof(TodoItem.IsCompleted), x => x.IsCompleted, (x, v) => x.IsCompleted = v);
+        MergeProperty(nameof(TodoItem.Priority), x => x.Priority, (x, v) => x.Priority = v);
+        MergeProperty(nameof(TodoItem.DueDate), x => x.DueDate, (x, v) => x.DueDate = v);
+        MergeProperty(nameof(TodoItem.ReminderAt), x => x.ReminderAt, (x, v) => x.ReminderAt = v);
+        MergeProperty(nameof(TodoItem.Category), x => x.Category, (x, v) => x.Category = v);
+        MergeProperty(nameof(TodoItem.IsRecurring), x => x.IsRecurring, (x, v) => x.IsRecurring = v);
+        MergeProperty(nameof(TodoItem.RecurrenceType), x => x.RecurrenceType, (x, v) => x.RecurrenceType = v);
+        MergeProperty(nameof(TodoItem.CustomRecurrenceInterval), x => x.CustomRecurrenceInterval, (x, v) => x.CustomRecurrenceInterval = v);
+        MergeProperty(nameof(TodoItem.CustomRecurrenceUnit), x => x.CustomRecurrenceUnit, (x, v) => x.CustomRecurrenceUnit = v);
+        MergeProperty(nameof(TodoItem.CustomWeeklyDays), x => x.CustomWeeklyDays, (x, v) => x.CustomWeeklyDays = v);
 
-        // Field 2: Description
-        if (local.Description == cloud.Description)
-        {
-            target.Description = local.Description;
-        }
-        else if (baseItem != null && local.Description == baseItem.Description)
-        {
-            target.Description = cloud.Description;
-        }
-        else if (baseItem != null && cloud.Description == baseItem.Description)
-        {
-            target.Description = local.Description;
-        }
-        else
-        {
-            result.HasConflict = true;
-            result.ConflictingFields.Add(nameof(TodoItem.Description));
-            target.Description = local.Description;
-        }
-
-        // Field 3: IsCompleted
-        if (local.IsCompleted == cloud.IsCompleted)
-        {
-            target.IsCompleted = local.IsCompleted;
-        }
-        else if (baseItem != null && local.IsCompleted == baseItem.IsCompleted)
-        {
-            target.IsCompleted = cloud.IsCompleted;
-        }
-        else if (baseItem != null && cloud.IsCompleted == baseItem.IsCompleted)
-        {
-            target.IsCompleted = local.IsCompleted;
-        }
-        else
-        {
-            result.HasConflict = true;
-            result.ConflictingFields.Add(nameof(TodoItem.IsCompleted));
-            target.IsCompleted = local.IsCompleted;
-        }
-
-        // Field 4: Priority
-        if (local.Priority == cloud.Priority)
-        {
-            target.Priority = local.Priority;
-        }
-        else if (baseItem != null && local.Priority == baseItem.Priority)
-        {
-            target.Priority = cloud.Priority;
-        }
-        else if (baseItem != null && cloud.Priority == baseItem.Priority)
-        {
-            target.Priority = local.Priority;
-        }
-        else
-        {
-            result.HasConflict = true;
-            result.ConflictingFields.Add(nameof(TodoItem.Priority));
-            target.Priority = local.Priority;
-        }
-
-        // Field 5: DueDate
-        if (local.DueDate == cloud.DueDate)
-        {
-            target.DueDate = local.DueDate;
-        }
-        else if (baseItem != null && local.DueDate == baseItem.DueDate)
-        {
-            target.DueDate = cloud.DueDate;
-        }
-        else if (baseItem != null && cloud.DueDate == baseItem.DueDate)
-        {
-            target.DueDate = local.DueDate;
-        }
-        else
-        {
-            result.HasConflict = true;
-            result.ConflictingFields.Add(nameof(TodoItem.DueDate));
-            target.DueDate = local.DueDate;
-        }
-
-        // Field 6: ReminderAt
-        if (local.ReminderAt == cloud.ReminderAt)
-        {
-            target.ReminderAt = local.ReminderAt;
-        }
-        else if (baseItem != null && local.ReminderAt == baseItem.ReminderAt)
-        {
-            target.ReminderAt = cloud.ReminderAt;
-        }
-        else if (baseItem != null && cloud.ReminderAt == baseItem.ReminderAt)
-        {
-            target.ReminderAt = local.ReminderAt;
-        }
-        else
-        {
-            result.HasConflict = true;
-            result.ConflictingFields.Add(nameof(TodoItem.ReminderAt));
-            target.ReminderAt = local.ReminderAt;
-        }
-
-        // Field 7: IsRecurring
-        target.IsRecurring = local.IsRecurring == cloud.IsRecurring
-            ? local.IsRecurring
-            : (baseItem != null && local.IsRecurring == baseItem.IsRecurring ? cloud.IsRecurring : local.IsRecurring);
-
-        // Field 8: RecurrenceType
-        target.RecurrenceType = local.RecurrenceType == cloud.RecurrenceType
-            ? local.RecurrenceType
-            : (baseItem != null && local.RecurrenceType == baseItem.RecurrenceType ? cloud.RecurrenceType : local.RecurrenceType);
-
-        // Field 9: CustomRecurrenceInterval
-        target.CustomRecurrenceInterval = local.CustomRecurrenceInterval == cloud.CustomRecurrenceInterval
-            ? local.CustomRecurrenceInterval
-            : (baseItem != null && local.CustomRecurrenceInterval == baseItem.CustomRecurrenceInterval ? cloud.CustomRecurrenceInterval : local.CustomRecurrenceInterval);
-
-        // Field 10: CustomRecurrenceUnit
-        target.CustomRecurrenceUnit = local.CustomRecurrenceUnit == cloud.CustomRecurrenceUnit
-            ? local.CustomRecurrenceUnit
-            : (baseItem != null && local.CustomRecurrenceUnit == baseItem.CustomRecurrenceUnit ? cloud.CustomRecurrenceUnit : local.CustomRecurrenceUnit);
-
-        // Field 11: CustomWeeklyDays
-        target.CustomWeeklyDays = local.CustomWeeklyDays == cloud.CustomWeeklyDays
-            ? local.CustomWeeklyDays
-            : (baseItem != null && local.CustomWeeklyDays == baseItem.CustomWeeklyDays ? cloud.CustomWeeklyDays : local.CustomWeeklyDays);
-
-        // Field 12: Category
-        target.Category = local.Category == cloud.Category
-            ? local.Category
-            : (baseItem != null && local.Category == baseItem.Category ? cloud.Category : local.Category);
+        result.MergedItem.Id = local.Id;
+        result.MergedItem.UpdatedAt = DateTime.UtcNow;
 
         return result;
+    }
+
+    public static TodoItem Clone(TodoItem item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        return new TodoItem
+        {
+            Id = item.Id,
+            Title = item.Title,
+            Description = item.Description,
+            IsCompleted = item.IsCompleted,
+            CompletedAt = item.CompletedAt,
+            Priority = item.Priority,
+            CreatedAt = item.CreatedAt,
+            UpdatedAt = item.UpdatedAt,
+            DueDate = item.DueDate,
+            ReminderAt = item.ReminderAt,
+            Version = item.Version,
+            IsDeleted = item.IsDeleted,
+            DeletedAt = item.DeletedAt,
+            SeriesId = item.SeriesId,
+            IsRecurring = item.IsRecurring,
+            RecurrenceType = item.RecurrenceType,
+            CustomRecurrenceInterval = item.CustomRecurrenceInterval,
+            CustomRecurrenceUnit = item.CustomRecurrenceUnit,
+            CustomWeeklyDays = item.CustomWeeklyDays,
+            Category = item.Category
+        };
     }
 }

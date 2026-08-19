@@ -126,8 +126,9 @@ public class SQLiteTodoService : ITodoService
         item.UpdatedAt = DateTime.UtcNow;
         item.Version = 1;
         item.IsDeleted = false;
-        if (item.IsRecurring)
+        if (item.IsRecurring && (!item.SeriesId.HasValue || item.SeriesId.Value == Guid.Empty))
         {
+            item.SeriesId = item.Id;
             var initialDate = item.DueDate?.Date ?? DateTime.Today;
             item.DueDate = RecurrenceHelper.GetFirstValidOccurrenceDate(item, initialDate);
         }
@@ -137,11 +138,20 @@ public class SQLiteTodoService : ITodoService
             item.CompletedAt ??= DateTime.UtcNow;
         }
 
-        var entity = TodoItemEntity.FromDomain(item);
-        await _database.InsertAsync(entity);
-
-        // Record sync log
-        await LogChangeAsync(item, SyncOperation.Insert, cancellationToken);
+        var existing = await _database.Table<TodoItemEntity>().FirstOrDefaultAsync(x => x.Id == item.Id);
+        if (existing != null)
+        {
+            item.Version = existing.Version + 1;
+            var entity = TodoItemEntity.FromDomain(item);
+            await _database.UpdateAsync(entity);
+            await LogChangeAsync(item, SyncOperation.Update, cancellationToken);
+        }
+        else
+        {
+            var entity = TodoItemEntity.FromDomain(item);
+            await _database.InsertAsync(entity);
+            await LogChangeAsync(item, SyncOperation.Insert, cancellationToken);
+        }
 
         return item;
     }
@@ -165,6 +175,15 @@ public class SQLiteTodoService : ITodoService
             item.CompletedAt = null;
         }
 
+        if (item.IsDeleted)
+        {
+            item.DeletedAt ??= DateTime.UtcNow;
+        }
+        else
+        {
+            item.DeletedAt = null;
+        }
+
         var entity = TodoItemEntity.FromDomain(item);
         var rows = await _database.UpdateAsync(entity);
 
@@ -186,6 +205,7 @@ public class SQLiteTodoService : ITodoService
         if (entity == null || entity.IsDeleted) return false;
 
         entity.IsDeleted = true;
+        entity.DeletedAt = DateTime.UtcNow;
         entity.UpdatedAt = DateTime.UtcNow;
         entity.Version++;
 
@@ -214,16 +234,22 @@ public class SQLiteTodoService : ITodoService
         if (effectiveTargetDate.HasValue && !item.IsCompleted && item.IsRecurring && !string.Equals(item.RecurrenceType, "None", StringComparison.OrdinalIgnoreCase))
         {
             DateTime dateToComplete = effectiveTargetDate.Value.Date;
+            Guid seriesId = item.SeriesId ?? item.Id;
+            item.SeriesId = seriesId;
+
+            Guid deterministicId = RecurrenceHelper.GenerateDeterministicRecurringId(seriesId, dateToComplete);
 
             var completedInstance = new TodoItem
             {
-                Id = Guid.NewGuid(),
+                Id = deterministicId,
+                SeriesId = seriesId,
                 Title = item.Title,
                 Description = item.Description,
                 IsCompleted = true,
                 CompletedAt = DateTime.UtcNow,
                 Priority = item.Priority,
                 CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
                 DueDate = dateToComplete,
                 ReminderAt = item.ReminderAt.HasValue && item.DueDate.HasValue
                     ? dateToComplete.Add(item.ReminderAt.Value.TimeOfDay)
