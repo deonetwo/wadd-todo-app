@@ -129,7 +129,7 @@ public class GoogleDriveSyncService : ISyncService
         INativeGoogleAuthService? nativeAuthService = null)
     {
         _todoService = todoService ?? throw new ArgumentNullException(nameof(todoService));
-        _httpClient = httpClient ?? new HttpClient();
+        _httpClient = httpClient ?? CreateOptimizedHttpClient();
         _nativeAuthService = nativeAuthService;
 
         if (_todoService is SQLiteTodoService sqliteService)
@@ -766,7 +766,7 @@ public class GoogleDriveSyncService : ISyncService
 
             if (filesToDownload.Count > 0)
             {
-                var downloadSemaphore = new SemaphoreSlim(8);
+                var downloadSemaphore = new SemaphoreSlim(16);
                 var remoteDownloadTasks = filesToDownload
                     .Select(async remoteFile =>
                     {
@@ -793,6 +793,8 @@ public class GoogleDriveSyncService : ISyncService
                     });
 
                 var remoteResults = await Task.WhenAll(remoteDownloadTasks);
+                var mergedTasksToUpsert = new List<TodoItem>();
+
                 foreach (var result in remoteResults)
                 {
                     if (!result.HasValue) continue;
@@ -800,19 +802,26 @@ public class GoogleDriveSyncService : ISyncService
 
                     localTasksMap.TryGetValue(taskId, out var localTask);
                     var mergedTask = ConflictResolutionEngine.MergeTask(localTask, remoteTask);
+                    mergedTasksToUpsert.Add(mergedTask);
+                    localTasksMap[taskId] = mergedTask;
+                }
 
+                if (mergedTasksToUpsert.Count > 0)
+                {
                     if (rawSqliteSvc != null)
                     {
-                        await rawSqliteSvc.DirectUpsertFromSyncAsync(mergedTask, cancellationToken);
+                        await rawSqliteSvc.BatchDirectUpsertFromSyncAsync(mergedTasksToUpsert, cancellationToken);
                     }
                     else
                     {
-                        if (localTask == null)
-                            await _todoService.AddTodoAsync(mergedTask, cancellationToken);
-                        else
-                            await _todoService.UpdateTodoAsync(mergedTask, cancellationToken);
+                        foreach (var mergedTask in mergedTasksToUpsert)
+                        {
+                            if (localTasksMap.ContainsKey(mergedTask.Id))
+                                await _todoService.UpdateTodoAsync(mergedTask, cancellationToken);
+                            else
+                                await _todoService.AddTodoAsync(mergedTask, cancellationToken);
+                        }
                     }
-                    localTasksMap[taskId] = mergedTask;
                 }
             }
 
@@ -842,7 +851,7 @@ public class GoogleDriveSyncService : ISyncService
             if (tasksToPush.Count > 0)
             {
                 var fileIdMap = remoteFileMap.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Id, StringComparer.OrdinalIgnoreCase);
-                var uploadSemaphore = new SemaphoreSlim(8);
+                var uploadSemaphore = new SemaphoreSlim(16);
                 var uploadTasks = tasksToPush
                     .Where(taskId => localTasksMap.ContainsKey(taskId))
                     .Select(async taskId =>
@@ -1005,7 +1014,7 @@ public class GoogleDriveSyncService : ISyncService
                 request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _authRecord.AccessToken);
             }
 
-            var response = await _httpClient.SendAsync(request, cancellationToken);
+            var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             if (response.IsSuccessStatusCode)
             {
                 return response;
@@ -1031,6 +1040,28 @@ public class GoogleDriveSyncService : ISyncService
             return response;
         }
         throw new InvalidOperationException("Google Drive request failed after retries.");
+    }
+
+    private static HttpClient CreateOptimizedHttpClient()
+    {
+        try
+        {
+            var handler = new SocketsHttpHandler
+            {
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
+                EnableMultipleHttp2Connections = true,
+                PooledConnectionLifetime = TimeSpan.FromMinutes(15),
+                PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
+                MaxConnectionsPerServer = 32
+            };
+            var client = new HttpClient(handler, disposeHandler: true);
+            client.DefaultRequestHeaders.AcceptEncoding.ParseAdd("gzip, deflate");
+            return client;
+        }
+        catch
+        {
+            return new HttpClient();
+        }
     }
 
 

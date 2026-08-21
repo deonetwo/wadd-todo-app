@@ -342,27 +342,40 @@ public class SQLiteTodoService : ITodoService
 
     public async Task DirectUpsertFromSyncAsync(TodoItem item, CancellationToken cancellationToken = default)
     {
+        await BatchDirectUpsertFromSyncAsync(new[] { item }, cancellationToken);
+    }
+
+    public async Task BatchDirectUpsertFromSyncAsync(IEnumerable<TodoItem> items, CancellationToken cancellationToken = default)
+    {
         await EnsureInitializedAsync();
-        if (item.IsCompleted)
-        {
-            item.CompletedAt ??= item.UpdatedAt ?? DateTime.UtcNow;
-        }
-        else
-        {
-            item.CompletedAt = null;
-        }
+        var list = items.ToList();
+        if (list.Count == 0) return;
 
-        var existing = await _database.Table<TodoItemEntity>().FirstOrDefaultAsync(x => x.Id == item.Id);
-        var entity = TodoItemEntity.FromDomain(item);
+        await _database.RunInTransactionAsync(conn =>
+        {
+            var existingIds = conn.Table<TodoItemEntity>().Select(x => x.Id).ToHashSet();
+            foreach (var item in list)
+            {
+                if (item.IsCompleted)
+                {
+                    item.CompletedAt ??= item.UpdatedAt ?? DateTime.UtcNow;
+                }
+                else
+                {
+                    item.CompletedAt = null;
+                }
 
-        if (existing == null)
-        {
-            await _database.InsertAsync(entity);
-        }
-        else
-        {
-            await _database.UpdateAsync(entity);
-        }
+                var entity = TodoItemEntity.FromDomain(item);
+                if (!existingIds.Contains(item.Id))
+                {
+                    conn.Insert(entity);
+                }
+                else
+                {
+                    conn.Update(entity);
+                }
+            }
+        });
     }
 
     public async Task DirectUpsertWithLogAsync(TodoItem item, CancellationToken cancellationToken = default)
