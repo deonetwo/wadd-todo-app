@@ -230,11 +230,11 @@ public class SQLiteTodoService : ITodoService
 
         var allTodos = await GetTodosAsync(cancellationToken);
         DateTime? effectiveTargetDate = targetDate ?? item.DueDate;
+        Guid seriesId = item.SeriesId ?? item.Id;
 
         if (effectiveTargetDate.HasValue && !item.IsCompleted && item.IsRecurring && !string.Equals(item.RecurrenceType, "None", StringComparison.OrdinalIgnoreCase))
         {
             DateTime dateToComplete = effectiveTargetDate.Value.Date;
-            Guid seriesId = item.SeriesId ?? item.Id;
             item.SeriesId = seriesId;
 
             Guid deterministicId = RecurrenceHelper.GenerateDeterministicRecurringId(seriesId, dateToComplete);
@@ -248,7 +248,7 @@ public class SQLiteTodoService : ITodoService
                 IsCompleted = true,
                 CompletedAt = DateTime.UtcNow,
                 Priority = item.Priority,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = item.CreatedAt,
                 UpdatedAt = DateTime.UtcNow,
                 DueDate = dateToComplete,
                 ReminderAt = item.ReminderAt.HasValue && item.DueDate.HasValue
@@ -279,8 +279,13 @@ public class SQLiteTodoService : ITodoService
 
         if (item.IsCompleted && !string.Equals(item.RecurrenceType, "None", StringComparison.OrdinalIgnoreCase))
         {
-            var activeParent = allTodos.FirstOrDefault(t => t.IsRecurring && !t.IsCompleted && t.Title.Equals(item.Title, StringComparison.OrdinalIgnoreCase));
-            if (activeParent != null)
+            var activeParent = allTodos.FirstOrDefault(t =>
+                t.IsRecurring &&
+                !t.IsCompleted &&
+                ((t.SeriesId.HasValue && t.SeriesId.Value == seriesId) || t.Id == seriesId || string.Equals(t.Title.Trim(), item.Title.Trim(), StringComparison.OrdinalIgnoreCase))
+            );
+
+            if (activeParent != null && activeParent.Id != item.Id)
             {
                 await DeleteTodoAsync(item.Id, cancellationToken);
 
@@ -301,28 +306,42 @@ public class SQLiteTodoService : ITodoService
                 item.IsCompleted = false;
                 item.IsRecurring = true;
                 item.CompletedAt = null;
+                item.SeriesId = seriesId;
                 return await UpdateTodoAsync(item, cancellationToken);
             }
         }
 
         item.IsCompleted = !item.IsCompleted;
+        if (item.IsCompleted)
+        {
+            item.CompletedAt = DateTime.UtcNow;
+        }
+        else
+        {
+            item.CompletedAt = null;
+        }
 
         if (item.IsCompleted && item.IsRecurring && !string.Equals(item.RecurrenceType, "None", StringComparison.OrdinalIgnoreCase))
         {
+            item.SeriesId = seriesId;
             var nextDueDate = RecurrenceHelper.CalculateNextUncompletedDueDate(item, null, allTodos);
-            var nextItem = new TodoItem
+            DateTime completionDate = item.DueDate?.Date ?? DateTime.Today;
+            Guid deterministicId = RecurrenceHelper.GenerateDeterministicRecurringId(seriesId, completionDate);
+
+            var completedInstance = new TodoItem
             {
-                Id = Guid.NewGuid(),
+                Id = deterministicId,
+                SeriesId = seriesId,
                 Title = item.Title,
                 Description = item.Description,
-                IsCompleted = false,
+                IsCompleted = true,
+                CompletedAt = DateTime.UtcNow,
                 Priority = item.Priority,
-                CreatedAt = DateTime.UtcNow,
-                DueDate = nextDueDate,
-                ReminderAt = item.ReminderAt.HasValue && item.DueDate.HasValue
-                    ? nextDueDate.Add(item.ReminderAt.Value.TimeOfDay)
-                    : item.ReminderAt,
-                IsRecurring = true,
+                CreatedAt = item.CreatedAt,
+                UpdatedAt = DateTime.UtcNow,
+                DueDate = completionDate,
+                ReminderAt = item.ReminderAt,
+                IsRecurring = false,
                 RecurrenceType = item.RecurrenceType,
                 CustomRecurrenceInterval = item.CustomRecurrenceInterval,
                 CustomRecurrenceUnit = item.CustomRecurrenceUnit,
@@ -330,11 +349,15 @@ public class SQLiteTodoService : ITodoService
                 Category = item.Category
             };
 
-            item.IsRecurring = false;
+            item.IsCompleted = false;
+            item.DueDate = nextDueDate;
+            if (item.ReminderAt.HasValue)
+            {
+                item.ReminderAt = nextDueDate.Add(item.ReminderAt.Value.TimeOfDay);
+            }
 
-            var updatedOriginal = await UpdateTodoAsync(item, cancellationToken);
-            await AddTodoAsync(nextItem, cancellationToken);
-            return updatedOriginal;
+            await AddTodoAsync(completedInstance, cancellationToken);
+            return await UpdateTodoAsync(item, cancellationToken);
         }
 
         return await UpdateTodoAsync(item, cancellationToken);

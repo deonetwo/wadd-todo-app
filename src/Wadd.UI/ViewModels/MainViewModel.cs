@@ -23,6 +23,8 @@ public partial class MainViewModel : ViewModelBase
     private readonly ISyncService _syncService;
     private readonly IExportService _exportService;
 
+    private readonly HashSet<Guid> _togglingTaskIds = new();
+
     private int _periodicSyncTicks;
     private bool _initialSyncCompleted;
     private DispatcherTimer? _autoSyncDebounceTimer;
@@ -2498,11 +2500,17 @@ public partial class MainViewModel : ViewModelBase
     private async Task ToggleTodoAsync(TodoItemViewModel? itemVm)
     {
         if (itemVm == null) return;
+
+        lock (_togglingTaskIds)
+        {
+            if (!_togglingTaskIds.Add(itemVm.Id))
+            {
+                return;
+            }
+        }
+
         try
         {
-            itemVm.IsCompleted = !itemVm.IsCompleted;
-            await Task.Delay(250);
-
             DateTime? targetDate = itemVm.ContextDate ?? (IsCalendarView && SelectedDay != null ? SelectedDay.Date : itemVm.DueDate);
             await _todoService.ToggleCompleteAsync(itemVm.Id, targetDate);
             await LoadTodoItemsAsync();
@@ -2513,6 +2521,13 @@ public partial class MainViewModel : ViewModelBase
             {
                 StatusMessage = $"Error toggling task: {ex.Message}";
             });
+        }
+        finally
+        {
+            lock (_togglingTaskIds)
+            {
+                _togglingTaskIds.Remove(itemVm.Id);
+            }
         }
     }
 

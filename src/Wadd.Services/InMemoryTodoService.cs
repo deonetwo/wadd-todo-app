@@ -82,20 +82,26 @@ public class InMemoryTodoService : ITodoService
         if (item == null) return Task.FromResult(false);
 
         DateTime? effectiveTargetDate = targetDate ?? item.DueDate;
+        Guid seriesId = item.SeriesId ?? item.Id;
 
         if (effectiveTargetDate.HasValue && !item.IsCompleted && item.IsRecurring && !string.Equals(item.RecurrenceType, "None", StringComparison.OrdinalIgnoreCase))
         {
             DateTime dateToComplete = effectiveTargetDate.Value.Date;
+            item.SeriesId = seriesId;
+
+            Guid deterministicId = Wadd.Core.Helpers.RecurrenceHelper.GenerateDeterministicRecurringId(seriesId, dateToComplete);
 
             var completedInstance = new TodoItem
             {
-                Id = Guid.NewGuid(),
+                Id = deterministicId,
+                SeriesId = seriesId,
                 Title = item.Title,
                 Description = item.Description,
                 IsCompleted = true,
                 CompletedAt = DateTime.UtcNow,
                 Priority = item.Priority,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = item.CreatedAt,
+                UpdatedAt = DateTime.UtcNow,
                 DueDate = dateToComplete,
                 ReminderAt = item.ReminderAt.HasValue && item.DueDate.HasValue
                     ? dateToComplete.Add(item.ReminderAt.Value.TimeOfDay)
@@ -125,8 +131,13 @@ public class InMemoryTodoService : ITodoService
 
         if (item.IsCompleted && !string.Equals(item.RecurrenceType, "None", StringComparison.OrdinalIgnoreCase))
         {
-            var activeParent = _items.FirstOrDefault(t => t.IsRecurring && !t.IsCompleted && t.Title.Equals(item.Title, StringComparison.OrdinalIgnoreCase));
-            if (activeParent != null)
+            var activeParent = _items.FirstOrDefault(t =>
+                t.IsRecurring &&
+                !t.IsCompleted &&
+                ((t.SeriesId.HasValue && t.SeriesId.Value == seriesId) || t.Id == seriesId || string.Equals(t.Title.Trim(), item.Title.Trim(), StringComparison.OrdinalIgnoreCase))
+            );
+
+            if (activeParent != null && activeParent.Id != item.Id)
             {
                 _items.Remove(item);
 
@@ -146,6 +157,7 @@ public class InMemoryTodoService : ITodoService
                 item.IsCompleted = false;
                 item.IsRecurring = true;
                 item.CompletedAt = null;
+                item.SeriesId = seriesId;
                 item.UpdatedAt = DateTime.UtcNow;
                 return Task.FromResult(true);
             }
@@ -161,6 +173,45 @@ public class InMemoryTodoService : ITodoService
             item.CompletedAt = null;
         }
         item.UpdatedAt = DateTime.UtcNow;
+
+        if (item.IsCompleted && item.IsRecurring && !string.Equals(item.RecurrenceType, "None", StringComparison.OrdinalIgnoreCase))
+        {
+            item.SeriesId = seriesId;
+            var nextDueDate = Wadd.Core.Helpers.RecurrenceHelper.CalculateNextUncompletedDueDate(item, null, _items);
+            DateTime completionDate = item.DueDate?.Date ?? DateTime.Today;
+            Guid deterministicId = Wadd.Core.Helpers.RecurrenceHelper.GenerateDeterministicRecurringId(seriesId, completionDate);
+
+            var completedInstance = new TodoItem
+            {
+                Id = deterministicId,
+                SeriesId = seriesId,
+                Title = item.Title,
+                Description = item.Description,
+                IsCompleted = true,
+                CompletedAt = DateTime.UtcNow,
+                Priority = item.Priority,
+                CreatedAt = item.CreatedAt,
+                UpdatedAt = DateTime.UtcNow,
+                DueDate = completionDate,
+                ReminderAt = item.ReminderAt,
+                IsRecurring = false,
+                RecurrenceType = item.RecurrenceType,
+                CustomRecurrenceInterval = item.CustomRecurrenceInterval,
+                CustomRecurrenceUnit = item.CustomRecurrenceUnit,
+                CustomWeeklyDays = item.CustomWeeklyDays,
+                Category = item.Category
+            };
+
+            item.IsCompleted = false;
+            item.DueDate = nextDueDate;
+            if (item.ReminderAt.HasValue)
+            {
+                item.ReminderAt = nextDueDate.Add(item.ReminderAt.Value.TimeOfDay);
+            }
+
+            _items.Add(completedInstance);
+        }
+
         return Task.FromResult(true);
     }
 
