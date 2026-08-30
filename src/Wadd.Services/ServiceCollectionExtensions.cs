@@ -18,6 +18,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISyncService, GoogleDriveSyncService>();
         services.AddSingleton<IExportService, ExcelExportService>();
         services.AddSingleton<ITracingService, TracingService>();
+        services.AddSingleton<IGoalService>(sp => new SQLiteGoalService(((SQLiteTodoService)sp.GetRequiredService<ITodoService>()).DatabaseConnection));
 
         return services;
     }

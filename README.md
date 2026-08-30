@@ -25,10 +25,25 @@
 
 ## ✨ Key Features
 
+- **🎯 Life Goals & Reflection Journal**: Organize long-term vision targets into categories (Health, Career, Finance, Personal) with sequential milestone checklists and record daily reflective journal entries with mood tags. Features dynamic progress calculation `(completed / total) * 100`, soft-deletion tombstones (`IsDeleted`, `DeletedAt`, `UpdatedAt`), and cross-platform desktop/mobile support.
 - **🏷️ Optional Task Categories & Tags Management**: Assign multi-tag category badges to tasks, filter views dynamically via toolbar category dropdowns, and manage tags globally (create, inline rename, delete) via a dedicated **Tags Management** view (`TagsManagementView.axaml`).
 - **📅 Calendar & Timeline View**: Interactive 42-cell month grid with micro status indicators, recurring habit occurrence calculations (`RecurrenceEvaluator`), overflow badges (`+X more`), and a toggleable Right Detail Sidebar panel.
 - **🎨 Dynamic Theme Engine**: Smooth Light / Dark mode switching using Semi.Avalonia design tokens.
 - **📐 Responsive Dual Layout**: Adaptive responsive UI supporting desktop multi-column view and compact mobile layout.
+
+---
+
+## 🗄️ Database & Persistence Architecture (SQLite)
+
+All application state is locally persisted in SQLite (`wadd.db`) stored under `Environment.SpecialFolder.LocalApplicationData` (`AppDataHelper.GetWaddDirectory()`). All domain models support offline tombstone soft-deletion for local-first sync capabilities.
+
+### Life Goals & Journal Schema
+
+| Entity | Fields | Description |
+|---|---|---|
+| `LifeGoal` | `Id` (GUID string), `Title` (string), `Description` (string?), `Category` (string), `TargetDate` (DateTime?), `IsAchieved` (bool), `CreatedAt` (UTC), `UpdatedAt` (UTC), `IsDeleted` (bool), `DeletedAt` (UTC) | Long-term life vision goal targets |
+| `GoalMilestone` | `Id` (GUID string), `GoalId` (string FK), `Title` (string), `IsCompleted` (bool), `OrderIndex` (int), `UpdatedAt` (UTC), `IsDeleted` (bool), `DeletedAt` (UTC) | Sequential milestone sub-tasks |
+| `JournalEntry` | `Id` (GUID string), `GoalId` (string? optional FK), `Title` (string), `Content` (string), `Mood` (string? emoji/label tag), `EntryDate` (UTC), `UpdatedAt` (UTC), `IsDeleted` (bool), `DeletedAt` (UTC) | Reflective thoughts & journal history |
 
 ---
 

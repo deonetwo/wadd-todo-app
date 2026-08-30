@@ -102,6 +102,122 @@
     <Setter Property="BoxShadow" Value="0 2 8 0 #300D9488"/>
   </Style>
 
+  <!-- ══════════════ THREE-TIER LIFE GOALS & APPLICATION BUTTON SYSTEM ══════════════ -->
+
+  <!-- Tier 1: Primary (Solid Teal Pill, Single commit action per view) -->
+  <Style Selector="Button.btn-primary">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="#0D9488" Offset="0.0"/>
+        <GradientStop Color="#10B981" Offset="1.0"/>
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="Foreground"              Value="#F0FDFA"/>
+    <Setter Property="BorderThickness"         Value="0"/>
+    <Setter Property="CornerRadius"            Value="20"/>
+    <Setter Property="Padding"                 Value="16,8"/>
+    <Setter Property="FontSize"                Value="13"/>
+    <Setter Property="FontWeight"              Value="SemiBold"/>
+    <Setter Property="Cursor"                  Value="Hand"/>
+    <Setter Property="RenderTransform"         Value="scale(1.0)"/>
+    <Setter Property="Transitions">
+      <Transitions>
+        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" Easing="CubicEaseOut"/>
+      </Transitions>
+    </Setter>
+  </Style>
+  <Style Selector="Button.btn-primary TextBlock">
+    <Setter Property="Foreground" Value="#F0FDFA"/>
+  </Style>
+  <Style Selector="Button.btn-primary PathIcon">
+    <Setter Property="Foreground" Value="#F0FDFA"/>
+  </Style>
+  <Style Selector="Button.btn-primary /template/ ContentPresenter">
+    <Setter Property="CornerRadius" Value="20"/>
+  </Style>
+  <Style Selector="Button.btn-primary:pointerover">
+    <Setter Property="RenderTransform" Value="scale(1.03) translateY(-1px)"/>
+  </Style>
+  <Style Selector="Button.btn-primary:pointerover /template/ ContentPresenter">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="#0F766E" Offset="0.0"/>
+        <GradientStop Color="#059669" Offset="1.0"/>
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="Foreground" Value="#F0FDFA"/>
+  </Style>
+  <Style Selector="Button.btn-primary:pressed">
+    <Setter Property="RenderTransform" Value="scale(0.97) translateY(0px)"/>
+    <Setter Property="Opacity"         Value="0.9"/>
+  </Style>
+
+  <!-- Tier 2: Secondary (Transparent background, Teal-tinted border & text, Low-commitment inline actions) -->
+  <Style Selector="Button.btn-secondary">
+    <Setter Property="Background"      Value="Transparent"/>
+    <Setter Property="Foreground"      Value="{DynamicResource AppPrimaryBrush}"/>
+    <Setter Property="BorderBrush"     Value="{DynamicResource AppPrimaryBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius"    Value="20"/>
+    <Setter Property="Padding"         Value="14,6"/>
+    <Setter Property="FontSize"        Value="12"/>
+    <Setter Property="FontWeight"      Value="SemiBold"/>
+    <Setter Property="Cursor"          Value="Hand"/>
+  </Style>
+  <Style Selector="Button.btn-secondary TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryBrush}"/>
+  </Style>
+  <Style Selector="Button.btn-secondary PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryBrush}"/>
+  </Style>
+  <Style Selector="Button.btn-secondary /template/ ContentPresenter">
+    <Setter Property="CornerRadius" Value="20"/>
+    <Setter Property="BorderBrush"  Value="{DynamicResource AppPrimaryBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+  </Style>
+  <Style Selector="Button.btn-secondary:pointerover /template/ ContentPresenter">
+    <Setter Property="Background"  Value="{DynamicResource AppPrimarySubtleBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryHoverBrush}"/>
+    <Setter Property="Foreground"  Value="{DynamicResource AppPrimaryHoverBrush}"/>
+  </Style>
+  <Style Selector="Button.btn-secondary:pointerover TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryHoverBrush}"/>
+  </Style>
+  <Style Selector="Button.btn-secondary:pointerover PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryHoverBrush}"/>
+  </Style>
+  <Style Selector="Button.btn-secondary:pressed">
+    <Setter Property="Opacity" Value="0.8"/>
+  </Style>
+
+  <!-- Tier 3: Text-only (Transparent background, No border, Muted text that brightens on hover) -->
+  <Style Selector="Button.btn-text">
+    <Setter Property="Background"      Value="Transparent"/>
+    <Setter Property="Foreground"      Value="{DynamicResource AppTextSecondaryBrush}"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="CornerRadius"    Value="6"/>
+    <Setter Property="Padding"         Value="10,6"/>
+    <Setter Property="FontSize"        Value="12"/>
+    <Setter Property="Cursor"          Value="Hand"/>
+  </Style>
+  <Style Selector="Button.btn-text TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource AppTextSecondaryBrush}"/>
+  </Style>
+  <Style Selector="Button.btn-text /template/ ContentPresenter">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="BorderThickness" Value="0"/>
+  </Style>
+  <Style Selector="Button.btn-text:pointerover TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
+  </Style>
+  <Style Selector="Button.btn-text:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
+  </Style>
+  <Style Selector="Button.btn-text:pressed">
+    <Setter Property="Opacity" Value="0.7"/>
+  </Style>
+
   <!-- Secondary: subtle fill with border (compat) -->
   <Style Selector="Button.secondary">
     <Setter Property="Background"      Value="{DynamicResource AppSurfaceSubtleBrush}"/>
@@ -195,12 +311,13 @@
     <Setter Property="Padding"                 Value="0"/>
     <Setter Property="Cursor"                  Value="Hand"/>
     <Setter Property="HorizontalAlignment"     Value="Stretch"/>
-    <Setter Property="HorizontalContentAlignment" Value="Left"/>
+    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
     <Setter Property="VerticalAlignment"       Value="Center"/>
   </Style>
   <Style Selector="Button.task-row-btn /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="Transparent"/>
     <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
   </Style>
   <Style Selector="Button.task-row-btn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="Transparent"/>
@@ -768,6 +885,9 @@
   <!-- Make CalendarDatePicker act as a click-only button (like ClockTimePicker) -->
   <Style Selector="CalendarDatePicker">
     <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
+    <Setter Property="PlaceholderText" Value="dd/mm/yyyy"/>
+    <Setter Property="SelectedDateFormat" Value="Custom"/>
+    <Setter Property="CustomDateFormatString" Value="dd/MM/yyyy"/>
     <Setter Property="Cursor" Value="Hand"/>
     <Setter Property="Focusable" Value="False"/>
   </Style>
@@ -985,6 +1105,57 @@
   </Style>
   <Style Selector="ToggleSwitch:checked /template/ Ellipse">
     <Setter Property="Fill" Value="#F0FDFA"/>
+  </Style>
+
+  <!-- ══════════════ GLOBAL MODERN SLEEK SCROLLBARS ══════════════ -->
+  <!-- Thin (6px), no arrow buttons, transparent track, rounded thumb, subtle hover (Notion/Linear/VS Code style) -->
+  <Style Selector="ScrollBar">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="BorderBrush" Value="Transparent"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="MinWidth" Value="6"/>
+    <Setter Property="MinHeight" Value="6"/>
+    <Setter Property="AllowAutoHide" Value="True"/>
+  </Style>
+  <Style Selector="ScrollBar:vertical">
+    <Setter Property="Width" Value="6"/>
+    <Setter Property="Padding" Value="0"/>
+    <Setter Property="Margin" Value="4,0,0,0"/>
+  </Style>
+  <Style Selector="ScrollBar:horizontal">
+    <Setter Property="Height" Value="6"/>
+    <Setter Property="Padding" Value="0"/>
+    <Setter Property="Margin" Value="0,4,0,0"/>
+  </Style>
+  <Style Selector="ScrollBar /template/ RepeatButton">
+    <Setter Property="IsVisible" Value="False"/>
+    <Setter Property="Width" Value="0"/>
+    <Setter Property="Height" Value="0"/>
+  </Style>
+  <Style Selector="ScrollBar /template/ Thumb">
+    <Setter Property="Background" Value="#33FFFFFF"/>
+    <Setter Property="CornerRadius" Value="3"/>
+    <Setter Property="MinWidth" Value="6"/>
+    <Setter Property="MinHeight" Value="24"/>
+    <Setter Property="Opacity" Value="0.4"/>
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.15"/>
+        <BrushTransition Property="Background" Duration="0:0:0.15"/>
+      </Transitions>
+    </Setter>
+  </Style>
+  <Style Selector="ScrollBar:pointerover /template/ Thumb">
+    <Setter Property="Background" Value="#66FFFFFF"/>
+    <Setter Property="Opacity" Value="0.85"/>
+  </Style>
+  <Style Selector="ScrollBar /template/ Thumb:pointerover">
+    <Setter Property="Background" Value="{DynamicResource AppPrimaryBrush}"/>
+    <Setter Property="Opacity" Value="1"/>
+  </Style>
+  <Style Selector="ScrollBar /template/ Thumb:active">
+    <Setter Property="Background" Value="{DynamicResource AppPrimaryBrush}"/>
+    <Setter Property="Opacity" Value="1"/>
   </Style>
 
 </Styles>

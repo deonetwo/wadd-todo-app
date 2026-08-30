@@ -161,7 +161,15 @@
               </Grid>
             </ListBoxItem>
 
-            <!-- Index 6: Settings -->
+            <!-- Index 6: Life Goals & Journal -->
+            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Life Goals &amp; Journal">
+              <Grid ColumnDefinitions="56,*" Height="44">
+                <PathIcon Grid.Column="0" Data="{StaticResource TargetIconData}" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="Goals &amp; Journal" FontSize="14" VerticalAlignment="Center"/>
+              </Grid>
+            </ListBoxItem>
+
+            <!-- Index 7: Settings -->
             <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Settings">
               <Grid ColumnDefinitions="56,*" Height="44">
                 <PathIcon Grid.Column="0" Data="{StaticResource SettingsIconData}" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -312,7 +320,14 @@
           </ContentControl>
         </Panel>
 
-        <!-- ═══ TAB 6: SETTINGS VIEW ═══ -->
+        <!-- ═══ TAB 6: GOALS & JOURNAL VIEW ═══ -->
+        <Panel IsVisible="{Binding IsGoalsView}">
+          <ContentControl IsVisible="{Binding HasLoadedGoalsView}">
+            <views:GoalsView DataContext="{Binding GoalsVM}"/>
+          </ContentControl>
+        </Panel>
+
+        <!-- ═══ TAB 7: SETTINGS VIEW ═══ -->
         <Panel IsVisible="{Binding IsSettingsView}">
           <ContentControl IsVisible="{Binding HasLoadedSettingsView}">
             <views:SettingsView/>
@@ -468,6 +483,13 @@
           </ContentControl>
         </Panel>
 
+        <!-- Compact Goals & Journal View -->
+        <Panel IsVisible="{Binding IsGoalsView}">
+          <ContentControl IsVisible="{Binding HasLoadedGoalsView}">
+            <views:GoalsView DataContext="{Binding GoalsVM}"/>
+          </ContentControl>
+        </Panel>
+
         <!-- ═══ TASK DETAIL DRAWER OVERLAY (Compact Bottom Sheet - Bottom-Docked) ═══ -->
         <Border IsVisible="{Binding IsDetailDrawerOpen}" ZIndex="900" Background="#90000000">
           <Grid RowDefinitions="*,Auto">
@@ -579,6 +601,12 @@
                   <StackPanel Orientation="Horizontal" Spacing="12">
                     <PathIcon Data="{StaticResource TagIconData}" Width="17" Height="17"/>
                     <TextBlock Text="Tags" VerticalAlignment="Center"/>
+                  </StackPanel>
+                </ListBoxItem>
+                <ListBoxItem Classes="side-menu-item">
+                  <StackPanel Orientation="Horizontal" Spacing="12">
+                    <PathIcon Data="{StaticResource TargetIconData}" Width="17" Height="17"/>
+                    <TextBlock Text="Goals &amp; Journal" VerticalAlignment="Center"/>
                   </StackPanel>
                 </ListBoxItem>
                 <ListBoxItem Classes="side-menu-item">
@@ -1381,6 +1409,22 @@
                   <StackPanel Grid.Column="1" Spacing="2" Margin="12,0,0,0" VerticalAlignment="Center">
                     <TextBlock Text="Tags Management" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
                     <TextBlock Text="Create, rename, or delete category tags" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                  </StackPanel>
+                </Grid>
+              </Button>
+
+              <!-- Life Goals & Journal -->
+              <Button Classes="outline"
+                      Command="{Binding OpenGoalsViewCommand}"
+                      HorizontalAlignment="Stretch"
+                      HorizontalContentAlignment="Left"
+                      Padding="14,12"
+                      CornerRadius="12">
+                <Grid ColumnDefinitions="Auto,*">
+                  <PathIcon Grid.Column="0" Data="{StaticResource TargetIconData}" Width="18" Height="18" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <StackPanel Grid.Column="1" Spacing="2" Margin="12,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="Goals &amp; Journal" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                    <TextBlock Text="Long-term vision targets and reflective journal" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
                   </StackPanel>
                 </Grid>
               </Button>

@@ -9,7 +9,7 @@ namespace Wadd.UI.Views;
 
 public partial class MainView : UserControl
 {
-    private const double CompactWidthThreshold = 720.0;
+    private const double CompactWidthThreshold = 820.0;
 
     public MainView()
     {

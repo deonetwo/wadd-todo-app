@@ -22,6 +22,10 @@ public partial class MainViewModel : ViewModelBase
     private readonly IThemeService _themeService;
     private readonly ISyncService _syncService;
     private readonly IExportService _exportService;
+    private readonly IGoalService _goalService;
+
+    [ObservableProperty]
+    private GoalsViewModel _goalsVM;
 
     private readonly HashSet<Guid> _togglingTaskIds = new();
 
@@ -1248,6 +1252,14 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     private bool _isCompact;
 
+    partial void OnIsCompactChanged(bool value)
+    {
+        if (GoalsVM != null)
+        {
+            GoalsVM.IsCompact = value;
+        }
+    }
+
     [ObservableProperty]
     private bool _isSideMenuOpen;
 
@@ -1370,15 +1382,19 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     private bool _hasLoadedSettingsView;
 
+    [ObservableProperty]
+    private bool _hasLoadedGoalsView;
+
     public bool IsTasksView => SelectedNavIndex == 0;
     public bool IsCompletedView => SelectedNavIndex == 1;
     public bool IsRecurringView => SelectedNavIndex == 2;
     public bool IsCalendarView => SelectedNavIndex == 3;
     public bool IsSearchView => SelectedNavIndex == 4;
     public bool IsTagsView => SelectedNavIndex == 5;
-    public bool IsSettingsView => SelectedNavIndex == 6;
+    public bool IsGoalsView => SelectedNavIndex == 6;
+    public bool IsSettingsView => SelectedNavIndex == 7;
 
-    public bool IsMoreActive => IsSearchView || IsTagsView || IsSettingsView;
+    public bool IsMoreActive => IsSearchView || IsTagsView || IsGoalsView || IsSettingsView;
 
     partial void OnSelectedNavIndexChanged(int value)
     {
@@ -1387,7 +1403,8 @@ public partial class MainViewModel : ViewModelBase
         if (value == 3 && !HasLoadedCalendarView) HasLoadedCalendarView = true;
         if (value == 4 && !HasLoadedSearchView) HasLoadedSearchView = true;
         if (value == 5 && !HasLoadedTagsView) HasLoadedTagsView = true;
-        if (value == 6 && !HasLoadedSettingsView) HasLoadedSettingsView = true;
+        if (value == 6 && !HasLoadedGoalsView) HasLoadedGoalsView = true;
+        if (value == 7 && !HasLoadedSettingsView) HasLoadedSettingsView = true;
 
         OnPropertyChanged(nameof(IsTasksView));
         OnPropertyChanged(nameof(IsSearchView));
@@ -1395,6 +1412,7 @@ public partial class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsRecurringView));
         OnPropertyChanged(nameof(IsCalendarView));
         OnPropertyChanged(nameof(IsTagsView));
+        OnPropertyChanged(nameof(IsGoalsView));
         OnPropertyChanged(nameof(IsSettingsView));
         OnPropertyChanged(nameof(IsMoreActive));
     }
@@ -2083,16 +2101,19 @@ public partial class MainViewModel : ViewModelBase
         App.Services?.GetService<ITodoService>() ?? new SQLiteTodoService(),
         App.Services?.GetService<IThemeService>() ?? new ThemeService(),
         App.Services?.GetService<ISyncService>() ?? new GoogleDriveSyncService(App.Services?.GetService<ITodoService>() ?? new SQLiteTodoService()),
-        App.Services?.GetService<IExportService>() ?? new ExcelExportService())
+        App.Services?.GetService<IExportService>() ?? new ExcelExportService(),
+        App.Services?.GetService<IGoalService>() ?? new SQLiteGoalService())
     {
     }
 
-    public MainViewModel(ITodoService todoService, IThemeService themeService, ISyncService syncService, IExportService exportService)
+    public MainViewModel(ITodoService todoService, IThemeService themeService, ISyncService syncService, IExportService exportService, IGoalService goalService)
     {
         _todoService = todoService ?? throw new ArgumentNullException(nameof(todoService));
         _themeService = themeService ?? throw new ArgumentNullException(nameof(themeService));
         _syncService = syncService ?? throw new ArgumentNullException(nameof(syncService));
         _exportService = exportService ?? throw new ArgumentNullException(nameof(exportService));
+        _goalService = goalService ?? throw new ArgumentNullException(nameof(goalService));
+        _goalsVM = new GoalsViewModel(_goalService);
         _selectedTasksLayoutOption = TasksLayoutOptions[0];
         LoadUserSettings();
 
@@ -2787,9 +2808,22 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void OpenSettings(object? parameter = null)
+    private void OpenGoalsView(object? parameter = null)
     {
         SelectedNavIndex = 6;
+        CloseAllOverlays();
+        _ = GoalsVM.InitializeAsync();
+
+        if (parameter is Flyout flyout)
+        {
+            flyout.Hide();
+        }
+    }
+
+    [RelayCommand]
+    private void OpenSettings(object? parameter = null)
+    {
+        SelectedNavIndex = 7;
         CloseAllOverlays();
 
         if (parameter is Flyout flyout)
