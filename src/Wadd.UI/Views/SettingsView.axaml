@@ -227,7 +227,107 @@
         </StackPanel>
       </Border>
 
-      <!-- 2. Private Google Drive Cloud Sync -->
+      <!-- 2. System & Windows Desktop Integration (Desktop Only) -->
+      <Border Classes="content-block" IsVisible="{Binding IsDesktopPlatform}">
+        <StackPanel Spacing="16">
+          <TextBlock Text="SYSTEM &amp; DESKTOP" Classes="micro"/>
+          <StackPanel Spacing="4">
+            <TextBlock Text="Windows &amp; System Tray Integration" Classes="heading"/>
+            <TextBlock Text="Configure automatic startup and background system tray behavior on Windows."
+                       Classes="small"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+          </StackPanel>
+
+          <!-- 1. Launch on Startup -->
+          <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+            <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+              <TextBlock Text="Launch on Windows Startup" Classes="heading"/>
+              <TextBlock Text="Automatically start Wadd when you sign in to Windows."
+                         Classes="small"
+                         TextWrapping="Wrap"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1"
+                          IsChecked="{Binding AutoStartOnBoot, Mode=TwoWay}"
+                          OnContent=""
+                          OffContent=""
+                          VerticalAlignment="Center"/>
+          </Grid>
+
+          <!-- 1b. Start Minimized to Tray (Sub-option when startup is enabled) -->
+          <Grid ColumnDefinitions="*,Auto" Margin="16,0,0,0" IsVisible="{Binding AutoStartOnBoot}">
+            <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+              <TextBlock Text="Start Minimized to Tray" Classes="heading" FontSize="13"/>
+              <TextBlock Text="Launch silently into the system tray without opening the main window at startup."
+                         Classes="small"
+                         TextWrapping="Wrap"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1"
+                          IsChecked="{Binding StartMinimized, Mode=TwoWay}"
+                          OnContent=""
+                          OffContent=""
+                          VerticalAlignment="Center"/>
+          </Grid>
+
+          <Separator Classes="divider" Margin="0,4"/>
+
+          <!-- 2. Show Tray Icon -->
+          <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+            <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+              <TextBlock Text="Show System Tray Icon" Classes="heading"/>
+              <TextBlock Text="Display an icon in the Windows taskbar notification area for quick access."
+                         Classes="small"
+                         TextWrapping="Wrap"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1"
+                          IsChecked="{Binding EnableTrayIcon, Mode=TwoWay}"
+                          OnContent=""
+                          OffContent=""
+                          VerticalAlignment="Center"/>
+          </Grid>
+
+          <Separator Classes="divider" Margin="0,4"/>
+
+          <!-- 3. Close to Tray -->
+          <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+            <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+              <TextBlock Text="Close to System Tray" Classes="heading"/>
+              <TextBlock Text="Keep Wadd running in the background when the main window is closed."
+                         Classes="small"
+                         TextWrapping="Wrap"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1"
+                          IsChecked="{Binding CloseToTray, Mode=TwoWay}"
+                          OnContent=""
+                          OffContent=""
+                          VerticalAlignment="Center"/>
+          </Grid>
+
+          <Separator Classes="divider" Margin="0,4"/>
+
+          <!-- 4. Minimize to Tray -->
+          <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+            <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+              <TextBlock Text="Minimize to System Tray" Classes="heading"/>
+              <TextBlock Text="Hide the window to the notification area when minimized."
+                         Classes="small"
+                         TextWrapping="Wrap"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1"
+                          IsChecked="{Binding MinimizeToTray, Mode=TwoWay}"
+                          OnContent=""
+                          OffContent=""
+                          VerticalAlignment="Center"/>
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <!-- 3. Private Google Drive Cloud Sync -->
       <Border Classes="content-block">
         <StackPanel Spacing="16">
           <TextBlock Text="CLOUD SYNCHRONIZATION" Classes="micro"/>
@@ -312,7 +412,7 @@
         </StackPanel>
       </Border>
 
-      <!-- 3. Export Data -->
+      <!-- 4. Export Data -->
       <Border Classes="content-block">
         <StackPanel Spacing="14">
           <TextBlock Text="DATA MANAGEMENT" Classes="micro"/>
@@ -333,7 +433,7 @@
         </StackPanel>
       </Border>
 
-      <!-- 4. About & Version Info -->
+      <!-- 5. About & Version Info -->
       <Border Classes="content-block">
         <StackPanel Spacing="14">
           <TextBlock Text="ABOUT APPLICATION" Classes="micro"/>

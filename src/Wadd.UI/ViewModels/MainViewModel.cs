@@ -23,6 +23,61 @@ public partial class MainViewModel : ViewModelBase
     private readonly ISyncService _syncService;
     private readonly IExportService _exportService;
     private readonly IGoalService _goalService;
+    private readonly IStartupService _startupService;
+
+    public bool IsDesktopPlatform => !OperatingSystem.IsAndroid() && !OperatingSystem.IsIOS();
+    public bool IsWindowsPlatform => OperatingSystem.IsWindows();
+
+    public event EventHandler<bool>? TrayIconVisibilityChanged;
+
+    [ObservableProperty]
+    private bool _autoStartOnBoot;
+
+    partial void OnAutoStartOnBootChanged(bool value)
+    {
+        if (_startupService.IsSupported && _startupService.IsAutoStartEnabled() != value)
+        {
+            _startupService.SetAutoStart(value, StartMinimized);
+        }
+        SaveUserSettings();
+    }
+
+    [ObservableProperty]
+    private bool _startMinimized;
+
+    partial void OnStartMinimizedChanged(bool value)
+    {
+        if (AutoStartOnBoot)
+        {
+            _startupService.SetAutoStart(AutoStartOnBoot, value);
+        }
+        SaveUserSettings();
+    }
+
+    [ObservableProperty]
+    private bool _minimizeToTray = true;
+
+    partial void OnMinimizeToTrayChanged(bool value)
+    {
+        SaveUserSettings();
+    }
+
+    [ObservableProperty]
+    private bool _closeToTray = true;
+
+    partial void OnCloseToTrayChanged(bool value)
+    {
+        SaveUserSettings();
+    }
+
+    [ObservableProperty]
+    private bool _enableTrayIcon = true;
+
+    partial void OnEnableTrayIconChanged(bool value)
+    {
+        SaveUserSettings();
+        TrayIconVisibilityChanged?.Invoke(this, value);
+    }
 
     [ObservableProperty]
     private GoalsViewModel _goalsVM;
@@ -2185,17 +2240,19 @@ public partial class MainViewModel : ViewModelBase
         App.Services?.GetService<IThemeService>() ?? new ThemeService(),
         App.Services?.GetService<ISyncService>() ?? new GoogleDriveSyncService(App.Services?.GetService<ITodoService>() ?? new SQLiteTodoService()),
         App.Services?.GetService<IExportService>() ?? new ExcelExportService(),
-        App.Services?.GetService<IGoalService>() ?? new SQLiteGoalService())
+        App.Services?.GetService<IGoalService>() ?? new SQLiteGoalService(),
+        App.Services?.GetService<IStartupService>() ?? new WindowsStartupService())
     {
     }
 
-    public MainViewModel(ITodoService todoService, IThemeService themeService, ISyncService syncService, IExportService exportService, IGoalService goalService)
+    public MainViewModel(ITodoService todoService, IThemeService themeService, ISyncService syncService, IExportService exportService, IGoalService goalService, IStartupService startupService)
     {
         _todoService = todoService ?? throw new ArgumentNullException(nameof(todoService));
         _themeService = themeService ?? throw new ArgumentNullException(nameof(themeService));
         _syncService = syncService ?? throw new ArgumentNullException(nameof(syncService));
         _exportService = exportService ?? throw new ArgumentNullException(nameof(exportService));
         _goalService = goalService ?? throw new ArgumentNullException(nameof(goalService));
+        _startupService = startupService ?? throw new ArgumentNullException(nameof(startupService));
         _goalsVM = new GoalsViewModel(_goalService);
         _selectedTasksLayoutOption = TasksLayoutOptions[0];
         LoadUserSettings();
@@ -3099,6 +3156,12 @@ public partial class MainViewModel
         }
         ShowNotePreviewsInList = settings.ShowNotePreviewsInList;
         _themeService.SetTheme(settings.ThemeMode);
+
+        AutoStartOnBoot = _startupService.IsSupported ? _startupService.IsAutoStartEnabled() : settings.AutoStartOnBoot;
+        StartMinimized = settings.StartMinimized;
+        MinimizeToTray = settings.MinimizeToTray;
+        CloseToTray = settings.CloseToTray;
+        EnableTrayIcon = settings.EnableTrayIcon;
     }
 
     public void SaveUserSettings()
@@ -3108,6 +3171,11 @@ public partial class MainViewModel
         settings.UpcomingTasksRange = UpcomingTasksRange;
         settings.ShowNotePreviewsInList = ShowNotePreviewsInList;
         settings.ThemeMode = _themeService.CurrentTheme;
+        settings.AutoStartOnBoot = AutoStartOnBoot;
+        settings.StartMinimized = StartMinimized;
+        settings.MinimizeToTray = MinimizeToTray;
+        settings.CloseToTray = CloseToTray;
+        settings.EnableTrayIcon = EnableTrayIcon;
         AppSettingsHelper.SaveSettings(settings);
     }
 
