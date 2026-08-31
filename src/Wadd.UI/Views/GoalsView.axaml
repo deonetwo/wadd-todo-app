@@ -389,7 +389,7 @@
                 <TextBox Grid.Column="0"
                          Text="{Binding NewMilestoneTitle}"
                          Classes="styled"
-                         PlaceholderText="Add a new milestone step..."
+                         PlaceholderText="Add next step or milestone..."
                          Padding="12,8"
                          MinHeight="36"
                          MaxLength="100"
@@ -486,7 +486,7 @@
                 <!-- Borderless Underlined Input for Title with Left Padding for Text & Placeholder -->
                 <TextBox Text="{Binding NewJournalTitle}"
                          Classes="styled"
-                         PlaceholderText="Entry title..."
+                         PlaceholderText="Entry title (e.g. Today's win)..."
                          Background="Transparent"
                          BorderBrush="{DynamicResource AppBorderBrush}"
                          BorderThickness="0,0,0,1"
@@ -499,7 +499,7 @@
                 <!-- Borderless Underlined Textarea for Body with Left Padding for Text & Placeholder -->
                 <TextBox Text="{Binding NewJournalContent}"
                          Classes="styled"
-                         PlaceholderText="Write your reflection, wins, or lessons learned..."
+                         PlaceholderText="What went well or what did you learn today?..."
                          Background="Transparent"
                          BorderBrush="{DynamicResource AppBorderBrush}"
                          BorderThickness="0,0,0,1"
@@ -817,7 +817,7 @@
                 <TextBox Grid.Column="0"
                          Text="{Binding NewMilestoneTitle}"
                          Classes="styled"
-                         PlaceholderText="Add a new milestone step..."
+                         PlaceholderText="Add next milestone step..."
                          Padding="10,6"
                          MinHeight="36"
                          MaxLength="100"
@@ -939,8 +939,8 @@
             </Button>
           </Grid>
 
-          <TextBox Text="{Binding NewJournalTitle}" Classes="styled" PlaceholderText="Entry Title..." Padding="12,8" MinHeight="44" MaxLength="100" CornerRadius="6" VerticalContentAlignment="Center"/>
-          <TextBox Text="{Binding NewJournalContent}" Classes="styled" PlaceholderText="Write your reflection, wins, or lessons learned..." Padding="12,8" AcceptsReturn="True" TextWrapping="Wrap" MaxLength="2000" MinHeight="100" CornerRadius="6" VerticalContentAlignment="Top" HorizontalContentAlignment="Left"/>
+          <TextBox Text="{Binding NewJournalTitle}" Classes="styled" PlaceholderText="Entry title (e.g. Today's win)..." Padding="12,8" MinHeight="44" MaxLength="100" CornerRadius="6" VerticalContentAlignment="Center"/>
+          <TextBox Text="{Binding NewJournalContent}" Classes="styled" PlaceholderText="What went well or what did you learn today?..." Padding="12,8" AcceptsReturn="True" TextWrapping="Wrap" MaxLength="2000" MinHeight="100" CornerRadius="6" VerticalContentAlignment="Top" HorizontalContentAlignment="Left"/>
 
           <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12" Margin="0,8,0,0">
             <Button Command="{Binding CloseJournalBottomSheetCommand}" Classes="btn-text" Content="Cancel" MinHeight="40" Padding="16,0"/>
@@ -966,7 +966,7 @@
 
           <StackPanel Spacing="6">
             <TextBlock Text="Goal Title *" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-            <TextBox Text="{Binding NewGoalTitle}" Classes="styled" PlaceholderText="e.g. Master Avalonia UI, Run a Marathon" Padding="12,8" MinHeight="40" MaxLength="100" CornerRadius="6" VerticalContentAlignment="Center"/>
+            <TextBox Text="{Binding NewGoalTitle}" Classes="styled" PlaceholderText="e.g. Run a marathon, Launch my app" Padding="12,8" MinHeight="40" MaxLength="100" CornerRadius="6" VerticalContentAlignment="Center"/>
           </StackPanel>
 
           <StackPanel Spacing="6">
@@ -976,12 +976,12 @@
 
           <StackPanel Spacing="6">
             <TextBlock Text="Target Completion Date" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-            <CalendarDatePicker SelectedDate="{Binding NewGoalTargetDate, Mode=TwoWay}" PlaceholderText="dd/mm/yyyy" SelectedDateFormat="Custom" CustomDateFormatString="dd/MM/yyyy" HorizontalAlignment="Stretch" Padding="12,8" MinHeight="40" CornerRadius="6"/>
+            <CalendarDatePicker SelectedDate="{Binding NewGoalTargetDate, Mode=TwoWay}" PlaceholderText="Pick target date (dd/mm/yyyy)" SelectedDateFormat="Custom" CustomDateFormatString="dd/MM/yyyy" HorizontalAlignment="Stretch" Padding="12,8" MinHeight="40" CornerRadius="6"/>
           </StackPanel>
 
           <StackPanel Spacing="6">
             <TextBlock Text="Vision &amp; Description" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-            <TextBox Text="{Binding NewGoalDescription}" Classes="styled" PlaceholderText="Describe your vision and strategy..." Padding="12,8" AcceptsReturn="True" TextWrapping="Wrap" MaxLength="500" MinHeight="80" CornerRadius="6" VerticalContentAlignment="Top" HorizontalContentAlignment="Left"/>
+            <TextBox Text="{Binding NewGoalDescription}" Classes="styled" PlaceholderText="Why this matters &amp; how you'll get there..." Padding="12,8" AcceptsReturn="True" TextWrapping="Wrap" MaxLength="500" MinHeight="80" CornerRadius="6" VerticalContentAlignment="Top" HorizontalContentAlignment="Left"/>
           </StackPanel>
 
           <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12" Margin="0,8,0,0">

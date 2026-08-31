@@ -96,6 +96,12 @@ public partial class MainView : UserControl
             vm.CloseTasksLayoutPickerCommand.Execute(null);
     }
 
+    private void OnUpcomingTasksRangePickerBackgroundPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.CloseUpcomingTasksRangePickerCommand.Execute(null);
+    }
+
     private void OnMobileDetailDrawerBackgroundPressed(object? sender, PointerPressedEventArgs e)
     {
         if (DataContext is MainViewModel vm)

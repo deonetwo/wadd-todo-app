@@ -192,7 +192,7 @@ public partial class MainViewModel : ViewModelBase
     public bool ShowCompletedTodaySection => TasksViewLayout != "TodayUpcomingOnly";
 
     public bool IsCompletedTodaySectionVisible => HasCompletedTodayTodoItems && ShowCompletedTodaySection;
-    public bool IsUpcomingSectionVisible => HasUpcomingTodoItems && ShowUpcomingSection;
+    public bool IsUpcomingSectionVisible => ShowUpcomingSection;
 
     [RelayCommand]
     private void SetTasksViewLayout(string layout)
@@ -201,6 +201,89 @@ public partial class MainViewModel : ViewModelBase
         {
             TasksViewLayout = layout;
             SelectedTasksLayoutOption = TasksLayoutOptions.FirstOrDefault(x => x.Id == layout) ?? TasksLayoutOptions[0];
+        }
+    }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(UpcomingTasksRangeLabel))]
+    [NotifyPropertyChangedFor(nameof(IsUpcomingRangeFilterActive))]
+    private string _upcomingTasksRange = "All";
+
+    partial void OnUpcomingTasksRangeChanged(string value)
+    {
+        SelectedUpcomingTasksRangeOption = UpcomingTasksRangeOptions.FirstOrDefault(x => x.Id == value) ?? UpcomingTasksRangeOptions[^1];
+        UpdateSubCollections();
+        SaveUserSettings();
+    }
+
+    public List<UpcomingTasksRangeOption> UpcomingTasksRangeOptions { get; } = new()
+    {
+        new UpcomingTasksRangeOption { Id = "Tomorrow", Name = "Tomorrow Only", Description = "Tasks due or reminded for tomorrow" },
+        new UpcomingTasksRangeOption { Id = "Next3Days", Name = "Next 3 Days", Description = "Tasks due or reminded within the next 3 days" },
+        new UpcomingTasksRangeOption { Id = "ThisWeek", Name = "This Week", Description = "Tasks due or reminded by end of this week (Sunday)" },
+        new UpcomingTasksRangeOption { Id = "Next7Days", Name = "Next 7 Days", Description = "Tasks due or reminded within the next 7 days" },
+        new UpcomingTasksRangeOption { Id = "ThisMonth", Name = "This Month", Description = "Tasks due or reminded by end of this calendar month" },
+        new UpcomingTasksRangeOption { Id = "Next30Days", Name = "Next 30 Days", Description = "Tasks due or reminded within the next 30 days" },
+        new UpcomingTasksRangeOption { Id = "All", Name = "All Upcoming", Description = "All future scheduled tasks without date limit" }
+    };
+
+    [ObservableProperty]
+    private UpcomingTasksRangeOption? _selectedUpcomingTasksRangeOption;
+
+    partial void OnSelectedUpcomingTasksRangeOptionChanged(UpcomingTasksRangeOption? value)
+    {
+        if (value != null && !string.IsNullOrWhiteSpace(value.Id) && value.Id != UpcomingTasksRange)
+        {
+            UpcomingTasksRange = value.Id;
+        }
+    }
+
+    public string UpcomingTasksRangeLabel => UpcomingTasksRange switch
+    {
+        "Tomorrow" => "Tomorrow",
+        "Next3Days" => "Next 3 Days",
+        "ThisWeek" => "This Week",
+        "Next7Days" => "Next 7 Days",
+        "ThisMonth" => "This Month",
+        "Next30Days" => "Next 30 Days",
+        _ => "All Upcoming"
+    };
+
+    public bool IsUpcomingRangeFilterActive => UpcomingTasksRange != "All";
+
+    [ObservableProperty]
+    private bool _isUpcomingTasksRangePickerSheetOpen;
+
+    [RelayCommand]
+    private void OpenUpcomingTasksRangePicker()
+    {
+        IsUpcomingTasksRangePickerSheetOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseUpcomingTasksRangePicker()
+    {
+        IsUpcomingTasksRangePickerSheetOpen = false;
+    }
+
+    [RelayCommand]
+    private void SelectUpcomingTasksRangeOption(UpcomingTasksRangeOption? option)
+    {
+        if (option != null)
+        {
+            SelectedUpcomingTasksRangeOption = option;
+            UpcomingTasksRange = option.Id;
+            IsUpcomingTasksRangePickerSheetOpen = false;
+        }
+    }
+
+    [RelayCommand]
+    private void SetUpcomingTasksRange(string range)
+    {
+        if (!string.IsNullOrWhiteSpace(range))
+        {
+            UpcomingTasksRange = range;
+            SelectedUpcomingTasksRangeOption = UpcomingTasksRangeOptions.FirstOrDefault(x => x.Id == range) ?? UpcomingTasksRangeOptions[^1];
         }
     }
 
@@ -1555,15 +1638,15 @@ public partial class MainViewModel : ViewModelBase
             (x.ReminderAt.HasValue && x.ReminderAt.Value.Date <= today) ||
             (!x.DueDate.HasValue && !x.ReminderAt.HasValue)).ToList();
 
-        // Upcoming tasks: active one-off (non-recurring) tasks due or reminded strictly in the future, sorted by nearest due date
+        // Upcoming tasks: active tasks (both one-off and recurring) due or reminded strictly in the future, filtered by range preset and sorted by nearest due date
         var allUpcoming = activeItems
-            .Where(x => !x.IsRecurring && !freshStandard.Contains(x))
+            .Where(x => !freshStandard.Contains(x))
+            .Where(x => PassesUpcomingRangeFilter(x, today, UpcomingTasksRange))
             .OrderBy(x => x.DueDate ?? x.ReminderAt ?? DateTime.MaxValue)
             .ToList();
 
-        // Cap upcoming display to 5 nearest items
-        var freshUpcoming = allUpcoming
-            .Take(5)
+        // Cap upcoming display to 10 items for All, or up to 50 for specific timeframes
+        var freshUpcoming = (UpcomingTasksRange == "All" ? allUpcoming.Take(10) : allUpcoming.Take(50))
             .ToList();
 
         var freshCompletedToday = completedItems
@@ -3005,6 +3088,15 @@ public partial class MainViewModel
             TasksViewLayout = settings.TasksViewLayout;
             SelectedTasksLayoutOption = TasksLayoutOptions.FirstOrDefault(x => x.Id == settings.TasksViewLayout) ?? TasksLayoutOptions[0];
         }
+        if (!string.IsNullOrWhiteSpace(settings.UpcomingTasksRange))
+        {
+            UpcomingTasksRange = settings.UpcomingTasksRange;
+            SelectedUpcomingTasksRangeOption = UpcomingTasksRangeOptions.FirstOrDefault(x => x.Id == settings.UpcomingTasksRange) ?? UpcomingTasksRangeOptions[^1];
+        }
+        else
+        {
+            SelectedUpcomingTasksRangeOption = UpcomingTasksRangeOptions.FirstOrDefault(x => x.Id == UpcomingTasksRange) ?? UpcomingTasksRangeOptions[^1];
+        }
         ShowNotePreviewsInList = settings.ShowNotePreviewsInList;
         _themeService.SetTheme(settings.ThemeMode);
     }
@@ -3013,9 +3105,35 @@ public partial class MainViewModel
     {
         var settings = AppSettingsHelper.LoadSettings();
         settings.TasksViewLayout = TasksViewLayout;
+        settings.UpcomingTasksRange = UpcomingTasksRange;
         settings.ShowNotePreviewsInList = ShowNotePreviewsInList;
         settings.ThemeMode = _themeService.CurrentTheme;
         AppSettingsHelper.SaveSettings(settings);
+    }
+
+    public static bool PassesUpcomingRangeFilter(TodoItemViewModel item, DateTime today, string range)
+    {
+        var targetDate = (item.DueDate ?? item.ReminderAt)?.Date;
+        if (!targetDate.HasValue) return false;
+        if (targetDate.Value <= today) return false;
+
+        return range switch
+        {
+            "Tomorrow" => targetDate.Value == today.AddDays(1),
+            "Next3Days" => targetDate.Value <= today.AddDays(3),
+            "ThisWeek" => targetDate.Value <= GetEndOfWeek(today),
+            "Next7Days" => targetDate.Value <= today.AddDays(7),
+            "ThisMonth" => targetDate.Value <= new DateTime(today.Year, today.Month, DateTime.DaysInMonth(today.Year, today.Month)),
+            "Next30Days" => targetDate.Value <= today.AddDays(30),
+            _ => true // "All"
+        };
+    }
+
+    private static DateTime GetEndOfWeek(DateTime date)
+    {
+        int diff = DayOfWeek.Sunday - date.DayOfWeek;
+        if (diff < 0) diff += 7;
+        return date.AddDays(diff);
     }
 }
 
@@ -3025,3 +3143,11 @@ public class TasksLayoutOption
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
 }
+
+public class UpcomingTasksRangeOption
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+}
+

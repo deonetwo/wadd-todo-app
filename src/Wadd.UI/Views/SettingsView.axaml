@@ -160,6 +160,70 @@
               </Grid>
             </Button>
           </StackPanel>
+
+          <Separator Classes="divider" Margin="0,4"/>
+
+          <!-- Upcoming Tasks Scope Setting (Adaptive Desktop Dropdown + Mobile Bottom Sheet) -->
+          <StackPanel Spacing="10" Margin="0,4,0,0">
+            <StackPanel Spacing="4">
+              <TextBlock Text="Upcoming Tasks Scope" Classes="heading"/>
+              <TextBlock Text="Filter which scheduled tasks appear in the Upcoming Tasks section (e.g. tomorrow only, this week, this month)."
+                         Classes="small"
+                         TextWrapping="Wrap"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            </StackPanel>
+
+            <!-- 1. PC / Desktop View: ComboBox Dropdown (IsVisible="{Binding !IsCompact}") -->
+            <ComboBox IsVisible="{Binding !IsCompact}"
+                      ItemsSource="{Binding UpcomingTasksRangeOptions}"
+                      SelectedItem="{Binding SelectedUpcomingTasksRangeOption, Mode=TwoWay}"
+                      HorizontalAlignment="Left"
+                      MinWidth="320"
+                      MaxWidth="440"
+                      Margin="0,2,0,0">
+              <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:UpcomingTasksRangeOption">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,2">
+                    <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                      <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                    </StackPanel>
+                  </Grid>
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+
+            <!-- 2. Mobile / Portrait View: Bottom Sheet Action Card (IsVisible="{Binding IsCompact}") -->
+            <Button IsVisible="{Binding IsCompact}"
+                    Classes="ghost"
+                    Command="{Binding OpenUpcomingTasksRangePickerCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
+                    Padding="14,12"
+                    CornerRadius="10"
+                    Background="{DynamicResource AppSurfaceSubtleBrush}"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    BorderThickness="1">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding SelectedUpcomingTasksRangeOption.Name, FallbackValue='All Upcoming'}"
+                             FontSize="13"
+                             FontWeight="SemiBold"
+                             Foreground="{DynamicResource AppTextPrimaryBrush}"
+                             TextTrimming="CharacterEllipsis"/>
+                  <TextBlock Text="{Binding SelectedUpcomingTasksRangeOption.Description, FallbackValue='All future scheduled tasks without date limit'}"
+                             FontSize="11"
+                             Foreground="{DynamicResource AppTextSecondaryBrush}"
+                             TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+                <PathIcon Grid.Column="1"
+                          Data="{StaticResource ChevronRightIconData}"
+                          Width="14" Height="14"
+                          Foreground="{DynamicResource AppTextSecondaryBrush}"
+                          VerticalAlignment="Center"/>
+              </Grid>
+            </Button>
+          </StackPanel>
         </StackPanel>
       </Border>
 

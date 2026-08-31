@@ -976,239 +976,326 @@
         </ItemsControl>
       </StackPanel>
 
-        <!-- ── Section 3: Upcoming Tasks (Capped at 5) ── -->
+        <!-- ── Section 3: Upcoming Tasks ── -->
         <StackPanel Grid.Row="{Binding UpcomingTasksGridRow}" IsVisible="{Binding IsUpcomingSectionVisible}" Margin="0,0,0,32">
-        <Button Classes="ghost"
-                Command="{Binding ToggleUpcomingTasksExpandedCommand}"
-                HorizontalAlignment="Left"
-                Padding="0"
-                Margin="0,0,0,10"
-                Cursor="Hand">
-          <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-            <PathIcon Data="{StaticResource CalendarIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}"/>
-            <TextBlock Text="UPCOMING TASKS"
-                       Classes="micro"
-                       Foreground="{DynamicResource AppPrimaryBrush}"
-                       VerticalAlignment="Center"/>
-            <Border Background="{DynamicResource AppSurfaceElevatedBrush}" CornerRadius="10" Padding="6,1" VerticalAlignment="Center" Margin="2,0,4,0">
-              <TextBlock Text="{Binding UpcomingTodoItems.Count}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-            </Border>
-            <TextBlock Text="▼" IsVisible="{Binding IsUpcomingTasksExpanded}" FontSize="9" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center"/>
-            <TextBlock Text="►" IsVisible="{Binding !IsUpcomingTasksExpanded}" FontSize="9" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center"/>
+          <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+            <!-- Left: Section Title & Toggle -->
+            <Button Grid.Column="0"
+                    Classes="ghost"
+                    Command="{Binding ToggleUpcomingTasksExpandedCommand}"
+                    HorizontalAlignment="Left"
+                    Padding="0"
+                    Cursor="Hand">
+              <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <PathIcon Data="{StaticResource CalendarIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                <TextBlock Text="UPCOMING TASKS"
+                           Classes="micro"
+                           Foreground="{DynamicResource AppPrimaryBrush}"
+                           VerticalAlignment="Center"/>
+                <Border Background="{DynamicResource AppSurfaceElevatedBrush}" CornerRadius="10" Padding="6,1" VerticalAlignment="Center" Margin="2,0,4,0">
+                  <TextBlock Text="{Binding UpcomingTodoItems.Count}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                </Border>
+                <TextBlock Text="▼" IsVisible="{Binding IsUpcomingTasksExpanded}" FontSize="9" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center"/>
+                <TextBlock Text="►" IsVisible="{Binding !IsUpcomingTasksExpanded}" FontSize="9" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
+
+            <!-- Right: Filter Badge / Scope Selector -->
+            <!-- 1. PC / Desktop Filter Button with Flyout (IsVisible="{Binding !IsCompact}") -->
+            <Button Grid.Column="1"
+                    IsVisible="{Binding !IsCompact}"
+                    Classes="ghost"
+                    Padding="8,3"
+                    CornerRadius="12"
+                    Background="{DynamicResource AppSurfaceSubtleBrush}"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    BorderThickness="1"
+                    VerticalAlignment="Center"
+                    ToolTip.Tip="Change upcoming tasks scope">
+              <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                <PathIcon Data="{StaticResource FilterIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding UpcomingTasksRangeLabel}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" VerticalAlignment="Center"/>
+                <PathIcon Data="{StaticResource ChevronDownIconData}" Width="8" Height="8" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center" Margin="1,0,0,0"/>
+              </StackPanel>
+              <Button.Flyout>
+                <Flyout Placement="BottomEdgeAlignedRight">
+                  <StackPanel Spacing="4" Width="240">
+                    <TextBlock Text="UPCOMING TASKS SCOPE" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="4,2,0,4"/>
+                    <ItemsControl ItemsSource="{Binding UpcomingTasksRangeOptions}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:UpcomingTasksRangeOption">
+                          <Button Classes="ghost"
+                                  Command="{Binding $parent[ItemsControl].((vm:MainViewModel)DataContext).SetUpcomingTasksRangeCommand}"
+                                  CommandParameter="{Binding Id}"
+                                  HorizontalAlignment="Stretch"
+                                  HorizontalContentAlignment="Left"
+                                  Padding="8,6"
+                                  Margin="0,1"
+                                  CornerRadius="6">
+                            <StackPanel Spacing="2">
+                              <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                              <TextBlock Text="{Binding Description}" FontSize="10" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                            </StackPanel>
+                          </Button>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Flyout>
+              </Button.Flyout>
+            </Button>
+
+            <!-- 2. Mobile / Compact Filter Button (opens Bottom Sheet) (IsVisible="{Binding IsCompact}") -->
+            <Button Grid.Column="1"
+                    IsVisible="{Binding IsCompact}"
+                    Classes="ghost"
+                    Command="{Binding OpenUpcomingTasksRangePickerCommand}"
+                    Padding="8,3"
+                    CornerRadius="12"
+                    Background="{DynamicResource AppSurfaceSubtleBrush}"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    BorderThickness="1"
+                    VerticalAlignment="Center"
+                    ToolTip.Tip="Change upcoming tasks scope">
+              <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                <PathIcon Data="{StaticResource FilterIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding UpcomingTasksRangeLabel}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" VerticalAlignment="Center"/>
+                <PathIcon Data="{StaticResource ChevronDownIconData}" Width="8" Height="8" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center" Margin="1,0,0,0"/>
+              </StackPanel>
+            </Button>
+          </Grid>
+
+        <!-- Collapsible Content -->
+        <StackPanel IsVisible="{Binding IsUpcomingTasksExpanded}">
+          <!-- Empty State when 0 items match the current range filter -->
+          <Border IsVisible="{Binding !HasUpcomingTodoItems}"
+                  Background="{DynamicResource AppSurfaceSubtleBrush}"
+                  BorderBrush="{DynamicResource AppBorderBrush}"
+                  BorderThickness="1"
+                  CornerRadius="8"
+                  Padding="14,10"
+                  Margin="0,0,0,8">
+            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+              <PathIcon Data="{StaticResource CalendarIconData}" Width="12" Height="12" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center"/>
+              <TextBlock Text="No upcoming tasks scheduled for this period."
+                         FontSize="12"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"
+                         VerticalAlignment="Center"/>
+            </StackPanel>
+          </Border>
+
+          <ItemsControl ItemsSource="{Binding UpcomingTodoItems}" IsVisible="{Binding HasUpcomingTodoItems}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:TodoItemViewModel">
+                <Border Classes="task-row" Classes.completed="{Binding IsCompleted}">
+                  <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                    <!-- Checkbox -->
+                    <CheckBox Grid.Column="0"
+                              Classes="task-checkbox"
+                              IsChecked="{Binding IsCompleted, Mode=OneWay}"
+                              Command="{Binding $parent[UserControl].DataContext.ToggleTodoCommand}"
+                              CommandParameter="{Binding}"/>
+
+                    <!-- Task metadata -->
+                    <Button Grid.Column="1"
+                            Classes="task-row-btn"
+                            Command="{Binding $parent[UserControl].DataContext.OpenDetailDrawerCommand}"
+                            CommandParameter="{Binding}"
+                            Padding="0"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Left"
+                            VerticalAlignment="Center"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Cursor="Hand"
+                            ToolTip.Tip="Click to open task details &amp; notes">
+                      <StackPanel Spacing="3" VerticalAlignment="Center">
+                        <!-- Task Title Row with Note Indicator -->
+                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding Title}"
+                                     Classes="body-bold task-title"
+                                     FontSize="14"
+                                     TextWrapping="Wrap"/>
+                          <PathIcon Data="{StaticResource NoteIconData}"
+                                    Width="12" Height="12"
+                                    Foreground="{DynamicResource AppPrimaryBrush}"
+                                    IsVisible="{Binding HasDescription}"
+                                    VerticalAlignment="Center"
+                                    ToolTip.Tip="Has note"/>
+                        </StackPanel>
+                        <!-- Note preview in list view: secondary muted typography, 2-line clamping -->
+                        <Panel IsVisible="{Binding HasDescription}" IsHitTestVisible="False">
+                          <controls:MarkdownTextBlock MarkdownText="{Binding DescriptionPreview}"
+                                                       IsVisible="{Binding $parent[UserControl].DataContext.ShowNotePreviewsInList}"
+                                                       FontSize="12"
+                                                       Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                                       Opacity="0.85"
+                                                       MaxLines="1"
+                                                       TextTrimming="CharacterEllipsis"/>
+                        </Panel>
+                        <!-- Badges (Due Date, Reminder, Recurrence) -->
+                        <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding HasAnyBadges}">
+                          <!-- Overdue Date Badge -->
+                          <Border IsVisible="{Binding IsOverdue}"
+                                  Background="{DynamicResource AppAccentDangerSubtleBrush}"
+                                  CornerRadius="4"
+                                  Padding="6,2"
+                                  HorizontalAlignment="Left">
+                            <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                              <PathIcon Data="{StaticResource CalendarIconData}" Width="10" Height="10" Foreground="{DynamicResource AppAccentDangerBrush}"/>
+                              <TextBlock Text="{Binding DueDateFormatted}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AppAccentDangerBrush}"/>
+                            </StackPanel>
+                          </Border>
+
+                          <!-- Normal Due Date Badge -->
+                          <Border IsVisible="{Binding HasDueDateOnly}"
+                                  Background="{DynamicResource AppPrimarySubtleBrush}"
+                                  CornerRadius="4"
+                                  Padding="6,2"
+                                  HorizontalAlignment="Left">
+                            <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                              <PathIcon Data="{StaticResource CalendarIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                              <TextBlock Text="{Binding DueDateFormatted}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                            </StackPanel>
+                          </Border>
+
+                          <!-- Reminder Badge -->
+                          <Border IsVisible="{Binding HasReminder}"
+                                  Background="{DynamicResource AppPrimarySubtleBrush}"
+                                  CornerRadius="4"
+                                  Padding="6,2"
+                                  HorizontalAlignment="Left">
+                            <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                              <PathIcon Data="{StaticResource BellIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                              <TextBlock Text="{Binding ReminderAtFormatted}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                            </StackPanel>
+                          </Border>
+
+                          <!-- Recurrence Badge -->
+                          <Border IsVisible="{Binding HasRecurrence}"
+                                  Background="{DynamicResource AppPrimarySubtleBrush}"
+                                  CornerRadius="4"
+                                  Padding="6,2"
+                                  HorizontalAlignment="Left">
+                            <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                              <PathIcon Data="{StaticResource RepeatIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                              <TextBlock Text="{Binding RecurrenceFormatted}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                            </StackPanel>
+                          </Border>
+
+                        </StackPanel>
+
+                        <!-- Category Badges (Dedicated Row) -->
+                        <ItemsControl ItemsSource="{Binding Categories}" IsVisible="{Binding HasCategories}">
+                          <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                              <WrapPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                          </ItemsControl.ItemsPanel>
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                              <Border Background="{DynamicResource AppTagBackgroundBrush}"
+                                      CornerRadius="4"
+                                      Padding="6,2"
+                                      Margin="0,0,4,3"
+                                      HorizontalAlignment="Left">
+                                <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                  <PathIcon Data="{StaticResource TagIconData}" Width="10" Height="10" Foreground="{DynamicResource AppTagForegroundBrush}"/>
+                                  <TextBlock Text="{Binding}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTagForegroundBrush}"/>
+                                </StackPanel>
+                              </Border>
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                      </StackPanel>
+                    </Button>
+
+                    <!-- Timestamp -->
+                    <TextBlock Grid.Column="2"
+                               Text="{Binding CreatedAt, StringFormat='{}{0:MMM d}'}"
+                               Classes="small"
+                               VerticalAlignment="Center"
+                               Margin="14,0,6,0"/>
+
+                    <!-- Delete -->
+                    <Button Grid.Column="3"
+                            Classes="danger"
+                            Command="{Binding $parent[UserControl].DataContext.DeleteTodoCommand}"
+                            CommandParameter="{Binding}"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="Delete task">
+                      <PathIcon Data="{StaticResource CloseIconData}" Width="12" Height="12"/>
+                    </Button>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <!-- Action Card Rows -->
+          <StackPanel Spacing="8" Margin="0,8,0,0">
+            <!-- Action Card Row 1: View Full Calendar & Timeline -->
+            <Button Classes="action-task-row"
+                    Command="{Binding NavigateToCalendarViewCommand}"
+                    ToolTip.Tip="View full calendar and timeline view for all upcoming deadlines and habits">
+              <Grid ColumnDefinitions="Auto,*,Auto">
+                <PathIcon Grid.Column="0"
+                          Data="{StaticResource CalendarIconData}"
+                          Width="15" Height="15"
+                          Foreground="{DynamicResource AppPrimaryBrush}"
+                          Margin="4,0,14,0"
+                          VerticalAlignment="Center"/>
+
+                <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                  <TextBlock Text="View Full Calendar &amp; Timeline"
+                             FontSize="13"
+                             FontWeight="SemiBold"
+                             Foreground="{DynamicResource AppPrimaryBrush}"/>
+                  <TextBlock Text="Explore all upcoming deadlines and recurring habits on the calendar grid"
+                             FontSize="11"
+                             Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                </StackPanel>
+
+                <PathIcon Grid.Column="2"
+                          Data="{StaticResource ChevronRightIconData}"
+                          Width="12" Height="12"
+                          Foreground="{DynamicResource AppPrimaryBrush}"
+                          VerticalAlignment="Center"
+                          Margin="8,0,4,0"/>
+              </Grid>
+            </Button>
+
+            <!-- Action Card Row 2: View All Recurring Tasks -->
+            <Button Classes="action-task-row"
+                    Command="{Binding NavigateToRecurringViewCommand}"
+                    ToolTip.Tip="View all recurring tasks in dedicated view">
+              <Grid ColumnDefinitions="Auto,*,Auto">
+                <PathIcon Grid.Column="0"
+                          Data="{StaticResource RepeatIconData}"
+                          Width="15" Height="15"
+                          Foreground="{DynamicResource AppPrimaryBrush}"
+                          Margin="4,0,14,0"
+                          VerticalAlignment="Center"/>
+
+                <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                  <TextBlock Text="View All Recurring Tasks"
+                             FontSize="13"
+                             FontWeight="SemiBold"
+                             Foreground="{DynamicResource AppPrimaryBrush}"/>
+                  <TextBlock Text="Manage all repeating task patterns and habits"
+                             FontSize="11"
+                             Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                </StackPanel>
+
+                <PathIcon Grid.Column="2"
+                          Data="{StaticResource ChevronRightIconData}"
+                          Width="12" Height="12"
+                          Foreground="{DynamicResource AppPrimaryBrush}"
+                          VerticalAlignment="Center"
+                          Margin="8,0,4,0"/>
+              </Grid>
+            </Button>
           </StackPanel>
-        </Button>
-
-        <ItemsControl ItemsSource="{Binding UpcomingTodoItems}" IsVisible="{Binding IsUpcomingTasksExpanded}">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="vm:TodoItemViewModel">
-              <Border Classes="task-row" Classes.completed="{Binding IsCompleted}">
-                <Grid ColumnDefinitions="Auto,*,Auto,Auto">
-                  <!-- Checkbox -->
-                  <CheckBox Grid.Column="0"
-                            Classes="task-checkbox"
-                            IsChecked="{Binding IsCompleted, Mode=OneWay}"
-                            Command="{Binding $parent[UserControl].DataContext.ToggleTodoCommand}"
-                            CommandParameter="{Binding}"/>
-
-                  <!-- Task metadata -->
-                  <Button Grid.Column="1"
-                          Classes="task-row-btn"
-                          Command="{Binding $parent[UserControl].DataContext.OpenDetailDrawerCommand}"
-                          CommandParameter="{Binding}"
-                          Padding="0"
-                          HorizontalAlignment="Stretch"
-                          HorizontalContentAlignment="Left"
-                          VerticalAlignment="Center"
-                          Background="Transparent"
-                          BorderThickness="0"
-                          Cursor="Hand"
-                          ToolTip.Tip="Click to open task details &amp; notes">
-                    <StackPanel Spacing="3" VerticalAlignment="Center">
-                      <!-- Task Title Row with Note Indicator -->
-                      <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding Title}"
-                                   Classes="body-bold task-title"
-                                   FontSize="14"
-                                   TextWrapping="Wrap"/>
-                        <PathIcon Data="{StaticResource NoteIconData}"
-                                  Width="12" Height="12"
-                                  Foreground="{DynamicResource AppPrimaryBrush}"
-                                  IsVisible="{Binding HasDescription}"
-                                  VerticalAlignment="Center"
-                                  ToolTip.Tip="Has note"/>
-                      </StackPanel>
-                      <!-- Note preview in list view: secondary muted typography, 2-line clamping -->
-                      <Panel IsVisible="{Binding HasDescription}" IsHitTestVisible="False">
-                        <controls:MarkdownTextBlock MarkdownText="{Binding DescriptionPreview}"
-                                                     IsVisible="{Binding $parent[UserControl].DataContext.ShowNotePreviewsInList}"
-                                                     FontSize="12"
-                                                     Foreground="{DynamicResource AppTextSecondaryBrush}"
-                                                     Opacity="0.85"
-                                                     MaxLines="1"
-                                                     TextTrimming="CharacterEllipsis"/>
-                      </Panel>
-                      <!-- Badges (Due Date, Reminder, Recurrence) -->
-                      <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding HasAnyBadges}">
-                        <!-- Overdue Date Badge -->
-                        <Border IsVisible="{Binding IsOverdue}"
-                                Background="{DynamicResource AppAccentDangerSubtleBrush}"
-                                CornerRadius="4"
-                                Padding="6,2"
-                                HorizontalAlignment="Left">
-                          <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                            <PathIcon Data="{StaticResource CalendarIconData}" Width="10" Height="10" Foreground="{DynamicResource AppAccentDangerBrush}"/>
-                            <TextBlock Text="{Binding DueDateFormatted}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AppAccentDangerBrush}"/>
-                          </StackPanel>
-                        </Border>
-
-                        <!-- Normal Due Date Badge -->
-                        <Border IsVisible="{Binding HasDueDateOnly}"
-                                Background="{DynamicResource AppPrimarySubtleBrush}"
-                                CornerRadius="4"
-                                Padding="6,2"
-                                HorizontalAlignment="Left">
-                          <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                            <PathIcon Data="{StaticResource CalendarIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                            <TextBlock Text="{Binding DueDateFormatted}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                          </StackPanel>
-                        </Border>
-
-                        <!-- Reminder Badge -->
-                        <Border IsVisible="{Binding HasReminder}"
-                                Background="{DynamicResource AppPrimarySubtleBrush}"
-                                CornerRadius="4"
-                                Padding="6,2"
-                                HorizontalAlignment="Left">
-                          <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                            <PathIcon Data="{StaticResource BellIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                            <TextBlock Text="{Binding ReminderAtFormatted}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                          </StackPanel>
-                        </Border>
-
-                        <!-- Recurrence Badge -->
-                        <Border IsVisible="{Binding HasRecurrence}"
-                                Background="{DynamicResource AppPrimarySubtleBrush}"
-                                CornerRadius="4"
-                                Padding="6,2"
-                                HorizontalAlignment="Left">
-                          <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                            <PathIcon Data="{StaticResource RepeatIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                            <TextBlock Text="{Binding RecurrenceFormatted}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                          </StackPanel>
-                        </Border>
-
-                      </StackPanel>
-
-                      <!-- Category Badges (Dedicated Row) -->
-                      <ItemsControl ItemsSource="{Binding Categories}" IsVisible="{Binding HasCategories}">
-                        <ItemsControl.ItemsPanel>
-                          <ItemsPanelTemplate>
-                            <WrapPanel Orientation="Horizontal"/>
-                          </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                          <DataTemplate>
-                            <Border Background="{DynamicResource AppTagBackgroundBrush}"
-                                    CornerRadius="4"
-                                    Padding="6,2"
-                                    Margin="0,0,4,3"
-                                    HorizontalAlignment="Left">
-                              <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                                <PathIcon Data="{StaticResource TagIconData}" Width="10" Height="10" Foreground="{DynamicResource AppTagForegroundBrush}"/>
-                                <TextBlock Text="{Binding}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTagForegroundBrush}"/>
-                              </StackPanel>
-                            </Border>
-                          </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                      </ItemsControl>
-                    </StackPanel>
-                  </Button>
-
-                  <!-- Timestamp -->
-                  <TextBlock Grid.Column="2"
-                             Text="{Binding CreatedAt, StringFormat='{}{0:MMM d}'}"
-                             Classes="small"
-                             VerticalAlignment="Center"
-                             Margin="14,0,6,0"/>
-
-                  <!-- Delete -->
-                  <Button Grid.Column="3"
-                          Classes="danger"
-                          Command="{Binding $parent[UserControl].DataContext.DeleteTodoCommand}"
-                          CommandParameter="{Binding}"
-                          VerticalAlignment="Center"
-                          ToolTip.Tip="Delete task">
-                    <PathIcon Data="{StaticResource CloseIconData}" Width="12" Height="12"/>
-                  </Button>
-                </Grid>
-              </Border>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-
-        <!-- Action Card Rows -->
-        <StackPanel Spacing="8" Margin="0,8,0,0" IsVisible="{Binding IsUpcomingTasksExpanded}">
-          <!-- Action Card Row 1: View Full Calendar & Timeline -->
-          <Button Classes="action-task-row"
-                  Command="{Binding NavigateToCalendarViewCommand}"
-                  ToolTip.Tip="View full calendar and timeline view for all upcoming deadlines and habits">
-            <Grid ColumnDefinitions="Auto,*,Auto">
-              <PathIcon Grid.Column="0"
-                        Data="{StaticResource CalendarIconData}"
-                        Width="15" Height="15"
-                        Foreground="{DynamicResource AppPrimaryBrush}"
-                        Margin="4,0,14,0"
-                        VerticalAlignment="Center"/>
-
-              <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
-                <TextBlock Text="View Full Calendar &amp; Timeline"
-                           FontSize="13"
-                           FontWeight="SemiBold"
-                           Foreground="{DynamicResource AppPrimaryBrush}"/>
-                <TextBlock Text="Explore all upcoming deadlines and recurring habits on the calendar grid"
-                           FontSize="11"
-                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-              </StackPanel>
-
-              <PathIcon Grid.Column="2"
-                        Data="{StaticResource ChevronRightIconData}"
-                        Width="12" Height="12"
-                        Foreground="{DynamicResource AppPrimaryBrush}"
-                        VerticalAlignment="Center"
-                        Margin="8,0,4,0"/>
-            </Grid>
-          </Button>
-
-          <!-- Action Card Row 2: View All Recurring Tasks -->
-          <Button Classes="action-task-row"
-                  Command="{Binding NavigateToRecurringViewCommand}"
-                  ToolTip.Tip="View all recurring tasks in dedicated view">
-            <Grid ColumnDefinitions="Auto,*,Auto">
-              <PathIcon Grid.Column="0"
-                        Data="{StaticResource RepeatIconData}"
-                        Width="15" Height="15"
-                        Foreground="{DynamicResource AppPrimaryBrush}"
-                        Margin="4,0,14,0"
-                        VerticalAlignment="Center"/>
-
-              <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
-                <TextBlock Text="View All Recurring Tasks"
-                           FontSize="13"
-                           FontWeight="SemiBold"
-                           Foreground="{DynamicResource AppPrimaryBrush}"/>
-                <TextBlock Text="Manage all repeating task patterns and habits"
-                           FontSize="11"
-                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-              </StackPanel>
-
-              <PathIcon Grid.Column="2"
-                        Data="{StaticResource ChevronRightIconData}"
-                        Width="12" Height="12"
-                        Foreground="{DynamicResource AppPrimaryBrush}"
-                        VerticalAlignment="Center"
-                        Margin="8,0,4,0"/>
-            </Grid>
-          </Button>
         </StackPanel>
       </StackPanel>
       </Grid>
