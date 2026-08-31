@@ -20,6 +20,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ITracingService, TracingService>();
         services.AddSingleton<IGoalService>(sp => new SQLiteGoalService(((SQLiteTodoService)sp.GetRequiredService<ITodoService>()).DatabaseConnection));
         services.AddSingleton<IStartupService, WindowsStartupService>();
+        services.AddSingleton<IAiGoalService, AiGoalService>();
 
         return services;
     }

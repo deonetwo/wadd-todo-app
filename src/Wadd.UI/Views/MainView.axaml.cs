@@ -107,4 +107,16 @@ public partial class MainView : UserControl
         if (DataContext is MainViewModel vm)
             vm.CloseDetailDrawerCommand.Execute(null);
     }
+
+    private void OnAiProviderPickerBackgroundPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.CloseAiProviderPickerCommand.Execute(null);
+    }
+
+    private void OnAiModelPickerBackgroundPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.CloseAiModelPickerCommand.Execute(null);
+    }
 }

@@ -24,6 +24,370 @@ public partial class MainViewModel : ViewModelBase
     private readonly IExportService _exportService;
     private readonly IGoalService _goalService;
     private readonly IStartupService _startupService;
+    private readonly IAiGoalService _aiGoalService;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsCustomAiProvider))]
+    [NotifyPropertyChangedFor(nameof(IsOpenRouterAiProvider))]
+    [NotifyPropertyChangedFor(nameof(ShowCustomModelField))]
+    [NotifyPropertyChangedFor(nameof(ShowCustomBaseUrlField))]
+    [NotifyPropertyChangedFor(nameof(AiKeyWatermark))]
+    [NotifyPropertyChangedFor(nameof(AiKeyHelpText))]
+    private string _aiProvider = "Gemini";
+
+    partial void OnAiProviderChanged(string value)
+    {
+        _aiGoalService.Provider = value;
+        SelectedAiProviderOption = AiProviderOptions.FirstOrDefault(x => x.Id.Equals(value, StringComparison.OrdinalIgnoreCase)) ?? AiProviderOptions[0];
+
+        // Autofill default model for this provider if empty or matching a known default
+        if (string.IsNullOrWhiteSpace(AiCustomModel) || IsKnownDefaultModel(AiCustomModel))
+        {
+            AiCustomModel = GetDefaultModelForProvider(value);
+        }
+
+        SaveUserSettings();
+        _ = LoadAvailableModelsAsync(forceLive: true);
+    }
+
+    public List<AiProviderOption> AiProviderOptions { get; } = new()
+    {
+        new AiProviderOption { Id = "Gemini", Name = "Google Gemini", Description = "Gemini 2.0 Flash / 1.5 Flash (Google AI Studio)", KeyWatermark = "Enter Gemini API key (AIzaSy...)", KeyHelpText = "Get a free API key at aistudio.google.com", DefaultModel = "gemini-2.0-flash" },
+        new AiProviderOption { Id = "OpenRouter", Name = "OpenRouter", Description = "Unified API for 100+ models (Claude 3.5, DeepSeek, GPT-4o)", KeyWatermark = "Enter OpenRouter API key (sk-or-v1-...)", KeyHelpText = "Get an API key at openrouter.ai", DefaultModel = "openai/gpt-4o-mini" },
+        new AiProviderOption { Id = "OpenAI", Name = "OpenAI (ChatGPT)", Description = "GPT-4o mini / GPT-4o Models", KeyWatermark = "Enter OpenAI API key (sk-proj-...)", KeyHelpText = "Get an API key at platform.openai.com", DefaultModel = "gpt-4o-mini" },
+        new AiProviderOption { Id = "Groq", Name = "Groq Cloud", Description = "Llama 3.3 70B (Ultra-fast inference)", KeyWatermark = "Enter Groq API key (gsk_...)", KeyHelpText = "Get a free API key at console.groq.com", DefaultModel = "llama-3.3-70b-versatile" },
+        new AiProviderOption { Id = "DeepSeek", Name = "DeepSeek", Description = "DeepSeek-V3 / DeepSeek-R1 Models", KeyWatermark = "Enter DeepSeek API key (sk-...)", KeyHelpText = "Get an API key at platform.deepseek.com", DefaultModel = "deepseek-chat" },
+        new AiProviderOption { Id = "Custom", Name = "Custom / Local AI", Description = "OpenAI-Compatible (Ollama, LM Studio, LocalAI)", KeyWatermark = "Enter API key (if required)", KeyHelpText = "Enter custom endpoint URL and model name below", DefaultModel = "llama3.2" }
+    };
+
+    [ObservableProperty]
+    private AiProviderOption? _selectedAiProviderOption;
+
+    partial void OnSelectedAiProviderOptionChanged(AiProviderOption? value)
+    {
+        if (value != null && !string.IsNullOrWhiteSpace(value.Id) && value.Id != AiProvider)
+        {
+            AiProvider = value.Id;
+        }
+    }
+
+    public bool IsCustomAiProvider => AiProvider.Equals("Custom", StringComparison.OrdinalIgnoreCase);
+    public bool IsOpenRouterAiProvider => AiProvider.Equals("OpenRouter", StringComparison.OrdinalIgnoreCase);
+    public bool ShowCustomModelField => true;
+    public bool ShowCustomBaseUrlField => IsCustomAiProvider;
+
+    public string AiKeyWatermark => SelectedAiProviderOption?.KeyWatermark ?? "Enter API key...";
+    public string AiKeyHelpText => SelectedAiProviderOption?.KeyHelpText ?? string.Empty;
+
+    public System.Collections.ObjectModel.ObservableCollection<AiModelOption> AvailableModels { get; } = new();
+    public System.Collections.ObjectModel.ObservableCollection<AiModelOption> FilteredModels { get; } = new();
+
+    [ObservableProperty]
+    private string _modelSearchQuery = string.Empty;
+
+    partial void OnModelSearchQueryChanged(string value)
+    {
+        FilterAvailableModels();
+    }
+
+    [RelayCommand]
+    private void ClearModelSearch()
+    {
+        ModelSearchQuery = string.Empty;
+    }
+
+    private void FilterAvailableModels()
+    {
+        var query = ModelSearchQuery?.Trim() ?? string.Empty;
+        FilteredModels.Clear();
+
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            foreach (var m in AvailableModels)
+            {
+                FilteredModels.Add(m);
+            }
+        }
+        else
+        {
+            foreach (var m in AvailableModels)
+            {
+                if (m.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                    m.Id.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                    m.Description.Contains(query, StringComparison.OrdinalIgnoreCase))
+                {
+                    FilteredModels.Add(m);
+                }
+            }
+        }
+    }
+
+    [ObservableProperty]
+    private AiModelOption? _selectedModelOption;
+
+    partial void OnSelectedModelOptionChanged(AiModelOption? value)
+    {
+        if (value != null && !string.IsNullOrWhiteSpace(value.Id) && value.Id != AiCustomModel)
+        {
+            AiCustomModel = value.Id;
+        }
+    }
+
+    [ObservableProperty]
+    private bool _isLoadingModels;
+
+    [ObservableProperty]
+    private string _aiApiKey = string.Empty;
+
+    partial void OnAiApiKeyChanged(string value)
+    {
+        _aiGoalService.ApiKey = value;
+
+        // Autofill default model when API key is entered if model is empty or default
+        if (!string.IsNullOrWhiteSpace(value) && (string.IsNullOrWhiteSpace(AiCustomModel) || IsKnownDefaultModel(AiCustomModel)))
+        {
+            AiCustomModel = GetDefaultModelForProvider(AiProvider);
+        }
+
+        SaveUserSettings();
+        _ = LoadAvailableModelsAsync(forceLive: true);
+    }
+
+    [ObservableProperty]
+    private string _aiCustomBaseUrl = string.Empty;
+
+    partial void OnAiCustomBaseUrlChanged(string value)
+    {
+        _aiGoalService.CustomBaseUrl = value;
+        SaveUserSettings();
+        if (IsCustomAiProvider)
+        {
+            _ = LoadAvailableModelsAsync(forceLive: true);
+        }
+    }
+
+    [ObservableProperty]
+    private string _aiCustomModel = string.Empty;
+
+    partial void OnAiCustomModelChanged(string value)
+    {
+        _aiGoalService.CustomModel = value;
+        if (!string.IsNullOrWhiteSpace(value) && (SelectedModelOption == null || !SelectedModelOption.Id.Equals(value, StringComparison.OrdinalIgnoreCase)))
+        {
+            var match = AvailableModels.FirstOrDefault(x => x.Id.Equals(value, StringComparison.OrdinalIgnoreCase));
+            if (match != null)
+            {
+                SelectedModelOption = match;
+            }
+            else
+            {
+                var customOpt = new AiModelOption { Id = value, Name = value, Description = "Custom Selected" };
+                AvailableModels.Insert(0, customOpt);
+                FilterAvailableModels();
+                SelectedModelOption = customOpt;
+            }
+        }
+        SaveUserSettings();
+    }
+
+    [RelayCommand]
+    public async Task RefreshAvailableModelsAsync()
+    {
+        await LoadAvailableModelsAsync(forceLive: true);
+    }
+
+    public async Task LoadAvailableModelsAsync(bool forceLive = false)
+    {
+        if (IsLoadingModels) return;
+        IsLoadingModels = true;
+
+        try
+        {
+            var models = await _aiGoalService.GetAvailableModelsAsync(AiProvider, AiApiKey, AiCustomBaseUrl);
+            AvailableModels.Clear();
+            foreach (var m in models)
+            {
+                AvailableModels.Add(m);
+            }
+            FilterAvailableModels();
+
+            if (!string.IsNullOrWhiteSpace(AiCustomModel))
+            {
+                var match = AvailableModels.FirstOrDefault(x => x.Id.Equals(AiCustomModel.Trim(), StringComparison.OrdinalIgnoreCase));
+                if (match != null)
+                {
+                    SelectedModelOption = match;
+                }
+                else
+                {
+                    var customOpt = new AiModelOption { Id = AiCustomModel.Trim(), Name = AiCustomModel.Trim(), Description = "Custom Selected" };
+                    AvailableModels.Insert(0, customOpt);
+                    FilterAvailableModels();
+                    SelectedModelOption = customOpt;
+                }
+            }
+            else
+            {
+                var defaultModel = GetDefaultModelForProvider(AiProvider);
+                var match = AvailableModels.FirstOrDefault(x => x.Id.Equals(defaultModel, StringComparison.OrdinalIgnoreCase)) ?? AvailableModels.FirstOrDefault();
+                if (match != null)
+                {
+                    SelectedModelOption = match;
+                    AiCustomModel = match.Id;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Trace.WriteLine($"[MainViewModel] LoadAvailableModelsAsync error: {ex.Message}");
+        }
+        finally
+        {
+            IsLoadingModels = false;
+        }
+    }
+
+    [ObservableProperty]
+    private bool _isTestingAiConnection;
+
+    [ObservableProperty]
+    private string? _aiConnectionStatusMessage;
+
+    [ObservableProperty]
+    private bool? _isAiConnectionSuccess;
+
+    [RelayCommand]
+    public async Task TestAiConnectionAsync()
+    {
+        if (IsTestingAiConnection) return;
+
+        try
+        {
+            IsTestingAiConnection = true;
+            AiConnectionStatusMessage = "Testing live API connection...";
+            IsAiConnectionSuccess = null;
+
+            var (success, message, modelName) = await _aiGoalService.TestConnectionAsync(
+                AiProvider,
+                AiApiKey,
+                AiCustomModel,
+                AiCustomBaseUrl);
+
+            IsAiConnectionSuccess = success;
+            AiConnectionStatusMessage = message;
+        }
+        catch (Exception ex)
+        {
+            IsAiConnectionSuccess = false;
+            AiConnectionStatusMessage = $"Connection test failed: {ex.Message}";
+        }
+        finally
+        {
+            IsTestingAiConnection = false;
+        }
+    }
+
+    [RelayCommand]
+    private void AutofillDefaultModel()
+    {
+        AiCustomModel = GetDefaultModelForProvider(AiProvider);
+        var match = AvailableModels.FirstOrDefault(x => x.Id.Equals(AiCustomModel, StringComparison.OrdinalIgnoreCase));
+        if (match != null)
+        {
+            SelectedModelOption = match;
+        }
+    }
+
+    [RelayCommand]
+    public void SelectModelOption(AiModelOption? option)
+    {
+        if (option != null && !string.IsNullOrWhiteSpace(option.Id))
+        {
+            SelectedModelOption = option;
+            AiCustomModel = option.Id;
+        }
+    }
+
+    [ObservableProperty]
+    private bool _isAiProviderPickerSheetOpen;
+
+    [RelayCommand]
+    private void OpenAiProviderPicker()
+    {
+        IsAiProviderPickerSheetOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseAiProviderPicker()
+    {
+        IsAiProviderPickerSheetOpen = false;
+    }
+
+    [RelayCommand]
+    private void SelectAiProviderFromSheet(AiProviderOption? option)
+    {
+        if (option != null)
+        {
+            SelectedAiProviderOption = option;
+            IsAiProviderPickerSheetOpen = false;
+        }
+    }
+
+    [ObservableProperty]
+    private bool _isAiModelPickerSheetOpen;
+
+    [RelayCommand]
+    private void OpenAiModelPicker()
+    {
+        IsAiModelPickerSheetOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseAiModelPicker()
+    {
+        IsAiModelPickerSheetOpen = false;
+    }
+
+    [RelayCommand]
+    private void SelectAiModelOptionFromSheet(AiModelOption? option)
+    {
+        if (option != null)
+        {
+            SelectModelOption(option);
+            IsAiModelPickerSheetOpen = false;
+        }
+    }
+
+    public static string GetDefaultModelForProvider(string? provider)
+    {
+        return (provider ?? string.Empty).ToLowerInvariant() switch
+        {
+            "openrouter" => "openai/gpt-4o-mini",
+            "openai" => "gpt-4o-mini",
+            "groq" => "llama-3.3-70b-versatile",
+            "deepseek" => "deepseek-chat",
+            "custom" => "llama3.2",
+            "gemini" => "gemini-2.0-flash",
+            _ => "openai/gpt-4o-mini"
+        };
+    }
+
+    public static bool IsKnownDefaultModel(string? model)
+    {
+        if (string.IsNullOrWhiteSpace(model)) return true;
+        var clean = model.Trim().ToLowerInvariant();
+        return clean is "gemini-2.0-flash" or "gemini-1.5-flash"
+            or "openai/gpt-4o-mini" or "gpt-4o-mini" or "gpt-4o"
+            or "llama-3.3-70b-versatile" or "llama-3.1-70b-versatile" or "llama3.2"
+            or "deepseek-chat" or "deepseek-reasoner";
+    }
+
+    // Compatibility property
+    public string GeminiApiKey
+    {
+        get => AiApiKey;
+        set => AiApiKey = value;
+    }
 
     public bool IsDesktopPlatform => !OperatingSystem.IsAndroid() && !OperatingSystem.IsIOS();
     public bool IsWindowsPlatform => OperatingSystem.IsWindows();
@@ -2241,11 +2605,12 @@ public partial class MainViewModel : ViewModelBase
         App.Services?.GetService<ISyncService>() ?? new GoogleDriveSyncService(App.Services?.GetService<ITodoService>() ?? new SQLiteTodoService()),
         App.Services?.GetService<IExportService>() ?? new ExcelExportService(),
         App.Services?.GetService<IGoalService>() ?? new SQLiteGoalService(),
-        App.Services?.GetService<IStartupService>() ?? new WindowsStartupService())
+        App.Services?.GetService<IStartupService>() ?? new WindowsStartupService(),
+        App.Services?.GetService<IAiGoalService>() ?? new Wadd.Services.AiGoalService(new System.Net.Http.HttpClient()))
     {
     }
 
-    public MainViewModel(ITodoService todoService, IThemeService themeService, ISyncService syncService, IExportService exportService, IGoalService goalService, IStartupService startupService)
+    public MainViewModel(ITodoService todoService, IThemeService themeService, ISyncService syncService, IExportService exportService, IGoalService goalService, IStartupService startupService, IAiGoalService aiGoalService)
     {
         _todoService = todoService ?? throw new ArgumentNullException(nameof(todoService));
         _themeService = themeService ?? throw new ArgumentNullException(nameof(themeService));
@@ -2253,7 +2618,8 @@ public partial class MainViewModel : ViewModelBase
         _exportService = exportService ?? throw new ArgumentNullException(nameof(exportService));
         _goalService = goalService ?? throw new ArgumentNullException(nameof(goalService));
         _startupService = startupService ?? throw new ArgumentNullException(nameof(startupService));
-        _goalsVM = new GoalsViewModel(_goalService);
+        _aiGoalService = aiGoalService ?? throw new ArgumentNullException(nameof(aiGoalService));
+        _goalsVM = new GoalsViewModel(_goalService, _aiGoalService);
         _selectedTasksLayoutOption = TasksLayoutOptions[0];
         LoadUserSettings();
 
@@ -3162,6 +3528,18 @@ public partial class MainViewModel
         MinimizeToTray = settings.MinimizeToTray;
         CloseToTray = settings.CloseToTray;
         EnableTrayIcon = settings.EnableTrayIcon;
+        AiProvider = string.IsNullOrWhiteSpace(settings.AiProvider) ? "Gemini" : settings.AiProvider;
+        SelectedAiProviderOption = AiProviderOptions.FirstOrDefault(x => x.Id.Equals(AiProvider, StringComparison.OrdinalIgnoreCase)) ?? AiProviderOptions[0];
+        AiApiKey = !string.IsNullOrWhiteSpace(settings.AiApiKey) ? settings.AiApiKey : (settings.GeminiApiKey ?? string.Empty);
+        AiCustomBaseUrl = settings.AiCustomBaseUrl ?? string.Empty;
+        AiCustomModel = settings.AiCustomModel ?? string.Empty;
+
+        _aiGoalService.Provider = AiProvider;
+        _aiGoalService.ApiKey = AiApiKey;
+        _aiGoalService.CustomBaseUrl = AiCustomBaseUrl;
+        _aiGoalService.CustomModel = AiCustomModel;
+
+        _ = LoadAvailableModelsAsync(forceLive: false);
     }
 
     public void SaveUserSettings()
@@ -3176,6 +3554,11 @@ public partial class MainViewModel
         settings.MinimizeToTray = MinimizeToTray;
         settings.CloseToTray = CloseToTray;
         settings.EnableTrayIcon = EnableTrayIcon;
+        settings.AiProvider = AiProvider;
+        settings.AiApiKey = AiApiKey;
+        settings.AiCustomBaseUrl = AiCustomBaseUrl;
+        settings.AiCustomModel = AiCustomModel;
+        settings.GeminiApiKey = AiApiKey;
         AppSettingsHelper.SaveSettings(settings);
     }
 
@@ -3217,5 +3600,15 @@ public class UpcomingTasksRangeOption
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
+}
+
+public class AiProviderOption
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string KeyWatermark { get; set; } = string.Empty;
+    public string KeyHelpText { get; set; } = string.Empty;
+    public string DefaultModel { get; set; } = string.Empty;
 }
 

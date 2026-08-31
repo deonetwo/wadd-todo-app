@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Wadd.Tests;
 
+[Collection("AppSettingsTests")]
 public class ThemePersistenceTests
 {
     [Fact]

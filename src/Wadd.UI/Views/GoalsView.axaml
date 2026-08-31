@@ -299,59 +299,65 @@
 
             <!-- FOCUSED GOAL HEADER (OPEN SECTION - NO NESTED CARD) -->
             <StackPanel Spacing="12" ClipToBounds="False">
-              <!-- Top Category & Action Bar -->
-              <Grid ColumnDefinitions="Auto,*,Auto,Auto" Margin="0,4,0,0" ClipToBounds="False">
-                <!-- Category Badge -->
-                <Border Grid.Column="0"
-                        Background="{DynamicResource AppTagBackgroundBrush}"
-                        CornerRadius="12"
-                        Padding="10,4"
-                        VerticalAlignment="Center"
-                        HorizontalAlignment="Left"
-                        MaxWidth="180"
-                        ClipToBounds="True"
-                        IsVisible="{Binding SelectedGoal.HasCategory}">
-                  <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                    <PathIcon Data="{StaticResource TagIconData}" Width="11" Height="11" Foreground="{DynamicResource AppTagForegroundBrush}" VerticalAlignment="Center"/>
-                    <TextBlock Text="{Binding SelectedGoal.Category}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AppTagForegroundBrush}" VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
-                  </StackPanel>
-                </Border>
+              <!-- Top Category, Date & Action Bar -->
+              <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0" ClipToBounds="False">
+                <!-- Left: Category & Date Badges -->
+                <WrapPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
+                  <!-- Category Badge -->
+                  <Border Background="{DynamicResource AppTagBackgroundBrush}"
+                          CornerRadius="10"
+                          Padding="8,4"
+                          Margin="0,0,8,4"
+                          VerticalAlignment="Center"
+                          IsVisible="{Binding SelectedGoal.HasCategory}">
+                    <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                      <PathIcon Data="{StaticResource TagIconData}" Width="10" Height="10" Foreground="{DynamicResource AppTagForegroundBrush}" VerticalAlignment="Center"/>
+                      <TextBlock Text="{Binding SelectedGoal.Category}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AppTagForegroundBrush}" VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                  </Border>
 
-                <!-- Target Date Info (if any) -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5" VerticalAlignment="Center" Margin="12,0,0,0">
-                  <PathIcon Data="{StaticResource CalendarIconData}" Width="12" Height="12" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center"/>
-                  <TextBlock Text="{Binding SelectedGoal.FormattedTargetDate}" FontSize="12" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center"/>
+                  <!-- Target Date Info (if any) -->
+                  <Border Background="{DynamicResource AppSurfaceSubtleBrush}"
+                          BorderBrush="{DynamicResource AppBorderBrush}"
+                          BorderThickness="1"
+                          CornerRadius="10"
+                          Padding="8,4"
+                          Margin="0,0,8,4"
+                          VerticalAlignment="Center"
+                          IsVisible="{Binding SelectedGoal.HasTargetDate}">
+                    <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                      <PathIcon Data="{StaticResource CalendarIconData}" Width="11" Height="11" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center"/>
+                      <TextBlock Text="{Binding SelectedGoal.FormattedTargetDate}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                  </Border>
+                </WrapPanel>
+
+                <!-- Right: Action Buttons (Achieve / Reopen + Delete) -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                  <!-- Secondary Action: Mark Achieved / Reopen Goal -->
+                  <Button Command="{Binding ToggleGoalAchievedCommand}"
+                          CommandParameter="{Binding SelectedGoal}"
+                          Classes="btn-secondary"
+                          Height="32" Padding="12,0"
+                          VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                      <PathIcon Data="{StaticResource UndoIconData}" Width="11" Height="11" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center" IsVisible="{Binding SelectedGoal.IsAchieved}"/>
+                      <PathIcon Data="{StaticResource SparkleIconData}" Width="11" Height="11" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center" IsVisible="{Binding !SelectedGoal.IsAchieved}"/>
+                      <TextBlock Text="Reopen Goal" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center" IsVisible="{Binding SelectedGoal.IsAchieved}"/>
+                      <TextBlock Text="Mark Achieved" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center" IsVisible="{Binding !SelectedGoal.IsAchieved}"/>
+                    </StackPanel>
+                  </Button>
+
+                  <!-- Separated Destructive Action: Delete Button -->
+                  <Button Command="{Binding DeleteGoalCommand}"
+                          CommandParameter="{Binding SelectedGoal}"
+                          Classes="danger"
+                          MinHeight="32" Width="32" Padding="6"
+                          VerticalAlignment="Center"
+                          ToolTip.Tip="Delete Goal">
+                    <PathIcon Data="{StaticResource TrashIconData}" Width="13" Height="13" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                  </Button>
                 </StackPanel>
-
-                <!-- Secondary Action: Mark Achieved / Reopen Goal -->
-                <Button Grid.Column="2"
-                        Command="{Binding ToggleGoalAchievedCommand}"
-                        CommandParameter="{Binding SelectedGoal}"
-                        Classes="btn-secondary"
-                        Height="32" Padding="14,0"
-                        Margin="0,2,0,2"
-                        ClipToBounds="False"
-                        VerticalAlignment="Center">
-                  <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                    <PathIcon Data="{StaticResource UndoIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center" IsVisible="{Binding SelectedGoal.IsAchieved}"/>
-                    <PathIcon Data="{StaticResource SparkleIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center" IsVisible="{Binding !SelectedGoal.IsAchieved}"/>
-                    <TextBlock Text="Reopen Goal" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center" IsVisible="{Binding SelectedGoal.IsAchieved}"/>
-                    <TextBlock Text="Mark Achieved" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center" IsVisible="{Binding !SelectedGoal.IsAchieved}"/>
-                  </StackPanel>
-                </Button>
-
-                <!-- Separated Destructive Action: Delete Button -->
-                <Button Grid.Column="3"
-                        Command="{Binding DeleteGoalCommand}"
-                        CommandParameter="{Binding SelectedGoal}"
-                        Classes="danger"
-                        MinHeight="32" Width="32" Padding="6"
-                        Margin="12,0,0,0"
-                        ClipToBounds="False"
-                        VerticalAlignment="Center"
-                        ToolTip.Tip="Delete Goal">
-                  <PathIcon Data="{StaticResource TrashIconData}" Width="14" Height="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Button>
               </Grid>
 
               <!-- Goal Title & Description (Strong Typography Hierarchy) -->
@@ -374,15 +380,30 @@
             <!-- SECTION 1: SEQUENTIAL MILESTONE CHECKLIST (OPEN SECTION) -->
             <StackPanel Spacing="12">
               <!-- Section Header Row -->
-              <Grid ColumnDefinitions="*,Auto">
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                  <PathIcon Data="{StaticResource CheckListIconData}" Width="16" Height="16" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
-                  <TextBlock Text="Sequential Milestone Checklist" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" VerticalAlignment="Center"/>
-                </StackPanel>
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <Grid Grid.Column="0" ColumnDefinitions="Auto,*" ColumnSpacing="8" VerticalAlignment="Center">
+                  <PathIcon Grid.Column="0" Data="{StaticResource CheckListIconData}" Width="16" Height="16" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <TextBlock Grid.Column="1" Text="Milestones" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                </Grid>
+
+                <!-- Secondary Tier Action: ✨ AI Suggest Steps -->
+                <Button Grid.Column="1"
+                        Command="{Binding GenerateMilestonesWithAiCommand}"
+                        Classes="btn-secondary"
+                        IsEnabled="{Binding !IsAiGeneratingMilestones}"
+                        Height="28" Padding="10,0"
+                        VerticalAlignment="Center"
+                        ToolTip.Tip="Automatically decompose this goal into sequential milestone steps">
+                  <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                    <PathIcon Data="{StaticResource SparkleIconData}" Width="11" Height="11" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                    <TextBlock Text="AI Suggest" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                  </StackPanel>
+                </Button>
               </Grid>
 
               <!-- 1px Subtle Section Divider -->
               <Separator Classes="divider"/>
+              <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsAiGeneratingMilestones}" Height="2" CornerRadius="1" Foreground="{DynamicResource AppPrimaryBrush}" Margin="0,-6,0,0"/>
 
               <!-- Milestone Input Bar -->
               <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,4">
@@ -456,28 +477,43 @@
 
             <!-- SECTION 2: REFLECTIVE JOURNAL TIMELINE (OPEN SECTION) -->
             <StackPanel Spacing="12">
-              <!-- Section Header Row with Title on Left and Write Entry Button on Right -->
-              <Grid ColumnDefinitions="*,Auto">
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                  <PathIcon Data="{StaticResource BookIconData}" Width="16" Height="16" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
-                  <TextBlock Text="Reflective Journal Timeline" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" VerticalAlignment="Center"/>
-                </StackPanel>
+              <!-- Section Header Row with Title on Left and Action Buttons on Right -->
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <Grid Grid.Column="0" ColumnDefinitions="Auto,*" ColumnSpacing="8" VerticalAlignment="Center">
+                  <PathIcon Grid.Column="0" Data="{StaticResource BookIconData}" Width="16" Height="16" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <TextBlock Grid.Column="1" Text="Reflective Journal" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                </Grid>
 
-                <!-- Secondary Tier Action: + Write Entry -->
-                <Button Grid.Column="1"
-                        Command="{Binding OpenCreateJournalFormCommand}"
-                        Classes="btn-secondary"
-                        Height="30" Padding="12,0"
-                        VerticalAlignment="Center">
-                  <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                    <PathIcon Data="{StaticResource PlusIconData}" Width="11" Height="11" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
-                    <TextBlock Text="Write Entry" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
-                  </StackPanel>
-                </Button>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                  <!-- AI Draft Reflection -->
+                  <Button Command="{Binding GenerateJournalDraftWithAiCommand}"
+                          Classes="btn-secondary"
+                          IsEnabled="{Binding !IsAiGeneratingJournal}"
+                          Height="28" Padding="8,0"
+                          VerticalAlignment="Center"
+                          ToolTip.Tip="Generate an inspiring reflection draft based on goal progress">
+                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                      <PathIcon Data="{StaticResource SparkleIconData}" Width="11" Height="11" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                      <TextBlock Text="AI Draft" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                    </StackPanel>
+                  </Button>
+
+                  <!-- Secondary Tier Action: + Write Entry -->
+                  <Button Command="{Binding OpenCreateJournalFormCommand}"
+                          Classes="btn-secondary"
+                          Height="28" Padding="10,0"
+                          VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                      <PathIcon Data="{StaticResource PlusIconData}" Width="11" Height="11" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                      <TextBlock Text="Write Entry" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                    </StackPanel>
+                  </Button>
+                </StackPanel>
               </Grid>
 
               <!-- 1px Subtle Section Divider -->
               <Separator Classes="divider"/>
+              <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsAiGeneratingJournal}" Height="2" CornerRadius="1" Foreground="{DynamicResource AppPrimaryBrush}" Margin="0,-6,0,0"/>
 
               <!-- FLATTENED INLINE COMPOSE FORM (No surrounding box or background fill) -->
               <StackPanel Spacing="10" Margin="0,4,0,10" IsVisible="{Binding IsCreatingJournal}">
@@ -781,20 +817,32 @@
             <!-- Overall Progress Summary (Open Header) -->
             <StackPanel Spacing="10">
               <Grid ColumnDefinitions="*,Auto">
-                <Border Grid.Column="0"
-                        Background="{DynamicResource AppTagBackgroundBrush}"
-                        CornerRadius="6"
-                        Padding="6,2"
-                        VerticalAlignment="Center"
-                        HorizontalAlignment="Left"
-                        MaxWidth="140"
-                        ClipToBounds="True"
-                        IsVisible="{Binding SelectedGoal.HasCategory}">
-                  <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                    <PathIcon Data="{StaticResource TagIconData}" Width="9" Height="9" Foreground="{DynamicResource AppTagForegroundBrush}"/>
-                    <TextBlock Text="{Binding SelectedGoal.Category}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AppTagForegroundBrush}" VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
-                  </StackPanel>
-                </Border>
+                <WrapPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                  <Border Background="{DynamicResource AppTagBackgroundBrush}"
+                          CornerRadius="6"
+                          Padding="6,2"
+                          Margin="0,0,6,2"
+                          VerticalAlignment="Center"
+                          IsVisible="{Binding SelectedGoal.HasCategory}">
+                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                      <PathIcon Data="{StaticResource TagIconData}" Width="9" Height="9" Foreground="{DynamicResource AppTagForegroundBrush}"/>
+                      <TextBlock Text="{Binding SelectedGoal.Category}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AppTagForegroundBrush}" VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                  </Border>
+                  <Border Background="{DynamicResource AppSurfaceSubtleBrush}"
+                          BorderBrush="{DynamicResource AppBorderBrush}"
+                          BorderThickness="1"
+                          CornerRadius="6"
+                          Padding="6,2"
+                          Margin="0,0,6,2"
+                          VerticalAlignment="Center"
+                          IsVisible="{Binding SelectedGoal.HasTargetDate}">
+                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                      <PathIcon Data="{StaticResource CalendarIconData}" Width="9" Height="9" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                      <TextBlock Text="{Binding SelectedGoal.FormattedTargetDate}" FontSize="10" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                  </Border>
+                </WrapPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
                   <PathIcon Data="{StaticResource CheckCircleIconData}" Width="11" Height="11" Foreground="{DynamicResource AppPrimaryBrush}" IsVisible="{Binding SelectedGoal.IsAchieved}"/>
                   <TextBlock Text="{Binding SelectedGoal.StatusText}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
@@ -806,11 +854,25 @@
 
             <!-- Sequential Milestone Checklist (Open Section) -->
             <StackPanel Spacing="10">
-              <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                <PathIcon Data="{StaticResource CheckListIconData}" Width="16" Height="16" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
-                <TextBlock Text="Sequential Milestones" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" TextWrapping="Wrap" VerticalAlignment="Center"/>
-              </StackPanel>
+              <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                  <PathIcon Data="{StaticResource CheckListIconData}" Width="16" Height="16" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <TextBlock Text="Sequential Milestones" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                </StackPanel>
+                <Button Grid.Column="1"
+                        Command="{Binding GenerateMilestonesWithAiCommand}"
+                        Classes="btn-secondary"
+                        IsEnabled="{Binding !IsAiGeneratingMilestones}"
+                        Height="28" Padding="8,0"
+                        VerticalAlignment="Center">
+                  <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                    <PathIcon Data="{StaticResource SparkleIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                    <TextBlock Text="AI Steps" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                  </StackPanel>
+                </Button>
+              </Grid>
               <Separator Classes="divider"/>
+              <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsAiGeneratingMilestones}" Height="2" CornerRadius="1" Foreground="{DynamicResource AppPrimaryBrush}" Margin="0,-6,0,0"/>
 
               <!-- Add Milestone Form -->
               <Grid ColumnDefinitions="*,Auto" Margin="0,2,0,2">
@@ -863,23 +925,34 @@
 
             <!-- Collapsible Reflection Journal Timeline (Open Section) -->
             <StackPanel Spacing="10">
-              <Grid ColumnDefinitions="*,Auto,Auto">
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,0,8,0">
+              <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,0,4,0">
                   <PathIcon Data="{StaticResource BookIconData}" Width="16" Height="16" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
-                  <TextBlock Text="Reflection Journal" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                  <TextBlock Text="Reflection" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
                 </StackPanel>
 
                 <Button Grid.Column="1"
-                        Command="{Binding OpenJournalBottomSheetCommand}"
+                        Command="{Binding GenerateJournalDraftWithAiCommand}"
                         Classes="btn-secondary"
-                        Height="30" Padding="12,0" Margin="0,0,4,0">
+                        IsEnabled="{Binding !IsAiGeneratingJournal}"
+                        Height="30" Padding="8,0" Margin="0,0,4,0">
                   <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                    <PathIcon Data="{StaticResource PlusIconData}" Width="11" Height="11" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
-                    <TextBlock Text="Write" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                    <PathIcon Data="{StaticResource SparkleIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                    <TextBlock Text="AI Draft" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}"/>
                   </StackPanel>
                 </Button>
 
                 <Button Grid.Column="2"
+                        Command="{Binding OpenJournalBottomSheetCommand}"
+                        Classes="btn-secondary"
+                        Height="30" Padding="10,0" Margin="0,0,4,0">
+                  <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                    <PathIcon Data="{StaticResource PlusIconData}" Width="11" Height="11" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                    <TextBlock Text="Write" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                  </StackPanel>
+                </Button>
+
+                <Button Grid.Column="3"
                         Command="{Binding ToggleJournalCollapsibleCommand}"
                         Classes="icon-btn"
                         MinHeight="32" MinWidth="32" Padding="6">
@@ -901,7 +974,7 @@
                       <Grid RowDefinitions="Auto,Auto,Auto">
                         <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
                           <TextBlock Grid.Column="0" Text="{Binding FormattedEntryDate}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center"/>
-                          <Button Grid.Column="1" Command="{Binding $parent[UserControl].((vm:GoalsViewModel)DataContext).DeleteJournalEntryCommand}" CommandParameter="{Binding}" Classes="danger" MinHeight="26" MinWidth="26" Padding="4">
+            <Button Grid.Column="1" Command="{Binding $parent[UserControl].((vm:GoalsViewModel)DataContext).DeleteJournalEntryCommand}" CommandParameter="{Binding}" Classes="danger" MinHeight="26" MinWidth="26" Padding="4">
                             <PathIcon Data="{StaticResource TrashIconData}" Width="12" Height="12"/>
                           </Button>
                         </Grid>
@@ -921,32 +994,45 @@
     </Grid>
 
     <!-- ═══════════════════════════════════════════════════════════════
-         MOBILE REFLECTION JOURNAL ENTRY BOTTOM SHEET (Popup Dialog)
+         REFLECTION JOURNAL BOTTOM SHEET / MODAL
     ═══════════════════════════════════════════════════════════════ -->
     <Panel IsVisible="{Binding IsJournalBottomSheetOpen}" ZIndex="2000" Background="#90000000">
-      <Border VerticalAlignment="Bottom"
-              HorizontalAlignment="Stretch"
+      <Border VerticalAlignment="Center"
+              HorizontalAlignment="Center"
+              MaxWidth="500"
+              MaxHeight="580"
+              Margin="16,24"
               Background="{DynamicResource AppSurfaceBrush}"
               BorderBrush="{DynamicResource AppBorderBrush}"
-              BorderThickness="0,1,0,0"
-              CornerRadius="24,24,0,0"
-              Padding="20,16,20,24">
-        <StackPanel Spacing="14">
-          <Grid ColumnDefinitions="*,Auto">
+              BorderThickness="1"
+              CornerRadius="16"
+              Padding="0"
+              BoxShadow="0 10 25 0 #80000000">
+        <Grid RowDefinitions="Auto,*,Auto">
+          <!-- Header -->
+          <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="20,18,20,12">
             <TextBlock Grid.Column="0" Text="Write Reflection Entry" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}" VerticalAlignment="Center"/>
-            <Button Grid.Column="1" Command="{Binding CloseJournalBottomSheetCommand}" Classes="icon-btn" MinHeight="44" MinWidth="44" Padding="8">
-              <PathIcon Data="{StaticResource CloseIconData}" Width="14" Height="14"/>
+            <Button Grid.Column="1" Command="{Binding CloseJournalBottomSheetCommand}" Classes="icon-btn" Padding="6" Height="30" Width="30">
+              <PathIcon Data="{StaticResource CloseIconData}" Width="12" Height="12"/>
             </Button>
           </Grid>
 
-          <TextBox Text="{Binding NewJournalTitle}" Classes="styled" PlaceholderText="Entry title (e.g. Today's win)..." Padding="12,8" MinHeight="44" MaxLength="100" CornerRadius="6" VerticalContentAlignment="Center"/>
-          <TextBox Text="{Binding NewJournalContent}" Classes="styled" PlaceholderText="What went well or what did you learn today?..." Padding="12,8" AcceptsReturn="True" TextWrapping="Wrap" MaxLength="2000" MinHeight="100" CornerRadius="6" VerticalContentAlignment="Top" HorizontalContentAlignment="Left"/>
+          <!-- Scrollable Body -->
+          <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="20,0,20,12">
+            <StackPanel Spacing="14">
+              <TextBox Text="{Binding NewJournalTitle}" Classes="styled" PlaceholderText="Entry title (e.g. Today's win)..." Padding="12,8" MinHeight="42" MaxLength="100" CornerRadius="6" VerticalContentAlignment="Center"/>
+              <TextBox Text="{Binding NewJournalContent}" Classes="styled" PlaceholderText="What went well or what did you learn today?..." Padding="12,8" AcceptsReturn="True" TextWrapping="Wrap" MaxLength="2000" MinHeight="140" CornerRadius="6" VerticalContentAlignment="Top" HorizontalContentAlignment="Left"/>
+            </StackPanel>
+          </ScrollViewer>
 
-          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12" Margin="0,8,0,0">
-            <Button Command="{Binding CloseJournalBottomSheetCommand}" Classes="btn-text" Content="Cancel" MinHeight="40" Padding="16,0"/>
-            <Button Command="{Binding SaveJournalEntryCommand}" Classes="btn-primary" Content="Save Entry" Height="40" Padding="20,0"/>
-          </StackPanel>
-        </StackPanel>
+          <!-- Footer -->
+          <Border Grid.Row="2" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="0,1,0,0" Padding="20,12" Background="{DynamicResource AppSurfaceSubtleBrush}" CornerRadius="0,0,16,16">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
+              <Button Command="{Binding CloseJournalBottomSheetCommand}" Classes="btn-text" Content="Cancel" MinHeight="38" Padding="16,0"/>
+              <Button Command="{Binding SaveJournalEntryCommand}" Classes="btn-primary" Content="Save Entry" Height="38" Padding="20,0"/>
+            </StackPanel>
+          </Border>
+        </Grid>
       </Border>
     </Panel>
 
@@ -954,40 +1040,208 @@
          CREATE NEW GOAL OVERLAY DIALOG (Shared Desktop/Mobile)
     ═══════════════════════════════════════════════════════════════ -->
     <Panel IsVisible="{Binding IsCreatingGoal}" ZIndex="2500" Background="#80000000">
-      <Border Width="450" MaxWidth="360" VerticalAlignment="Center" HorizontalAlignment="Center"
+      <Border MaxWidth="480"
+              VerticalAlignment="Center"
+              HorizontalAlignment="Center"
+              Margin="16,24"
+              MaxHeight="640"
               Background="{DynamicResource AppSurfaceBrush}"
               BorderBrush="{DynamicResource AppBorderBrush}"
               BorderThickness="1"
-              CornerRadius="14"
+              CornerRadius="16"
+              Padding="0"
+              BoxShadow="0 10 25 0 #80000000">
+        <Grid RowDefinitions="Auto,Auto,*,Auto">
+          <!-- Sticky Header -->
+          <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Margin="20,18,20,10">
+            <TextBlock Grid.Column="0" Text="Create New Life Goal" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}" VerticalAlignment="Center"/>
+            <Button Grid.Column="1"
+                    Command="{Binding AutoFillGoalWithAiCommand}"
+                    Classes="btn-secondary"
+                    IsEnabled="{Binding !IsAiGeneratingGoal}"
+                    Height="30" Padding="10,0"
+                    VerticalAlignment="Center"
+                    ToolTip.Tip="Type a keyword/title and auto-generate Category, Date, Vision &amp; Milestones">
+              <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                <PathIcon Data="{StaticResource SparkleIconData}" Width="11" Height="11" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                <TextBlock Text="Auto-Fill with AI" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+              </StackPanel>
+            </Button>
+            <Button Grid.Column="2"
+                    Command="{Binding CancelCreateGoalCommand}"
+                    Classes="icon-btn"
+                    Padding="6"
+                    Height="30" Width="30"
+                    VerticalAlignment="Center">
+              <PathIcon Data="{StaticResource CloseIconData}" Width="12" Height="12"/>
+            </Button>
+          </Grid>
+
+          <!-- Loading & AI Status -->
+          <StackPanel Grid.Row="1" Spacing="6" Margin="20,0,20,8">
+            <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsAiGeneratingGoal}" Height="2" CornerRadius="1" Foreground="{DynamicResource AppPrimaryBrush}"/>
+
+            <!-- AI Status feedback badge -->
+            <Border Background="{DynamicResource AppSurfaceSubtleBrush}"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Padding="10,6"
+                    IsVisible="{Binding AiStatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+              <TextBlock Text="{Binding AiStatusMessage}" FontSize="11" Foreground="{DynamicResource AppPrimaryBrush}" TextWrapping="Wrap"/>
+            </Border>
+          </StackPanel>
+
+          <!-- Scrollable Form Body -->
+          <ScrollViewer Grid.Row="2"
+                        VerticalScrollBarVisibility="Auto"
+                        HorizontalScrollBarVisibility="Disabled"
+                        Padding="20,4,20,12">
+            <StackPanel Spacing="14">
+              <StackPanel Spacing="6">
+                <TextBlock Text="Goal Title *" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                <TextBox Text="{Binding NewGoalTitle}" Classes="styled" PlaceholderText="e.g. Run a marathon, Launch my app" Padding="12,8" MinHeight="40" MaxLength="100" CornerRadius="6" VerticalContentAlignment="Center"/>
+              </StackPanel>
+
+              <StackPanel Spacing="6">
+                <TextBlock Text="Category" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                <TextBox Text="{Binding NewGoalCategory}" Classes="styled" PlaceholderText="e.g. Health, Career, Finance" Padding="12,8" MinHeight="40" MaxLength="24" CornerRadius="6" VerticalContentAlignment="Center"/>
+              </StackPanel>
+
+              <StackPanel Spacing="6">
+                <TextBlock Text="Target Completion Date" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                <CalendarDatePicker SelectedDate="{Binding NewGoalTargetDate, Mode=TwoWay}" PlaceholderText="Pick target date (dd/mm/yyyy)" SelectedDateFormat="Custom" CustomDateFormatString="dd/MM/yyyy" HorizontalAlignment="Stretch" Padding="12,8" MinHeight="40" CornerRadius="6"/>
+              </StackPanel>
+
+              <StackPanel Spacing="6">
+                <TextBlock Text="Vision &amp; Description" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                <TextBox Text="{Binding NewGoalDescription}" Classes="styled" PlaceholderText="Why this matters &amp; how you'll get there..." Padding="12,8" AcceptsReturn="True" TextWrapping="Wrap" MaxLength="500" MinHeight="80" CornerRadius="6" VerticalContentAlignment="Top" HorizontalContentAlignment="Left"/>
+              </StackPanel>
+
+              <!-- Preview of AI-generated milestones if any -->
+              <StackPanel Spacing="4" IsVisible="{Binding HasPendingAiMilestones}">
+                <TextBlock Text="AI SUGGESTED STEPS (SAVED ON CREATION)" Classes="micro" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                <ItemsControl ItemsSource="{Binding PendingAiMilestones}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Background="{DynamicResource AppSurfaceSubtleBrush}" CornerRadius="6" Padding="10,6" Margin="0,2">
+                        <TextBlock Text="{Binding}" FontSize="12" Foreground="{DynamicResource AppTextPrimaryBrush}" TextWrapping="Wrap"/>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </StackPanel>
+          </ScrollViewer>
+
+          <!-- Sticky Footer -->
+          <Border Grid.Row="3"
+                  BorderBrush="{DynamicResource AppBorderBrush}"
+                  BorderThickness="0,1,0,0"
+                  Padding="20,12"
+                  Background="{DynamicResource AppSurfaceSubtleBrush}"
+                  CornerRadius="0,0,16,16">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
+              <Button Command="{Binding CancelCreateGoalCommand}" Classes="btn-text" Content="Cancel" MinHeight="38" Padding="16,0"/>
+              <Button Command="{Binding SaveNewGoalCommand}" Classes="btn-primary" Content="Create Goal" Height="38" Padding="20,0"/>
+            </StackPanel>
+          </Border>
+        </Grid>
+      </Border>
+    </Panel>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         MILESTONE AI ASSIST CHOICE MODAL (Smart Append vs Replace)
+    ═══════════════════════════════════════════════════════════════ -->
+    <Panel IsVisible="{Binding IsMilestoneAiChoiceModalOpen}" ZIndex="2600" Background="#80000000">
+      <Border MaxWidth="440"
+              VerticalAlignment="Center"
+              HorizontalAlignment="Center"
+              Margin="16"
+              Background="{DynamicResource AppSurfaceBrush}"
+              BorderBrush="{DynamicResource AppBorderBrush}"
+              BorderThickness="1"
+              CornerRadius="16"
               Padding="20"
               BoxShadow="0 10 25 0 #80000000">
-        <StackPanel Spacing="14">
-          <TextBlock Text="Create New Life Goal" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+        <StackPanel Spacing="16">
+          <!-- Header -->
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Grid.Column="0" Spacing="4">
+              <TextBlock Text="AI Milestone Assistance" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+              <TextBlock Text="You already have existing milestones for this goal. How would you like AI to assist?"
+                         FontSize="12"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"
+                         TextWrapping="Wrap"/>
+            </StackPanel>
+            <Button Grid.Column="1"
+                    Command="{Binding CloseMilestoneAiChoiceModalCommand}"
+                    Classes="icon-btn"
+                    Padding="6"
+                    Height="30" Width="30"
+                    VerticalAlignment="Top">
+              <PathIcon Data="{StaticResource CloseIconData}" Width="12" Height="12"/>
+            </Button>
+          </Grid>
 
-          <StackPanel Spacing="6">
-            <TextBlock Text="Goal Title *" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-            <TextBox Text="{Binding NewGoalTitle}" Classes="styled" PlaceholderText="e.g. Run a marathon, Launch my app" Padding="12,8" MinHeight="40" MaxLength="100" CornerRadius="6" VerticalContentAlignment="Center"/>
+          <!-- Options Buttons Stack -->
+          <StackPanel Spacing="10">
+            <!-- Option 1: Append Next Steps (Context Aware) -->
+            <Button Command="{Binding AppendNextMilestonesWithAiCommand}"
+                    Classes="ghost"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
+                    Padding="14,12"
+                    CornerRadius="10"
+                    Background="{DynamicResource AppSurfaceSubtleBrush}"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    BorderThickness="1">
+              <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                <Border Grid.Column="0"
+                        Background="{DynamicResource AppTagBackgroundBrush}"
+                        CornerRadius="8"
+                        Width="36" Height="36">
+                  <PathIcon Data="{StaticResource PlusIconData}" Width="14" Height="14" Foreground="{DynamicResource AppPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                  <TextBlock Text="Generate Next Steps (Build Upon Current)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                  <TextBlock Text="AI analyzes your current milestones and generates 2-4 next sequential steps without duplicating." FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" TextWrapping="Wrap"/>
+                </StackPanel>
+              </Grid>
+            </Button>
+
+            <!-- Option 2: Regenerate All (Replace) -->
+            <Button Command="{Binding ReplaceAllMilestonesWithAiCommand}"
+                    Classes="ghost"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
+                    Padding="14,12"
+                    CornerRadius="10"
+                    Background="{DynamicResource AppSurfaceSubtleBrush}"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    BorderThickness="1">
+              <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                <Border Grid.Column="0"
+                        Background="{DynamicResource AppTagBackgroundBrush}"
+                        CornerRadius="8"
+                        Width="36" Height="36">
+                  <PathIcon Data="{StaticResource UndoIconData}" Width="14" Height="14" Foreground="{DynamicResource AppPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                  <TextBlock Text="Regenerate Entire Roadmap (Replace All)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                  <TextBlock Text="Clears current milestones and creates a fresh comprehensive roadmap from scratch." FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" TextWrapping="Wrap"/>
+                </StackPanel>
+              </Grid>
+            </Button>
           </StackPanel>
 
-          <StackPanel Spacing="6">
-            <TextBlock Text="Category" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-            <TextBox Text="{Binding NewGoalCategory}" Classes="styled" PlaceholderText="e.g. Health, Career, Finance" Padding="12,8" MinHeight="40" MaxLength="24" CornerRadius="6" VerticalContentAlignment="Center"/>
-          </StackPanel>
-
-          <StackPanel Spacing="6">
-            <TextBlock Text="Target Completion Date" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-            <CalendarDatePicker SelectedDate="{Binding NewGoalTargetDate, Mode=TwoWay}" PlaceholderText="Pick target date (dd/mm/yyyy)" SelectedDateFormat="Custom" CustomDateFormatString="dd/MM/yyyy" HorizontalAlignment="Stretch" Padding="12,8" MinHeight="40" CornerRadius="6"/>
-          </StackPanel>
-
-          <StackPanel Spacing="6">
-            <TextBlock Text="Vision &amp; Description" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-            <TextBox Text="{Binding NewGoalDescription}" Classes="styled" PlaceholderText="Why this matters &amp; how you'll get there..." Padding="12,8" AcceptsReturn="True" TextWrapping="Wrap" MaxLength="500" MinHeight="80" CornerRadius="6" VerticalContentAlignment="Top" HorizontalContentAlignment="Left"/>
-          </StackPanel>
-
-          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12" Margin="0,8,0,0">
-            <Button Command="{Binding CancelCreateGoalCommand}" Classes="btn-text" Content="Cancel" MinHeight="40" Padding="16,0"/>
-            <Button Command="{Binding SaveNewGoalCommand}" Classes="btn-primary" Content="Create Goal" Height="40" Padding="20,0"/>
-          </StackPanel>
+          <!-- Cancel Footer -->
+          <Button Command="{Binding CloseMilestoneAiChoiceModalCommand}"
+                  Classes="btn-text"
+                  Content="Cancel"
+                  HorizontalAlignment="Right"
+                  Padding="16,6"
+                  Height="34"/>
         </StackPanel>
       </Border>
     </Panel>

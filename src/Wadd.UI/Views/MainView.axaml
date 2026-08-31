@@ -1824,5 +1824,190 @@
       </Grid>
     </Border>
 
+    <!-- AI Provider Picker Bottom Sheet Modal (Mobile/Portrait UX Best Practice) -->
+    <Border x:Name="AiProviderPickerSheetPanel"
+            IsVisible="{Binding IsAiProviderPickerSheetOpen}"
+            ZIndex="1100"
+            Background="#A0000000">
+      <Grid RowDefinitions="*,Auto">
+        <!-- Dismiss Backdrop Overlay -->
+        <Border Grid.Row="0" Background="Transparent" PointerPressed="OnAiProviderPickerBackgroundPressed"/>
+
+        <!-- Bottom Sheet Card Container -->
+        <Border Grid.Row="1"
+                Background="{DynamicResource AppSurfaceElevatedBrush}"
+                BorderBrush="{DynamicResource AppBorderBrush}"
+                BorderThickness="0,1,0,0"
+                CornerRadius="20,20,0,0"
+                Padding="20,16,20,24"
+                MaxWidth="560"
+                HorizontalAlignment="Stretch">
+          <StackPanel Spacing="16">
+            <!-- Sheet Drag Pill -->
+            <Border Width="36" Height="4" CornerRadius="2" Background="{DynamicResource AppBorderBrush}" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+
+            <!-- Sheet Header -->
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Grid.Column="0" Spacing="2">
+                <TextBlock Text="AI Provider" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                <TextBlock Text="Choose which AI provider endpoint to connect with." FontSize="12" Foreground="{DynamicResource AppTextSecondaryBrush}" TextWrapping="Wrap"/>
+              </StackPanel>
+              <Button Grid.Column="1"
+                      Classes="ghost"
+                      Command="{Binding CloseAiProviderPickerCommand}"
+                      Padding="6"
+                      VerticalAlignment="Top">
+                <PathIcon Data="{StaticResource CloseIconData}" Width="14" Height="14" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </Button>
+            </Grid>
+
+            <Separator Classes="divider" Margin="0,2"/>
+
+            <!-- Provider Option Cards List -->
+            <ScrollViewer MaxHeight="380" VerticalScrollBarVisibility="Auto">
+              <ItemsControl ItemsSource="{Binding AiProviderOptions}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:AiProviderOption">
+                    <Button Classes="ghost"
+                            Command="{Binding $parent[ItemsControl].((vm:MainViewModel)DataContext).SelectAiProviderFromSheetCommand}"
+                            CommandParameter="{Binding}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Stretch"
+                            Padding="14,12"
+                            Margin="0,0,0,8"
+                            CornerRadius="10"
+                            Background="{DynamicResource AppSurfaceSubtleBrush}"
+                            BorderBrush="{DynamicResource AppBorderBrush}"
+                            BorderThickness="1">
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                          <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" TextWrapping="Wrap"/>
+                        </StackPanel>
+
+                        <!-- Checkmark for selected provider -->
+                        <PathIcon Grid.Column="1"
+                                  Data="{StaticResource CheckIconData}"
+                                  Width="16" Height="16"
+                                  Foreground="{DynamicResource AppPrimaryBrush}"
+                                  VerticalAlignment="Center"
+                                  IsVisible="{Binding $parent[ItemsControl].((vm:MainViewModel)DataContext).AiProvider, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={Binding Id}}"/>
+                      </Grid>
+                    </Button>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </StackPanel>
+        </Border>
+      </Grid>
+    </Border>
+
+    <!-- AI Model Picker Bottom Sheet Modal (Mobile/Portrait UX with Live Search) -->
+    <Border x:Name="AiModelPickerSheetPanel"
+            IsVisible="{Binding IsAiModelPickerSheetOpen}"
+            ZIndex="1100"
+            Background="#A0000000">
+      <Grid RowDefinitions="*,Auto">
+        <!-- Dismiss Backdrop Overlay -->
+        <Border Grid.Row="0" Background="Transparent" PointerPressed="OnAiModelPickerBackgroundPressed"/>
+
+        <!-- Bottom Sheet Card Container -->
+        <Border Grid.Row="1"
+                Background="{DynamicResource AppSurfaceElevatedBrush}"
+                BorderBrush="{DynamicResource AppBorderBrush}"
+                BorderThickness="0,1,0,0"
+                CornerRadius="20,20,0,0"
+                Padding="20,16,20,24"
+                MaxWidth="560"
+                HorizontalAlignment="Stretch">
+          <StackPanel Spacing="16">
+            <!-- Sheet Drag Pill -->
+            <Border Width="36" Height="4" CornerRadius="2" Background="{DynamicResource AppBorderBrush}" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+
+            <!-- Sheet Header -->
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Grid.Column="0" Spacing="2">
+                <TextBlock Text="AI Model Selection" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                <TextBlock Text="Choose the model to use for goal breakdown and reflection." FontSize="12" Foreground="{DynamicResource AppTextSecondaryBrush}" TextWrapping="Wrap"/>
+              </StackPanel>
+              <Button Grid.Column="1"
+                      Classes="ghost"
+                      Command="{Binding CloseAiModelPickerCommand}"
+                      Padding="6"
+                      VerticalAlignment="Top">
+                <PathIcon Data="{StaticResource CloseIconData}" Width="14" Height="14" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </Button>
+            </Grid>
+
+            <!-- Search input inside sheet -->
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBox Grid.Column="0"
+                       Text="{Binding ModelSearchQuery, Mode=TwoWay}"
+                       Classes="styled"
+                       PlaceholderText="Search models (e.g. claude, gpt, deepseek, llama)..."
+                       Padding="10,6"
+                       MinHeight="34"
+                       CornerRadius="6"
+                       VerticalContentAlignment="Center"/>
+              <Button Grid.Column="1"
+                      Command="{Binding ClearModelSearchCommand}"
+                      Classes="btn-text"
+                      Padding="8,0"
+                      Height="34"
+                      Margin="4,0,0,0"
+                      IsVisible="{Binding ModelSearchQuery, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                      ToolTip.Tip="Clear search">
+                <PathIcon Data="{StaticResource TrashIconData}" Width="12" Height="12" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </Button>
+            </Grid>
+
+            <Separator Classes="divider" Margin="0,2"/>
+
+            <!-- Model Option Cards List -->
+            <ScrollViewer MaxHeight="340" VerticalScrollBarVisibility="Auto">
+              <ItemsControl ItemsSource="{Binding FilteredModels}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="models:AiModelOption">
+                    <Button Classes="ghost"
+                            Command="{Binding $parent[ItemsControl].((vm:MainViewModel)DataContext).SelectAiModelOptionFromSheetCommand}"
+                            CommandParameter="{Binding}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Stretch"
+                            Padding="14,12"
+                            Margin="0,0,0,8"
+                            CornerRadius="10"
+                            Background="{DynamicResource AppSurfaceSubtleBrush}"
+                            BorderBrush="{DynamicResource AppBorderBrush}"
+                            BorderThickness="1">
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                          <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" TextWrapping="Wrap" Margin="0,0,6,0"/>
+                            <Border Grid.Column="1" Background="{DynamicResource AppTagBackgroundBrush}" CornerRadius="4" Padding="5,1" IsVisible="{Binding IsRecommended}" VerticalAlignment="Center">
+                              <TextBlock Text="RECOMMENDED" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource AppTagForegroundBrush}"/>
+                            </Border>
+                          </Grid>
+                          <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" TextWrapping="Wrap" IsVisible="{Binding HasDescription}" MaxLines="2" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+
+                        <!-- Checkmark for selected model -->
+                        <PathIcon Grid.Column="1"
+                                  Data="{StaticResource CheckIconData}"
+                                  Width="16" Height="16"
+                                  Foreground="{DynamicResource AppPrimaryBrush}"
+                                  VerticalAlignment="Center"
+                                  IsVisible="{Binding $parent[ItemsControl].((vm:MainViewModel)DataContext).AiCustomModel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={Binding Id}}"/>
+                      </Grid>
+                    </Button>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </StackPanel>
+        </Border>
+      </Grid>
+    </Border>
+
   </Panel>
 </UserControl>

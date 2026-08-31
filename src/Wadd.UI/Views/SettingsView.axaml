@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Wadd.UI.ViewModels;assembly=Wadd.UI"
+             xmlns:models="clr-namespace:Wadd.Core.Models;assembly=Wadd.Core"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="700"
              x:Class="Wadd.UI.Views.SettingsView"
              x:DataType="vm:MainViewModel">
@@ -13,6 +14,11 @@
     </Style>
     <Style Selector="StackPanel.view-container.compact">
       <Setter Property="Margin" Value="16,20,16,40"/>
+    </Style>
+    <Style Selector="FlyoutPresenter.ai-model-flyout">
+      <Setter Property="MaxWidth" Value="3000"/>
+      <Setter Property="Padding" Value="10"/>
+      <Setter Property="CornerRadius" Value="8"/>
     </Style>
   </UserControl.Styles>
 
@@ -433,7 +439,326 @@
         </StackPanel>
       </Border>
 
-      <!-- 5. About & Version Info -->
+      <!-- 5. AI Assistant & Multi-Provider Settings -->
+      <Border Classes="content-block">
+        <StackPanel Spacing="16">
+          <TextBlock Text="AI ASSISTANT &amp; GENERATION" Classes="micro"/>
+          <StackPanel Spacing="4">
+            <TextBlock Text="Life Goals AI Engine" Classes="heading"/>
+            <TextBlock Text="Wadd includes built-in offline smart heuristics for Life Goals. You can also connect Google Gemini, OpenAI, Groq, DeepSeek, or local AI endpoints for live generative responses."
+                       Classes="small"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+          </StackPanel>
+
+          <!-- Provider Dropdown Selector (Desktop ComboBox + Mobile Bottom Sheet Action Card) -->
+          <StackPanel Spacing="6" HorizontalAlignment="Stretch">
+            <TextBlock Text="AI Provider" Classes="small" FontWeight="SemiBold"/>
+
+            <!-- Desktop ComboBox -->
+            <ComboBox IsVisible="{Binding !IsCompact}"
+                      ItemsSource="{Binding AiProviderOptions}"
+                      SelectedItem="{Binding SelectedAiProviderOption, Mode=TwoWay}"
+                      HorizontalAlignment="Stretch"
+                      MinHeight="38">
+              <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:AiProviderOption">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,2">
+                    <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" TextWrapping="Wrap"/>
+                      <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" TextWrapping="Wrap"/>
+                    </StackPanel>
+                  </Grid>
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+
+            <!-- Mobile Bottom Sheet Action Card -->
+            <Button IsVisible="{Binding IsCompact}"
+                    Classes="ghost"
+                    Command="{Binding OpenAiProviderPickerCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
+                    Padding="14,12"
+                    CornerRadius="10"
+                    Background="{DynamicResource AppSurfaceSubtleBrush}"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    BorderThickness="1">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding SelectedAiProviderOption.Name, FallbackValue='OpenRouter'}"
+                             FontSize="13"
+                             FontWeight="SemiBold"
+                             Foreground="{DynamicResource AppTextPrimaryBrush}"
+                             TextTrimming="CharacterEllipsis"/>
+                  <TextBlock Text="{Binding SelectedAiProviderOption.Description, FallbackValue='Unified API for 100+ models'}"
+                             FontSize="11"
+                             Foreground="{DynamicResource AppTextSecondaryBrush}"
+                             TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+                <PathIcon Grid.Column="1"
+                          Data="{StaticResource ChevronRightIconData}"
+                          Width="14" Height="14"
+                          Foreground="{DynamicResource AppTextSecondaryBrush}"
+                          VerticalAlignment="Center"/>
+              </Grid>
+            </Button>
+          </StackPanel>
+
+          <!-- API Key Input -->
+          <StackPanel Spacing="6" HorizontalAlignment="Stretch">
+            <TextBlock Text="API Key" Classes="small" FontWeight="SemiBold"/>
+            <TextBox Text="{Binding AiApiKey, Mode=TwoWay}"
+                     Classes="styled"
+                     PlaceholderText="{Binding AiKeyWatermark}"
+                     PasswordChar="•"
+                     Padding="12,8"
+                     MinHeight="38"
+                     CornerRadius="6"
+                     HorizontalAlignment="Stretch"
+                     VerticalContentAlignment="Center"/>
+            <TextBlock Text="{Binding AiKeyHelpText}"
+                       Classes="micro"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"
+                       TextWrapping="Wrap"
+                       Margin="2,1,0,0"/>
+          </StackPanel>
+
+          <!-- Custom Endpoint Base URL (Visible only when Custom provider selected) -->
+          <StackPanel Spacing="6" HorizontalAlignment="Stretch" IsVisible="{Binding ShowCustomBaseUrlField}">
+            <TextBlock Text="Custom Endpoint Base URL" Classes="small" FontWeight="SemiBold"/>
+            <TextBox Text="{Binding AiCustomBaseUrl, Mode=TwoWay}"
+                     Classes="styled"
+                     PlaceholderText="e.g. http://localhost:11434/v1"
+                     Padding="12,8"
+                     MinHeight="38"
+                     CornerRadius="6"
+                     HorizontalAlignment="Stretch"
+                     VerticalContentAlignment="Center"/>
+            <TextBlock Text="Base URL for your OpenAI-compatible server (e.g. Ollama, LM Studio, vLLM)."
+                       Classes="micro"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"
+                       TextWrapping="Wrap"
+                       Margin="2,1,0,0"/>
+          </StackPanel>
+
+          <!-- Model Selection (Desktop Searchable Dropdown + Mobile Bottom Sheet Action Card) -->
+          <StackPanel Spacing="6" HorizontalAlignment="Stretch">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <TextBlock Text="AI Model" Classes="small" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                <TextBlock Text="Loading models..." FontSize="11" Foreground="{DynamicResource AppPrimaryBrush}" IsVisible="{Binding IsLoadingModels}" VerticalAlignment="Center"/>
+              </StackPanel>
+              <Button Grid.Column="1"
+                      Command="{Binding RefreshAvailableModelsCommand}"
+                      Classes="btn-text"
+                      Padding="6,2"
+                      Height="24"
+                      ToolTip.Tip="Refresh available models from provider API">
+                <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                  <PathIcon Data="{StaticResource UndoIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <TextBlock Text="Refresh Models" FontSize="11" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                </StackPanel>
+              </Button>
+            </Grid>
+
+            <!-- Indeterminate ProgressBar while fetching live models -->
+            <ProgressBar IsIndeterminate="True" Height="2" CornerRadius="1" Foreground="{DynamicResource AppPrimaryBrush}" IsVisible="{Binding IsLoadingModels}" Margin="0,-2,0,2"/>
+
+            <!-- Desktop Searchable DropDownButton -->
+            <DropDownButton x:Name="AiModelDropDownButton"
+                            IsVisible="{Binding !IsCompact}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Stretch"
+                            Padding="14,12"
+                            Background="{DynamicResource AppSurfaceBrush}"
+                            BorderBrush="{DynamicResource AppBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            MinHeight="44">
+              <DropDownButton.Flyout>
+                <Flyout Placement="BottomEdgeAlignedLeft"
+                        FlyoutPresenterClasses="ai-model-flyout"
+                        Opening="OnAiModelFlyoutOpening">
+                  <StackPanel x:Name="AiModelFlyoutContainer" HorizontalAlignment="Stretch" Spacing="8">
+                    <!-- Built-in Search Bar inside Dropdown Popup -->
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBox Grid.Column="0"
+                               Text="{Binding ModelSearchQuery, Mode=TwoWay}"
+                               Classes="styled"
+                               PlaceholderText="Search models (e.g. claude, gpt, deepseek, llama)..."
+                               Padding="10,6"
+                               MinHeight="34"
+                               CornerRadius="6"
+                               VerticalContentAlignment="Center"/>
+                      <Button Grid.Column="1"
+                              Command="{Binding ClearModelSearchCommand}"
+                              Classes="btn-text"
+                              Padding="8,0"
+                              Height="34"
+                              Margin="4,0,0,0"
+                              IsVisible="{Binding ModelSearchQuery, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                              ToolTip.Tip="Clear search">
+                        <PathIcon Data="{StaticResource TrashIconData}" Width="12" Height="12" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                      </Button>
+                    </Grid>
+
+                    <!-- Virtualized ListBox for instant 0ms open and smooth scrolling -->
+                    <ListBox ItemsSource="{Binding FilteredModels}"
+                             SelectedItem="{Binding SelectedModelOption, Mode=TwoWay}"
+                             MaxHeight="260"
+                             Background="Transparent"
+                             HorizontalAlignment="Stretch"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                      <ListBox.Styles>
+                        <Style Selector="ListBoxItem">
+                          <Setter Property="Padding" Value="10,8"/>
+                          <Setter Property="CornerRadius" Value="6"/>
+                          <Setter Property="MinHeight" Value="32"/>
+                        </Style>
+                      </ListBox.Styles>
+                      <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="models:AiModelOption">
+                          <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="13" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,6,0"/>
+                            <Border Grid.Column="1" Background="{DynamicResource AppTagBackgroundBrush}" CornerRadius="4" Padding="5,1" IsVisible="{Binding IsRecommended}" VerticalAlignment="Center">
+                              <TextBlock Text="RECOMMENDED" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource AppTagForegroundBrush}"/>
+                            </Border>
+                          </Grid>
+                        </DataTemplate>
+                      </ListBox.ItemTemplate>
+                    </ListBox>
+                  </StackPanel>
+                </Flyout>
+              </DropDownButton.Flyout>
+
+              <!-- Selected Model View on the DropDownButton face -->
+              <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0" Spacing="3" Margin="0,0,8,0">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Text="{Binding SelectedModelOption.Name, FallbackValue='Select AI Model'}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}" TextWrapping="Wrap" Margin="0,0,6,0"/>
+                    <Border Grid.Column="1" Background="{DynamicResource AppTagBackgroundBrush}" CornerRadius="4" Padding="5,1" IsVisible="{Binding SelectedModelOption.IsRecommended, FallbackValue=False}" VerticalAlignment="Center">
+                      <TextBlock Text="RECOMMENDED" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource AppTagForegroundBrush}"/>
+                    </Border>
+                  </Grid>
+                  <TextBlock Text="{Binding SelectedModelOption.Id}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" Opacity="0.85" TextWrapping="Wrap" IsVisible="{Binding SelectedModelOption, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                  <TextBlock Text="{Binding SelectedModelOption.Description}" FontSize="12" Foreground="{DynamicResource AppTextSecondaryBrush}" TextWrapping="Wrap" MaxLines="3" TextTrimming="CharacterEllipsis" IsVisible="{Binding SelectedModelOption.HasDescription, FallbackValue=False}" Margin="0,2,0,0"/>
+                </StackPanel>
+              </Grid>
+            </DropDownButton>
+
+            <!-- Mobile Bottom Sheet Action Card -->
+            <Button IsVisible="{Binding IsCompact}"
+                    Classes="ghost"
+                    Command="{Binding OpenAiModelPickerCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
+                    Padding="14,12"
+                    CornerRadius="10"
+                    Background="{DynamicResource AppSurfaceSubtleBrush}"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    BorderThickness="1">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Text="{Binding SelectedModelOption.Name, FallbackValue='Select AI Model'}"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppTextPrimaryBrush}"
+                               TextTrimming="CharacterEllipsis"
+                               Margin="0,0,6,0"/>
+                    <Border Grid.Column="1" Background="{DynamicResource AppTagBackgroundBrush}" CornerRadius="4" Padding="5,1" IsVisible="{Binding SelectedModelOption.IsRecommended, FallbackValue=False}" VerticalAlignment="Center">
+                      <TextBlock Text="RECOMMENDED" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource AppTagForegroundBrush}"/>
+                    </Border>
+                  </Grid>
+                  <TextBlock Text="{Binding SelectedModelOption.Description, FallbackValue='Choose model for AI Goal Breakdown'}"
+                             FontSize="11"
+                             Foreground="{DynamicResource AppTextSecondaryBrush}"
+                             TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+                <PathIcon Grid.Column="1"
+                          Data="{StaticResource ChevronRightIconData}"
+                          Width="14" Height="14"
+                          Foreground="{DynamicResource AppTextSecondaryBrush}"
+                          VerticalAlignment="Center"/>
+              </Grid>
+            </Button>
+
+            <TextBlock Text="Models automatically discovered from provider API when API key is entered."
+                       Classes="micro"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"
+                       TextWrapping="Wrap"
+                       Margin="2,1,0,0"/>
+          </StackPanel>
+
+          <!-- Test API Connection Button & Feedback Banner -->
+          <StackPanel Spacing="8" HorizontalAlignment="Stretch" Margin="0,2,0,0">
+            <Button Command="{Binding TestAiConnectionCommand}"
+                    Classes="btn-secondary"
+                    HorizontalAlignment="Left"
+                    Padding="14,8"
+                    MinHeight="36"
+                    CornerRadius="6"
+                    IsEnabled="{Binding !IsTestingAiConnection}">
+              <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <PathIcon Data="{StaticResource SparkleIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                <TextBlock Text="Test API Connection" FontSize="12" FontWeight="SemiBold" IsVisible="{Binding !IsTestingAiConnection}"/>
+                <TextBlock Text="Testing Connection..." FontSize="12" FontWeight="SemiBold" IsVisible="{Binding IsTestingAiConnection}"/>
+              </StackPanel>
+            </Button>
+
+            <!-- Test Connection Result Banner -->
+            <Border Background="{DynamicResource AppSurfaceSubtleBrush}"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="12,10"
+                    HorizontalAlignment="Stretch"
+                    IsVisible="{Binding AiConnectionStatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+              <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                <PathIcon Grid.Column="0"
+                          Data="{StaticResource CheckIconData}"
+                          Width="14" Height="14"
+                          Foreground="#22C55E"
+                          VerticalAlignment="Top"
+                          Margin="0,2,0,0"
+                          IsVisible="{Binding IsAiConnectionSuccess, FallbackValue=False}"/>
+                <PathIcon Grid.Column="0"
+                          Data="{StaticResource CloseIconData}"
+                          Width="14" Height="14"
+                          Foreground="#EF4444"
+                          VerticalAlignment="Top"
+                          Margin="0,2,0,0"
+                          IsVisible="{Binding !IsAiConnectionSuccess, FallbackValue=False}"/>
+                <TextBlock Grid.Column="1"
+                           Text="{Binding AiConnectionStatusMessage}"
+                           FontSize="12"
+                           Foreground="{DynamicResource AppTextPrimaryBrush}"
+                           TextWrapping="Wrap"/>
+              </Grid>
+            </Border>
+          </StackPanel>
+
+          <!-- Helpful note -->
+          <Border Background="{DynamicResource AppSurfaceSubtleBrush}"
+                  BorderBrush="{DynamicResource AppBorderBrush}"
+                  BorderThickness="1"
+                  CornerRadius="8"
+                  Padding="12,10"
+                  HorizontalAlignment="Stretch">
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+              <PathIcon Grid.Column="0" Data="{StaticResource SparkleIconData}" Width="14" Height="14" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Top" Margin="0,2,0,0"/>
+              <TextBlock Grid.Column="1"
+                         Text="Out-of-the-box Offline Engine: If no API key is provided or offline, Wadd automatically uses smart built-in heuristic decomposition templates without sending any data over the internet."
+                         Classes="small"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"
+                         TextWrapping="Wrap"/>
+            </Grid>
+          </Border>
+        </StackPanel>
+      </Border>
+
+      <!-- 6. About & Version Info -->
       <Border Classes="content-block">
         <StackPanel Spacing="14">
           <TextBlock Text="ABOUT APPLICATION" Classes="micro"/>

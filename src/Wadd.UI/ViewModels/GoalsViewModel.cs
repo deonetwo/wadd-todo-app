@@ -27,6 +27,7 @@ public partial class CategoryFilterItemViewModel : ObservableObject
 public partial class GoalsViewModel : ViewModelBase
 {
     private readonly IGoalService _goalService;
+    private readonly IAiGoalService _aiGoalService;
 
     public ObservableCollection<LifeGoalItemViewModel> Goals { get; } = new();
     public ObservableCollection<LifeGoalItemViewModel> FilteredGoals { get; } = new();
@@ -34,8 +35,21 @@ public partial class GoalsViewModel : ViewModelBase
     public ObservableCollection<JournalEntryItemViewModel> CurrentJournalEntries { get; } = new();
     public ObservableCollection<JournalEntryItemViewModel> AllJournalEntries { get; } = new();
     public ObservableCollection<CategoryFilterItemViewModel> Categories { get; } = new();
+    public ObservableCollection<string> PendingAiMilestones { get; } = new();
 
+    public bool HasPendingAiMilestones => PendingAiMilestones.Count > 0;
 
+    [ObservableProperty]
+    private bool _isAiGeneratingGoal;
+
+    [ObservableProperty]
+    private bool _isAiGeneratingMilestones;
+
+    [ObservableProperty]
+    private bool _isAiGeneratingJournal;
+
+    [ObservableProperty]
+    private string _aiStatusMessage = string.Empty;
 
     public bool HasCategories => Categories.Count > 1;
 
@@ -76,6 +90,9 @@ public partial class GoalsViewModel : ViewModelBase
     private bool _isJournalCollapsibleExpanded = true;
 
     [ObservableProperty]
+    private bool _isMilestoneAiChoiceModalOpen;
+
+    [ObservableProperty]
     private bool _isJournalBottomSheetOpen;
 
     [ObservableProperty]
@@ -108,11 +125,15 @@ public partial class GoalsViewModel : ViewModelBase
     [ObservableProperty]
     private string _newJournalContent = string.Empty;
 
-
-
     public GoalsViewModel(IGoalService goalService)
+        : this(goalService, new Wadd.Services.AiGoalService(new System.Net.Http.HttpClient()))
+    {
+    }
+
+    public GoalsViewModel(IGoalService goalService, IAiGoalService aiGoalService)
     {
         _goalService = goalService ?? throw new ArgumentNullException(nameof(goalService));
+        _aiGoalService = aiGoalService ?? throw new ArgumentNullException(nameof(aiGoalService));
         _ = InitializeAsync();
     }
 
@@ -247,13 +268,69 @@ public partial class GoalsViewModel : ViewModelBase
         NewGoalDescription = string.Empty;
         NewGoalCategory = string.Empty;
         NewGoalTargetDate = null;
+        PendingAiMilestones.Clear();
+        OnPropertyChanged(nameof(HasPendingAiMilestones));
+        IsAiGeneratingGoal = false;
+        AiStatusMessage = string.Empty;
         IsCreatingGoal = true;
     }
 
     [RelayCommand]
     private void CancelCreateGoal()
     {
+        PendingAiMilestones.Clear();
+        OnPropertyChanged(nameof(HasPendingAiMilestones));
+        IsAiGeneratingGoal = false;
+        AiStatusMessage = string.Empty;
         IsCreatingGoal = false;
+    }
+
+    [RelayCommand]
+    private async Task AutoFillGoalWithAiAsync()
+    {
+        if (IsAiGeneratingGoal) return;
+
+        var prompt = string.IsNullOrWhiteSpace(NewGoalTitle) ? "Achieve meaningful personal breakthrough" : NewGoalTitle.Trim();
+
+        try
+        {
+            IsAiGeneratingGoal = true;
+            AiStatusMessage = "AI is drafting your goal plan & milestones...";
+
+            var result = await _aiGoalService.GenerateGoalDetailsAsync(prompt);
+
+            NewGoalTitle = result.Title;
+            NewGoalCategory = result.Category;
+            NewGoalTargetDate = result.TargetDate;
+            NewGoalDescription = result.Description;
+
+            PendingAiMilestones.Clear();
+            if (result.SuggestedMilestones != null && result.SuggestedMilestones.Count > 0)
+            {
+                foreach (var m in result.SuggestedMilestones)
+                {
+                    PendingAiMilestones.Add(m);
+                }
+            }
+            OnPropertyChanged(nameof(HasPendingAiMilestones));
+            if (result.IsLiveAi)
+            {
+                AiStatusMessage = $"✓ Generated with Live AI ({result.SourceLabel})";
+            }
+            else
+            {
+                AiStatusMessage = "ℹ Generated with Smart Offline Engine";
+            }
+        }
+        catch (Exception ex)
+        {
+            AiStatusMessage = $"Could not auto-generate: {ex.Message}";
+            System.Diagnostics.Trace.WriteLine($"[GoalsViewModel] AutoFillGoalWithAi error: {ex}");
+        }
+        finally
+        {
+            IsAiGeneratingGoal = false;
+        }
     }
 
     [RelayCommand]
@@ -281,7 +358,32 @@ public partial class GoalsViewModel : ViewModelBase
             };
 
             var saved = await _goalService.SaveGoalAsync(goal);
+
+            // Save any pending AI-generated milestones
+            if (PendingAiMilestones.Count > 0)
+            {
+                int order = 0;
+                foreach (var milestoneTitle in PendingAiMilestones)
+                {
+                    if (!string.IsNullOrWhiteSpace(milestoneTitle))
+                    {
+                        await _goalService.SaveMilestoneAsync(new GoalMilestone
+                        {
+                            GoalId = saved.Id,
+                            Title = milestoneTitle.Trim(),
+                            OrderIndex = order++,
+                            IsCompleted = false
+                        });
+                    }
+                }
+                PendingAiMilestones.Clear();
+                OnPropertyChanged(nameof(HasPendingAiMilestones));
+            }
+
             var vm = new LifeGoalItemViewModel(saved);
+            var milestones = (await _goalService.GetMilestonesForGoalAsync(saved.Id)).ToList();
+            vm.UpdateMilestonesSummary(milestones.Count(m => m.IsCompleted), milestones.Count);
+
             Goals.Insert(0, vm);
 
             SelectedCategoryFilter = "All";
@@ -453,6 +555,129 @@ public partial class GoalsViewModel : ViewModelBase
         _ = _goalService.SaveGoalAsync(SelectedGoal.Model);
     }
 
+    [RelayCommand]
+    private async Task GenerateMilestonesWithAiAsync()
+    {
+        if (SelectedGoal == null || IsAiGeneratingMilestones) return;
+
+        if (CurrentMilestones.Count == 0)
+        {
+            await ReplaceAllMilestonesWithAiAsync();
+        }
+        else
+        {
+            IsMilestoneAiChoiceModalOpen = true;
+        }
+    }
+
+    [RelayCommand]
+    private void CloseMilestoneAiChoiceModal()
+    {
+        IsMilestoneAiChoiceModalOpen = false;
+    }
+
+    [RelayCommand]
+    private async Task AppendNextMilestonesWithAiAsync()
+    {
+        if (SelectedGoal == null || IsAiGeneratingMilestones) return;
+
+        try
+        {
+            IsAiGeneratingMilestones = true;
+            IsMilestoneAiChoiceModalOpen = false;
+
+            var existingTitles = CurrentMilestones.Select(m => m.Title).ToList();
+            var suggested = await _aiGoalService.GenerateMilestonesAsync(SelectedGoal.Title, SelectedGoal.Category, SelectedGoal.Description, existingTitles);
+
+            if (suggested != null && suggested.Count > 0)
+            {
+                int order = CurrentMilestones.Count;
+                foreach (var s in suggested)
+                {
+                    if (!string.IsNullOrWhiteSpace(s))
+                    {
+                        var trimmed = s.Trim();
+                        // Extra deduplication guard against identical titles
+                        if (CurrentMilestones.Any(m => m.Title.Equals(trimmed, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            continue;
+                        }
+
+                        var milestone = new GoalMilestone
+                        {
+                            GoalId = SelectedGoal.Id,
+                            Title = trimmed,
+                            OrderIndex = order++,
+                            IsCompleted = false
+                        };
+                        var saved = await _goalService.SaveMilestoneAsync(milestone);
+                        CurrentMilestones.Add(new GoalMilestoneItemViewModel(saved));
+                    }
+                }
+                UpdateSelectedGoalProgress();
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Trace.WriteLine($"[GoalsViewModel] AppendNextMilestonesWithAi error: {ex}");
+        }
+        finally
+        {
+            IsAiGeneratingMilestones = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task ReplaceAllMilestonesWithAiAsync()
+    {
+        if (SelectedGoal == null || IsAiGeneratingMilestones) return;
+
+        try
+        {
+            IsAiGeneratingMilestones = true;
+            IsMilestoneAiChoiceModalOpen = false;
+
+            // 1. Delete existing milestones from DB
+            var existing = CurrentMilestones.ToList();
+            foreach (var m in existing)
+            {
+                await _goalService.DeleteMilestoneAsync(m.Id);
+            }
+            CurrentMilestones.Clear();
+
+            // 2. Generate brand new comprehensive roadmap from scratch
+            var suggested = await _aiGoalService.GenerateMilestonesAsync(SelectedGoal.Title, SelectedGoal.Category, SelectedGoal.Description, null);
+            if (suggested != null && suggested.Count > 0)
+            {
+                int order = 0;
+                foreach (var s in suggested)
+                {
+                    if (!string.IsNullOrWhiteSpace(s))
+                    {
+                        var milestone = new GoalMilestone
+                        {
+                            GoalId = SelectedGoal.Id,
+                            Title = s.Trim(),
+                            OrderIndex = order++,
+                            IsCompleted = false
+                        };
+                        var saved = await _goalService.SaveMilestoneAsync(milestone);
+                        CurrentMilestones.Add(new GoalMilestoneItemViewModel(saved));
+                    }
+                }
+                UpdateSelectedGoalProgress();
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Trace.WriteLine($"[GoalsViewModel] ReplaceAllMilestonesWithAi error: {ex}");
+        }
+        finally
+        {
+            IsAiGeneratingMilestones = false;
+        }
+    }
+
     #endregion
 
     #region Reflection Journal Commands
@@ -480,6 +705,40 @@ public partial class GoalsViewModel : ViewModelBase
         if (IsCompact)
         {
             IsJournalBottomSheetOpen = true;
+        }
+    }
+
+    [RelayCommand]
+    private async Task GenerateJournalDraftWithAiAsync()
+    {
+        if (SelectedGoal == null || IsAiGeneratingJournal) return;
+
+        try
+        {
+            IsAiGeneratingJournal = true;
+            int completed = CurrentMilestones.Count(m => m.IsCompleted);
+            int total = CurrentMilestones.Count;
+            var recentMilestone = CurrentMilestones.LastOrDefault(m => m.IsCompleted)?.Title;
+
+            var draft = await _aiGoalService.GenerateJournalPromptAsync(SelectedGoal.Title, completed, total, recentMilestone);
+            if (draft != null)
+            {
+                NewJournalTitle = draft.Title;
+                NewJournalContent = draft.Content;
+                IsCreatingJournal = true;
+                if (IsCompact)
+                {
+                    IsJournalBottomSheetOpen = true;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Trace.WriteLine($"[GoalsViewModel] GenerateJournalDraftWithAi error: {ex}");
+        }
+        finally
+        {
+            IsAiGeneratingJournal = false;
         }
     }
 
