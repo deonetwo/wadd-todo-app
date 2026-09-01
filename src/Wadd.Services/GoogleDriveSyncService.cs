@@ -34,6 +34,9 @@ public class GoogleDriveSyncService : ISyncService
     public bool IsSignedIn => _authRecord?.IsSignedIn ?? false;
     public string? UserEmail => _authRecord?.UserEmail;
     public string? UserName => _authRecord?.UserName;
+    public event EventHandler? AuthStateChanged;
+
+    private void NotifyAuthStateChanged() => AuthStateChanged?.Invoke(this, EventArgs.Empty);
 
     private static string? GetAssemblyMetadata(string key)
     {
@@ -261,15 +264,17 @@ public class GoogleDriveSyncService : ISyncService
                     GoogleClientId = GoogleClientId,
                     FirebaseApiKey = FirebaseApiKey,
                     FirebaseProjectId = FirebaseProjectId,
-                    AccessToken = nativeResult.AccessToken ?? string.Empty,
+                    AccessToken = !string.IsNullOrWhiteSpace(nativeResult.AccessToken) ? nativeResult.AccessToken : fbSession.OAuthAccessToken,
                     RefreshToken = string.Empty,
                     FirebaseIdToken = fbSession.FirebaseIdToken,
                     FirebaseRefreshToken = fbSession.FirebaseRefreshToken,
                     FirebaseLocalId = fbSession.LocalId,
-                    AuthenticatedAt = DateTime.UtcNow
+                    AuthenticatedAt = DateTime.UtcNow,
+                    TokenExpiresAtUtc = DateTime.UtcNow.AddMinutes(50)
                 };
 
                 SaveAuthRecord();
+                NotifyAuthStateChanged();
                 return true;
             }
 
@@ -282,8 +287,8 @@ public class GoogleDriveSyncService : ISyncService
 
         var localRedirectUri = "http://localhost:5001/";
         var redirectUri = localRedirectUri;
-
         var state = Guid.NewGuid().ToString("N");
+
         var listener = new HttpListener();
         listener.Prefixes.Add(localRedirectUri);
         listener.Start();
@@ -301,7 +306,6 @@ public class GoogleDriveSyncService : ISyncService
 
             OpenBrowserUrl(authUrl);
 
-            string code = string.Empty;
             string idToken = string.Empty;
             string accessToken = string.Empty;
             string returnedState = string.Empty;
@@ -324,7 +328,6 @@ public class GoogleDriveSyncService : ISyncService
 
                 if (request.Url?.AbsolutePath == "/callback")
                 {
-                    code = request.QueryString["code"] ?? string.Empty;
                     idToken = request.QueryString["id_token"] ?? string.Empty;
                     accessToken = request.QueryString["access_token"] ?? string.Empty;
                     returnedState = request.QueryString["state"] ?? string.Empty;
@@ -345,10 +348,23 @@ public class GoogleDriveSyncService : ISyncService
             }
 
             string googleAccessToken = accessToken;
-            string googleRefreshToken = string.Empty;
+            string googleRefreshToken = _authRecord?.RefreshToken ?? string.Empty;
             string googleIdToken = idToken;
+            int expiresInSeconds = 3600;
 
+            if (string.IsNullOrWhiteSpace(googleAccessToken) && !string.IsNullOrWhiteSpace(googleIdToken))
+            {
+                var fbEarly = await ExchangeGoogleIdTokenWithFirebaseAsync(googleIdToken, string.Empty, redirectUri, cancellationToken);
+                if (!string.IsNullOrWhiteSpace(fbEarly.OAuthAccessToken))
+                {
+                    googleAccessToken = fbEarly.OAuthAccessToken;
+                }
+            }
 
+            if (string.IsNullOrWhiteSpace(googleAccessToken))
+            {
+                throw new InvalidOperationException("Failed to obtain Google access token. Please verify your Google Client ID and try again.");
+            }
 
             var userInfo = await FetchUserInfoAsync(googleAccessToken, cancellationToken);
             var fbSession = await ExchangeGoogleIdTokenWithFirebaseAsync(googleIdToken, googleAccessToken, redirectUri, cancellationToken);
@@ -366,10 +382,12 @@ public class GoogleDriveSyncService : ISyncService
                 FirebaseIdToken = fbSession.FirebaseIdToken,
                 FirebaseRefreshToken = fbSession.FirebaseRefreshToken,
                 FirebaseLocalId = fbSession.LocalId,
-                AuthenticatedAt = DateTime.UtcNow
+                AuthenticatedAt = DateTime.UtcNow,
+                TokenExpiresAtUtc = DateTime.UtcNow.AddSeconds(Math.Max(300, expiresInSeconds - 60))
             };
 
             SaveAuthRecord();
+            NotifyAuthStateChanged();
             return true;
         }
         finally
@@ -444,11 +462,11 @@ public class GoogleDriveSyncService : ISyncService
         response.OutputStream.Close();
     }
 
-    private async Task<(string FirebaseIdToken, string FirebaseRefreshToken, string LocalId, string Email, string DisplayName)> ExchangeGoogleIdTokenWithFirebaseAsync(string googleIdToken, string googleAccessToken, string requestUri, CancellationToken cancellationToken)
+    private async Task<(string FirebaseIdToken, string FirebaseRefreshToken, string LocalId, string Email, string DisplayName, string OAuthAccessToken)> ExchangeGoogleIdTokenWithFirebaseAsync(string googleIdToken, string googleAccessToken, string requestUri, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(FirebaseApiKey) || (string.IsNullOrWhiteSpace(googleIdToken) && string.IsNullOrWhiteSpace(googleAccessToken)))
         {
-            return (string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
+            return (string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
         }
 
         try
@@ -484,13 +502,14 @@ public class GoogleDriveSyncService : ISyncService
                 var localId = root.TryGetProperty("localId", out var lidp) ? lidp.GetString() ?? "" : "";
                 var email = root.TryGetProperty("email", out var ep) ? ep.GetString() ?? "" : "";
                 var displayName = root.TryGetProperty("displayName", out var dnp) ? dnp.GetString() ?? "" : "";
+                var oauthAccessToken = root.TryGetProperty("oauthAccessToken", out var oatp) ? oatp.GetString() ?? "" : "";
 
-                return (fbIdToken, fbRefreshToken, localId, email, displayName);
+                return (fbIdToken, fbRefreshToken, localId, email, displayName, oauthAccessToken);
             }
         }
         catch { }
 
-        return (string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
+        return (string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
     }
 
     private async Task<(string Email, string Name)> FetchUserInfoAsync(string accessToken, CancellationToken cancellationToken)
@@ -527,6 +546,7 @@ public class GoogleDriveSyncService : ISyncService
                 {
                     _authRecord ??= new UserAuthRecord();
                     _authRecord.AccessToken = nativeResult.AccessToken;
+                    _authRecord.TokenExpiresAtUtc = DateTime.UtcNow.AddMinutes(50);
                     SaveAuthRecord();
                     return true;
                 }
@@ -546,32 +566,40 @@ public class GoogleDriveSyncService : ISyncService
                 ["grant_type"] = "refresh_token"
             };
 
-            var clientSecret = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET")?.Trim();
-            if (!string.IsNullOrWhiteSpace(clientSecret))
-            {
-                dict["client_secret"] = clientSecret;
-            }
-
             using var request = new HttpRequestMessage(HttpMethod.Post, tokenUrl)
             {
                 Content = new FormUrlEncodedContent(dict)
             };
 
             var response = await _httpClient.SendAsync(request, cancellationToken);
+            var json = await response.Content.ReadAsStringAsync(cancellationToken);
+
             if (response.IsSuccessStatusCode)
             {
-                var json = await response.Content.ReadAsStringAsync(cancellationToken);
                 using var doc = JsonDocument.Parse(json);
                 var root = doc.RootElement;
                 if (root.TryGetProperty("access_token", out var atProp))
                 {
                     _authRecord.AccessToken = atProp.GetString() ?? string.Empty;
+                    var expSec = root.TryGetProperty("expires_in", out var exp) ? exp.GetInt32() : 3600;
+                    _authRecord.TokenExpiresAtUtc = DateTime.UtcNow.AddSeconds(Math.Max(300, expSec - 60));
                     SaveAuthRecord();
                     return true;
                 }
             }
+            else
+            {
+                Trace.WriteLine($"[WARN] Token refresh failed ({response.StatusCode}): {json}");
+                if (json.Contains("invalid_grant") || json.Contains("unauthorized_client"))
+                {
+                    await SignOutAsync(cancellationToken);
+                }
+            }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Trace.WriteLine($"[WARN] Exception during token refresh: {ex.Message}");
+        }
 
         return false;
     }
@@ -665,12 +693,13 @@ public class GoogleDriveSyncService : ISyncService
 
     public async Task SignOutAsync(CancellationToken cancellationToken = default)
     {
-        await Task.Delay(200, cancellationToken);
+        await Task.Delay(50, cancellationToken);
         _authRecord = null;
         if (File.Exists(_authFilePath))
         {
             try { File.Delete(_authFilePath); } catch { }
         }
+        NotifyAuthStateChanged();
     }
 
     // =========================================================================
@@ -700,9 +729,29 @@ public class GoogleDriveSyncService : ISyncService
 
     public async Task<bool> SyncAsync(CancellationToken cancellationToken = default)
     {
-        if (!IsSignedIn || _authRecord == null || string.IsNullOrWhiteSpace(_authRecord.AccessToken))
+        if (!IsSignedIn || _authRecord == null)
         {
             throw new InvalidOperationException("Please sign in with Google in Settings to synchronize your data.");
+        }
+
+        // Proactive token refresh if token is expired or close to expiring (within 2 minutes)
+        if (_authRecord.TokenExpiresAtUtc.HasValue && DateTime.UtcNow >= _authRecord.TokenExpiresAtUtc.Value.AddMinutes(-2))
+        {
+            await TryRefreshTokenAsync(cancellationToken);
+        }
+
+        if (string.IsNullOrWhiteSpace(_authRecord.AccessToken))
+        {
+            // If refresh token exists, attempt refresh
+            if (!string.IsNullOrWhiteSpace(_authRecord.RefreshToken))
+            {
+                await TryRefreshTokenAsync(cancellationToken);
+            }
+
+            if (string.IsNullOrWhiteSpace(_authRecord.AccessToken))
+            {
+                throw new InvalidOperationException("Google authorization token missing. Please sign in with Google in Settings.");
+            }
         }
 
         await _syncLock.WaitAsync(cancellationToken);
@@ -1078,8 +1127,7 @@ public class GoogleDriveSyncService : ISyncService
                     return;
                 }
 
-                await SignOutAsync();
-                throw new InvalidOperationException("Google session expired or credentials revoked. Please sign in with Google again in Settings.");
+                throw new InvalidOperationException("Google session expired. Please click 'Connect Google Drive Account' in Settings to refresh your connection.");
             }
 
             if (response.StatusCode == System.Net.HttpStatusCode.Forbidden || content.Contains("drive.googleapis.com") || content.Contains("API has not been used"))
@@ -1106,4 +1154,5 @@ public class UserAuthRecord
     public string FirebaseRefreshToken { get; set; } = string.Empty;
     public string FirebaseLocalId { get; set; } = string.Empty;
     public DateTime AuthenticatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? TokenExpiresAtUtc { get; set; }
 }

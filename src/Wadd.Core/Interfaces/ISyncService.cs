@@ -14,6 +14,7 @@ public interface ISyncService
 
     int UnresolvedConflictCount { get; }
     event EventHandler? ConflictCountChanged;
+    event EventHandler? AuthStateChanged;
 
     Task<bool> SignInAsync(CancellationToken cancellationToken = default);
     Task SignOutAsync(CancellationToken cancellationToken = default);

@@ -2645,6 +2645,14 @@ public partial class MainViewModel : ViewModelBase
             });
         };
 
+        _syncService.AuthStateChanged += (_, _) =>
+        {
+            Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                UpdateGoogleAuthState();
+            });
+        };
+
         _currentThemeMode = _themeService.CurrentTheme;
         UpdateThemeLabel();
 
@@ -3183,6 +3191,7 @@ public partial class MainViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            UpdateGoogleAuthState();
             StatusMessage = $"Sync failed: {ex.Message}";
         }
         finally
