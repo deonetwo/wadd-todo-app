@@ -8,19 +8,14 @@ public static class RecurrenceEvaluator
     {
         DateTime targetDate = date.Date;
 
-        // 1. Direct Due Date match
-        if (item.DueDate.HasValue && item.DueDate.Value.Date == targetDate)
+        // 1. Direct match: Due Date takes priority; fallback to Reminder Date only if Due Date is not set
+        var taskDate = item.DueDate?.Date ?? item.ReminderAt?.Date;
+        if (taskDate.HasValue && taskDate.Value == targetDate)
         {
             return true;
         }
 
-        // 2. Direct Reminder Date match
-        if (item.ReminderAt.HasValue && item.ReminderAt.Value.Date == targetDate)
-        {
-            return true;
-        }
-
-        // 3. Recurring Task evaluation
+        // 2. Recurring Task evaluation
         if (!item.IsRecurring)
         {
             return false;
@@ -128,10 +123,9 @@ public static class RecurrenceEvaluator
         DateTime targetDate = date.Date;
         var taskList = allTasks.ToList();
 
-        // 1. Direct/explicit items assigned to this date (completed or specific one-off tasks)
+        // 1. Direct/explicit items assigned to this date (DueDate takes priority, fallback to ReminderAt only if no DueDate)
         var directItemsForDate = taskList
-            .Where(t => (t.DueDate.HasValue && t.DueDate.Value.Date == targetDate) ||
-                        (t.ReminderAt.HasValue && t.ReminderAt.Value.Date == targetDate))
+            .Where(t => (t.DueDate?.Date ?? t.ReminderAt?.Date) == targetDate)
             .DistinctBy(t => new { Title = t.Title.Trim().ToLowerInvariant(), t.IsCompleted })
             .ToList();
 

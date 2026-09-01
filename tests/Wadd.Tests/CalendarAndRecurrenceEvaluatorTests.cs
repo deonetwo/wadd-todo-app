@@ -87,4 +87,51 @@ public class CalendarAndRecurrenceEvaluatorTests
         var allItems = (await service.GetAllAsync()).ToList();
         Assert.True(allItems.Count >= 1);
     }
+
+    [Fact]
+    public void GetTasksForDate_WhenTaskHasDifferentDueDateAndReminderDate_OnlyScheduledOnDueDate()
+    {
+        var dueDate = new DateTime(2026, 8, 15);
+        var reminderDate = new DateTime(2026, 8, 10);
+        var item = new TodoItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Project Milestone",
+            DueDate = dueDate,
+            ReminderAt = reminderDate
+        };
+
+        var allTasks = new[] { item };
+
+        // Should NOT be scheduled on ReminderDate (Aug 10)
+        var reminderDateTasks = RecurrenceEvaluator.GetTasksForDate(reminderDate, allTasks).ToList();
+        Assert.Empty(reminderDateTasks);
+        Assert.False(RecurrenceEvaluator.IsTaskScheduledOnDate(item, reminderDate));
+
+        // Should be scheduled on DueDate (Aug 15)
+        var dueDateTasks = RecurrenceEvaluator.GetTasksForDate(dueDate, allTasks).ToList();
+        Assert.Single(dueDateTasks);
+        Assert.Equal(item.Id, dueDateTasks.Single().Id);
+        Assert.True(RecurrenceEvaluator.IsTaskScheduledOnDate(item, dueDate));
+    }
+
+    [Fact]
+    public void GetTasksForDate_WhenTaskHasReminderDateOnly_ScheduledOnReminderDate()
+    {
+        var reminderDate = new DateTime(2026, 8, 10);
+        var item = new TodoItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Call Doctor",
+            DueDate = null,
+            ReminderAt = reminderDate
+        };
+
+        var allTasks = new[] { item };
+
+        var tasks = RecurrenceEvaluator.GetTasksForDate(reminderDate, allTasks).ToList();
+        Assert.Single(tasks);
+        Assert.Equal(item.Id, tasks.Single().Id);
+        Assert.True(RecurrenceEvaluator.IsTaskScheduledOnDate(item, reminderDate));
+    }
 }
