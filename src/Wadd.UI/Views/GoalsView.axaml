@@ -39,7 +39,7 @@
       </Setter>
     </Style>
     <Style Selector="Button.filter-chip:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtleBrush}"/>
+      <Setter Property="Background" Value="{DynamicResource AppHoverBrush}"/>
       <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
       <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryBrush}"/>
     </Style>
@@ -69,7 +69,7 @@
       <Setter Property="Cursor" Value="Hand"/>
     </Style>
     <Style Selector="Border.goal-card:pointerover">
-      <Setter Property="Background" Value="{DynamicResource AppSurfaceElevatedBrush}"/>
+      <Setter Property="Background" Value="{DynamicResource AppHoverBrush}"/>
       <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryBrush}"/>
     </Style>
     <Style Selector="Border.goal-card.selected">
@@ -88,7 +88,7 @@
       <Setter Property="Margin" Value="0,0,0,2"/>
     </Style>
     <Style Selector="Border.milestone-item:pointerover">
-      <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtleBrush}"/>
+      <Setter Property="Background" Value="{DynamicResource AppHoverBrush}"/>
     </Style>
     <Style Selector="Border.milestone-item.completed">
       <Setter Property="Opacity" Value="0.55"/>
@@ -109,7 +109,7 @@
       <Setter Property="Margin" Value="0,0,0,4"/>
     </Style>
     <Style Selector="Border.journal-item:pointerover">
-      <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtleBrush}"/>
+      <Setter Property="Background" Value="{DynamicResource AppHoverBrush}"/>
     </Style>
 
     <Style Selector="TextBlock.milestone-title">
@@ -1142,13 +1142,8 @@
                 <Grid ColumnDefinitions="*,Auto">
                   <CalendarDatePicker Grid.Column="0"
                                       SelectedDate="{Binding NewGoalTargetDate, Mode=TwoWay}"
-                                      PlaceholderText="Pick target date (dd/mm/yyyy)"
-                                      SelectedDateFormat="Custom"
-                                      CustomDateFormatString="dd/MM/yyyy"
-                                      HorizontalAlignment="Stretch"
-                                      Padding="12,8"
-                                      MinHeight="40"
-                                      CornerRadius="6"/>
+                                      PlaceholderText="Select Target Date..."
+                                      HorizontalAlignment="Stretch"/>
                   <Button Grid.Column="1"
                           Classes="icon-btn"
                           Command="{Binding ClearNewGoalTargetDateCommand}"
@@ -1156,11 +1151,10 @@
                           ToolTip.Tip="Clear target date"
                           Margin="6,0,0,0"
                           Padding="8"
-                          Height="40"
-                          Width="40"
-                          VerticalAlignment="Center"
-                          CornerRadius="6">
-                    <PathIcon Data="{StaticResource CloseIconData}" Width="12" Height="12" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                          Height="34"
+                          Width="34"
+                          VerticalAlignment="Center">
+                    <PathIcon Data="{StaticResource CloseIconData}" Width="11" Height="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
                   </Button>
                 </Grid>
               </StackPanel>

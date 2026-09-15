@@ -114,13 +114,13 @@
                           Command="{Binding OpenTagsViewCommand}"
                           CommandParameter="{Binding $parent[Button].Flyout}"
                           x:CompileBindings="False"
-                          Foreground="{DynamicResource AppPrimaryBrush}"
-                          FontWeight="SemiBold"
                           HorizontalAlignment="Stretch"
-                          HorizontalContentAlignment="Left">
+                          HorizontalContentAlignment="Left"
+                          Padding="8,6"
+                          CornerRadius="6">
                     <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                      <PathIcon Data="{StaticResource SettingsIconData}" Width="12" Height="12"/>
-                      <TextBlock Text="Manage Tags..." FontSize="12"/>
+                      <PathIcon Data="{StaticResource SettingsIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                      <TextBlock Text="Manage Tags..." Foreground="{DynamicResource AppPrimaryBrush}" FontSize="13" FontWeight="SemiBold"/>
                     </StackPanel>
                   </Button>
                 </StackPanel>
@@ -385,9 +385,14 @@
                                 <Button Classes="ghost"
                                         HorizontalAlignment="Stretch"
                                         HorizontalContentAlignment="Left"
+                                        Padding="8,6"
+                                        CornerRadius="6"
                                         Command="{Binding $parent[UserControl].DataContext.AddNewTaskCategoryCommand}"
                                         CommandParameter="{Binding}">
-                                  <TextBlock Text="{Binding}" Foreground="{DynamicResource AppTextPrimaryBrush}" FontSize="13" FontWeight="SemiBold"/>
+                                  <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                    <PathIcon Data="{StaticResource TagIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                                    <TextBlock Text="{Binding}" Foreground="{DynamicResource AppTextPrimaryBrush}" FontSize="13" FontWeight="SemiBold"/>
+                                  </StackPanel>
                                 </Button>
                               </DataTemplate>
                             </ItemsControl.ItemTemplate>
@@ -400,7 +405,9 @@
                                 CommandParameter="{Binding $parent[Button].Flyout}"
                                 x:CompileBindings="False"
                                 HorizontalAlignment="Stretch"
-                                HorizontalContentAlignment="Left">
+                                HorizontalContentAlignment="Left"
+                                Padding="8,6"
+                                CornerRadius="6">
                           <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                             <PathIcon Data="{StaticResource SettingsIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}"/>
                             <TextBlock Text="Manage Tags..." Foreground="{DynamicResource AppPrimaryBrush}" FontSize="13" FontWeight="SemiBold"/>

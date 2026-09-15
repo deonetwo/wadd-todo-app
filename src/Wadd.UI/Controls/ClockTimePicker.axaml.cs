@@ -31,6 +31,13 @@ public partial class ClockTimePicker : UserControl
     {
         InitializeComponent();
         ActualThemeVariantChanged += (_, _) => UpdateUI();
+        Loaded += (_, _) => UpdateUI();
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        UpdateUI();
     }
 
     protected override void OnInitialized()
@@ -72,8 +79,8 @@ public partial class ClockTimePicker : UserControl
                 : "12:00";
         }
 
-        var primaryBrush = GetThemeBrush("AppPrimaryBrush", Brushes.Teal);
-        var textSecondaryBrush = GetThemeBrush("AppTextSecondaryBrush", Brushes.Gray);
+        var primaryBrush = GetThemeBrush("AppPrimaryBrush", new SolidColorBrush(Color.Parse("#14B8A6")));
+        var textSecondaryBrush = GetThemeBrush("AppTextSecondaryBrush", new SolidColorBrush(Color.Parse("#6B8B90")));
 
         // Update header texts
         if (HourHeaderTextBlock != null)
@@ -98,14 +105,32 @@ public partial class ClockTimePicker : UserControl
 
     private IBrush GetThemeBrush(string key, IBrush fallback)
     {
-        if (this.TryFindResource(key, out var resource) && resource is IBrush brush)
+        var theme = ActualThemeVariant;
+        if (this.TryFindResource(key, theme, out var resource) && resource is IBrush brush)
         {
             return brush;
         }
-        if (Application.Current?.TryFindResource(key, out var appRes) == true && appRes is IBrush appBrush)
+        if (Application.Current != null && Application.Current.TryFindResource(key, Application.Current.ActualThemeVariant, out var appRes) && appRes is IBrush appBrush)
         {
             return appBrush;
         }
+
+        bool isDark = theme == Avalonia.Styling.ThemeVariant.Dark
+            || (theme == Avalonia.Styling.ThemeVariant.Default && Application.Current?.ActualThemeVariant == Avalonia.Styling.ThemeVariant.Dark);
+
+        if (isDark)
+        {
+            if (key.Contains("TextPrimary", StringComparison.OrdinalIgnoreCase)) return new SolidColorBrush(Color.Parse("#F0FDF4"));
+            if (key.Contains("TextSecondary", StringComparison.OrdinalIgnoreCase)) return new SolidColorBrush(Color.Parse("#6B8B90"));
+            if (key.Contains("Primary", StringComparison.OrdinalIgnoreCase)) return new SolidColorBrush(Color.Parse("#14B8A6"));
+        }
+        else
+        {
+            if (key.Contains("TextPrimary", StringComparison.OrdinalIgnoreCase)) return new SolidColorBrush(Color.Parse("#0F292B"));
+            if (key.Contains("TextSecondary", StringComparison.OrdinalIgnoreCase)) return new SolidColorBrush(Color.Parse("#526E74"));
+            if (key.Contains("Primary", StringComparison.OrdinalIgnoreCase)) return new SolidColorBrush(Color.Parse("#0D9488"));
+        }
+
         return fallback;
     }
 
@@ -117,8 +142,8 @@ public partial class ClockTimePicker : UserControl
 
         double cx = 100;
         double cy = 100;
-        var primaryBrush = GetThemeBrush("AppPrimaryBrush", Brushes.Teal);
-        var textPrimaryBrush = GetThemeBrush("AppTextPrimaryBrush", Brushes.Black);
+        var primaryBrush = GetThemeBrush("AppPrimaryBrush", new SolidColorBrush(Color.Parse("#14B8A6")));
+        var textPrimaryBrush = GetThemeBrush("AppTextPrimaryBrush", new SolidColorBrush(Color.Parse("#F0FDF4")));
 
         double rHand;
         double handAngleDeg;
@@ -188,7 +213,7 @@ public partial class ClockTimePicker : UserControl
                 double y = cy + 75 * Math.Sin(rad);
                 bool isSelected = (val == activeHour);
 
-                AddDialLabel(val.ToString("D2"), x, y, isSelected, textPrimaryBrush);
+                AddDialLabel(val.ToString("D2"), x, y, isSelected, textPrimaryBrush, 10);
             }
 
             // Inner ring (12, 1..11)
@@ -201,7 +226,7 @@ public partial class ClockTimePicker : UserControl
                 double y = cy + 48 * Math.Sin(rad);
                 bool isSelected = (val == activeHour);
 
-                AddDialLabel(val.ToString(), x, y, isSelected, textPrimaryBrush);
+                AddDialLabel(val.ToString(), x, y, isSelected, textPrimaryBrush, 12);
             }
         }
         else
@@ -216,7 +241,7 @@ public partial class ClockTimePicker : UserControl
                 double y = cy + 75 * Math.Sin(rad);
                 bool isSelected = (val == activeMinute);
 
-                AddDialLabel(val.ToString("D2"), x, y, isSelected, textPrimaryBrush);
+                AddDialLabel(val.ToString("D2"), x, y, isSelected, textPrimaryBrush, 11);
             }
 
             // If minute is not multiple of 5 (e.g. 14), draw extra small indicator dot at (hx, hy)
@@ -235,15 +260,15 @@ public partial class ClockTimePicker : UserControl
         }
     }
 
-    private void AddDialLabel(string text, double x, double y, bool isSelected, IBrush textPrimaryBrush)
+    private void AddDialLabel(string text, double x, double y, bool isSelected, IBrush textBrush, double fontSize = 11)
     {
         double boxSize = 28;
         var tb = new TextBlock
         {
             Text = text,
-            FontSize = 11,
-            FontWeight = isSelected ? FontWeight.Bold : FontWeight.Normal,
-            Foreground = isSelected ? Brushes.White : textPrimaryBrush,
+            FontSize = fontSize,
+            FontWeight = isSelected ? FontWeight.Bold : FontWeight.Medium,
+            Foreground = isSelected ? new SolidColorBrush(Color.Parse("#F0FDFA")) : textBrush,
             HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
             TextAlignment = TextAlignment.Center

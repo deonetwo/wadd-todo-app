@@ -5,6 +5,7 @@
        Primary: Ocean Teal #0D9488 (light) / #14B8A6 (dark)
        Accent: Emerald Green #16A34A (light) / #22C55E (dark)
        Surfaces: Fresh porcelain / Deep obsidian teal
+       Hover: Distinct high-contrast tactile tint (AppHoverBrush)
   ═══════════════════════════════════════════════════════════════ -->
   <ResourceDictionary.ThemeDictionaries>
 
@@ -15,6 +16,7 @@
       <Color x:Key="AppSurfaceColor">#FAFCFC</Color>
       <Color x:Key="AppSurfaceElevatedColor">#E7F1F2</Color>
       <Color x:Key="AppSurfaceSubtleColor">#DDECEE</Color>
+      <Color x:Key="AppHoverColor">#D2EAEC</Color>
       <!-- Primary brand: rich ocean teal -->
       <Color x:Key="AppPrimaryColor">#0D9488</Color>
       <Color x:Key="AppPrimaryHoverColor">#0F766E</Color>
@@ -38,6 +40,7 @@
       <SolidColorBrush x:Key="AppSurfaceBrush"         Color="{StaticResource AppSurfaceColor}"/>
       <SolidColorBrush x:Key="AppSurfaceElevatedBrush" Color="{StaticResource AppSurfaceElevatedColor}"/>
       <SolidColorBrush x:Key="AppSurfaceSubtleBrush"   Color="{StaticResource AppSurfaceSubtleColor}"/>
+      <SolidColorBrush x:Key="AppHoverBrush"           Color="{StaticResource AppHoverColor}"/>
       <SolidColorBrush x:Key="AppPrimaryBrush"         Color="{StaticResource AppPrimaryColor}"/>
       <SolidColorBrush x:Key="AppPrimaryHoverBrush"    Color="{StaticResource AppPrimaryHoverColor}"/>
       <SolidColorBrush x:Key="AppTextPrimaryBrush"     Color="{StaticResource AppTextPrimaryColor}"/>
@@ -58,11 +61,12 @@
 
     <!-- ───── DARK THEME ───── -->
     <ResourceDictionary x:Key="Dark">
-      <!-- Surfaces: deep obsidian teal -->
-      <Color x:Key="AppBackgroundColor">#0B1315</Color>
-      <Color x:Key="AppSurfaceColor">#111C1F</Color>
-      <Color x:Key="AppSurfaceElevatedColor">#17262A</Color>
-      <Color x:Key="AppSurfaceSubtleColor">#1E3136</Color>
+      <!-- Surfaces: deep obsidian teal with distinct steps -->
+      <Color x:Key="AppBackgroundColor">#0A1113</Color>
+      <Color x:Key="AppSurfaceColor">#101B1E</Color>
+      <Color x:Key="AppSurfaceElevatedColor">#152428</Color>
+      <Color x:Key="AppSurfaceSubtleColor">#1A2D33</Color>
+      <Color x:Key="AppHoverColor">#2C4F59</Color>
       <!-- Primary brand: glowing cyan teal -->
       <Color x:Key="AppPrimaryColor">#14B8A6</Color>
       <Color x:Key="AppPrimaryHoverColor">#2DD4BF</Color>
@@ -72,7 +76,7 @@
       <!-- Structure -->
       <Color x:Key="AppBorderColor">#1E343A</Color>
       <!-- States -->
-      <Color x:Key="AppMenuSelectedColor">#163A3E</Color>
+      <Color x:Key="AppMenuSelectedColor">#183E43</Color>
       <Color x:Key="AppAccentTintColor">#143438</Color>
       <!-- Semantic -->
       <Color x:Key="AppAccentSuccessColor">#22C55E</Color>
@@ -86,6 +90,7 @@
       <SolidColorBrush x:Key="AppSurfaceBrush"         Color="{StaticResource AppSurfaceColor}"/>
       <SolidColorBrush x:Key="AppSurfaceElevatedBrush" Color="{StaticResource AppSurfaceElevatedColor}"/>
       <SolidColorBrush x:Key="AppSurfaceSubtleBrush"   Color="{StaticResource AppSurfaceSubtleColor}"/>
+      <SolidColorBrush x:Key="AppHoverBrush"           Color="{StaticResource AppHoverColor}"/>
       <SolidColorBrush x:Key="AppPrimaryBrush"         Color="{StaticResource AppPrimaryColor}"/>
       <SolidColorBrush x:Key="AppPrimaryHoverBrush"    Color="{StaticResource AppPrimaryHoverColor}"/>
       <SolidColorBrush x:Key="AppTextPrimaryBrush"     Color="{StaticResource AppTextPrimaryColor}"/>

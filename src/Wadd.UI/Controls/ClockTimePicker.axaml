@@ -8,34 +8,39 @@
     <UserControl.Styles>
         <Style Selector="Button.picker-header-btn">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Padding" Value="4,2"/>
+            <Setter Property="Padding" Value="6,2"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Cursor" Value="Hand"/>
         </Style>
-        <Style Selector="Button.picker-header-btn:hover">
-            <Setter Property="Background" Value="{DynamicResource AppSurfaceElevatedBrush}"/>
+        <Style Selector="Button.picker-header-btn:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AppHoverBrush}"/>
         </Style>
 
         <Style Selector="Button.time-picker-trigger">
-            <Setter Property="Height" Value="32"/>
+            <Setter Property="Height" Value="34"/>
             <Setter Property="Padding" Value="12,0"/>
-            <Setter Property="Background" Value="{DynamicResource CalendarDatePickerBackground}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource CalendarDatePickerBorderBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtleBrush}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
         <Style Selector="Button.time-picker-trigger:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource AppSurfaceElevatedBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource AppHoverBrush}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+        <Style Selector="Button.time-picker-trigger:pointerover PathIcon">
+            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
         </Style>
         <Style Selector="FlyoutPresenter.time-picker-flyout">
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="MinWidth" Value="0"/>
             <Setter Property="MinHeight" Value="0"/>
         </Style>
@@ -44,7 +49,7 @@
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="CornerRadius" Value="12"/>
         </Style>
     </UserControl.Styles>
 
@@ -57,7 +62,7 @@
                 <TextBlock x:Name="TimeDisplayTextBlock"
                            Grid.Column="0"
                            Text="12:00"
-                           FontSize="14"
+                           FontSize="13"
                            FontWeight="Normal"
                            Foreground="{DynamicResource AppTextPrimaryBrush}"
                            VerticalAlignment="Center"
@@ -68,7 +73,7 @@
                           Data="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z"
                           Width="15"
                           Height="15"
-                          Foreground="{DynamicResource CalendarDatePickerIconForeground}"
+                          Foreground="{DynamicResource AppTextSecondaryBrush}"
                           HorizontalAlignment="Right"
                           VerticalAlignment="Center"
                           Margin="6,0,0,0"/>
@@ -78,11 +83,12 @@
             <Button.Flyout>
                 <Flyout Placement="BottomEdgeAlignedRight" ShowMode="Standard" FlyoutPresenterClasses="time-picker-flyout">
                     <Border Width="240"
-                            Padding="12,12,12,16"
-                            Background="{DynamicResource CalendarBackground}"
-                            BorderThickness="0"
-                            CornerRadius="10"
-                            BoxShadow="0 8 32 0 #30000000">
+                            Padding="14,14,14,16"
+                            Background="{DynamicResource AppSurfaceElevatedBrush}"
+                            BorderBrush="{DynamicResource AppBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="12"
+                            BoxShadow="0 12 36 0 #40000000">
                         <StackPanel Spacing="10" HorizontalAlignment="Center">
                             <!-- Digital Time Display Header (HH : MM) -->
                             <StackPanel Orientation="Horizontal"
@@ -124,7 +130,7 @@
                             <Border x:Name="ClockContainer"
                                     Width="200"
                                     Height="200"
-                                    Background="Transparent"
+                                    Background="{DynamicResource AppSurfaceSubtleBrush}"
                                     BorderThickness="0"
                                     CornerRadius="100"
                                     ClipToBounds="True"

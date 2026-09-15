@@ -31,9 +31,9 @@
 
     <!-- Pointerover Unchecked -->
     <Style Selector="ToggleButton.filter-pill:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="{DynamicResource AppSurfaceElevatedBrush}"/>
+      <Setter Property="Background" Value="{DynamicResource AppHoverBrush}"/>
       <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
-      <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryBrush}"/>
     </Style>
 
     <!-- Checked State (Active Soft-Tinted Pill) -->
@@ -52,7 +52,7 @@
 
     <!-- Checked State Hover -->
     <Style Selector="ToggleButton.filter-pill:checked:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtleBrush}"/>
+      <Setter Property="Background" Value="{DynamicResource AppHoverBrush}"/>
       <Setter Property="Foreground" Value="{DynamicResource AppPrimaryHoverBrush}"/>
       <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryHoverBrush}"/>
     </Style>
@@ -239,13 +239,13 @@
                           Command="{Binding OpenTagsViewCommand}"
                           CommandParameter="{Binding $parent[Button].Flyout}"
                           x:CompileBindings="False"
-                          Foreground="{DynamicResource AppPrimaryBrush}"
-                          FontWeight="SemiBold"
                           HorizontalAlignment="Stretch"
-                          HorizontalContentAlignment="Left">
+                          HorizontalContentAlignment="Left"
+                          Padding="8,6"
+                          CornerRadius="6">
                     <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                      <PathIcon Data="{StaticResource SettingsIconData}" Width="12" Height="12"/>
-                      <TextBlock Text="Manage Tags..." FontSize="12"/>
+                      <PathIcon Data="{StaticResource SettingsIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                      <TextBlock Text="Manage Tags..." Foreground="{DynamicResource AppPrimaryBrush}" FontSize="13" FontWeight="SemiBold"/>
                     </StackPanel>
                   </Button>
                 </StackPanel>
@@ -325,7 +325,7 @@
 
                       <!-- Active Card Hover Effect (Exact CornerRadius 10) -->
                       <Style Selector="Border:pointerover">
-                        <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtleBrush}"/>
+                        <Setter Property="Background" Value="{DynamicResource AppHoverBrush}"/>
                         <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryBrush}"/>
                       </Style>
 

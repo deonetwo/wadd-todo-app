@@ -34,7 +34,7 @@
     <!-- Hover State (:pointerover) -->
     <Style Selector="RadioButton.card:pointerover /template/ Border#CardBorder">
       <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryHoverBrush}"/>
-      <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtleBrush}"/>
+      <Setter Property="Background" Value="{DynamicResource AppHoverBrush}"/>
     </Style>
 
     <!-- Selected / Checked State with Green Accent Border & Subtle Background Tint -->

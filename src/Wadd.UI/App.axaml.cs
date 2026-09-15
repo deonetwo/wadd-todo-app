@@ -146,8 +146,6 @@ public partial class App : Application
             openItem.Click += (s, e) => ShowMainWindow(desktop);
             menu.Add(openItem);
 
-            menu.Add(new NativeMenuItemSeparator());
-
             var exitItem = new NativeMenuItem("Exit");
             exitItem.Click += (s, e) => ExitApplication(desktop);
             menu.Add(exitItem);
