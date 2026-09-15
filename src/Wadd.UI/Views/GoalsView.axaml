@@ -460,14 +460,29 @@
                                    Margin="0,0,8,0"
                                    FontSize="13"
                                    VerticalAlignment="Center"/>
-                        <Button Grid.Column="2"
-                                Command="{Binding $parent[UserControl].((vm:GoalsViewModel)DataContext).DeleteMilestoneCommand}"
-                                CommandParameter="{Binding}"
-                                Classes="danger"
-                                MinHeight="28" MinWidth="28" Padding="5"
-                                VerticalAlignment="Center">
-                          <PathIcon Data="{StaticResource TrashIconData}" Width="12" Height="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Button>
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                          <Button Command="{Binding $parent[UserControl].((vm:GoalsViewModel)DataContext).MoveMilestoneUpCommand}"
+                                  CommandParameter="{Binding}"
+                                  Classes="icon-btn"
+                                  MinHeight="26" MinWidth="26" Padding="4"
+                                  ToolTip.Tip="Move step up">
+                            <PathIcon Data="{StaticResource ChevronUpIconData}" Width="10" Height="10"/>
+                          </Button>
+                          <Button Command="{Binding $parent[UserControl].((vm:GoalsViewModel)DataContext).MoveMilestoneDownCommand}"
+                                  CommandParameter="{Binding}"
+                                  Classes="icon-btn"
+                                  MinHeight="26" MinWidth="26" Padding="4"
+                                  ToolTip.Tip="Move step down">
+                            <PathIcon Data="{StaticResource ChevronDownIconData}" Width="10" Height="10"/>
+                          </Button>
+                          <Button Command="{Binding $parent[UserControl].((vm:GoalsViewModel)DataContext).DeleteMilestoneCommand}"
+                                  CommandParameter="{Binding}"
+                                  Classes="danger"
+                                  MinHeight="26" MinWidth="26" Padding="4"
+                                  ToolTip.Tip="Delete step">
+                            <PathIcon Data="{StaticResource TrashIconData}" Width="11" Height="11"/>
+                          </Button>
+                        </StackPanel>
                       </Grid>
                     </Border>
                   </DataTemplate>
@@ -913,9 +928,29 @@
                       <Grid ColumnDefinitions="Auto,*,Auto">
                         <CheckBox Grid.Column="0" Classes="task-checkbox" IsChecked="{Binding IsCompleted}" Command="{Binding $parent[UserControl].((vm:GoalsViewModel)DataContext).ToggleMilestoneCommand}" CommandParameter="{Binding}" MinHeight="28" MinWidth="28" Margin="0,0,10,0" VerticalAlignment="Center"/>
                         <TextBlock Grid.Column="1" Text="{Binding Title}" Classes="milestone-title" Classes.completed="{Binding IsCompleted}" TextWrapping="Wrap" Margin="0,0,8,0" FontSize="13" VerticalAlignment="Center"/>
-                        <Button Grid.Column="2" Command="{Binding $parent[UserControl].((vm:GoalsViewModel)DataContext).DeleteMilestoneCommand}" CommandParameter="{Binding}" Classes="danger" MinHeight="28" MinWidth="28" Padding="5">
-                          <PathIcon Data="{StaticResource TrashIconData}" Width="12" Height="12"/>
-                        </Button>
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                          <Button Command="{Binding $parent[UserControl].((vm:GoalsViewModel)DataContext).MoveMilestoneUpCommand}"
+                                  CommandParameter="{Binding}"
+                                  Classes="icon-btn"
+                                  MinHeight="26" MinWidth="26" Padding="4"
+                                  ToolTip.Tip="Move step up">
+                            <PathIcon Data="{StaticResource ChevronUpIconData}" Width="10" Height="10"/>
+                          </Button>
+                          <Button Command="{Binding $parent[UserControl].((vm:GoalsViewModel)DataContext).MoveMilestoneDownCommand}"
+                                  CommandParameter="{Binding}"
+                                  Classes="icon-btn"
+                                  MinHeight="26" MinWidth="26" Padding="4"
+                                  ToolTip.Tip="Move step down">
+                            <PathIcon Data="{StaticResource ChevronDownIconData}" Width="10" Height="10"/>
+                          </Button>
+                          <Button Command="{Binding $parent[UserControl].((vm:GoalsViewModel)DataContext).DeleteMilestoneCommand}"
+                                  CommandParameter="{Binding}"
+                                  Classes="danger"
+                                  MinHeight="26" MinWidth="26" Padding="4"
+                                  ToolTip.Tip="Delete step">
+                            <PathIcon Data="{StaticResource TrashIconData}" Width="11" Height="11"/>
+                          </Button>
+                        </StackPanel>
                       </Grid>
                     </Border>
                   </DataTemplate>
@@ -1112,18 +1147,87 @@
                 <TextBox Text="{Binding NewGoalDescription}" Classes="styled" PlaceholderText="Why this matters &amp; how you'll get there..." Padding="12,8" AcceptsReturn="True" TextWrapping="Wrap" MaxLength="500" MinHeight="80" CornerRadius="6" VerticalContentAlignment="Top" HorizontalContentAlignment="Left"/>
               </StackPanel>
 
-              <!-- Preview of AI-generated milestones if any -->
-              <StackPanel Spacing="4" IsVisible="{Binding HasPendingAiMilestones}">
-                <TextBlock Text="AI SUGGESTED STEPS (SAVED ON CREATION)" Classes="micro" Foreground="{DynamicResource AppPrimaryBrush}"/>
+              <!-- Preview & Management of AI-generated milestones -->
+              <StackPanel Spacing="6" IsVisible="{Binding HasPendingAiMilestones}">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Grid.Column="0" Text="AI SUGGESTED STEPS (SAVED ON CREATION)" Classes="micro" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <TextBlock Grid.Column="1" Text="{Binding PendingAiMilestones.Count, StringFormat='{}{0} steps'}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center"/>
+                </Grid>
+
                 <ItemsControl ItemsSource="{Binding PendingAiMilestones}">
                   <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                      <Border Background="{DynamicResource AppSurfaceSubtleBrush}" CornerRadius="6" Padding="10,6" Margin="0,2">
-                        <TextBlock Text="{Binding}" FontSize="12" Foreground="{DynamicResource AppTextPrimaryBrush}" TextWrapping="Wrap"/>
+                      <Border Background="{DynamicResource AppSurfaceSubtleBrush}"
+                              BorderBrush="{DynamicResource AppBorderBrush}"
+                              BorderThickness="1"
+                              CornerRadius="6"
+                              Padding="10,6"
+                              Margin="0,2">
+                        <Grid ColumnDefinitions="*,Auto">
+                          <TextBlock Grid.Column="0"
+                                     Text="{Binding}"
+                                     FontSize="12"
+                                     Foreground="{DynamicResource AppTextPrimaryBrush}"
+                                     TextWrapping="Wrap"
+                                     VerticalAlignment="Center"
+                                     Margin="0,0,8,0"/>
+                          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                            <Button Command="{Binding $parent[UserControl].((vm:GoalsViewModel)DataContext).MovePendingMilestoneUpCommand}"
+                                    CommandParameter="{Binding}"
+                                    Classes="icon-btn"
+                                    MinHeight="24" MinWidth="24" Padding="3"
+                                    ToolTip.Tip="Move step up">
+                              <PathIcon Data="{StaticResource ChevronUpIconData}" Width="10" Height="10"/>
+                            </Button>
+                            <Button Command="{Binding $parent[UserControl].((vm:GoalsViewModel)DataContext).MovePendingMilestoneDownCommand}"
+                                    CommandParameter="{Binding}"
+                                    Classes="icon-btn"
+                                    MinHeight="24" MinWidth="24" Padding="3"
+                                    ToolTip.Tip="Move step down">
+                              <PathIcon Data="{StaticResource ChevronDownIconData}" Width="10" Height="10"/>
+                            </Button>
+                            <Button Command="{Binding $parent[UserControl].((vm:GoalsViewModel)DataContext).DeletePendingMilestoneCommand}"
+                                    CommandParameter="{Binding}"
+                                    Classes="danger"
+                                    MinHeight="24" MinWidth="24" Padding="3"
+                                    ToolTip.Tip="Delete step">
+                              <PathIcon Data="{StaticResource TrashIconData}" Width="10" Height="10"/>
+                            </Button>
+                          </StackPanel>
+                        </Grid>
                       </Border>
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
+
+                <!-- Quick Add Custom Step into Dialog -->
+                <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+                  <TextBox Grid.Column="0"
+                           Text="{Binding NewPendingMilestoneTitle}"
+                           Classes="styled"
+                           PlaceholderText="Add another step..."
+                           Padding="10,6"
+                           MinHeight="34"
+                           MaxLength="100"
+                           CornerRadius="6"
+                           Margin="0,0,8,0"
+                           VerticalContentAlignment="Center">
+                    <TextBox.KeyBindings>
+                      <KeyBinding Gesture="Enter" Command="{Binding AddPendingMilestoneCommand}"/>
+                    </TextBox.KeyBindings>
+                  </TextBox>
+                  <Button Grid.Column="1"
+                          Command="{Binding AddPendingMilestoneCommand}"
+                          Classes="btn-secondary"
+                          Height="34"
+                          Padding="12,0"
+                          VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                      <PathIcon Data="{StaticResource PlusIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                      <TextBlock Text="Add Step" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                  </Button>
+                </Grid>
               </StackPanel>
             </StackPanel>
           </ScrollViewer>

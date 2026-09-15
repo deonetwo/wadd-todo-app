@@ -261,6 +261,9 @@ public partial class GoalsViewModel : ViewModelBase
         SelectedCategoryFilter = category;
     }
 
+    [ObservableProperty]
+    private string _newPendingMilestoneTitle = string.Empty;
+
     [RelayCommand]
     private void OpenCreateGoalDialog()
     {
@@ -268,6 +271,7 @@ public partial class GoalsViewModel : ViewModelBase
         NewGoalDescription = string.Empty;
         NewGoalCategory = string.Empty;
         NewGoalTargetDate = null;
+        NewPendingMilestoneTitle = string.Empty;
         PendingAiMilestones.Clear();
         OnPropertyChanged(nameof(HasPendingAiMilestones));
         IsAiGeneratingGoal = false;
@@ -278,11 +282,53 @@ public partial class GoalsViewModel : ViewModelBase
     [RelayCommand]
     private void CancelCreateGoal()
     {
+        NewPendingMilestoneTitle = string.Empty;
         PendingAiMilestones.Clear();
         OnPropertyChanged(nameof(HasPendingAiMilestones));
         IsAiGeneratingGoal = false;
         AiStatusMessage = string.Empty;
         IsCreatingGoal = false;
+    }
+
+    [RelayCommand]
+    private void AddPendingMilestone()
+    {
+        if (string.IsNullOrWhiteSpace(NewPendingMilestoneTitle)) return;
+        var title = NewPendingMilestoneTitle.Trim();
+        if (title.Length > 100) title = title.Substring(0, 100).Trim();
+        PendingAiMilestones.Add(title);
+        NewPendingMilestoneTitle = string.Empty;
+        OnPropertyChanged(nameof(HasPendingAiMilestones));
+    }
+
+    [RelayCommand]
+    private void DeletePendingMilestone(string? milestone)
+    {
+        if (string.IsNullOrWhiteSpace(milestone)) return;
+        PendingAiMilestones.Remove(milestone);
+        OnPropertyChanged(nameof(HasPendingAiMilestones));
+    }
+
+    [RelayCommand]
+    private void MovePendingMilestoneUp(string? milestone)
+    {
+        if (string.IsNullOrWhiteSpace(milestone)) return;
+        int index = PendingAiMilestones.IndexOf(milestone);
+        if (index > 0)
+        {
+            PendingAiMilestones.Move(index, index - 1);
+        }
+    }
+
+    [RelayCommand]
+    private void MovePendingMilestoneDown(string? milestone)
+    {
+        if (string.IsNullOrWhiteSpace(milestone)) return;
+        int index = PendingAiMilestones.IndexOf(milestone);
+        if (index >= 0 && index < PendingAiMilestones.Count - 1)
+        {
+            PendingAiMilestones.Move(index, index + 1);
+        }
     }
 
     public Action<string, NotificationBubbleType?>? StatusNotificationRequested { get; set; }
@@ -546,6 +592,38 @@ public partial class GoalsViewModel : ViewModelBase
 
         await _goalService.SaveMilestoneAsync(milestoneVm.Model);
         UpdateSelectedGoalProgress();
+    }
+
+    [RelayCommand]
+    private async Task MoveMilestoneUpAsync(GoalMilestoneItemViewModel? milestoneVm)
+    {
+        if (milestoneVm == null || SelectedGoal == null) return;
+        int index = CurrentMilestones.IndexOf(milestoneVm);
+        if (index > 0)
+        {
+            CurrentMilestones.Move(index, index - 1);
+            for (int i = 0; i < CurrentMilestones.Count; i++)
+            {
+                CurrentMilestones[i].Model.OrderIndex = i;
+                await _goalService.SaveMilestoneAsync(CurrentMilestones[i].Model);
+            }
+        }
+    }
+
+    [RelayCommand]
+    private async Task MoveMilestoneDownAsync(GoalMilestoneItemViewModel? milestoneVm)
+    {
+        if (milestoneVm == null || SelectedGoal == null) return;
+        int index = CurrentMilestones.IndexOf(milestoneVm);
+        if (index >= 0 && index < CurrentMilestones.Count - 1)
+        {
+            CurrentMilestones.Move(index, index + 1);
+            for (int i = 0; i < CurrentMilestones.Count; i++)
+            {
+                CurrentMilestones[i].Model.OrderIndex = i;
+                await _goalService.SaveMilestoneAsync(CurrentMilestones[i].Model);
+            }
+        }
     }
 
     [RelayCommand]

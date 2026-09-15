@@ -558,4 +558,98 @@ public class NotificationSettingsTests
         Assert.Single(vm.StatusNotifications);
         Assert.Equal("Note saved for Today", vm.StatusNotifications[0].Message);
     }
+
+    [Fact]
+    public void GoalsViewModel_PendingMilestones_MoveAndReorderAndAddAndRemove()
+    {
+        var tempPath = Path.Combine(Path.GetTempPath(), "WaddGoalMoveTest_" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var goalService = new Wadd.Services.SQLiteGoalService(Path.Combine(tempPath, "test.db"));
+            var aiService = new Wadd.Services.AiGoalService(new System.Net.Http.HttpClient()) { ApiKey = string.Empty };
+            var vm = new GoalsViewModel(goalService, aiService);
+
+            vm.PendingAiMilestones.Add("Step 1");
+            vm.PendingAiMilestones.Add("Step 2");
+            vm.PendingAiMilestones.Add("Step 3");
+
+            // Move Step 2 up to index 0
+            vm.MovePendingMilestoneUpCommand.Execute("Step 2");
+            Assert.Equal("Step 2", vm.PendingAiMilestones[0]);
+            Assert.Equal("Step 1", vm.PendingAiMilestones[1]);
+            Assert.Equal("Step 3", vm.PendingAiMilestones[2]);
+
+            // Move Step 2 down to index 1
+            vm.MovePendingMilestoneDownCommand.Execute("Step 2");
+            Assert.Equal("Step 1", vm.PendingAiMilestones[0]);
+            Assert.Equal("Step 2", vm.PendingAiMilestones[1]);
+            Assert.Equal("Step 3", vm.PendingAiMilestones[2]);
+
+            // Delete Step 2
+            vm.DeletePendingMilestoneCommand.Execute("Step 2");
+            Assert.Equal(2, vm.PendingAiMilestones.Count);
+            Assert.DoesNotContain("Step 2", vm.PendingAiMilestones);
+
+            // Add new step
+            vm.NewPendingMilestoneTitle = "Step 4 Custom";
+            vm.AddPendingMilestoneCommand.Execute(null);
+            Assert.Equal(3, vm.PendingAiMilestones.Count);
+            Assert.Equal("Step 4 Custom", vm.PendingAiMilestones[^1]);
+        }
+        finally
+        {
+            if (Directory.Exists(tempPath))
+            {
+                try { Directory.Delete(tempPath, true); } catch { }
+            }
+        }
+    }
+
+    [Fact]
+    public async Task GoalsViewModel_CurrentMilestones_MoveUpAndDown_UpdatesOrderIndex()
+    {
+        var tempPath = Path.Combine(Path.GetTempPath(), "WaddGoalMilestoneOrderTest_" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var goalService = new Wadd.Services.SQLiteGoalService(Path.Combine(tempPath, "test.db"));
+            var aiService = new Wadd.Services.AiGoalService(new System.Net.Http.HttpClient()) { ApiKey = string.Empty };
+            var vm = new GoalsViewModel(goalService, aiService);
+
+            var goal = await goalService.SaveGoalAsync(new Wadd.Core.Models.LifeGoal { Title = "Test Move Goal" });
+            var m1 = await goalService.SaveMilestoneAsync(new Wadd.Core.Models.GoalMilestone { GoalId = goal.Id, Title = "Alpha", OrderIndex = 0 });
+            var m2 = await goalService.SaveMilestoneAsync(new Wadd.Core.Models.GoalMilestone { GoalId = goal.Id, Title = "Beta", OrderIndex = 1 });
+            var m3 = await goalService.SaveMilestoneAsync(new Wadd.Core.Models.GoalMilestone { GoalId = goal.Id, Title = "Gamma", OrderIndex = 2 });
+
+            await vm.LoadAllGoalsAsync();
+            vm.SelectedGoal = vm.Goals.First(g => g.Id == goal.Id);
+
+            // Wait for milestones to load
+            await Task.Delay(50);
+
+            Assert.Equal(3, vm.CurrentMilestones.Count);
+            Assert.Equal("Alpha", vm.CurrentMilestones[0].Title);
+            Assert.Equal("Beta", vm.CurrentMilestones[1].Title);
+
+            // Move Beta up to index 0
+            var betaVm = vm.CurrentMilestones[1];
+            await vm.MoveMilestoneUpCommand.ExecuteAsync(betaVm);
+
+            Assert.Equal("Beta", vm.CurrentMilestones[0].Title);
+            Assert.Equal("Alpha", vm.CurrentMilestones[1].Title);
+            Assert.Equal(0, vm.CurrentMilestones[0].Model.OrderIndex);
+            Assert.Equal(1, vm.CurrentMilestones[1].Model.OrderIndex);
+
+            // Move Beta down to index 1
+            await vm.MoveMilestoneDownCommand.ExecuteAsync(betaVm);
+            Assert.Equal("Alpha", vm.CurrentMilestones[0].Title);
+            Assert.Equal("Beta", vm.CurrentMilestones[1].Title);
+        }
+        finally
+        {
+            if (Directory.Exists(tempPath))
+            {
+                try { Directory.Delete(tempPath, true); } catch { }
+            }
+        }
+    }
 }
