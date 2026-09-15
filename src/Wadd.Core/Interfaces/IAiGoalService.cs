@@ -12,11 +12,31 @@ public interface IAiGoalService
     string? CustomModel { get; set; }
     string GeminiApiKey { get; set; }
 
-    Task<GoalGenerationResult> GenerateGoalDetailsAsync(string goalTitleOrPrompt);
+    Task<GoalGenerationResult> GenerateGoalDetailsAsync(
+        string? goalTitleOrPrompt = null,
+        string? category = null,
+        System.DateTime? targetDate = null,
+        string? description = null,
+        IReadOnlyList<string>? existingMilestones = null,
+        string? newMilestoneDraft = null);
 
-    Task<IReadOnlyList<string>> GenerateMilestonesAsync(string goalTitle, string? category, string? description, IReadOnlyList<string>? existingMilestones = null);
+    Task<IReadOnlyList<string>> GenerateMilestonesAsync(
+        string goalTitle,
+        string? category = null,
+        string? description = null,
+        IReadOnlyList<string>? existingMilestones = null,
+        System.DateTime? targetDate = null,
+        string? newMilestoneDraft = null);
 
-    Task<JournalDraftResult> GenerateJournalPromptAsync(string goalTitle, int completedSteps, int totalSteps, string? recentMilestone = null);
+    Task<JournalDraftResult> GenerateJournalPromptAsync(
+        string goalTitle,
+        int completedSteps,
+        int totalSteps,
+        string? recentMilestone = null,
+        string? category = null,
+        string? description = null,
+        IReadOnlyList<string>? allMilestones = null,
+        string? currentJournalDraft = null);
 
     Task<IReadOnlyList<AiModelOption>> GetAvailableModelsAsync(string? provider = null, string? apiKey = null, string? customBaseUrl = null);
 

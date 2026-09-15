@@ -114,6 +114,19 @@ public partial class GoalsViewModel : ViewModelBase
     [ObservableProperty]
     private DateTime? _newGoalTargetDate;
 
+    public bool HasNewGoalTargetDate => NewGoalTargetDate.HasValue;
+
+    partial void OnNewGoalTargetDateChanged(DateTime? value)
+    {
+        OnPropertyChanged(nameof(HasNewGoalTargetDate));
+    }
+
+    [RelayCommand]
+    private void ClearNewGoalTargetDate()
+    {
+        NewGoalTargetDate = null;
+    }
+
     // New Milestone Form Property
     [ObservableProperty]
     private string _newMilestoneTitle = string.Empty;
@@ -352,19 +365,46 @@ public partial class GoalsViewModel : ViewModelBase
             AiStatusMessage = draftingMsg;
             NotifyStatus(draftingMsg, NotificationBubbleType.Info);
 
-            var result = await _aiGoalService.GenerateGoalDetailsAsync(prompt);
+            var existingSteps = PendingAiMilestones.ToList();
+            if (!string.IsNullOrWhiteSpace(NewPendingMilestoneTitle))
+            {
+                existingSteps.Add(NewPendingMilestoneTitle.Trim());
+            }
 
-            NewGoalTitle = result.Title;
-            NewGoalCategory = result.Category;
-            NewGoalTargetDate = result.TargetDate;
-            NewGoalDescription = result.Description;
+            var result = await _aiGoalService.GenerateGoalDetailsAsync(
+                goalTitleOrPrompt: NewGoalTitle,
+                category: NewGoalCategory,
+                targetDate: NewGoalTargetDate,
+                description: NewGoalDescription,
+                existingMilestones: existingSteps.Count > 0 ? existingSteps : null,
+                newMilestoneDraft: NewPendingMilestoneTitle);
+
+            if (!string.IsNullOrWhiteSpace(result.Title))
+            {
+                NewGoalTitle = result.Title;
+            }
+            if (!string.IsNullOrWhiteSpace(result.Category))
+            {
+                NewGoalCategory = result.Category;
+            }
+            if (result.TargetDate.HasValue && !NewGoalTargetDate.HasValue)
+            {
+                NewGoalTargetDate = result.TargetDate;
+            }
+            if (!string.IsNullOrWhiteSpace(result.Description))
+            {
+                NewGoalDescription = result.Description;
+            }
 
             PendingAiMilestones.Clear();
             if (result.SuggestedMilestones != null && result.SuggestedMilestones.Count > 0)
             {
                 foreach (var m in result.SuggestedMilestones)
                 {
-                    PendingAiMilestones.Add(m);
+                    if (!string.IsNullOrWhiteSpace(m) && !PendingAiMilestones.Contains(m.Trim()))
+                    {
+                        PendingAiMilestones.Add(m.Trim());
+                    }
                 }
             }
             OnPropertyChanged(nameof(HasPendingAiMilestones));
@@ -680,7 +720,15 @@ public partial class GoalsViewModel : ViewModelBase
             IsMilestoneAiChoiceModalOpen = false;
 
             var existingTitles = CurrentMilestones.Select(m => m.Title).ToList();
-            var suggested = await _aiGoalService.GenerateMilestonesAsync(SelectedGoal.Title, SelectedGoal.Category, SelectedGoal.Description, existingTitles);
+            var draftStep = !string.IsNullOrWhiteSpace(NewMilestoneTitle) ? NewMilestoneTitle.Trim() : null;
+
+            var suggested = await _aiGoalService.GenerateMilestonesAsync(
+                goalTitle: SelectedGoal.Title,
+                category: SelectedGoal.Category,
+                description: SelectedGoal.Description,
+                existingMilestones: existingTitles,
+                targetDate: SelectedGoal.TargetDate,
+                newMilestoneDraft: draftStep);
 
             if (suggested != null && suggested.Count > 0)
             {
@@ -730,6 +778,8 @@ public partial class GoalsViewModel : ViewModelBase
             IsAiGeneratingMilestones = true;
             IsMilestoneAiChoiceModalOpen = false;
 
+            var draftStep = !string.IsNullOrWhiteSpace(NewMilestoneTitle) ? NewMilestoneTitle.Trim() : null;
+
             // 1. Delete existing milestones from DB
             var existing = CurrentMilestones.ToList();
             foreach (var m in existing)
@@ -739,7 +789,14 @@ public partial class GoalsViewModel : ViewModelBase
             CurrentMilestones.Clear();
 
             // 2. Generate brand new comprehensive roadmap from scratch
-            var suggested = await _aiGoalService.GenerateMilestonesAsync(SelectedGoal.Title, SelectedGoal.Category, SelectedGoal.Description, null);
+            var suggested = await _aiGoalService.GenerateMilestonesAsync(
+                goalTitle: SelectedGoal.Title,
+                category: SelectedGoal.Category,
+                description: SelectedGoal.Description,
+                existingMilestones: null,
+                targetDate: SelectedGoal.TargetDate,
+                newMilestoneDraft: draftStep);
+
             if (suggested != null && suggested.Count > 0)
             {
                 int order = 0;
@@ -812,8 +869,19 @@ public partial class GoalsViewModel : ViewModelBase
             int completed = CurrentMilestones.Count(m => m.IsCompleted);
             int total = CurrentMilestones.Count;
             var recentMilestone = CurrentMilestones.LastOrDefault(m => m.IsCompleted)?.Title;
+            var allMilestonesList = CurrentMilestones.Select(m => $"[{(m.IsCompleted ? "Completed" : "Pending")}] {m.Title}").ToList();
+            var draftUserContent = !string.IsNullOrWhiteSpace(NewJournalContent) ? NewJournalContent : NewJournalTitle;
 
-            var draft = await _aiGoalService.GenerateJournalPromptAsync(SelectedGoal.Title, completed, total, recentMilestone);
+            var draft = await _aiGoalService.GenerateJournalPromptAsync(
+                goalTitle: SelectedGoal.Title,
+                completedSteps: completed,
+                totalSteps: total,
+                recentMilestone: recentMilestone,
+                category: SelectedGoal.Category,
+                description: SelectedGoal.Description,
+                allMilestones: allMilestonesList,
+                currentJournalDraft: draftUserContent);
+
             if (draft != null)
             {
                 NewJournalTitle = draft.Title;

@@ -155,6 +155,97 @@ public class AiGoalServiceTests
             Assert.False(string.IsNullOrWhiteSpace(m.Name));
         }
     }
+
+    [Fact]
+    public void BuildGoalPromptContext_IncludesAllNonBlankFields()
+    {
+        var targetDate = new DateTime(2026, 12, 31);
+        var existingMilestones = new List<string> { "Step A", "Step B" };
+
+        var context = AiGoalService.BuildGoalPromptContext(
+            goalTitleOrPrompt: "Run a Marathon",
+            category: "Health & Fitness",
+            targetDate: targetDate,
+            description: "Finish sub-4 hours with disciplined training.",
+            existingMilestones: existingMilestones,
+            newMilestoneDraft: "Step C");
+
+        Assert.Contains("Run a Marathon", context);
+        Assert.Contains("Health & Fitness", context);
+        Assert.Contains("2026-12-31", context);
+        Assert.Contains("Finish sub-4 hours", context);
+        Assert.Contains("1. Step A", context);
+        Assert.Contains("2. Step B", context);
+        Assert.Contains("3. Step C", context);
+    }
+
+    [Fact]
+    public void BuildMilestonesPromptContext_IncludesAllNonBlankFields()
+    {
+        var targetDate = new DateTime(2026, 11, 15);
+        var existing = new List<string> { "Initial Research" };
+
+        var context = AiGoalService.BuildMilestonesPromptContext(
+            goalTitle: "Launch SaaS",
+            category: "Career & Business",
+            description: "B2B productivity tool",
+            existingMilestones: existing,
+            targetDate: targetDate,
+            newMilestoneDraft: "Create landing page");
+
+        Assert.Contains("Launch SaaS", context);
+        Assert.Contains("Career & Business", context);
+        Assert.Contains("B2B productivity tool", context);
+        Assert.Contains("2026-11-15", context);
+        Assert.Contains("1. Initial Research", context);
+        Assert.Contains("Create landing page", context);
+    }
+
+    [Fact]
+    public void BuildJournalPromptContext_IncludesAllNonBlankFields()
+    {
+        var allMilestones = new List<string> { "[Completed] Step 1", "[Pending] Step 2" };
+
+        var context = AiGoalService.BuildJournalPromptContext(
+            goalTitle: "Learn Spanish",
+            completedSteps: 1,
+            totalSteps: 2,
+            recentMilestone: "Finish A1 Course",
+            category: "Learning & Skills",
+            description: "Conversational fluency in 6 months",
+            allMilestones: allMilestones,
+            currentJournalDraft: "Feeling confident about vocabulary today.");
+
+        Assert.Contains("Learn Spanish", context);
+        Assert.Contains("1/2 milestone steps completed", context);
+        Assert.Contains("Finish A1 Course", context);
+        Assert.Contains("Learning & Skills", context);
+        Assert.Contains("Conversational fluency", context);
+        Assert.Contains("[Completed] Step 1", context);
+        Assert.Contains("Feeling confident about vocabulary", context);
+    }
+
+    [Fact]
+    public async Task GenerateGoalDetailsAsync_WithAllNonBlankFields_PreservesAndIncorporatesCustomFields()
+    {
+        var targetDate = new DateTime(2026, 10, 20);
+        var existing = new List<string> { "Step One Already Done" };
+
+        var result = await _aiGoalService.GenerateGoalDetailsAsync(
+            goalTitleOrPrompt: "Custom Project Plan",
+            category: "Finance & Wealth",
+            targetDate: targetDate,
+            description: "Custom user description providing specific details",
+            existingMilestones: existing,
+            newMilestoneDraft: "Next Pending Step");
+
+        Assert.NotNull(result);
+        Assert.Equal("Finance & Wealth", result.Category);
+        Assert.Equal(targetDate, result.TargetDate);
+        Assert.Equal("Custom user description providing specific details", result.Description);
+        Assert.Contains(result.SuggestedMilestones, m => m.Contains("Step One Already Done", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(result.SuggestedMilestones, m => m.Contains("Next Pending Step", StringComparison.OrdinalIgnoreCase));
+    }
 }
 
 

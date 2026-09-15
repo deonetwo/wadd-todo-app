@@ -117,4 +117,20 @@ public class GoalServiceTests : IDisposable
         var activeMilestones = (await _goalService.GetMilestonesForGoalAsync(goal.Id)).ToList();
         Assert.Empty(activeMilestones);
     }
+
+    [Fact]
+    public void GoalsViewModel_ClearNewGoalTargetDateCommand_ClearsTargetDate()
+    {
+        var vm = new Wadd.UI.ViewModels.GoalsViewModel(_goalService);
+        Assert.False(vm.HasNewGoalTargetDate);
+        Assert.Null(vm.NewGoalTargetDate);
+
+        vm.NewGoalTargetDate = new DateTime(2026, 12, 31);
+        Assert.True(vm.HasNewGoalTargetDate);
+        Assert.NotNull(vm.NewGoalTargetDate);
+
+        vm.ClearNewGoalTargetDateCommand.Execute(null);
+        Assert.False(vm.HasNewGoalTargetDate);
+        Assert.Null(vm.NewGoalTargetDate);
+    }
 }
