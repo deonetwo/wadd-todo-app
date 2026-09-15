@@ -111,16 +111,6 @@ public class AndroidNotificationService : INotificationService
                 System.Diagnostics.Trace.WriteLine($"[AndroidNotificationService] Error loading large icon: {ex.Message}");
             }
 
-            if (settings.AndroidHighPriorityChannel)
-            {
-                builder.SetPriority((int)NotificationPriority.High);
-            }
-
-            if (settings.AndroidVibration)
-            {
-                builder.SetVibrate(new long[] { 0, 250, 100, 250 });
-            }
-
             var notificationId = !string.IsNullOrWhiteSpace(tag) ? tag.GetHashCode() : (int)DateTime.UtcNow.Ticks;
             notificationManager.Notify(tag, notificationId, builder.Build());
         }
