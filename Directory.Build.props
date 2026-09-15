@@ -9,6 +9,11 @@
     <FirebaseProjectId Condition="'$(FirebaseProjectId)' == ''">$(FIREBASE_PROJECT_ID)</FirebaseProjectId>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+
   <ItemGroup Condition="'$(GoogleClientId)' != ''">
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
       <_Parameter1>GoogleClientId</_Parameter1>
