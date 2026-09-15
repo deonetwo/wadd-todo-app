@@ -615,6 +615,7 @@ public partial class MainViewModel : ViewModelBase
     private readonly HashSet<Guid> _notifiedOverdueIds = new();
     private readonly Dictionary<Guid, DateTime> _lastNotifiedTimes = new();
     private DateTime _lastDueDateCheckDay = DateTime.Today;
+    private bool _isInitialNotificationSeeded;
 
     private void StartReminderChecker()
     {
@@ -627,7 +628,7 @@ public partial class MainViewModel : ViewModelBase
         _reminderTimer.Start();
     }
 
-    private void SeedInitialNotificationState()
+    public void SeedInitialNotificationState()
     {
         var now = DateTime.Now;
         var today = now.Date;
@@ -639,7 +640,10 @@ public partial class MainViewModel : ViewModelBase
             if (item.ReminderAt.HasValue && item.ReminderAt.Value <= now)
             {
                 _notifiedReminderIds.Add(item.Id);
-                _lastNotifiedTimes[item.Id] = now;
+                if (!_lastNotifiedTimes.ContainsKey(item.Id))
+                {
+                    _lastNotifiedTimes[item.Id] = now;
+                }
             }
 
             bool isOverdue = (item.DueDate.HasValue && item.DueDate.Value.Date < today) ||
@@ -647,13 +651,19 @@ public partial class MainViewModel : ViewModelBase
             if (isOverdue)
             {
                 _notifiedOverdueIds.Add(item.Id);
-                _lastNotifiedTimes[item.Id] = now;
+                if (!_lastNotifiedTimes.ContainsKey(item.Id))
+                {
+                    _lastNotifiedTimes[item.Id] = now;
+                }
             }
 
             if (item.DueDate.HasValue && item.DueDate.Value.Date == today)
             {
                 _notifiedDueDateIds.Add(item.Id);
-                _lastNotifiedTimes[item.Id] = now;
+                if (!_lastNotifiedTimes.ContainsKey(item.Id))
+                {
+                    _lastNotifiedTimes[item.Id] = now;
+                }
             }
         }
     }
@@ -945,6 +955,16 @@ public partial class MainViewModel : ViewModelBase
 
     partial void OnStatusMessageChanged(string value)
     {
+        if (string.IsNullOrWhiteSpace(value) ||
+            value == "Ready" ||
+            value.StartsWith("Loaded ", StringComparison.OrdinalIgnoreCase) ||
+            value.StartsWith("Syncing", StringComparison.OrdinalIgnoreCase) ||
+            value.Equals("Sync finished.", StringComparison.OrdinalIgnoreCase) ||
+            value.StartsWith("Signing in", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
         ShowStatusBubble(value);
     }
 
@@ -3331,6 +3351,14 @@ public partial class MainViewModel : ViewModelBase
                 GenerateCalendarGrid();
                 LastUpdatedAt = DateTime.Now;
                 StatusMessage = $"Loaded {TodoItems.Count} {(TodoItems.Count == 1 ? "task" : "tasks")} from device.";
+
+                // When tasks are first loaded from disk/DB on startup, seed notification state
+                // to prevent pop-up alerts for existing tasks on app launch.
+                if (!_isInitialNotificationSeeded)
+                {
+                    _isInitialNotificationSeeded = true;
+                    SeedInitialNotificationState();
+                }
 
                 if (!_initialSyncCompleted && IsGoogleSignedIn)
                 {

@@ -463,7 +463,7 @@ public class NotificationSettingsTests
         try
         {
             var goalService = new Wadd.Services.SQLiteGoalService(Path.Combine(tempPath, "test.db"));
-            var aiService = new Wadd.Services.AiGoalService(new System.Net.Http.HttpClient());
+            var aiService = new Wadd.Services.AiGoalService(new System.Net.Http.HttpClient()) { ApiKey = string.Empty };
             var vm = new GoalsViewModel(goalService, aiService);
 
             var notifications = new List<(string Message, NotificationBubbleType? Type)>();
@@ -482,5 +482,80 @@ public class NotificationSettingsTests
                 try { Directory.Delete(tempPath, true); } catch { }
             }
         }
+    }
+
+    [Fact]
+    public void MainViewModel_Startup_SeedingSuppressesImmediateNotifications()
+    {
+        var mockService = new MockNotificationService();
+        var vm = new MainViewModel(
+            new Wadd.Services.InMemoryTodoService(),
+            new Wadd.Services.ThemeService(),
+            new Wadd.Services.SyncService(),
+            new Wadd.Services.ExcelExportService(),
+            new Wadd.Services.SQLiteGoalService(),
+            new Wadd.Services.WindowsStartupService(),
+            new Wadd.Services.AiGoalService(new System.Net.Http.HttpClient()) { ApiKey = string.Empty },
+            mockService);
+
+        vm.EnableNotifications = true;
+        vm.NotifyOnTaskReminder = true;
+        vm.NotifyOnOverdueTasks = true;
+        vm.NotifyOnTaskDueDate = true;
+
+        var now = DateTime.Now;
+
+        // Existing overdue task
+        vm.TodoItems.Add(new TodoItemViewModel(new TodoItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Old Overdue Task",
+            DueDate = now.AddDays(-2)
+        }));
+
+        // Existing past reminder
+        vm.TodoItems.Add(new TodoItemViewModel(new TodoItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Past Morning Reminder",
+            ReminderAt = now.AddHours(-3)
+        }));
+
+        // Existing due today task
+        vm.TodoItems.Add(new TodoItemViewModel(new TodoItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Task Due Today",
+            DueDate = now.Date
+        }));
+
+        // Seed notification state as happens on startup when loading DB
+        vm.SeedInitialNotificationState();
+
+        // Timer check runs
+        vm.CheckReminders();
+
+        // Verify zero pop-up notifications were fired on startup
+        Assert.Empty(mockService.ShownNotifications);
+    }
+
+    [Fact]
+    public void MainViewModel_OnStatusMessageChanged_IgnoresStartupBackgroundStatusMessages()
+    {
+        var vm = new MainViewModel();
+        vm.StatusNotifications.Clear();
+
+        vm.StatusMessage = "Loaded 5 tasks from device.";
+        Assert.Empty(vm.StatusNotifications);
+
+        vm.StatusMessage = "Syncing with Google Drive...";
+        Assert.Empty(vm.StatusNotifications);
+
+        vm.StatusMessage = "Sync finished.";
+        Assert.Empty(vm.StatusNotifications);
+
+        vm.StatusMessage = "Note saved for Today";
+        Assert.Single(vm.StatusNotifications);
+        Assert.Equal("Note saved for Today", vm.StatusNotifications[0].Message);
     }
 }
