@@ -2422,16 +2422,37 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     private string _searchStatusFilter = "All";
 
-    partial void OnSearchStatusFilterChanged(string value)
+    public bool IsSearchFilterAll
     {
-        UpdateSearchResults();
+        get => SearchStatusFilter == "All";
+        set { if (value) SearchStatusFilter = "All"; }
     }
 
-    [RelayCommand]
-    private void SetSearchStatusFilter(string? filter)
+    public bool IsSearchFilterActive
     {
-        if (string.IsNullOrWhiteSpace(filter)) return;
-        SearchStatusFilter = filter;
+        get => SearchStatusFilter == "Active";
+        set { if (value) SearchStatusFilter = "Active"; }
+    }
+
+    public bool IsSearchFilterCompleted
+    {
+        get => SearchStatusFilter == "Completed";
+        set { if (value) SearchStatusFilter = "Completed"; }
+    }
+
+    public bool IsSearchFilterWithNotes
+    {
+        get => SearchStatusFilter == "WithNotes";
+        set { if (value) SearchStatusFilter = "WithNotes"; }
+    }
+
+    partial void OnSearchStatusFilterChanged(string value)
+    {
+        OnPropertyChanged(nameof(IsSearchFilterAll));
+        OnPropertyChanged(nameof(IsSearchFilterActive));
+        OnPropertyChanged(nameof(IsSearchFilterCompleted));
+        OnPropertyChanged(nameof(IsSearchFilterWithNotes));
+        UpdateSearchResults();
     }
 
     [RelayCommand]
@@ -3791,6 +3812,15 @@ public partial class MainViewModel : ViewModelBase
     {
         SelectedNavIndex = 4;
         CloseAllOverlays();
+
+        if (string.IsNullOrWhiteSpace(SearchStatusFilter))
+        {
+            SearchStatusFilter = "All";
+        }
+        OnPropertyChanged(nameof(IsSearchFilterAll));
+        OnPropertyChanged(nameof(IsSearchFilterActive));
+        OnPropertyChanged(nameof(IsSearchFilterCompleted));
+        OnPropertyChanged(nameof(IsSearchFilterWithNotes));
 
         if (parameter is Flyout flyout)
         {

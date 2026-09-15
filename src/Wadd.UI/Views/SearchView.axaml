@@ -111,41 +111,28 @@
           <!-- Filter Chips Row -->
           <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
             <!-- Filter Option: All -->
-            <RadioButton Content="All Tasks"
-                         GroupName="SearchFilter"
-                         IsChecked="True"
-                         Command="{Binding SetSearchStatusFilterCommand}"
-                         CommandParameter="All"
-                         Margin="0,0,8,6"
-                         FontSize="12"
-                         FontWeight="SemiBold"/>
+            <RadioButton Classes="filter-chip"
+                         Content="All Tasks"
+                         IsChecked="{Binding IsSearchFilterAll, Mode=TwoWay}"
+                         Margin="0,0,8,6"/>
 
             <!-- Filter Option: Active Only -->
-            <RadioButton Content="Active"
-                         GroupName="SearchFilter"
-                         Command="{Binding SetSearchStatusFilterCommand}"
-                         CommandParameter="Active"
-                         Margin="0,0,8,6"
-                         FontSize="12"
-                         FontWeight="SemiBold"/>
+            <RadioButton Classes="filter-chip"
+                         Content="Active"
+                         IsChecked="{Binding IsSearchFilterActive, Mode=TwoWay}"
+                         Margin="0,0,8,6"/>
 
             <!-- Filter Option: Completed Only -->
-            <RadioButton Content="Completed"
-                         GroupName="SearchFilter"
-                         Command="{Binding SetSearchStatusFilterCommand}"
-                         CommandParameter="Completed"
-                         Margin="0,0,8,6"
-                         FontSize="12"
-                         FontWeight="SemiBold"/>
+            <RadioButton Classes="filter-chip"
+                         Content="Completed"
+                         IsChecked="{Binding IsSearchFilterCompleted, Mode=TwoWay}"
+                         Margin="0,0,8,6"/>
 
             <!-- Filter Option: With Notes -->
-            <RadioButton Content="With Notes"
-                         GroupName="SearchFilter"
-                         Command="{Binding SetSearchStatusFilterCommand}"
-                         CommandParameter="WithNotes"
-                         Margin="0,0,8,6"
-                         FontSize="12"
-                         FontWeight="SemiBold"/>
+            <RadioButton Classes="filter-chip"
+                         Content="With Notes"
+                         IsChecked="{Binding IsSearchFilterWithNotes, Mode=TwoWay}"
+                         Margin="0,0,8,6"/>
           </WrapPanel>
         </StackPanel>
 

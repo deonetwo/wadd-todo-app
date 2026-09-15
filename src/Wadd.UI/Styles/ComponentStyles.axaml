@@ -1206,4 +1206,73 @@
     <Setter Property="Fill" Value="{DynamicResource AppAccentSuccessBrush}"/>
   </Style>
 
+  <!-- ══════════════ FILTER CHIP RADIO BUTTONS ══════════════ -->
+  <Style Selector="RadioButton.filter-chip">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="ChipBorder"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            RecognizesAccessKey="True"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"/>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Setter Property="Background" Value="{DynamicResource AppSurfaceElevatedBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppTextSecondaryBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="14"/>
+    <Setter Property="Padding" Value="14,6"/>
+    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Cursor" Value="Hand"/>
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.15"/>
+        <BrushTransition Property="Foreground" Duration="0:0:0.15"/>
+        <BrushTransition Property="BorderBrush" Duration="0:0:0.15"/>
+        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.10"/>
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <!-- Hover State -->
+  <Style Selector="RadioButton.filter-chip:pointerover /template/ Border#ChipBorder">
+    <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtleBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryBrush}"/>
+  </Style>
+  <Style Selector="RadioButton.filter-chip:pointerover">
+    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
+  </Style>
+  <Style Selector="RadioButton.filter-chip:pointerover TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
+  </Style>
+
+  <!-- Checked / Active State -->
+  <Style Selector="RadioButton.filter-chip:checked /template/ Border#ChipBorder">
+    <Setter Property="Background" Value="{DynamicResource AppAccentTintBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryBrush}"/>
+    <Setter Property="BorderThickness" Value="1.5"/>
+  </Style>
+  <Style Selector="RadioButton.filter-chip:checked">
+    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryBrush}"/>
+    <Setter Property="FontWeight" Value="Bold"/>
+  </Style>
+  <Style Selector="RadioButton.filter-chip:checked TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryBrush}"/>
+    <Setter Property="FontWeight" Value="Bold"/>
+  </Style>
+
+  <!-- Pressed State -->
+  <Style Selector="RadioButton.filter-chip:pressed">
+    <Setter Property="RenderTransform" Value="scale(0.96)"/>
+  </Style>
+
 </Styles>

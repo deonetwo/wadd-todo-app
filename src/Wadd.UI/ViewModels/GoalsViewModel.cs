@@ -780,7 +780,7 @@ public partial class GoalsViewModel : ViewModelBase
         AllJournalEntries.Clear();
         var rawEntries = await _goalService.GetJournalEntriesAsync();
 
-        var goalsMap = Goals.ToDictionary(g => g.Id, g => g.Title);
+        var goalsMap = Goals.GroupBy(g => g.Id).ToDictionary(g => g.Key, g => g.First().Title);
 
         foreach (var entry in rawEntries)
         {
