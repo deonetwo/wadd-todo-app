@@ -40,8 +40,10 @@ public class AndroidApplication : AvaloniaAndroidApplication<App>
 public class MainActivity : AvaloniaMainActivity
 {
     public const int RcSignIn = 9001;
+    public const int RcNotification = 1010;
     public static MainActivity? Instance { get; private set; }
     public System.Threading.Tasks.TaskCompletionSource<Wadd.Core.Interfaces.NativeAuthResult>? PendingAuthTcs { get; set; }
+    public System.Threading.Tasks.TaskCompletionSource<bool>? PendingNotificationPermissionTcs { get; set; }
 
     public static System.Threading.Tasks.TaskCompletionSource<string>? PendingWebOAuthTcs { get; set; }
 
@@ -51,6 +53,7 @@ public class MainActivity : AvaloniaMainActivity
         SQLitePCL.Batteries_V2.Init();
         base.OnCreate(savedInstanceState);
         HandleIntent(Intent);
+        RequestNotificationPermissionIfRequired();
     }
 
     protected override void OnNewIntent(global::Android.Content.Intent? intent)
@@ -145,6 +148,61 @@ public class MainActivity : AvaloniaMainActivity
                     });
                 }
             });
+        }
+    }
+
+    public void RequestNotificationPermissionIfRequired()
+    {
+        if (OperatingSystem.IsAndroidVersionAtLeast(33))
+        {
+            var settings = Wadd.Core.Helpers.AppSettingsHelper.LoadSettings();
+            if (settings.EnableNotifications && CheckSelfPermission("android.permission.POST_NOTIFICATIONS") != Permission.Granted)
+            {
+                RequestPermissions(new[] { "android.permission.POST_NOTIFICATIONS" }, RcNotification);
+            }
+        }
+    }
+
+    public System.Threading.Tasks.Task<bool> RequestNotificationPermissionAsync()
+    {
+        if (!OperatingSystem.IsAndroidVersionAtLeast(33))
+        {
+            return System.Threading.Tasks.Task.FromResult(true);
+        }
+
+        if (CheckSelfPermission("android.permission.POST_NOTIFICATIONS") == Permission.Granted)
+        {
+            return System.Threading.Tasks.Task.FromResult(true);
+        }
+
+        var tcs = new System.Threading.Tasks.TaskCompletionSource<bool>();
+        PendingNotificationPermissionTcs = tcs;
+
+        RunOnUiThread(() =>
+        {
+            try
+            {
+                RequestPermissions(new[] { "android.permission.POST_NOTIFICATIONS" }, RcNotification);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine($"[MainActivity] RequestNotificationPermissionAsync error: {ex.Message}");
+                tcs.TrySetResult(false);
+            }
+        });
+
+        return tcs.Task;
+    }
+
+    public override void OnRequestPermissionsResult(int requestCode, string[] permissions, Permission[] grantResults)
+    {
+        base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == RcNotification)
+        {
+            bool granted = grantResults != null && grantResults.Length > 0 && grantResults[0] == Permission.Granted;
+            PendingNotificationPermissionTcs?.TrySetResult(granted);
+            PendingNotificationPermissionTcs = null;
         }
     }
 

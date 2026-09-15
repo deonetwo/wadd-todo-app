@@ -454,6 +454,10 @@ public partial class MainViewModel : ViewModelBase
     partial void OnEnableNotificationsChanged(bool value)
     {
         SaveUserSettings();
+        if (value)
+        {
+            _ = _notificationService.RequestPermissionAsync();
+        }
     }
 
     [ObservableProperty]
@@ -596,6 +600,10 @@ public partial class MainViewModel : ViewModelBase
     {
         try
         {
+            if (EnableNotifications)
+            {
+                await _notificationService.RequestPermissionAsync();
+            }
             var title = "Wadd Reminder (Test)";
             var message = "Notifications are enabled and working.";
             await _notificationService.ShowNotificationAsync(title, message, "test-notification");
@@ -622,6 +630,11 @@ public partial class MainViewModel : ViewModelBase
         // When the app opens, seed existing past reminders, overdue tasks, and due-today tasks
         // so Wadd never shows unwanted pop-up notifications immediately upon launching.
         SeedInitialNotificationState();
+
+        if (EnableNotifications)
+        {
+            _ = _notificationService.RequestPermissionAsync();
+        }
 
         _reminderTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
         _reminderTimer.Tick += (_, _) => CheckReminders();

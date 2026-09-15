@@ -22,16 +22,12 @@ public class AndroidNotificationService : INotificationService
 
     public Task<bool> RequestPermissionAsync()
     {
-        if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu) // API 33+
+        if (OperatingSystem.IsAndroidVersionAtLeast(33))
         {
             var activity = MainActivity.Instance;
             if (activity != null)
             {
-                if (activity.CheckSelfPermission("android.permission.POST_NOTIFICATIONS") != Permission.Granted)
-                {
-                    activity.RequestPermissions(new[] { "android.permission.POST_NOTIFICATIONS" }, 1010);
-                    return Task.FromResult(false);
-                }
+                return activity.RequestNotificationPermissionAsync();
             }
         }
         return Task.FromResult(true);
@@ -49,6 +45,15 @@ public class AndroidNotificationService : INotificationService
         if (context == null)
         {
             return Task.CompletedTask;
+        }
+
+        if (OperatingSystem.IsAndroidVersionAtLeast(33))
+        {
+            var activity = MainActivity.Instance;
+            if (activity != null && activity.CheckSelfPermission("android.permission.POST_NOTIFICATIONS") != Permission.Granted)
+            {
+                _ = activity.RequestNotificationPermissionAsync();
+            }
         }
 
         try
