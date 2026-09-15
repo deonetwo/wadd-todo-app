@@ -25,6 +25,7 @@ public partial class MainViewModel : ViewModelBase
     private readonly IGoalService _goalService;
     private readonly IStartupService _startupService;
     private readonly IAiGoalService _aiGoalService;
+    private readonly INotificationService _notificationService;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsCustomAiProvider))]
@@ -265,6 +266,7 @@ public partial class MainViewModel : ViewModelBase
         {
             IsTestingAiConnection = true;
             AiConnectionStatusMessage = "Testing live API connection...";
+            ShowStatusBubble("Testing live API connection...", NotificationBubbleType.Info);
             IsAiConnectionSuccess = null;
 
             var (success, message, modelName) = await _aiGoalService.TestConnectionAsync(
@@ -275,11 +277,13 @@ public partial class MainViewModel : ViewModelBase
 
             IsAiConnectionSuccess = success;
             AiConnectionStatusMessage = message;
+            ShowStatusBubble(message, success ? NotificationBubbleType.Success : NotificationBubbleType.Error);
         }
         catch (Exception ex)
         {
             IsAiConnectionSuccess = false;
             AiConnectionStatusMessage = $"Connection test failed: {ex.Message}";
+            ShowStatusBubble($"Connection test failed: {ex.Message}", NotificationBubbleType.Error);
         }
         finally
         {
@@ -391,6 +395,7 @@ public partial class MainViewModel : ViewModelBase
 
     public bool IsDesktopPlatform => !OperatingSystem.IsAndroid() && !OperatingSystem.IsIOS();
     public bool IsWindowsPlatform => OperatingSystem.IsWindows();
+    public bool IsAndroidPlatform => OperatingSystem.IsAndroid();
 
     public event EventHandler<bool>? TrayIconVisibilityChanged;
 
@@ -444,7 +449,398 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [ObservableProperty]
+    private bool _enableNotifications = true;
+
+    partial void OnEnableNotificationsChanged(bool value)
+    {
+        SaveUserSettings();
+    }
+
+    [ObservableProperty]
+    private bool _notifyOnTaskReminder = true;
+
+    partial void OnNotifyOnTaskReminderChanged(bool value)
+    {
+        SaveUserSettings();
+    }
+
+    [ObservableProperty]
+    private bool _notifyOnOverdueTasks = true;
+
+    partial void OnNotifyOnOverdueTasksChanged(bool value)
+    {
+        SaveUserSettings();
+    }
+
+    [ObservableProperty]
+    private bool _notifyOnTaskDueDate = true;
+
+    partial void OnNotifyOnTaskDueDateChanged(bool value)
+    {
+        SaveUserSettings();
+    }
+
+    [ObservableProperty]
+    private int _notificationLeadTimeMinutes = 0;
+
+    partial void OnNotificationLeadTimeMinutesChanged(int value)
+    {
+        SelectedNotificationLeadTimeOption = NotificationLeadTimeOptions.FirstOrDefault(x => x.Minutes == value) ?? NotificationLeadTimeOptions[0];
+        SaveUserSettings();
+    }
+
+    public List<NotificationLeadTimeOption> NotificationLeadTimeOptions { get; } = new()
+    {
+        new NotificationLeadTimeOption { Minutes = 0, Name = "At time of event", Description = "Remind me right when the time arrives" },
+        new NotificationLeadTimeOption { Minutes = 5, Name = "5 minutes before", Description = "Remind me 5 minutes in advance" },
+        new NotificationLeadTimeOption { Minutes = 10, Name = "10 minutes before", Description = "Remind me 10 minutes in advance" },
+        new NotificationLeadTimeOption { Minutes = 15, Name = "15 minutes before", Description = "Remind me 15 minutes in advance" },
+        new NotificationLeadTimeOption { Minutes = 30, Name = "30 minutes before", Description = "Remind me 30 minutes in advance" },
+        new NotificationLeadTimeOption { Minutes = 60, Name = "1 hour before", Description = "Remind me 1 hour in advance" }
+    };
+
+    [ObservableProperty]
+    private NotificationLeadTimeOption? _selectedNotificationLeadTimeOption;
+
+    partial void OnSelectedNotificationLeadTimeOptionChanged(NotificationLeadTimeOption? value)
+    {
+        if (value != null && value.Minutes != NotificationLeadTimeMinutes)
+        {
+            NotificationLeadTimeMinutes = value.Minutes;
+        }
+    }
+
+    [ObservableProperty]
+    private int _notificationRepeatIntervalMinutes = 0;
+
+    partial void OnNotificationRepeatIntervalMinutesChanged(int value)
+    {
+        SelectedNotificationRepeatIntervalOption = NotificationRepeatIntervalOptions.FirstOrDefault(x => x.Minutes == value) ?? NotificationRepeatIntervalOptions[0];
+        SaveUserSettings();
+    }
+
+    public List<NotificationRepeatIntervalOption> NotificationRepeatIntervalOptions { get; } = new()
+    {
+        new NotificationRepeatIntervalOption { Minutes = 0, Name = "Don't repeat (once only)", Description = "Remind me only once when the reminder or due date arrives" },
+        new NotificationRepeatIntervalOption { Minutes = 30, Name = "Every 30 minutes", Description = "Remind me every 30 minutes until finished" },
+        new NotificationRepeatIntervalOption { Minutes = 60, Name = "Every 1 hour", Description = "Remind me every hour until finished" },
+        new NotificationRepeatIntervalOption { Minutes = 120, Name = "Every 2 hours", Description = "Remind me every 2 hours until finished" },
+        new NotificationRepeatIntervalOption { Minutes = 180, Name = "Every 3 hours", Description = "Remind me every 3 hours until finished" },
+        new NotificationRepeatIntervalOption { Minutes = 300, Name = "Every 5 hours", Description = "Remind me every 5 hours until finished" }
+    };
+
+    [ObservableProperty]
+    private NotificationRepeatIntervalOption? _selectedNotificationRepeatIntervalOption;
+
+    partial void OnSelectedNotificationRepeatIntervalOptionChanged(NotificationRepeatIntervalOption? value)
+    {
+        if (value != null && value.Minutes != NotificationRepeatIntervalMinutes)
+        {
+            NotificationRepeatIntervalMinutes = value.Minutes;
+        }
+    }
+
+    [ObservableProperty]
+    private bool _playNotificationSound = true;
+
+    partial void OnPlayNotificationSoundChanged(bool value)
+    {
+        SaveUserSettings();
+    }
+
+    [ObservableProperty]
+    private bool _windowsToastNotifications = true;
+
+    partial void OnWindowsToastNotificationsChanged(bool value)
+    {
+        SaveUserSettings();
+    }
+
+    [ObservableProperty]
+    private bool _windowsNotificationIncludeNotes = true;
+
+    partial void OnWindowsNotificationIncludeNotesChanged(bool value)
+    {
+        SaveUserSettings();
+    }
+
+    [ObservableProperty]
+    private bool _androidVibration = true;
+
+    partial void OnAndroidVibrationChanged(bool value)
+    {
+        SaveUserSettings();
+    }
+
+    [ObservableProperty]
+    private bool _androidHighPriorityChannel = true;
+
+    partial void OnAndroidHighPriorityChannelChanged(bool value)
+    {
+        SaveUserSettings();
+    }
+
+    [ObservableProperty]
+    private bool _androidStickyReminders;
+
+    partial void OnAndroidStickyRemindersChanged(bool value)
+    {
+        SaveUserSettings();
+    }
+
+    [ObservableProperty]
+    private string _testNotificationFeedback = string.Empty;
+
+    [RelayCommand]
+    public async Task SendTestNotificationAsync()
+    {
+        try
+        {
+            var title = "Wadd Reminder (Test)";
+            var message = "Notifications are enabled and working.";
+            await _notificationService.ShowNotificationAsync(title, message, "test-notification");
+            TestNotificationFeedback = $"Test notification sent ({DateTime.Now:HH:mm:ss}).";
+            ShowStatusBubble("Test notification sent.", NotificationBubbleType.Success);
+        }
+        catch (Exception ex)
+        {
+            TestNotificationFeedback = $"Failed to send test notification: {ex.Message}";
+            ShowStatusBubble($"Failed to send test notification: {ex.Message}", NotificationBubbleType.Error);
+        }
+    }
+
+    private DispatcherTimer? _reminderTimer;
+    private readonly HashSet<Guid> _notifiedReminderIds = new();
+    private readonly HashSet<Guid> _notifiedDueDateIds = new();
+    private readonly HashSet<Guid> _notifiedOverdueIds = new();
+    private readonly Dictionary<Guid, DateTime> _lastNotifiedTimes = new();
+    private DateTime _lastDueDateCheckDay = DateTime.Today;
+
+    private void StartReminderChecker()
+    {
+        // When the app opens, seed existing past reminders, overdue tasks, and due-today tasks
+        // so Wadd never shows unwanted pop-up notifications immediately upon launching.
+        SeedInitialNotificationState();
+
+        _reminderTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
+        _reminderTimer.Tick += (_, _) => CheckReminders();
+        _reminderTimer.Start();
+    }
+
+    private void SeedInitialNotificationState()
+    {
+        var now = DateTime.Now;
+        var today = now.Date;
+
+        foreach (var item in TodoItems)
+        {
+            if (item.IsCompleted) continue;
+
+            if (item.ReminderAt.HasValue && item.ReminderAt.Value <= now)
+            {
+                _notifiedReminderIds.Add(item.Id);
+                _lastNotifiedTimes[item.Id] = now;
+            }
+
+            bool isOverdue = (item.DueDate.HasValue && item.DueDate.Value.Date < today) ||
+                             (item.ReminderAt.HasValue && item.ReminderAt.Value.Date < today);
+            if (isOverdue)
+            {
+                _notifiedOverdueIds.Add(item.Id);
+                _lastNotifiedTimes[item.Id] = now;
+            }
+
+            if (item.DueDate.HasValue && item.DueDate.Value.Date == today)
+            {
+                _notifiedDueDateIds.Add(item.Id);
+                _lastNotifiedTimes[item.Id] = now;
+            }
+        }
+    }
+
+    private enum TaskNotificationCategory
+    {
+        Reminder,
+        Overdue,
+        DueToday
+    }
+
+    public void CheckReminders()
+    {
+        if (!EnableNotifications) return;
+
+        var now = DateTime.Now;
+        var today = now.Date;
+
+        if (today != _lastDueDateCheckDay)
+        {
+            _lastDueDateCheckDay = today;
+            _notifiedDueDateIds.Clear();
+            _notifiedReminderIds.Clear();
+            _notifiedOverdueIds.Clear();
+        }
+
+        var pendingAlerts = new List<(TodoItemViewModel Item, TaskNotificationCategory Category, string Title, string Body)>();
+
+        foreach (var item in TodoItems)
+        {
+            if (item.IsCompleted)
+            {
+                _lastNotifiedTimes.Remove(item.Id);
+                continue;
+            }
+
+            bool shouldRepeat = NotificationRepeatIntervalMinutes > 0
+                && _lastNotifiedTimes.TryGetValue(item.Id, out var lastTime)
+                && (now - lastTime).TotalMinutes >= NotificationRepeatIntervalMinutes;
+
+            // 1. Check Scheduled Task Reminders for today
+            if (NotifyOnTaskReminder && item.ReminderAt.HasValue)
+            {
+                var triggerTime = item.ReminderAt.Value.AddMinutes(-NotificationLeadTimeMinutes);
+                if (triggerTime <= now)
+                {
+                    if (!_notifiedReminderIds.Contains(item.Id))
+                    {
+                        _notifiedReminderIds.Add(item.Id);
+                        _lastNotifiedTimes[item.Id] = now;
+                        var body = item.HasDescription
+                            ? $"{item.Title} - {item.DescriptionPreview}"
+                            : item.Title;
+                        pendingAlerts.Add((item, TaskNotificationCategory.Reminder, $"Reminder: {item.Title}", body));
+                        continue;
+                    }
+                    else if (shouldRepeat)
+                    {
+                        _lastNotifiedTimes[item.Id] = now;
+                        var body = item.HasDescription
+                            ? $"{item.Title} - {item.DescriptionPreview}"
+                            : item.Title;
+                        pendingAlerts.Add((item, TaskNotificationCategory.Reminder, $"Reminder: {item.Title}", body));
+                        continue;
+                    }
+                }
+            }
+
+            // 2. Check Overdue Tasks
+            if (NotifyOnOverdueTasks)
+            {
+                bool isOverdue = (item.DueDate.HasValue && item.DueDate.Value.Date < today) ||
+                                 (item.ReminderAt.HasValue && item.ReminderAt.Value.Date < today);
+
+                if (isOverdue)
+                {
+                    if (!_notifiedOverdueIds.Contains(item.Id))
+                    {
+                        _notifiedOverdueIds.Add(item.Id);
+                        _lastNotifiedTimes[item.Id] = now;
+                        var body = item.HasDescription
+                            ? $"{item.Title} - {item.DescriptionPreview}"
+                            : item.Title;
+                        pendingAlerts.Add((item, TaskNotificationCategory.Overdue, $"Overdue: {item.Title}", body));
+                        continue;
+                    }
+                    else if (shouldRepeat)
+                    {
+                        _lastNotifiedTimes[item.Id] = now;
+                        var body = item.HasDescription
+                            ? $"{item.Title} - {item.DescriptionPreview}"
+                            : item.Title;
+                        pendingAlerts.Add((item, TaskNotificationCategory.Overdue, $"Overdue: {item.Title}", body));
+                        continue;
+                    }
+                }
+            }
+
+            // 3. Check Due Date Today Alerts
+            if (NotifyOnTaskDueDate && item.DueDate.HasValue && item.DueDate.Value.Date == today)
+            {
+                if (!_notifiedDueDateIds.Contains(item.Id))
+                {
+                    _notifiedDueDateIds.Add(item.Id);
+                    _lastNotifiedTimes[item.Id] = now;
+                    var body = item.HasDescription
+                        ? $"{item.Title} - {item.DescriptionPreview}"
+                        : item.Title;
+                    pendingAlerts.Add((item, TaskNotificationCategory.DueToday, $"Due Today: {item.Title}", body));
+                }
+                else if (shouldRepeat)
+                {
+                    _lastNotifiedTimes[item.Id] = now;
+                    var body = item.HasDescription
+                        ? $"{item.Title} - {item.DescriptionPreview}"
+                        : item.Title;
+                    pendingAlerts.Add((item, TaskNotificationCategory.DueToday, $"Due Today: {item.Title}", body));
+                }
+            }
+        }
+
+        if (pendingAlerts.Count == 0)
+        {
+            return;
+        }
+
+        if (pendingAlerts.Count == 1)
+        {
+            var single = pendingAlerts[0];
+            _ = _notificationService.ShowNotificationAsync(single.Title, single.Body, single.Item.Id.ToString());
+            return;
+        }
+
+        // Multiple notifications triggered simultaneously -> Bundle into a single summary notification
+        // to prevent sound spam, screen clutter, and OS throttling.
+        var totalCount = pendingAlerts.Count;
+        string bundleTitle;
+
+        bool allReminders = pendingAlerts.All(p => p.Category == TaskNotificationCategory.Reminder);
+        bool allOverdue = pendingAlerts.All(p => p.Category == TaskNotificationCategory.Overdue);
+        bool allDueToday = pendingAlerts.All(p => p.Category == TaskNotificationCategory.DueToday);
+
+        if (allReminders)
+        {
+            bundleTitle = $"{totalCount} Task Reminders";
+        }
+        else if (allOverdue)
+        {
+            bundleTitle = $"{totalCount} Overdue Tasks";
+        }
+        else if (allDueToday)
+        {
+            bundleTitle = $"{totalCount} Tasks Due Today";
+        }
+        else
+        {
+            bundleTitle = $"{totalCount} Task Reminders";
+        }
+
+        const int maxDisplayItems = 3;
+        var displayLines = pendingAlerts.Take(maxDisplayItems)
+            .Select(p => $"• {p.Item.Title}");
+
+        string bundleBody;
+        if (totalCount <= maxDisplayItems)
+        {
+            bundleBody = string.Join("\n", displayLines);
+        }
+        else
+        {
+            var remaining = totalCount - maxDisplayItems;
+            bundleBody = string.Join("\n", displayLines) + $"\n+ {remaining} more tasks";
+        }
+
+        _ = _notificationService.ShowNotificationAsync(bundleTitle, bundleBody, "tasks-summary");
+    }
+
+    [ObservableProperty]
     private GoalsViewModel _goalsVM;
+
+    partial void OnGoalsVMChanged(GoalsViewModel value)
+    {
+        if (value != null)
+        {
+            value.StatusNotificationRequested = (msg, type) => ShowStatusBubble(msg, type);
+        }
+    }
 
     private readonly HashSet<Guid> _togglingTaskIds = new();
 
@@ -469,27 +865,87 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     private string _statusMessage = "Ready";
 
-    partial void OnStatusMessageChanged(string value)
+    public void ShowStatusBubble(string message, NotificationBubbleType? type = null)
     {
-        if (string.IsNullOrWhiteSpace(value) || value == "Ready")
+        if (string.IsNullOrWhiteSpace(message) || message == "Ready")
             return;
 
-        var notif = new NotificationBubbleItem(value);
-        StatusNotifications.Add(notif);
+        var resolvedType = type ?? InferBubbleType(message);
 
-        Task.Run(async () =>
+        Action addAction = () =>
         {
-            await Task.Delay(4000);
-            await Dispatcher.UIThread.InvokeAsync(() =>
+            var notif = new NotificationBubbleItem(message, resolvedType);
+            StatusNotifications.Add(notif);
+
+            Task.Run(async () =>
             {
-                notif.Opacity = 0.0;
+                await Task.Delay(4000);
+                try
+                {
+                    if (Avalonia.Application.Current == null || Dispatcher.UIThread.CheckAccess())
+                    {
+                        notif.Opacity = 0.0;
+                    }
+                    else
+                    {
+                        await Dispatcher.UIThread.InvokeAsync(() => notif.Opacity = 0.0);
+                    }
+                }
+                catch { }
+
+                await Task.Delay(450);
+                try
+                {
+                    if (Avalonia.Application.Current == null || Dispatcher.UIThread.CheckAccess())
+                    {
+                        StatusNotifications.Remove(notif);
+                    }
+                    else
+                    {
+                        await Dispatcher.UIThread.InvokeAsync(() => StatusNotifications.Remove(notif));
+                    }
+                }
+                catch { }
             });
-            await Task.Delay(450);
-            await Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                StatusNotifications.Remove(notif);
-            });
-        });
+        };
+
+        if (Avalonia.Application.Current == null || Dispatcher.UIThread.CheckAccess())
+        {
+            addAction();
+        }
+        else
+        {
+            Dispatcher.UIThread.Post(addAction);
+        }
+    }
+
+    public static NotificationBubbleType InferBubbleType(string message)
+    {
+        if (string.IsNullOrWhiteSpace(message)) return NotificationBubbleType.Info;
+
+        var lower = message.ToLowerInvariant();
+        if (lower.Contains("error") || lower.Contains("failed") || lower.Contains("failure"))
+        {
+            return NotificationBubbleType.Error;
+        }
+
+        if (lower.Contains("warning") || lower.Contains("cannot") || lower.Contains("exceeded") ||
+            lower.Contains("require your review") || lower.Contains("past"))
+        {
+            return NotificationBubbleType.Warning;
+        }
+
+        if (lower.Contains("success") || lower.Contains("successfully") || lower.StartsWith("✓"))
+        {
+            return NotificationBubbleType.Success;
+        }
+
+        return NotificationBubbleType.Info;
+    }
+
+    partial void OnStatusMessageChanged(string value)
+    {
+        ShowStatusBubble(value);
     }
 
     [ObservableProperty]
@@ -2606,11 +3062,12 @@ public partial class MainViewModel : ViewModelBase
         App.Services?.GetService<IExportService>() ?? new ExcelExportService(),
         App.Services?.GetService<IGoalService>() ?? new SQLiteGoalService(),
         App.Services?.GetService<IStartupService>() ?? new WindowsStartupService(),
-        App.Services?.GetService<IAiGoalService>() ?? new Wadd.Services.AiGoalService(new System.Net.Http.HttpClient()))
+        App.Services?.GetService<IAiGoalService>() ?? new Wadd.Services.AiGoalService(new System.Net.Http.HttpClient()),
+        App.Services?.GetService<INotificationService>() ?? new WindowsNotificationService())
     {
     }
 
-    public MainViewModel(ITodoService todoService, IThemeService themeService, ISyncService syncService, IExportService exportService, IGoalService goalService, IStartupService startupService, IAiGoalService aiGoalService)
+    public MainViewModel(ITodoService todoService, IThemeService themeService, ISyncService syncService, IExportService exportService, IGoalService goalService, IStartupService startupService, IAiGoalService aiGoalService, INotificationService notificationService)
     {
         _todoService = todoService ?? throw new ArgumentNullException(nameof(todoService));
         _themeService = themeService ?? throw new ArgumentNullException(nameof(themeService));
@@ -2619,9 +3076,12 @@ public partial class MainViewModel : ViewModelBase
         _goalService = goalService ?? throw new ArgumentNullException(nameof(goalService));
         _startupService = startupService ?? throw new ArgumentNullException(nameof(startupService));
         _aiGoalService = aiGoalService ?? throw new ArgumentNullException(nameof(aiGoalService));
+        _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
         _goalsVM = new GoalsViewModel(_goalService, _aiGoalService);
+        _goalsVM.StatusNotificationRequested = (msg, type) => ShowStatusBubble(msg, type);
         _selectedTasksLayoutOption = TasksLayoutOptions[0];
         LoadUserSettings();
+        StartReminderChecker();
 
         IConflictRepository conflictRepo;
         if (_todoService is SQLiteTodoService sqliteSvc)
@@ -2784,11 +3244,11 @@ public partial class MainViewModel : ViewModelBase
         try
         {
             await _syncService.SyncAsync();
-            StatusMessage = "✓ All task updates have been reviewed successfully.";
+            StatusMessage = "All task updates have been reviewed successfully.";
         }
         catch (Exception ex)
         {
-            StatusMessage = $"✓ Task updates saved. Sync update pending: {ex.Message}";
+            StatusMessage = $"Task updates saved. Sync update pending: {ex.Message}";
         }
     }
 
@@ -3181,7 +3641,7 @@ public partial class MainViewModel : ViewModelBase
                 }
                 else
                 {
-                    StatusMessage = "✓ Sync completed successfully.";
+                    StatusMessage = "Sync completed successfully.";
                 }
             }
             else
@@ -3474,17 +3934,32 @@ public partial class MainViewModel : ViewModelBase
     }
 }
 
+public enum NotificationBubbleType
+{
+    Info,
+    Success,
+    Warning,
+    Error
+}
+
 public partial class NotificationBubbleItem : ObservableObject
 {
     public string Message { get; }
     public string Timestamp { get; }
+    public NotificationBubbleType Type { get; }
+
+    public bool IsInfo => Type == NotificationBubbleType.Info;
+    public bool IsSuccess => Type == NotificationBubbleType.Success;
+    public bool IsWarning => Type == NotificationBubbleType.Warning;
+    public bool IsError => Type == NotificationBubbleType.Error;
 
     [ObservableProperty]
     private double _opacity = 1.0;
 
-    public NotificationBubbleItem(string message)
+    public NotificationBubbleItem(string message, NotificationBubbleType type = NotificationBubbleType.Info)
     {
         Message = message;
+        Type = type;
         Timestamp = DateTime.Now.ToString("HH:mm");
     }
 }
@@ -3548,6 +4023,21 @@ public partial class MainViewModel
         _aiGoalService.CustomBaseUrl = AiCustomBaseUrl;
         _aiGoalService.CustomModel = AiCustomModel;
 
+        EnableNotifications = settings.EnableNotifications;
+        NotifyOnTaskReminder = settings.NotifyOnTaskReminder;
+        NotifyOnOverdueTasks = settings.NotifyOnOverdueTasks;
+        NotifyOnTaskDueDate = settings.NotifyOnTaskDueDate;
+        NotificationLeadTimeMinutes = settings.NotificationLeadTimeMinutes;
+        SelectedNotificationLeadTimeOption = NotificationLeadTimeOptions.FirstOrDefault(x => x.Minutes == settings.NotificationLeadTimeMinutes) ?? NotificationLeadTimeOptions[0];
+        NotificationRepeatIntervalMinutes = settings.NotificationRepeatIntervalMinutes;
+        SelectedNotificationRepeatIntervalOption = NotificationRepeatIntervalOptions.FirstOrDefault(x => x.Minutes == settings.NotificationRepeatIntervalMinutes) ?? NotificationRepeatIntervalOptions[0];
+        PlayNotificationSound = settings.PlayNotificationSound;
+        WindowsToastNotifications = true; // Always on
+        WindowsNotificationIncludeNotes = true; // Always on
+        AndroidVibration = settings.AndroidVibration;
+        AndroidHighPriorityChannel = settings.AndroidHighPriorityChannel;
+        AndroidStickyReminders = settings.AndroidStickyReminders;
+
         _ = LoadAvailableModelsAsync(forceLive: false);
     }
 
@@ -3563,6 +4053,18 @@ public partial class MainViewModel
         settings.MinimizeToTray = MinimizeToTray;
         settings.CloseToTray = CloseToTray;
         settings.EnableTrayIcon = EnableTrayIcon;
+        settings.EnableNotifications = EnableNotifications;
+        settings.NotifyOnTaskReminder = NotifyOnTaskReminder;
+        settings.NotifyOnOverdueTasks = NotifyOnOverdueTasks;
+        settings.NotifyOnTaskDueDate = NotifyOnTaskDueDate;
+        settings.NotificationLeadTimeMinutes = NotificationLeadTimeMinutes;
+        settings.NotificationRepeatIntervalMinutes = NotificationRepeatIntervalMinutes;
+        settings.PlayNotificationSound = PlayNotificationSound;
+        settings.WindowsToastNotifications = true; // Always on
+        settings.WindowsNotificationIncludeNotes = true; // Always on
+        settings.AndroidVibration = AndroidVibration;
+        settings.AndroidHighPriorityChannel = AndroidHighPriorityChannel;
+        settings.AndroidStickyReminders = AndroidStickyReminders;
         settings.AiProvider = AiProvider;
         settings.AiApiKey = AiApiKey;
         settings.AiCustomBaseUrl = AiCustomBaseUrl;
@@ -3591,9 +4093,8 @@ public partial class MainViewModel
 
     private static DateTime GetEndOfWeek(DateTime date)
     {
-        int diff = DayOfWeek.Sunday - date.DayOfWeek;
-        if (diff < 0) diff += 7;
-        return date.AddDays(diff);
+        int diff = (7 + (date.DayOfWeek - DayOfWeek.Monday)) % 7;
+        return date.AddDays(6 - diff).Date;
     }
 }
 
@@ -3619,5 +4120,19 @@ public class AiProviderOption
     public string KeyWatermark { get; set; } = string.Empty;
     public string KeyHelpText { get; set; } = string.Empty;
     public string DefaultModel { get; set; } = string.Empty;
+}
+
+public class NotificationLeadTimeOption
+{
+    public int Minutes { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+}
+
+public class NotificationRepeatIntervalOption
+{
+    public int Minutes { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
 }
 

@@ -41,6 +41,13 @@ public partial class App : Application
             {
                 collection.AddSingleton(typeof(Wadd.Core.Interfaces.INativeGoogleAuthService), androidAuthType);
             }
+
+            var androidNotifType = Type.GetType("Wadd.Android.AndroidNotificationService, Wadd.Android")
+                                  ?? System.Reflection.Assembly.GetEntryAssembly()?.GetType("Wadd.Android.AndroidNotificationService");
+            if (androidNotifType != null)
+            {
+                collection.AddSingleton(typeof(Wadd.Core.Interfaces.INotificationService), androidNotifType);
+            }
         }
 
         collection.AddTransient<MainViewModel>();

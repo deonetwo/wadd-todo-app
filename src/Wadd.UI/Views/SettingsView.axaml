@@ -333,6 +333,243 @@
         </StackPanel>
       </Border>
 
+      <!-- Notifications -->
+      <Border Classes="content-block">
+        <StackPanel Spacing="16">
+          <TextBlock Text="NOTIFICATIONS" Classes="micro"/>
+          <StackPanel Spacing="4">
+            <TextBlock Text="Reminders &amp; Notifications" Classes="heading"/>
+            <TextBlock Text="Get helpful reminders so you never miss an important task or deadline."
+                       Classes="small"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+          </StackPanel>
+
+          <!-- 1. Master Notifications Toggle -->
+          <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+            <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+              <TextBlock Text="Allow Notifications" Classes="heading"/>
+              <TextBlock Text="Receive pop-up reminders and alerts for your tasks."
+                         Classes="small"
+                         TextWrapping="Wrap"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1"
+                          IsChecked="{Binding EnableNotifications, Mode=TwoWay}"
+                          OnContent=""
+                          OffContent=""
+                          VerticalAlignment="Center"/>
+          </Grid>
+
+          <!-- Sub-options (enabled when Master Switch is ON) -->
+          <StackPanel Spacing="16" IsEnabled="{Binding EnableNotifications}">
+
+            <Separator Classes="divider" Margin="0,4"/>
+
+            <!-- 2. Task Reminders Alert -->
+            <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+              <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+                <TextBlock Text="Remind at Set Time" Classes="heading"/>
+                <TextBlock Text="Notify you when a task's reminder time arrives."
+                           Classes="small"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </StackPanel>
+              <ToggleSwitch Grid.Column="1"
+                            IsChecked="{Binding NotifyOnTaskReminder, Mode=TwoWay}"
+                            OnContent=""
+                            OffContent=""
+                            VerticalAlignment="Center"/>
+            </Grid>
+
+            <Separator Classes="divider" Margin="0,4"/>
+
+            <!-- 3. Overdue & Missed Tasks Alert -->
+            <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+              <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+                <TextBlock Text="Missed &amp; Overdue Tasks" Classes="heading"/>
+                <TextBlock Text="Notify you if you have tasks that passed their reminder or due date."
+                           Classes="small"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </StackPanel>
+              <ToggleSwitch Grid.Column="1"
+                            IsChecked="{Binding NotifyOnOverdueTasks, Mode=TwoWay}"
+                            OnContent=""
+                            OffContent=""
+                            VerticalAlignment="Center"/>
+            </Grid>
+
+            <Separator Classes="divider" Margin="0,4"/>
+
+            <!-- 4. Due Date Alerts -->
+            <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+              <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+                <TextBlock Text="Tasks Due Today" Classes="heading"/>
+                <TextBlock Text="Get a friendly reminder for tasks scheduled for today."
+                           Classes="small"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </StackPanel>
+              <ToggleSwitch Grid.Column="1"
+                            IsChecked="{Binding NotifyOnTaskDueDate, Mode=TwoWay}"
+                            OnContent=""
+                            OffContent=""
+                            VerticalAlignment="Center"/>
+            </Grid>
+
+            <Separator Classes="divider" Margin="0,4"/>
+
+            <!-- 5. Repeat Frequency for Unfinished Tasks -->
+            <StackPanel Spacing="10" Margin="0,4,0,0">
+              <StackPanel Spacing="4">
+                <TextBlock Text="Repeat Until Completed" Classes="heading"/>
+                <TextBlock Text="How often to remind you if an active task hasn't been finished yet."
+                           Classes="small"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </StackPanel>
+
+              <ComboBox ItemsSource="{Binding NotificationRepeatIntervalOptions}"
+                        SelectedItem="{Binding SelectedNotificationRepeatIntervalOption, Mode=TwoWay}"
+                        HorizontalAlignment="Left"
+                        MinWidth="320"
+                        MaxWidth="440"
+                        Margin="0,2,0,0">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="vm:NotificationRepeatIntervalOption">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,2">
+                      <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                        <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                      </StackPanel>
+                    </Grid>
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+            </StackPanel>
+
+            <Separator Classes="divider" Margin="0,4"/>
+
+            <!-- 6. Reminder Lead Time -->
+            <StackPanel Spacing="10" Margin="0,4,0,0">
+              <StackPanel Spacing="4">
+                <TextBlock Text="Remind in Advance" Classes="heading"/>
+                <TextBlock Text="How early you'd like to be reminded before a scheduled task time."
+                           Classes="small"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </StackPanel>
+
+              <ComboBox ItemsSource="{Binding NotificationLeadTimeOptions}"
+                        SelectedItem="{Binding SelectedNotificationLeadTimeOption, Mode=TwoWay}"
+                        HorizontalAlignment="Left"
+                        MinWidth="320"
+                        MaxWidth="440"
+                        Margin="0,2,0,0">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="vm:NotificationLeadTimeOption">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,2">
+                      <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                        <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                      </StackPanel>
+                    </Grid>
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+            </StackPanel>
+
+            <Separator Classes="divider" Margin="0,4"/>
+
+            <!-- 7. Play Sound -->
+            <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+              <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+                <TextBlock Text="Notification Sound" Classes="heading"/>
+                <TextBlock Text="Play a gentle sound when a notification arrives."
+                           Classes="small"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </StackPanel>
+              <ToggleSwitch Grid.Column="1"
+                            IsChecked="{Binding PlayNotificationSound, Mode=TwoWay}"
+                            OnContent=""
+                            OffContent=""
+                            VerticalAlignment="Center"/>
+            </Grid>
+
+
+            <!-- 9. Android Platform Notification Preferences (ONLY ON ANDROID) -->
+            <StackPanel Spacing="16" IsVisible="{Binding IsAndroidPlatform}">
+              <Separator Classes="divider" Margin="0,4"/>
+
+              <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+                <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+                  <TextBlock Text="Vibrate on Alert" Classes="heading"/>
+                  <TextBlock Text="Vibrate your device when a notification arrives."
+                             Classes="small"
+                             TextWrapping="Wrap"
+                             Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                </StackPanel>
+                <ToggleSwitch Grid.Column="1"
+                              IsChecked="{Binding AndroidVibration, Mode=TwoWay}"
+                              OnContent=""
+                              OffContent=""
+                              VerticalAlignment="Center"/>
+              </Grid>
+
+              <Separator Classes="divider" Margin="0,4"/>
+
+              <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+                <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+                  <TextBlock Text="Pop-up Banners" Classes="heading"/>
+                  <TextBlock Text="Show notification banners on top of running apps."
+                             Classes="small"
+                             TextWrapping="Wrap"
+                             Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                </StackPanel>
+                <ToggleSwitch Grid.Column="1"
+                              IsChecked="{Binding AndroidHighPriorityChannel, Mode=TwoWay}"
+                              OnContent=""
+                              OffContent=""
+                              VerticalAlignment="Center"/>
+              </Grid>
+
+              <Separator Classes="divider" Margin="0,4"/>
+
+              <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+                <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+                  <TextBlock Text="Keep in Notification Drawer" Classes="heading"/>
+                  <TextBlock Text="Keep reminders pinned in your notification bar until dismissed."
+                             Classes="small"
+                             TextWrapping="Wrap"
+                             Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                </StackPanel>
+                <ToggleSwitch Grid.Column="1"
+                              IsChecked="{Binding AndroidStickyReminders, Mode=TwoWay}"
+                              OnContent=""
+                              OffContent=""
+                              VerticalAlignment="Center"/>
+              </Grid>
+            </StackPanel>
+
+            <Separator Classes="divider" Margin="0,4"/>
+
+            <!-- Test Notification Action Button -->
+            <Button Classes="outline"
+                    Command="{Binding SendTestNotificationCommand}"
+                    HorizontalAlignment="Left"
+                    Margin="0,4,0,0">
+              <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <PathIcon Data="{StaticResource BellIconData}" Width="13" Height="13" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                <TextBlock Text="Send Test Notification" FontSize="12" FontWeight="SemiBold"/>
+              </StackPanel>
+            </Button>
+
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
       <!-- 3. Private Google Drive Cloud Sync -->
       <Border Classes="content-block">
         <StackPanel Spacing="16">
@@ -691,53 +928,21 @@
                        Margin="2,1,0,0"/>
           </StackPanel>
 
-          <!-- Test API Connection Button & Feedback Banner -->
-          <StackPanel Spacing="8" HorizontalAlignment="Stretch" Margin="0,2,0,0">
-            <Button Command="{Binding TestAiConnectionCommand}"
-                    Classes="btn-secondary"
-                    HorizontalAlignment="Left"
-                    Padding="14,8"
-                    MinHeight="36"
-                    CornerRadius="6"
-                    IsEnabled="{Binding !IsTestingAiConnection}">
-              <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                <PathIcon Data="{StaticResource SparkleIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                <TextBlock Text="Test API Connection" FontSize="12" FontWeight="SemiBold" IsVisible="{Binding !IsTestingAiConnection}"/>
-                <TextBlock Text="Testing Connection..." FontSize="12" FontWeight="SemiBold" IsVisible="{Binding IsTestingAiConnection}"/>
-              </StackPanel>
-            </Button>
-
-            <!-- Test Connection Result Banner -->
-            <Border Background="{DynamicResource AppSurfaceSubtleBrush}"
-                    BorderBrush="{DynamicResource AppBorderBrush}"
-                    BorderThickness="1"
-                    CornerRadius="8"
-                    Padding="12,10"
-                    HorizontalAlignment="Stretch"
-                    IsVisible="{Binding AiConnectionStatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-              <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-                <PathIcon Grid.Column="0"
-                          Data="{StaticResource CheckIconData}"
-                          Width="14" Height="14"
-                          Foreground="#22C55E"
-                          VerticalAlignment="Top"
-                          Margin="0,2,0,0"
-                          IsVisible="{Binding IsAiConnectionSuccess, FallbackValue=False}"/>
-                <PathIcon Grid.Column="0"
-                          Data="{StaticResource CloseIconData}"
-                          Width="14" Height="14"
-                          Foreground="#EF4444"
-                          VerticalAlignment="Top"
-                          Margin="0,2,0,0"
-                          IsVisible="{Binding !IsAiConnectionSuccess, FallbackValue=False}"/>
-                <TextBlock Grid.Column="1"
-                           Text="{Binding AiConnectionStatusMessage}"
-                           FontSize="12"
-                           Foreground="{DynamicResource AppTextPrimaryBrush}"
-                           TextWrapping="Wrap"/>
-              </Grid>
-            </Border>
-          </StackPanel>
+          <!-- Test API Connection Button -->
+          <Button Command="{Binding TestAiConnectionCommand}"
+                  Classes="btn-secondary"
+                  HorizontalAlignment="Left"
+                  Padding="14,8"
+                  MinHeight="36"
+                  CornerRadius="6"
+                  Margin="0,2,0,0"
+                  IsEnabled="{Binding !IsTestingAiConnection}">
+            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+              <PathIcon Data="{StaticResource SparkleIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}"/>
+              <TextBlock Text="Test API Connection" FontSize="12" FontWeight="SemiBold" IsVisible="{Binding !IsTestingAiConnection}"/>
+              <TextBlock Text="Testing Connection..." FontSize="12" FontWeight="SemiBold" IsVisible="{Binding IsTestingAiConnection}"/>
+            </StackPanel>
+          </Button>
 
           <!-- Helpful note -->
           <Border Background="{DynamicResource AppSurfaceSubtleBrush}"

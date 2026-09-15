@@ -49,8 +49,12 @@
                      Text="{Binding SearchQuery, Mode=TwoWay}"
                      FontSize="20"
                      FontWeight="Medium"
-                     Padding="14,8"
+                     Padding="14,6"
                      Height="44"
+                     VerticalContentAlignment="Center"
+                     AcceptsReturn="False"
+                     ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                      CornerRadius="0"
                      HorizontalAlignment="Stretch">
               <TextBox.KeyBindings>

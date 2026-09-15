@@ -285,6 +285,13 @@ public partial class GoalsViewModel : ViewModelBase
         IsCreatingGoal = false;
     }
 
+    public Action<string, NotificationBubbleType?>? StatusNotificationRequested { get; set; }
+
+    private void NotifyStatus(string message, NotificationBubbleType? type = null)
+    {
+        StatusNotificationRequested?.Invoke(message, type);
+    }
+
     [RelayCommand]
     private async Task AutoFillGoalWithAiAsync()
     {
@@ -295,7 +302,9 @@ public partial class GoalsViewModel : ViewModelBase
         try
         {
             IsAiGeneratingGoal = true;
-            AiStatusMessage = "AI is drafting your goal plan & milestones...";
+            var draftingMsg = "Drafting goal plan & milestones...";
+            AiStatusMessage = draftingMsg;
+            NotifyStatus(draftingMsg, NotificationBubbleType.Info);
 
             var result = await _aiGoalService.GenerateGoalDetailsAsync(prompt);
 
@@ -315,16 +324,22 @@ public partial class GoalsViewModel : ViewModelBase
             OnPropertyChanged(nameof(HasPendingAiMilestones));
             if (result.IsLiveAi)
             {
-                AiStatusMessage = $"✓ Generated with Live AI ({result.SourceLabel})";
+                var msg = $"Generated with Live AI ({result.SourceLabel})";
+                AiStatusMessage = msg;
+                NotifyStatus(msg, NotificationBubbleType.Success);
             }
             else
             {
-                AiStatusMessage = "ℹ Generated with Smart Offline Engine";
+                var msg = "Generated with Smart Offline Engine";
+                AiStatusMessage = msg;
+                NotifyStatus(msg, NotificationBubbleType.Info);
             }
         }
         catch (Exception ex)
         {
-            AiStatusMessage = $"Could not auto-generate: {ex.Message}";
+            var msg = $"Could not auto-generate: {ex.Message}";
+            AiStatusMessage = msg;
+            NotifyStatus(msg, NotificationBubbleType.Error);
             System.Diagnostics.Trace.WriteLine($"[GoalsViewModel] AutoFillGoalWithAi error: {ex}");
         }
         finally

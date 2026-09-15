@@ -25,4 +25,15 @@
     <ProjectReference Include="..\Wadd.UI\Wadd.UI.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="..\Wadd.UI\Assets\logo.png" Link="Assets\logo.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Wadd.UI\Assets\logo_square.png" Link="Assets\logo_square.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Wadd.UI\Assets\logo.ico" Link="Assets\logo.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>

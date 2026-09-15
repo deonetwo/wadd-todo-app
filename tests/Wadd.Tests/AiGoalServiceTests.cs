@@ -13,7 +13,7 @@ public class AiGoalServiceTests
 
     public AiGoalServiceTests()
     {
-        _aiGoalService = new AiGoalService(new HttpClient());
+        _aiGoalService = new AiGoalService(new HttpClient()) { ApiKey = string.Empty };
     }
 
     [Fact]

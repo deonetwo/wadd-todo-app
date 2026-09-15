@@ -16,6 +16,24 @@ public class AppSettingsData
     public bool MinimizeToTray { get; set; } = true;
     public bool CloseToTray { get; set; } = true;
 
+    // Notification Settings (Cross-Platform & Platform-Specific)
+    public bool EnableNotifications { get; set; } = true;
+    public bool NotifyOnTaskReminder { get; set; } = true;
+    public bool NotifyOnOverdueTasks { get; set; } = true;
+    public bool NotifyOnTaskDueDate { get; set; } = true;
+    public int NotificationLeadTimeMinutes { get; set; } = 0;
+    public int NotificationRepeatIntervalMinutes { get; set; } = 0;
+    public bool PlayNotificationSound { get; set; } = true;
+
+    // Windows Desktop Notification Settings
+    public bool WindowsToastNotifications { get; set; } = true;
+    public bool WindowsNotificationIncludeNotes { get; set; } = true;
+
+    // Android Mobile Notification Settings
+    public bool AndroidVibration { get; set; } = true;
+    public bool AndroidHighPriorityChannel { get; set; } = true;
+    public bool AndroidStickyReminders { get; set; } = false;
+
     // AI Integration Settings
     public string AiProvider { get; set; } = "Gemini";
     public string AiApiKey { get; set; } = string.Empty;

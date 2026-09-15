@@ -392,6 +392,13 @@
     <Setter Property="FontWeight"      Value="Normal"/>
     <Setter Property="MinHeight"       Value="42"/>
     <Setter Property="SelectionBrush"  Value="{DynamicResource AppPrimaryBrush}"/>
+    <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled"/>
+    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+  </Style>
+  <Style Selector="TextBox.composer /template/ ScrollViewer#PART_ScrollViewer">
+    <Setter Property="VerticalScrollBarVisibility" Value="Disabled"/>
+    <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/>
   </Style>
   <Style Selector="TextBox.composer /template/ Border#PART_BorderElement">
     <Setter Property="Background" Value="Transparent"/>
@@ -422,11 +429,19 @@
     <Setter Property="BorderBrush"     Value="{DynamicResource AppBorderBrush}"/>
     <Setter Property="BorderThickness" Value="0,0,0,1.5"/>
     <Setter Property="CornerRadius"    Value="0"/>
-    <Setter Property="Padding"         Value="14,10"/>
+    <Setter Property="Padding"         Value="14,6"/>
     <Setter Property="FontSize"        Value="20"/>
     <Setter Property="FontWeight"      Value="Medium"/>
     <Setter Property="MinHeight"       Value="44"/>
     <Setter Property="SelectionBrush"  Value="{DynamicResource AppPrimaryBrush}"/>
+    <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled"/>
+    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+    <Setter Property="AcceptsReturn"   Value="False"/>
+  </Style>
+  <Style Selector="TextBox.search-composer /template/ ScrollViewer#PART_ScrollViewer">
+    <Setter Property="VerticalScrollBarVisibility" Value="Disabled"/>
+    <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/>
   </Style>
   <Style Selector="TextBox.search-composer /template/ Border#PART_BorderElement">
     <Setter Property="Background" Value="Transparent"/>
@@ -1156,6 +1171,39 @@
   <Style Selector="ScrollBar /template/ Thumb:active">
     <Setter Property="Background" Value="{DynamicResource AppPrimaryBrush}"/>
     <Setter Property="Opacity" Value="1"/>
+  </Style>
+
+  <!-- ══════════════ STATUS NOTIFICATION BUBBLES ══════════════ -->
+  <Style Selector="Border.status-bubble">
+    <Setter Property="Background" Value="{DynamicResource AppSurfaceElevatedBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}"/>
+  </Style>
+  <Style Selector="Border.status-bubble Ellipse">
+    <Setter Property="Fill" Value="{DynamicResource AppPrimaryBrush}"/>
+  </Style>
+
+  <!-- Warning bubble: amber dot & subtle amber border -->
+  <Style Selector="Border.status-bubble.bubble-warning">
+    <Setter Property="BorderBrush" Value="{DynamicResource AppAccentWarningBrush}"/>
+  </Style>
+  <Style Selector="Border.status-bubble.bubble-warning Ellipse">
+    <Setter Property="Fill" Value="{DynamicResource AppAccentWarningBrush}"/>
+  </Style>
+
+  <!-- Error bubble: rose-red dot & subtle rose-red border -->
+  <Style Selector="Border.status-bubble.bubble-error">
+    <Setter Property="BorderBrush" Value="{DynamicResource AppAccentDangerBrush}"/>
+  </Style>
+  <Style Selector="Border.status-bubble.bubble-error Ellipse">
+    <Setter Property="Fill" Value="{DynamicResource AppAccentDangerBrush}"/>
+  </Style>
+
+  <!-- Success bubble: emerald dot & subtle emerald border -->
+  <Style Selector="Border.status-bubble.bubble-success">
+    <Setter Property="BorderBrush" Value="{DynamicResource AppAccentSuccessBrush}"/>
+  </Style>
+  <Style Selector="Border.status-bubble.bubble-success Ellipse">
+    <Setter Property="Fill" Value="{DynamicResource AppAccentSuccessBrush}"/>
   </Style>
 
 </Styles>

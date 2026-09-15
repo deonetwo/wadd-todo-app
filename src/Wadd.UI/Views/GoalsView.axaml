@@ -1077,20 +1077,14 @@
             </Button>
           </Grid>
 
-          <!-- Loading & AI Status -->
-          <StackPanel Grid.Row="1" Spacing="6" Margin="20,0,20,8">
-            <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsAiGeneratingGoal}" Height="2" CornerRadius="1" Foreground="{DynamicResource AppPrimaryBrush}"/>
-
-            <!-- AI Status feedback badge -->
-            <Border Background="{DynamicResource AppSurfaceSubtleBrush}"
-                    BorderBrush="{DynamicResource AppBorderBrush}"
-                    BorderThickness="1"
-                    CornerRadius="6"
-                    Padding="10,6"
-                    IsVisible="{Binding AiStatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-              <TextBlock Text="{Binding AiStatusMessage}" FontSize="11" Foreground="{DynamicResource AppPrimaryBrush}" TextWrapping="Wrap"/>
-            </Border>
-          </StackPanel>
+          <!-- Loading Indicator -->
+          <ProgressBar Grid.Row="1"
+                       IsIndeterminate="True"
+                       IsVisible="{Binding IsAiGeneratingGoal}"
+                       Height="2"
+                       CornerRadius="1"
+                       Foreground="{DynamicResource AppPrimaryBrush}"
+                       Margin="20,0,20,8"/>
 
           <!-- Scrollable Form Body -->
           <ScrollViewer Grid.Row="2"

@@ -1,0 +1,155 @@
+using System;
+using System.Threading.Tasks;
+using Android.App;
+using Android.Content;
+using Android.Content.PM;
+using Android.OS;
+using Wadd.Core.Helpers;
+using Wadd.Core.Interfaces;
+
+namespace Wadd.Android;
+
+/// <summary>
+/// Native Android notification service implementing INotificationService via Android NotificationManager and NotificationChannel.
+/// </summary>
+public class AndroidNotificationService : INotificationService
+{
+    private const string ChannelId = "wadd_task_reminders";
+    private const string ChannelName = "Wadd Task Reminders";
+    private const string ChannelDesc = "Task due dates and reminder alerts";
+
+    public bool IsSupported => true;
+
+    public Task<bool> RequestPermissionAsync()
+    {
+        if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu) // API 33+
+        {
+            var activity = MainActivity.Instance;
+            if (activity != null)
+            {
+                if (activity.CheckSelfPermission("android.permission.POST_NOTIFICATIONS") != Permission.Granted)
+                {
+                    activity.RequestPermissions(new[] { "android.permission.POST_NOTIFICATIONS" }, 1010);
+                    return Task.FromResult(false);
+                }
+            }
+        }
+        return Task.FromResult(true);
+    }
+
+    public Task ShowNotificationAsync(string title, string message, string? tag = null)
+    {
+        var settings = AppSettingsHelper.LoadSettings();
+        if (!settings.EnableNotifications)
+        {
+            return Task.CompletedTask;
+        }
+
+        var context = MainActivity.Instance ?? Application.Context;
+        if (context == null)
+        {
+            return Task.CompletedTask;
+        }
+
+        try
+        {
+            var notificationManager = (NotificationManager?)context.GetSystemService(Context.NotificationService);
+            if (notificationManager == null)
+            {
+                return Task.CompletedTask;
+            }
+
+            // Ensure notification channel exists (API 26+)
+            if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
+            {
+                var importance = settings.AndroidHighPriorityChannel
+                    ? NotificationImportance.High
+                    : NotificationImportance.Default;
+
+                var channel = new NotificationChannel(ChannelId, ChannelName, importance)
+                {
+                    Description = ChannelDesc
+                };
+
+                channel.EnableVibration(settings.AndroidVibration);
+                if (settings.AndroidVibration)
+                {
+                    channel.SetVibrationPattern(new long[] { 0, 250, 100, 250 });
+                }
+
+                notificationManager.CreateNotificationChannel(channel);
+            }
+
+            // Create intent to bring MainActivity to foreground on tap
+            var intent = new Intent(context, typeof(MainActivity));
+            intent.AddFlags(ActivityFlags.ClearTop | ActivityFlags.SingleTop);
+            var pendingIntent = PendingIntent.GetActivity(
+                context,
+                0,
+                intent,
+                PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Immutable);
+
+            var builder = new Notification.Builder(context, ChannelId)
+                .SetContentTitle(title)
+                .SetContentText(message)
+                .SetStyle(new Notification.BigTextStyle().BigText(message))
+                .SetSmallIcon(Resource.Drawable.icon)
+                .SetContentIntent(pendingIntent)
+                .SetAutoCancel(!settings.AndroidStickyReminders)
+                .SetOngoing(settings.AndroidStickyReminders);
+
+            try
+            {
+                var largeIcon = global::Android.Graphics.BitmapFactory.DecodeResource(context.Resources, Resource.Drawable.icon);
+                if (largeIcon != null)
+                {
+                    builder.SetLargeIcon(largeIcon);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine($"[AndroidNotificationService] Error loading large icon: {ex.Message}");
+            }
+
+            if (settings.AndroidHighPriorityChannel)
+            {
+                builder.SetPriority((int)NotificationPriority.High);
+            }
+
+            if (settings.AndroidVibration)
+            {
+                builder.SetVibrate(new long[] { 0, 250, 100, 250 });
+            }
+
+            var notificationId = !string.IsNullOrWhiteSpace(tag) ? tag.GetHashCode() : (int)DateTime.UtcNow.Ticks;
+            notificationManager.Notify(tag, notificationId, builder.Build());
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Trace.WriteLine($"[AndroidNotificationService] Error posting notification: {ex.Message}");
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task CancelNotificationAsync(string tag)
+    {
+        var context = MainActivity.Instance ?? Application.Context;
+        if (context == null || string.IsNullOrWhiteSpace(tag))
+        {
+            return Task.CompletedTask;
+        }
+
+        try
+        {
+            var notificationManager = (NotificationManager?)context.GetSystemService(Context.NotificationService);
+            notificationManager?.Cancel(tag, tag.GetHashCode());
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Trace.WriteLine($"[AndroidNotificationService] Error cancelling notification: {ex.Message}");
+        }
+
+        return Task.CompletedTask;
+    }
+}

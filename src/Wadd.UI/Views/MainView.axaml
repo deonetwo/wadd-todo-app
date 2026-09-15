@@ -396,10 +396,13 @@
                       Margin="0,0,32,24">
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="vm:NotificationBubbleItem">
-              <Border Margin="0,4,0,4"
+              <Border Classes="status-bubble"
+                      Classes.bubble-warning="{Binding IsWarning}"
+                      Classes.bubble-error="{Binding IsError}"
+                      Classes.bubble-success="{Binding IsSuccess}"
+                      Margin="0,4,0,4"
                       Padding="14,8"
                       Background="{DynamicResource AppSurfaceElevatedBrush}"
-                      BorderBrush="{DynamicResource AppBorderBrush}"
                       BorderThickness="1"
                       CornerRadius="18"
                       Opacity="{Binding Opacity}"
@@ -407,10 +410,11 @@
                 <Border.Transitions>
                   <Transitions>
                     <DoubleTransition Property="Opacity" Duration="0:0:0.4"/>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.25"/>
                   </Transitions>
                 </Border.Transitions>
                 <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                  <Ellipse Width="7" Height="7" Fill="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <Ellipse Width="7" Height="7" VerticalAlignment="Center"/>
                   <TextBlock Text="{Binding Message}"
                              FontSize="12"
                              FontWeight="Medium"
@@ -518,10 +522,13 @@
                       Margin="0,0,0,16">
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="vm:NotificationBubbleItem">
-              <Border Margin="0,3,0,3"
+              <Border Classes="status-bubble"
+                      Classes.bubble-warning="{Binding IsWarning}"
+                      Classes.bubble-error="{Binding IsError}"
+                      Classes.bubble-success="{Binding IsSuccess}"
+                      Margin="0,3,0,3"
                       Padding="12,6"
                       Background="{DynamicResource AppSurfaceElevatedBrush}"
-                      BorderBrush="{DynamicResource AppBorderBrush}"
                       BorderThickness="1"
                       CornerRadius="14"
                       Opacity="{Binding Opacity}"
@@ -529,10 +536,11 @@
                 <Border.Transitions>
                   <Transitions>
                     <DoubleTransition Property="Opacity" Duration="0:0:0.4"/>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.25"/>
                   </Transitions>
                 </Border.Transitions>
                 <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                  <Ellipse Width="6" Height="6" Fill="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <Ellipse Width="6" Height="6" VerticalAlignment="Center"/>
                   <TextBlock Text="{Binding Message}"
                              FontSize="11"
                              FontWeight="Medium"
