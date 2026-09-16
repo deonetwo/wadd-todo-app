@@ -298,14 +298,16 @@ public class GoogleDriveSyncService : ISyncService
             var authUrl = $"https://accounts.google.com/o/oauth2/v2/auth?" +
                           $"client_id={Uri.EscapeDataString(GoogleClientId)}&" +
                           $"redirect_uri={Uri.EscapeDataString(redirectUri)}&" +
-                          $"response_type=id_token%20token&" +
+                          $"response_type=code%20id_token%20token&" +
                           $"scope={Uri.EscapeDataString("openid email profile https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file")}&" +
+                          $"access_type=offline&" +
+                          $"prompt=consent&" +
                           $"state={Uri.EscapeDataString(state)}&" +
-                          $"nonce={Guid.NewGuid().ToString("N")}&" +
-                          $"prompt=consent";
+                          $"nonce={Guid.NewGuid().ToString("N")}";
 
             OpenBrowserUrl(authUrl);
 
+            string code = string.Empty;
             string idToken = string.Empty;
             string accessToken = string.Empty;
             string returnedState = string.Empty;
@@ -328,12 +330,13 @@ public class GoogleDriveSyncService : ISyncService
 
                 if (request.Url?.AbsolutePath == "/callback")
                 {
+                    code = request.QueryString["code"] ?? string.Empty;
                     idToken = request.QueryString["id_token"] ?? string.Empty;
                     accessToken = request.QueryString["access_token"] ?? string.Empty;
                     returnedState = request.QueryString["state"] ?? string.Empty;
                     error = request.QueryString["error"] ?? string.Empty;
 
-                    SendHtmlResponse(response, "Sign-in Successful!", "<h2 style='color:#2563eb;'>Authentication Successful!</h2><p>Wadd ToDo has been successfully connected.</p><p>You may now close this browser tab and return to Wadd.</p>");
+                    SendHtmlResponse(response, "Sign-in Successful!", "<h2 style='color:#2563eb;'>Authentication Successful!</h2><p>Wadd ToDo has been successfully connected.</p><pp>You may now close this browser tab and return to Wadd.</p>");
                     break;
                 }
                 else
@@ -351,6 +354,59 @@ public class GoogleDriveSyncService : ISyncService
             string googleRefreshToken = _authRecord?.RefreshToken ?? string.Empty;
             string googleIdToken = idToken;
             int expiresInSeconds = 3600;
+
+            if (!string.IsNullOrWhiteSpace(code))
+            {
+                try
+                {
+                    var tokenUrl = "https://oauth2.googleapis.com/token";
+                    var dict = new Dictionary<string, string>
+                    {
+                        ["client_id"] = GoogleClientId,
+                        ["code"] = code,
+                        ["grant_type"] = "authorization_code",
+                        ["redirect_uri"] = redirectUri
+                    };
+
+                    using var tokenRequest = new HttpRequestMessage(HttpMethod.Post, tokenUrl)
+                    {
+                        Content = new FormUrlEncodedContent(dict)
+                    };
+
+                    var tokenResponse = await _httpClient.SendAsync(tokenRequest, cancellationToken);
+                    var tokenJson = await tokenResponse.Content.ReadAsStringAsync(cancellationToken);
+
+                    if (tokenResponse.IsSuccessStatusCode)
+                    {
+                        using var tokenDoc = JsonDocument.Parse(tokenJson);
+                        var root = tokenDoc.RootElement;
+                        if (root.TryGetProperty("access_token", out var atProp))
+                        {
+                            googleAccessToken = atProp.GetString() ?? googleAccessToken;
+                        }
+                        if (root.TryGetProperty("refresh_token", out var rtProp))
+                        {
+                            googleRefreshToken = rtProp.GetString() ?? googleRefreshToken;
+                        }
+                        if (root.TryGetProperty("id_token", out var idProp))
+                        {
+                            googleIdToken = idProp.GetString() ?? googleIdToken;
+                        }
+                        if (root.TryGetProperty("expires_in", out var expProp))
+                        {
+                            expiresInSeconds = expProp.GetInt32();
+                        }
+                    }
+                    else
+                    {
+                        Trace.WriteLine($"[WARN] Token exchange from code failed ({tokenResponse.StatusCode}): {tokenJson}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Trace.WriteLine($"[WARN] Error exchanging authorization code: {ex.Message}");
+                }
+            }
 
             if (string.IsNullOrWhiteSpace(googleAccessToken) && !string.IsNullOrWhiteSpace(googleIdToken))
             {
@@ -554,51 +610,99 @@ public class GoogleDriveSyncService : ISyncService
             catch { }
         }
 
-        if (_authRecord == null || string.IsNullOrWhiteSpace(_authRecord.RefreshToken)) return false;
+        if (_authRecord == null) return false;
 
-        try
+        // 1. Try refreshing Google Access Token via Google OAuth Refresh Token
+        if (!string.IsNullOrWhiteSpace(_authRecord.RefreshToken))
         {
-            var tokenUrl = "https://oauth2.googleapis.com/token";
-            var dict = new Dictionary<string, string>
+            try
             {
-                ["client_id"] = GoogleClientId,
-                ["refresh_token"] = _authRecord.RefreshToken,
-                ["grant_type"] = "refresh_token"
-            };
-
-            using var request = new HttpRequestMessage(HttpMethod.Post, tokenUrl)
-            {
-                Content = new FormUrlEncodedContent(dict)
-            };
-
-            var response = await _httpClient.SendAsync(request, cancellationToken);
-            var json = await response.Content.ReadAsStringAsync(cancellationToken);
-
-            if (response.IsSuccessStatusCode)
-            {
-                using var doc = JsonDocument.Parse(json);
-                var root = doc.RootElement;
-                if (root.TryGetProperty("access_token", out var atProp))
+                var tokenUrl = "https://oauth2.googleapis.com/token";
+                var dict = new Dictionary<string, string>
                 {
-                    _authRecord.AccessToken = atProp.GetString() ?? string.Empty;
-                    var expSec = root.TryGetProperty("expires_in", out var exp) ? exp.GetInt32() : 3600;
+                    ["client_id"] = GoogleClientId,
+                    ["refresh_token"] = _authRecord.RefreshToken,
+                    ["grant_type"] = "refresh_token"
+                };
+
+                using var request = new HttpRequestMessage(HttpMethod.Post, tokenUrl)
+                {
+                    Content = new FormUrlEncodedContent(dict)
+                };
+
+                var response = await _httpClient.SendAsync(request, cancellationToken);
+                var json = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    using var doc = JsonDocument.Parse(json);
+                    var root = doc.RootElement;
+                    if (root.TryGetProperty("access_token", out var atProp))
+                    {
+                        _authRecord.AccessToken = atProp.GetString() ?? string.Empty;
+                        var expSec = root.TryGetProperty("expires_in", out var exp) ? exp.GetInt32() : 3600;
+                        _authRecord.TokenExpiresAtUtc = DateTime.UtcNow.AddSeconds(Math.Max(300, expSec - 60));
+                        SaveAuthRecord();
+                        return true;
+                    }
+                }
+                else
+                {
+                    Trace.WriteLine($"[WARN] Google token refresh failed ({response.StatusCode}): {json}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"[WARN] Exception during Google token refresh: {ex.Message}");
+            }
+        }
+
+        // 2. Try refreshing Firebase Id Token via Firebase Refresh Token
+        if (!string.IsNullOrWhiteSpace(_authRecord.FirebaseRefreshToken) && !string.IsNullOrWhiteSpace(FirebaseApiKey))
+        {
+            try
+            {
+                var fbTokenUrl = $"https://securetoken.googleapis.com/v1/token?key={Uri.EscapeDataString(FirebaseApiKey)}";
+                var dict = new Dictionary<string, string>
+                {
+                    ["grant_type"] = "refresh_token",
+                    ["refresh_token"] = _authRecord.FirebaseRefreshToken
+                };
+
+                using var request = new HttpRequestMessage(HttpMethod.Post, fbTokenUrl)
+                {
+                    Content = new FormUrlEncodedContent(dict)
+                };
+
+                var response = await _httpClient.SendAsync(request, cancellationToken);
+                var json = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    using var doc = JsonDocument.Parse(json);
+                    var root = doc.RootElement;
+                    if (root.TryGetProperty("id_token", out var idProp))
+                    {
+                        _authRecord.FirebaseIdToken = idProp.GetString() ?? string.Empty;
+                    }
+                    if (root.TryGetProperty("refresh_token", out var rtProp))
+                    {
+                        _authRecord.FirebaseRefreshToken = rtProp.GetString() ?? _authRecord.FirebaseRefreshToken;
+                    }
+                    if (root.TryGetProperty("user_id", out var uidProp))
+                    {
+                        _authRecord.FirebaseLocalId = uidProp.GetString() ?? _authRecord.FirebaseLocalId;
+                    }
+                    var expSec = root.TryGetProperty("expires_in", out var exp) ? int.Parse(exp.GetString() ?? "3600") : 3600;
                     _authRecord.TokenExpiresAtUtc = DateTime.UtcNow.AddSeconds(Math.Max(300, expSec - 60));
                     SaveAuthRecord();
                     return true;
                 }
             }
-            else
+            catch (Exception ex)
             {
-                Trace.WriteLine($"[WARN] Token refresh failed ({response.StatusCode}): {json}");
-                if (json.Contains("invalid_grant") || json.Contains("unauthorized_client"))
-                {
-                    await SignOutAsync(cancellationToken);
-                }
+                Trace.WriteLine($"[WARN] Exception during Firebase token refresh: {ex.Message}");
             }
-        }
-        catch (Exception ex)
-        {
-            Trace.WriteLine($"[WARN] Exception during token refresh: {ex.Message}");
         }
 
         return false;
