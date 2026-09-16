@@ -58,6 +58,8 @@ public partial class App : Application
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
             var mainWindow = new MainWindow
             {
                 DataContext = mainViewModel
@@ -70,13 +72,17 @@ public partial class App : Application
             if (isAutoStart && mainViewModel.StartMinimized)
             {
                 mainWindow.WindowState = WindowState.Minimized;
-                mainWindow.Opened += (s, e) =>
+                EventHandler? onInitialOpened = null;
+                onInitialOpened = (s, e) =>
                 {
+                    mainWindow.Opened -= onInitialOpened;
                     Dispatcher.UIThread.Post(() =>
                     {
                         mainWindow.Hide();
+                        mainWindow.WindowState = WindowState.Normal;
                     });
                 };
+                mainWindow.Opened += onInitialOpened;
             }
 
             mainWindow.Closing += (s, e) =>
@@ -86,6 +92,11 @@ public partial class App : Application
                 {
                     e.Cancel = true;
                     mainWindow.Hide();
+                    mainWindow.WindowState = WindowState.Normal;
+                }
+                else if (!_isExplicitExit && !mainViewModel.CloseToTray)
+                {
+                    ExitApplication(desktop);
                 }
             };
 
@@ -93,9 +104,11 @@ public partial class App : Application
             {
                 if (e.Property == Window.WindowStateProperty &&
                     mainWindow.WindowState == WindowState.Minimized &&
+                    mainWindow.IsVisible &&
                     mainViewModel.MinimizeToTray)
                 {
                     mainWindow.Hide();
+                    mainWindow.WindowState = WindowState.Normal;
                 }
             };
 
@@ -169,16 +182,18 @@ public partial class App : Application
         }
     }
 
-    public void ShowMainWindow(IClassicDesktopStyleApplicationLifetime desktop)
+    public void ShowMainWindow(IClassicDesktopStyleApplicationLifetime? desktop = null)
     {
-        if (desktop.MainWindow is Window window)
+        var targetLifetime = desktop ?? ApplicationLifetime as IClassicDesktopStyleApplicationLifetime;
+        if (targetLifetime?.MainWindow is Window window)
         {
+            window.WindowState = WindowState.Normal;
             window.Show();
-            if (window.WindowState == WindowState.Minimized)
-            {
-                window.WindowState = WindowState.Normal;
-            }
+            window.WindowState = WindowState.Normal;
             window.Activate();
+            window.Topmost = true;
+            window.Topmost = false;
+            window.Focus();
         }
     }
 
