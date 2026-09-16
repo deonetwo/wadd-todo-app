@@ -28,19 +28,340 @@
       <!-- Header -->
       <StackPanel Spacing="4">
         <TextBlock Text="Settings &amp; About" Classes="display"/>
-        <TextBlock Text="Manage theme preferences, cloud synchronization, data export, and application information."
+        <TextBlock Text="Manage cloud synchronization, reminders, appearance, and application preferences."
                    Classes="small"
                    TextWrapping="Wrap"
                    Foreground="{DynamicResource AppTextSecondaryBrush}"/>
       </StackPanel>
 
-      <!-- 1. Appearance / Theme -->
+      <!-- 1. Cloud Synchronization & Account (Highest Importance) -->
       <Border Classes="content-block">
         <StackPanel Spacing="16">
-          <TextBlock Text="APPEARANCE" Classes="micro"/>
+          <TextBlock Text="CLOUD SYNCHRONIZATION" Classes="micro"/>
           <StackPanel Spacing="4">
-            <TextBlock Text="Interface Theme" Classes="heading"/>
-            <TextBlock Text="Choose your preferred color theme or match your system default."
+            <TextBlock Text="Private Google Drive Backup" Classes="heading"/>
+            <TextBlock Text="Synchronize your tasks securely to your private Google Drive storage across Windows &amp; Android."
+                       Classes="small"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+          </StackPanel>
+
+          <!-- Signed Out State -->
+          <StackPanel IsVisible="{Binding !IsGoogleSignedIn}" Spacing="14">
+            <Button Classes="primary"
+                    Command="{Binding SignInWithGoogleCommand}"
+                    HorizontalAlignment="Left"
+                    ToolTip.Tip="Sign in with your Google Account">
+              <StackPanel Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">
+                <Border Width="20" Height="20" CornerRadius="10" Background="#F0FDFA" VerticalAlignment="Center">
+                  <TextBlock Text="G" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Text="Connect Google Drive Account" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/>
+              </StackPanel>
+            </Button>
+            <Grid ColumnDefinitions="Auto,*" Margin="0,2,0,0">
+              <TextBlock Grid.Column="0" Text="🔒" FontSize="12" VerticalAlignment="Top" Margin="0,1,6,0"/>
+              <TextBlock Grid.Column="1" Text="Your tasks are safely backed up to your personal Google Drive." Classes="small" TextWrapping="Wrap" VerticalAlignment="Center"/>
+            </Grid>
+          </StackPanel>
+
+          <!-- Signed In State -->
+          <StackPanel IsVisible="{Binding IsGoogleSignedIn}" Spacing="16">
+            <Border Background="{DynamicResource AppSurfaceElevatedBrush}"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="14,12">
+              <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                <Border Grid.Column="0" Width="36" Height="36" CornerRadius="18" Background="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center">
+                  <TextBlock Text="G" FontSize="18" FontWeight="Bold" Foreground="#F0FDFA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding GoogleUserEmail}"
+                             FontWeight="SemiBold"
+                             FontSize="14"
+                             Foreground="{DynamicResource AppTextPrimaryBrush}"
+                             TextTrimming="CharacterEllipsis"
+                             VerticalAlignment="Center"/>
+                  <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding GoogleUserName}"
+                               Classes="small"
+                               Foreground="{DynamicResource AppTextSecondaryBrush}"
+                               TextTrimming="CharacterEllipsis"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,0"/>
+                    <Border Background="{DynamicResource AppAccentTintBrush}"
+                            CornerRadius="4"
+                            Padding="6,2"
+                            VerticalAlignment="Center">
+                      <TextBlock Text="Connected" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                    </Border>
+                  </WrapPanel>
+                </StackPanel>
+
+                <Button Grid.Column="2"
+                        Classes="outline"
+                        Command="{Binding SignOutGoogleCommand}"
+                        VerticalAlignment="Center">
+                  <TextBlock Text="Sign Out" FontSize="12"/>
+                </Button>
+              </Grid>
+            </Border>
+
+            <Button Classes="primary" Command="{Binding SyncCommand}" IsEnabled="{Binding !IsSyncing}" HorizontalAlignment="Left">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <PathIcon Data="{StaticResource SyncIconData}" Width="13" Height="13"/>
+                <TextBlock Text="Sync Now with Google Drive"/>
+              </StackPanel>
+            </Button>
+          </StackPanel>
+
+        </StackPanel>
+      </Border>
+
+      <!-- 2. Reminders & Notifications (High Importance) -->
+      <Border Classes="content-block">
+        <StackPanel Spacing="16">
+          <TextBlock Text="NOTIFICATIONS &amp; REMINDERS" Classes="micro"/>
+          <StackPanel Spacing="4">
+            <TextBlock Text="Task Alerts &amp; Schedules" Classes="heading"/>
+            <TextBlock Text="Get helpful reminders so you never miss an important task or deadline."
+                       Classes="small"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+          </StackPanel>
+
+          <!-- 1. Master Notifications Toggle -->
+          <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+            <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+              <TextBlock Text="Allow Notifications" Classes="heading"/>
+              <TextBlock Text="Receive pop-up reminders and alerts for your tasks."
+                         Classes="small"
+                         TextWrapping="Wrap"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1"
+                          IsChecked="{Binding EnableNotifications, Mode=TwoWay}"
+                          OnContent=""
+                          OffContent=""
+                          VerticalAlignment="Center"/>
+          </Grid>
+
+          <!-- Sub-options (enabled when Master Switch is ON) -->
+          <StackPanel Spacing="16" IsEnabled="{Binding EnableNotifications}">
+
+            <Separator Classes="divider" Margin="0,4"/>
+
+            <!-- 2. Task Reminders Alert -->
+            <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+              <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+                <TextBlock Text="Remind at Set Time" Classes="heading"/>
+                <TextBlock Text="Notify you when a task's reminder time arrives."
+                           Classes="small"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </StackPanel>
+              <ToggleSwitch Grid.Column="1"
+                            IsChecked="{Binding NotifyOnTaskReminder, Mode=TwoWay}"
+                            OnContent=""
+                            OffContent=""
+                            VerticalAlignment="Center"/>
+            </Grid>
+
+            <Separator Classes="divider" Margin="0,4"/>
+
+            <!-- 3. Overdue & Missed Tasks Alert -->
+            <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+              <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+                <TextBlock Text="Missed &amp; Overdue Tasks" Classes="heading"/>
+                <TextBlock Text="Notify you if you have tasks that passed their reminder or due date."
+                           Classes="small"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </StackPanel>
+              <ToggleSwitch Grid.Column="1"
+                            IsChecked="{Binding NotifyOnOverdueTasks, Mode=TwoWay}"
+                            OnContent=""
+                            OffContent=""
+                            VerticalAlignment="Center"/>
+            </Grid>
+
+            <Separator Classes="divider" Margin="0,4"/>
+
+            <!-- 4. Due Date Alerts -->
+            <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+              <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+                <TextBlock Text="Tasks Due Today" Classes="heading"/>
+                <TextBlock Text="Get a friendly reminder for tasks scheduled for today."
+                           Classes="small"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </StackPanel>
+              <ToggleSwitch Grid.Column="1"
+                            IsChecked="{Binding NotifyOnTaskDueDate, Mode=TwoWay}"
+                            OnContent=""
+                            OffContent=""
+                            VerticalAlignment="Center"/>
+            </Grid>
+
+            <Separator Classes="divider" Margin="0,4"/>
+
+            <!-- 5. Repeat Frequency for Unfinished Tasks -->
+            <StackPanel Spacing="10" Margin="0,4,0,0">
+              <StackPanel Spacing="4">
+                <TextBlock Text="Repeat Until Completed" Classes="heading"/>
+                <TextBlock Text="How often to remind you if an active task hasn't been finished yet."
+                           Classes="small"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </StackPanel>
+
+              <ComboBox ItemsSource="{Binding NotificationRepeatIntervalOptions}"
+                        SelectedItem="{Binding SelectedNotificationRepeatIntervalOption, Mode=TwoWay}"
+                        HorizontalAlignment="Left"
+                        MinWidth="320"
+                        MaxWidth="440"
+                        Margin="0,2,0,0">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="vm:NotificationRepeatIntervalOption">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,2">
+                      <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                        <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                      </StackPanel>
+                    </Grid>
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+            </StackPanel>
+
+            <Separator Classes="divider" Margin="0,4"/>
+
+            <!-- 6. Reminder Lead Time -->
+            <StackPanel Spacing="10" Margin="0,4,0,0">
+              <StackPanel Spacing="4">
+                <TextBlock Text="Remind in Advance" Classes="heading"/>
+                <TextBlock Text="How early you'd like to be reminded before a scheduled task time."
+                           Classes="small"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </StackPanel>
+
+              <ComboBox ItemsSource="{Binding NotificationLeadTimeOptions}"
+                        SelectedItem="{Binding SelectedNotificationLeadTimeOption, Mode=TwoWay}"
+                        HorizontalAlignment="Left"
+                        MinWidth="320"
+                        MaxWidth="440"
+                        Margin="0,2,0,0">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="vm:NotificationLeadTimeOption">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,2">
+                      <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                        <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                      </StackPanel>
+                    </Grid>
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+            </StackPanel>
+
+            <Separator Classes="divider" Margin="0,4"/>
+
+            <!-- 7. Play Sound -->
+            <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+              <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+                <TextBlock Text="Notification Sound" Classes="heading"/>
+                <TextBlock Text="Play a gentle sound when a notification arrives."
+                           Classes="small"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </StackPanel>
+              <ToggleSwitch Grid.Column="1"
+                            IsChecked="{Binding PlayNotificationSound, Mode=TwoWay}"
+                            OnContent=""
+                            OffContent=""
+                            VerticalAlignment="Center"/>
+            </Grid>
+
+            <!-- 8. Android Platform Notification Preferences (ONLY ON ANDROID) -->
+            <StackPanel Spacing="16" IsVisible="{Binding IsAndroidPlatform}">
+              <Separator Classes="divider" Margin="0,4"/>
+
+              <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+                <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+                  <TextBlock Text="Vibrate on Alert" Classes="heading"/>
+                  <TextBlock Text="Vibrate your device when a notification arrives."
+                             Classes="small"
+                             TextWrapping="Wrap"
+                             Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                </StackPanel>
+                <ToggleSwitch Grid.Column="1"
+                              IsChecked="{Binding AndroidVibration, Mode=TwoWay}"
+                              OnContent=""
+                              OffContent=""
+                              VerticalAlignment="Center"/>
+              </Grid>
+
+              <Separator Classes="divider" Margin="0,4"/>
+
+              <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+                <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+                  <TextBlock Text="Pop-up Banners" Classes="heading"/>
+                  <TextBlock Text="Show notification banners on top of running apps."
+                             Classes="small"
+                             TextWrapping="Wrap"
+                             Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                </StackPanel>
+                <ToggleSwitch Grid.Column="1"
+                              IsChecked="{Binding AndroidHighPriorityChannel, Mode=TwoWay}"
+                              OnContent=""
+                              OffContent=""
+                              VerticalAlignment="Center"/>
+              </Grid>
+
+              <Separator Classes="divider" Margin="0,4"/>
+
+              <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+                <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+                  <TextBlock Text="Keep in Notification Drawer" Classes="heading"/>
+                  <TextBlock Text="Keep reminders pinned in your notification bar until dismissed."
+                             Classes="small"
+                             TextWrapping="Wrap"
+                             Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                </StackPanel>
+                <ToggleSwitch Grid.Column="1"
+                              IsChecked="{Binding AndroidStickyReminders, Mode=TwoWay}"
+                              OnContent=""
+                              OffContent=""
+                              VerticalAlignment="Center"/>
+              </Grid>
+            </StackPanel>
+
+            <Separator Classes="divider" Margin="0,4"/>
+
+            <!-- Test Notification Action Button -->
+            <Button Classes="outline"
+                    Command="{Binding SendTestNotificationCommand}"
+                    HorizontalAlignment="Left"
+                    Margin="0,4,0,0">
+              <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <PathIcon Data="{StaticResource BellIconData}" Width="13" Height="13" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                <TextBlock Text="Send Test Notification" FontSize="12" FontWeight="SemiBold"/>
+              </StackPanel>
+            </Button>
+
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <!-- 3. Appearance & Theme (Medium-High Importance) -->
+      <Border Classes="content-block">
+        <StackPanel Spacing="16">
+          <TextBlock Text="APPEARANCE &amp; DISPLAY" Classes="micro"/>
+          <StackPanel Spacing="4">
+            <TextBlock Text="Interface Theme &amp; Layout" Classes="heading"/>
+            <TextBlock Text="Choose your preferred color theme, layout mode, and task display options."
                        Classes="small"
                        TextWrapping="Wrap"
                        Foreground="{DynamicResource AppTextSecondaryBrush}"/>
@@ -233,7 +554,7 @@
         </StackPanel>
       </Border>
 
-      <!-- 2. System & Windows Desktop Integration (Desktop Only) -->
+      <!-- 4. System & Windows Desktop Integration (Desktop Only - Medium Importance) -->
       <Border Classes="content-block" IsVisible="{Binding IsDesktopPlatform}">
         <StackPanel Spacing="16">
           <TextBlock Text="SYSTEM &amp; DESKTOP" Classes="micro"/>
@@ -333,350 +654,7 @@
         </StackPanel>
       </Border>
 
-      <!-- Notifications -->
-      <Border Classes="content-block">
-        <StackPanel Spacing="16">
-          <TextBlock Text="NOTIFICATIONS" Classes="micro"/>
-          <StackPanel Spacing="4">
-            <TextBlock Text="Reminders &amp; Notifications" Classes="heading"/>
-            <TextBlock Text="Get helpful reminders so you never miss an important task or deadline."
-                       Classes="small"
-                       TextWrapping="Wrap"
-                       Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-          </StackPanel>
-
-          <!-- 1. Master Notifications Toggle -->
-          <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
-            <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
-              <TextBlock Text="Allow Notifications" Classes="heading"/>
-              <TextBlock Text="Receive pop-up reminders and alerts for your tasks."
-                         Classes="small"
-                         TextWrapping="Wrap"
-                         Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-            </StackPanel>
-            <ToggleSwitch Grid.Column="1"
-                          IsChecked="{Binding EnableNotifications, Mode=TwoWay}"
-                          OnContent=""
-                          OffContent=""
-                          VerticalAlignment="Center"/>
-          </Grid>
-
-          <!-- Sub-options (enabled when Master Switch is ON) -->
-          <StackPanel Spacing="16" IsEnabled="{Binding EnableNotifications}">
-
-            <Separator Classes="divider" Margin="0,4"/>
-
-            <!-- 2. Task Reminders Alert -->
-            <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
-              <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
-                <TextBlock Text="Remind at Set Time" Classes="heading"/>
-                <TextBlock Text="Notify you when a task's reminder time arrives."
-                           Classes="small"
-                           TextWrapping="Wrap"
-                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-              </StackPanel>
-              <ToggleSwitch Grid.Column="1"
-                            IsChecked="{Binding NotifyOnTaskReminder, Mode=TwoWay}"
-                            OnContent=""
-                            OffContent=""
-                            VerticalAlignment="Center"/>
-            </Grid>
-
-            <Separator Classes="divider" Margin="0,4"/>
-
-            <!-- 3. Overdue & Missed Tasks Alert -->
-            <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
-              <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
-                <TextBlock Text="Missed &amp; Overdue Tasks" Classes="heading"/>
-                <TextBlock Text="Notify you if you have tasks that passed their reminder or due date."
-                           Classes="small"
-                           TextWrapping="Wrap"
-                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-              </StackPanel>
-              <ToggleSwitch Grid.Column="1"
-                            IsChecked="{Binding NotifyOnOverdueTasks, Mode=TwoWay}"
-                            OnContent=""
-                            OffContent=""
-                            VerticalAlignment="Center"/>
-            </Grid>
-
-            <Separator Classes="divider" Margin="0,4"/>
-
-            <!-- 4. Due Date Alerts -->
-            <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
-              <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
-                <TextBlock Text="Tasks Due Today" Classes="heading"/>
-                <TextBlock Text="Get a friendly reminder for tasks scheduled for today."
-                           Classes="small"
-                           TextWrapping="Wrap"
-                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-              </StackPanel>
-              <ToggleSwitch Grid.Column="1"
-                            IsChecked="{Binding NotifyOnTaskDueDate, Mode=TwoWay}"
-                            OnContent=""
-                            OffContent=""
-                            VerticalAlignment="Center"/>
-            </Grid>
-
-            <Separator Classes="divider" Margin="0,4"/>
-
-            <!-- 5. Repeat Frequency for Unfinished Tasks -->
-            <StackPanel Spacing="10" Margin="0,4,0,0">
-              <StackPanel Spacing="4">
-                <TextBlock Text="Repeat Until Completed" Classes="heading"/>
-                <TextBlock Text="How often to remind you if an active task hasn't been finished yet."
-                           Classes="small"
-                           TextWrapping="Wrap"
-                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-              </StackPanel>
-
-              <ComboBox ItemsSource="{Binding NotificationRepeatIntervalOptions}"
-                        SelectedItem="{Binding SelectedNotificationRepeatIntervalOption, Mode=TwoWay}"
-                        HorizontalAlignment="Left"
-                        MinWidth="320"
-                        MaxWidth="440"
-                        Margin="0,2,0,0">
-                <ComboBox.ItemTemplate>
-                  <DataTemplate x:DataType="vm:NotificationRepeatIntervalOption">
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,2">
-                      <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
-                        <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-                      </StackPanel>
-                    </Grid>
-                  </DataTemplate>
-                </ComboBox.ItemTemplate>
-              </ComboBox>
-            </StackPanel>
-
-            <Separator Classes="divider" Margin="0,4"/>
-
-            <!-- 6. Reminder Lead Time -->
-            <StackPanel Spacing="10" Margin="0,4,0,0">
-              <StackPanel Spacing="4">
-                <TextBlock Text="Remind in Advance" Classes="heading"/>
-                <TextBlock Text="How early you'd like to be reminded before a scheduled task time."
-                           Classes="small"
-                           TextWrapping="Wrap"
-                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-              </StackPanel>
-
-              <ComboBox ItemsSource="{Binding NotificationLeadTimeOptions}"
-                        SelectedItem="{Binding SelectedNotificationLeadTimeOption, Mode=TwoWay}"
-                        HorizontalAlignment="Left"
-                        MinWidth="320"
-                        MaxWidth="440"
-                        Margin="0,2,0,0">
-                <ComboBox.ItemTemplate>
-                  <DataTemplate x:DataType="vm:NotificationLeadTimeOption">
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,2">
-                      <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
-                        <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-                      </StackPanel>
-                    </Grid>
-                  </DataTemplate>
-                </ComboBox.ItemTemplate>
-              </ComboBox>
-            </StackPanel>
-
-            <Separator Classes="divider" Margin="0,4"/>
-
-            <!-- 7. Play Sound -->
-            <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
-              <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
-                <TextBlock Text="Notification Sound" Classes="heading"/>
-                <TextBlock Text="Play a gentle sound when a notification arrives."
-                           Classes="small"
-                           TextWrapping="Wrap"
-                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-              </StackPanel>
-              <ToggleSwitch Grid.Column="1"
-                            IsChecked="{Binding PlayNotificationSound, Mode=TwoWay}"
-                            OnContent=""
-                            OffContent=""
-                            VerticalAlignment="Center"/>
-            </Grid>
-
-
-            <!-- 9. Android Platform Notification Preferences (ONLY ON ANDROID) -->
-            <StackPanel Spacing="16" IsVisible="{Binding IsAndroidPlatform}">
-              <Separator Classes="divider" Margin="0,4"/>
-
-              <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
-                <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
-                  <TextBlock Text="Vibrate on Alert" Classes="heading"/>
-                  <TextBlock Text="Vibrate your device when a notification arrives."
-                             Classes="small"
-                             TextWrapping="Wrap"
-                             Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-                </StackPanel>
-                <ToggleSwitch Grid.Column="1"
-                              IsChecked="{Binding AndroidVibration, Mode=TwoWay}"
-                              OnContent=""
-                              OffContent=""
-                              VerticalAlignment="Center"/>
-              </Grid>
-
-              <Separator Classes="divider" Margin="0,4"/>
-
-              <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
-                <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
-                  <TextBlock Text="Pop-up Banners" Classes="heading"/>
-                  <TextBlock Text="Show notification banners on top of running apps."
-                             Classes="small"
-                             TextWrapping="Wrap"
-                             Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-                </StackPanel>
-                <ToggleSwitch Grid.Column="1"
-                              IsChecked="{Binding AndroidHighPriorityChannel, Mode=TwoWay}"
-                              OnContent=""
-                              OffContent=""
-                              VerticalAlignment="Center"/>
-              </Grid>
-
-              <Separator Classes="divider" Margin="0,4"/>
-
-              <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
-                <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
-                  <TextBlock Text="Keep in Notification Drawer" Classes="heading"/>
-                  <TextBlock Text="Keep reminders pinned in your notification bar until dismissed."
-                             Classes="small"
-                             TextWrapping="Wrap"
-                             Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-                </StackPanel>
-                <ToggleSwitch Grid.Column="1"
-                              IsChecked="{Binding AndroidStickyReminders, Mode=TwoWay}"
-                              OnContent=""
-                              OffContent=""
-                              VerticalAlignment="Center"/>
-              </Grid>
-            </StackPanel>
-
-            <Separator Classes="divider" Margin="0,4"/>
-
-            <!-- Test Notification Action Button -->
-            <Button Classes="outline"
-                    Command="{Binding SendTestNotificationCommand}"
-                    HorizontalAlignment="Left"
-                    Margin="0,4,0,0">
-              <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                <PathIcon Data="{StaticResource BellIconData}" Width="13" Height="13" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                <TextBlock Text="Send Test Notification" FontSize="12" FontWeight="SemiBold"/>
-              </StackPanel>
-            </Button>
-
-          </StackPanel>
-        </StackPanel>
-      </Border>
-
-      <!-- 3. Private Google Drive Cloud Sync -->
-      <Border Classes="content-block">
-        <StackPanel Spacing="16">
-          <TextBlock Text="CLOUD SYNCHRONIZATION" Classes="micro"/>
-          <StackPanel Spacing="4">
-            <TextBlock Text="Private Google Drive Backup" Classes="heading"/>
-            <TextBlock Text="Synchronize your tasks securely to your private Google Drive storage across Windows &amp; Android."
-                       Classes="small"
-                       TextWrapping="Wrap"
-                       Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-          </StackPanel>
-
-          <!-- Signed Out State -->
-          <StackPanel IsVisible="{Binding !IsGoogleSignedIn}" Spacing="14">
-            <Button Classes="primary"
-                    Command="{Binding SignInWithGoogleCommand}"
-                    HorizontalAlignment="Left"
-                    ToolTip.Tip="Sign in with your Google Account">
-              <StackPanel Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">
-                <Border Width="20" Height="20" CornerRadius="10" Background="#F0FDFA" VerticalAlignment="Center">
-                  <TextBlock Text="G" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Border>
-                <TextBlock Text="Connect Google Drive Account" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/>
-              </StackPanel>
-            </Button>
-            <Grid ColumnDefinitions="Auto,*" Margin="0,2,0,0">
-              <TextBlock Grid.Column="0" Text="🔒" FontSize="12" VerticalAlignment="Top" Margin="0,1,6,0"/>
-              <TextBlock Grid.Column="1" Text="Your tasks are safely backed up to your personal Google Drive." Classes="small" TextWrapping="Wrap" VerticalAlignment="Center"/>
-            </Grid>
-          </StackPanel>
-
-          <!-- Signed In State -->
-          <StackPanel IsVisible="{Binding IsGoogleSignedIn}" Spacing="16">
-            <Border Background="{DynamicResource AppSurfaceElevatedBrush}"
-                    BorderBrush="{DynamicResource AppBorderBrush}"
-                    BorderThickness="1"
-                    CornerRadius="8"
-                    Padding="14,12">
-              <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
-                <Border Grid.Column="0" Width="36" Height="36" CornerRadius="18" Background="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center">
-                  <TextBlock Text="G" FontSize="18" FontWeight="Bold" Foreground="#F0FDFA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Border>
-                <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
-                  <TextBlock Text="{Binding GoogleUserEmail}"
-                             FontWeight="SemiBold"
-                             FontSize="14"
-                             Foreground="{DynamicResource AppTextPrimaryBrush}"
-                             TextTrimming="CharacterEllipsis"
-                             VerticalAlignment="Center"/>
-                  <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding GoogleUserName}"
-                               Classes="small"
-                               Foreground="{DynamicResource AppTextSecondaryBrush}"
-                               TextTrimming="CharacterEllipsis"
-                               VerticalAlignment="Center"
-                               Margin="0,0,8,0"/>
-                    <Border Background="{DynamicResource AppAccentTintBrush}"
-                            CornerRadius="4"
-                            Padding="6,2"
-                            VerticalAlignment="Center">
-                      <TextBlock Text="Connected" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                    </Border>
-                  </WrapPanel>
-                </StackPanel>
-
-                <Button Grid.Column="2"
-                        Classes="outline"
-                        Command="{Binding SignOutGoogleCommand}"
-                        VerticalAlignment="Center">
-                  <TextBlock Text="Sign Out" FontSize="12"/>
-                </Button>
-              </Grid>
-            </Border>
-
-            <Button Classes="primary" Command="{Binding SyncCommand}" IsEnabled="{Binding !IsSyncing}" HorizontalAlignment="Left">
-              <StackPanel Orientation="Horizontal" Spacing="6">
-                <PathIcon Data="{StaticResource SyncIconData}" Width="13" Height="13"/>
-                <TextBlock Text="Sync Now with Google Drive"/>
-              </StackPanel>
-            </Button>
-          </StackPanel>
-
-        </StackPanel>
-      </Border>
-
-      <!-- 4. Export Data -->
-      <Border Classes="content-block">
-        <StackPanel Spacing="14">
-          <TextBlock Text="DATA MANAGEMENT" Classes="micro"/>
-          <StackPanel Spacing="4">
-            <TextBlock Text="Export To Excel" Classes="heading"/>
-            <TextBlock Text="Export all your tasks, due dates, and priorities to an Excel (.xlsx) file."
-                       Classes="small"
-                       TextWrapping="Wrap"
-                       Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-          </StackPanel>
-
-          <Button Classes="outline" Command="{Binding ExportToExcelCommand}" HorizontalAlignment="Left">
-            <StackPanel Orientation="Horizontal" Spacing="8">
-              <PathIcon Data="{StaticResource ExportIconData}" Width="14" Height="14"/>
-              <TextBlock Text="Export Tasks to Excel"/>
-            </StackPanel>
-          </Button>
-        </StackPanel>
-      </Border>
-
-      <!-- 5. AI Assistant & Multi-Provider Settings -->
+      <!-- 5. AI Assistant & Goal Generation (Advanced Feature) -->
       <Border Classes="content-block">
         <StackPanel Spacing="16">
           <TextBlock Text="AI ASSISTANT &amp; GENERATION" Classes="micro"/>
@@ -963,7 +941,28 @@
         </StackPanel>
       </Border>
 
-      <!-- 6. About & Version Info -->
+      <!-- 6. Data Management & Export (Low Importance) -->
+      <Border Classes="content-block">
+        <StackPanel Spacing="14">
+          <TextBlock Text="DATA MANAGEMENT" Classes="micro"/>
+          <StackPanel Spacing="4">
+            <TextBlock Text="Export To Excel" Classes="heading"/>
+            <TextBlock Text="Export all your tasks, due dates, and priorities to an Excel (.xlsx) file."
+                       Classes="small"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+          </StackPanel>
+
+          <Button Classes="outline" Command="{Binding ExportToExcelCommand}" HorizontalAlignment="Left">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <PathIcon Data="{StaticResource ExportIconData}" Width="14" Height="14"/>
+              <TextBlock Text="Export Tasks to Excel"/>
+            </StackPanel>
+          </Button>
+        </StackPanel>
+      </Border>
+
+      <!-- 7. About Application (Informational - Bottom) -->
       <Border Classes="content-block">
         <StackPanel Spacing="14">
           <TextBlock Text="ABOUT APPLICATION" Classes="micro"/>
