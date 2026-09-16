@@ -311,8 +311,6 @@ public class GoogleDriveSyncService : ISyncService
         var localRedirectUri = "http://localhost:5001/";
         var redirectUri = localRedirectUri;
         var state = Guid.NewGuid().ToString("N");
-        var codeVerifier = GeneratePkceCodeVerifier();
-        var codeChallenge = GeneratePkceCodeChallenge(codeVerifier);
 
         var listener = new HttpListener();
         listener.Prefixes.Add(localRedirectUri);
@@ -332,7 +330,6 @@ public class GoogleDriveSyncService : ISyncService
 
             OpenBrowserUrl(authUrl);
 
-            string code = string.Empty;
             string idToken = string.Empty;
             string accessToken = string.Empty;
             string returnedState = string.Empty;
@@ -353,22 +350,8 @@ public class GoogleDriveSyncService : ISyncService
                 var request = context.Request;
                 var response = context.Response;
 
-                var qCode = request.QueryString["code"];
-                var qError = request.QueryString["error"];
-                var qState = request.QueryString["state"];
-
-                if (!string.IsNullOrEmpty(qCode) || !string.IsNullOrEmpty(qError))
+                if (request.Url?.AbsolutePath == "/callback")
                 {
-                    code = qCode ?? string.Empty;
-                    error = qError ?? string.Empty;
-                    returnedState = qState ?? string.Empty;
-
-                    SendHtmlResponse(response, "Sign-in Successful!", "<h2 style='color:#0d9488;'>Authentication Successful!</h2><p>Wadd ToDo has been successfully connected.</p><p>You may now close this browser tab and return to Wadd.</p>");
-                    break;
-                }
-                else if (request.Url?.AbsolutePath == "/callback")
-                {
-                    code = request.QueryString["code"] ?? string.Empty;
                     idToken = request.QueryString["id_token"] ?? string.Empty;
                     accessToken = request.QueryString["access_token"] ?? string.Empty;
                     returnedState = request.QueryString["state"] ?? string.Empty;
@@ -389,68 +372,8 @@ public class GoogleDriveSyncService : ISyncService
             }
 
             string googleAccessToken = accessToken;
-            string googleRefreshToken = _authRecord?.RefreshToken ?? string.Empty;
             string googleIdToken = idToken;
             int expiresInSeconds = 3600;
-
-            if (!string.IsNullOrWhiteSpace(code))
-            {
-                try
-                {
-                    var tokenUrl = "https://oauth2.googleapis.com/token";
-                    var dict = new Dictionary<string, string>
-                    {
-                        ["client_id"] = GoogleClientId,
-                        ["code"] = code,
-                        ["code_verifier"] = codeVerifier,
-                        ["grant_type"] = "authorization_code",
-                        ["redirect_uri"] = redirectUri
-                    };
-
-                    if (!string.IsNullOrWhiteSpace(GoogleClientSecret))
-                    {
-                        dict["client_secret"] = GoogleClientSecret;
-                    }
-
-                    using var tokenRequest = new HttpRequestMessage(HttpMethod.Post, tokenUrl)
-                    {
-                        Content = new FormUrlEncodedContent(dict)
-                    };
-
-                    var tokenResponse = await _httpClient.SendAsync(tokenRequest, cancellationToken);
-                    var tokenJson = await tokenResponse.Content.ReadAsStringAsync(cancellationToken);
-
-                    if (tokenResponse.IsSuccessStatusCode)
-                    {
-                        using var tokenDoc = JsonDocument.Parse(tokenJson);
-                        var root = tokenDoc.RootElement;
-                        if (root.TryGetProperty("access_token", out var atProp))
-                        {
-                            googleAccessToken = atProp.GetString() ?? googleAccessToken;
-                        }
-                        if (root.TryGetProperty("refresh_token", out var rtProp) && !string.IsNullOrWhiteSpace(rtProp.GetString()))
-                        {
-                            googleRefreshToken = rtProp.GetString()!;
-                        }
-                        if (root.TryGetProperty("id_token", out var idProp))
-                        {
-                            googleIdToken = idProp.GetString() ?? googleIdToken;
-                        }
-                        if (root.TryGetProperty("expires_in", out var expProp))
-                        {
-                            expiresInSeconds = expProp.GetInt32();
-                        }
-                    }
-                    else
-                    {
-                        Trace.WriteLine($"[WARN] Token exchange from code failed ({tokenResponse.StatusCode}): {tokenJson}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Trace.WriteLine($"[WARN] Error exchanging authorization code: {ex.Message}");
-                }
-            }
 
             if (string.IsNullOrWhiteSpace(googleAccessToken) && !string.IsNullOrWhiteSpace(googleIdToken))
             {
@@ -479,7 +402,7 @@ public class GoogleDriveSyncService : ISyncService
                 FirebaseApiKey = FirebaseApiKey,
                 FirebaseProjectId = FirebaseProjectId,
                 AccessToken = !string.IsNullOrWhiteSpace(googleAccessToken) ? googleAccessToken : fbSession.OAuthAccessToken,
-                RefreshToken = !string.IsNullOrWhiteSpace(googleRefreshToken) ? googleRefreshToken : (_authRecord?.RefreshToken ?? string.Empty),
+                RefreshToken = _authRecord?.RefreshToken ?? string.Empty,
                 FirebaseIdToken = fbSession.FirebaseIdToken,
                 FirebaseRefreshToken = fbSession.FirebaseRefreshToken,
                 FirebaseLocalId = fbSession.LocalId,
@@ -1295,29 +1218,6 @@ public class GoogleDriveSyncService : ISyncService
 
             throw new InvalidOperationException($"Google Drive API {actionName} failed ({response.StatusCode}): {content}");
         }
-    }
-
-    private static string GeneratePkceCodeVerifier()
-    {
-        var bytes = new byte[32];
-        using var rng = RandomNumberGenerator.Create();
-        rng.GetBytes(bytes);
-        return Base64UrlEncode(bytes);
-    }
-
-    private static string GeneratePkceCodeChallenge(string codeVerifier)
-    {
-        using var sha256 = SHA256.Create();
-        var hash = sha256.ComputeHash(Encoding.ASCII.GetBytes(codeVerifier));
-        return Base64UrlEncode(hash);
-    }
-
-    private static string Base64UrlEncode(byte[] bytes)
-    {
-        return Convert.ToBase64String(bytes)
-            .TrimEnd('=')
-            .Replace('+', '-')
-            .Replace('/', '_');
     }
 }
 
