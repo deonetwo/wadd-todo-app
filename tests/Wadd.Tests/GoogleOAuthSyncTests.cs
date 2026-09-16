@@ -19,6 +19,7 @@ public class GoogleOAuthSyncTests
             UserEmail = "testuser@gmail.com",
             UserName = "Test User",
             GoogleClientId = "test-client-id.apps.googleusercontent.com",
+            GoogleClientSecret = "test-client-secret-123",
             AccessToken = "ya29.test-access-token",
             RefreshToken = "1//04-test-refresh-token-permanent",
             FirebaseApiKey = "AIzaSyTest",
@@ -38,6 +39,7 @@ public class GoogleOAuthSyncTests
         Assert.Equal(original.UserEmail, restored.UserEmail);
         Assert.Equal(original.UserName, restored.UserName);
         Assert.Equal(original.GoogleClientId, restored.GoogleClientId);
+        Assert.Equal(original.GoogleClientSecret, restored.GoogleClientSecret);
         Assert.Equal(original.AccessToken, restored.AccessToken);
         Assert.Equal(original.RefreshToken, restored.RefreshToken);
         Assert.Equal(original.FirebaseApiKey, restored.FirebaseApiKey);

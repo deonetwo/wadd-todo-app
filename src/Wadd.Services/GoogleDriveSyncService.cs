@@ -70,6 +70,29 @@ public class GoogleDriveSyncService : ISyncService
         }
     }
 
+    public string GoogleClientSecret
+    {
+        get
+        {
+            var envVal = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET");
+            if (!string.IsNullOrWhiteSpace(envVal)) return envVal.Trim();
+
+            if (!string.IsNullOrWhiteSpace(_authRecord?.GoogleClientSecret))
+                return _authRecord.GoogleClientSecret;
+
+            var compiledVal = GetAssemblyMetadata("GoogleClientSecret");
+            if (!string.IsNullOrWhiteSpace(compiledVal)) return compiledVal.Trim();
+
+            return string.Empty;
+        }
+        set
+        {
+            _authRecord ??= new UserAuthRecord();
+            _authRecord.GoogleClientSecret = value;
+            SaveAuthRecord();
+        }
+    }
+
     public string FirebaseApiKey
     {
         get
@@ -288,6 +311,8 @@ public class GoogleDriveSyncService : ISyncService
         var localRedirectUri = "http://localhost:5001/";
         var redirectUri = localRedirectUri;
         var state = Guid.NewGuid().ToString("N");
+        var codeVerifier = GeneratePkceCodeVerifier();
+        var codeChallenge = GeneratePkceCodeChallenge(codeVerifier);
 
         var listener = new HttpListener();
         listener.Prefixes.Add(localRedirectUri);
@@ -295,15 +320,15 @@ public class GoogleDriveSyncService : ISyncService
 
         try
         {
+            var nonce = Guid.NewGuid().ToString("N");
             var authUrl = $"https://accounts.google.com/o/oauth2/v2/auth?" +
                           $"client_id={Uri.EscapeDataString(GoogleClientId)}&" +
                           $"redirect_uri={Uri.EscapeDataString(redirectUri)}&" +
-                          $"response_type=code%20id_token%20token&" +
+                          $"response_type=token%20id_token&" +
                           $"scope={Uri.EscapeDataString("openid email profile https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file")}&" +
-                          $"access_type=offline&" +
-                          $"prompt=consent&" +
-                          $"state={Uri.EscapeDataString(state)}&" +
-                          $"nonce={Guid.NewGuid().ToString("N")}";
+                          $"prompt=select_account&" +
+                          $"nonce={Uri.EscapeDataString(nonce)}&" +
+                          $"state={Uri.EscapeDataString(state)}";
 
             OpenBrowserUrl(authUrl);
 
@@ -328,7 +353,20 @@ public class GoogleDriveSyncService : ISyncService
                 var request = context.Request;
                 var response = context.Response;
 
-                if (request.Url?.AbsolutePath == "/callback")
+                var qCode = request.QueryString["code"];
+                var qError = request.QueryString["error"];
+                var qState = request.QueryString["state"];
+
+                if (!string.IsNullOrEmpty(qCode) || !string.IsNullOrEmpty(qError))
+                {
+                    code = qCode ?? string.Empty;
+                    error = qError ?? string.Empty;
+                    returnedState = qState ?? string.Empty;
+
+                    SendHtmlResponse(response, "Sign-in Successful!", "<h2 style='color:#0d9488;'>Authentication Successful!</h2><p>Wadd ToDo has been successfully connected.</p><p>You may now close this browser tab and return to Wadd.</p>");
+                    break;
+                }
+                else if (request.Url?.AbsolutePath == "/callback")
                 {
                     code = request.QueryString["code"] ?? string.Empty;
                     idToken = request.QueryString["id_token"] ?? string.Empty;
@@ -336,7 +374,7 @@ public class GoogleDriveSyncService : ISyncService
                     returnedState = request.QueryString["state"] ?? string.Empty;
                     error = request.QueryString["error"] ?? string.Empty;
 
-                    SendHtmlResponse(response, "Sign-in Successful!", "<h2 style='color:#2563eb;'>Authentication Successful!</h2><p>Wadd ToDo has been successfully connected.</p><pp>You may now close this browser tab and return to Wadd.</p>");
+                    SendHtmlResponse(response, "Sign-in Successful!", "<h2 style='color:#0d9488;'>Authentication Successful!</h2><p>Wadd ToDo has been successfully connected.</p><p>You may now close this browser tab and return to Wadd.</p>");
                     break;
                 }
                 else
@@ -364,9 +402,15 @@ public class GoogleDriveSyncService : ISyncService
                     {
                         ["client_id"] = GoogleClientId,
                         ["code"] = code,
+                        ["code_verifier"] = codeVerifier,
                         ["grant_type"] = "authorization_code",
                         ["redirect_uri"] = redirectUri
                     };
+
+                    if (!string.IsNullOrWhiteSpace(GoogleClientSecret))
+                    {
+                        dict["client_secret"] = GoogleClientSecret;
+                    }
 
                     using var tokenRequest = new HttpRequestMessage(HttpMethod.Post, tokenUrl)
                     {
@@ -384,9 +428,9 @@ public class GoogleDriveSyncService : ISyncService
                         {
                             googleAccessToken = atProp.GetString() ?? googleAccessToken;
                         }
-                        if (root.TryGetProperty("refresh_token", out var rtProp))
+                        if (root.TryGetProperty("refresh_token", out var rtProp) && !string.IsNullOrWhiteSpace(rtProp.GetString()))
                         {
-                            googleRefreshToken = rtProp.GetString() ?? googleRefreshToken;
+                            googleRefreshToken = rtProp.GetString()!;
                         }
                         if (root.TryGetProperty("id_token", out var idProp))
                         {
@@ -431,10 +475,11 @@ public class GoogleDriveSyncService : ISyncService
                 UserEmail = !string.IsNullOrWhiteSpace(fbSession.Email) ? fbSession.Email : userInfo.Email,
                 UserName = !string.IsNullOrWhiteSpace(fbSession.DisplayName) ? fbSession.DisplayName : userInfo.Name,
                 GoogleClientId = GoogleClientId,
+                GoogleClientSecret = GoogleClientSecret,
                 FirebaseApiKey = FirebaseApiKey,
                 FirebaseProjectId = FirebaseProjectId,
-                AccessToken = googleAccessToken,
-                RefreshToken = googleRefreshToken,
+                AccessToken = !string.IsNullOrWhiteSpace(googleAccessToken) ? googleAccessToken : fbSession.OAuthAccessToken,
+                RefreshToken = !string.IsNullOrWhiteSpace(googleRefreshToken) ? googleRefreshToken : (_authRecord?.RefreshToken ?? string.Empty),
                 FirebaseIdToken = fbSession.FirebaseIdToken,
                 FirebaseRefreshToken = fbSession.FirebaseRefreshToken,
                 FirebaseLocalId = fbSession.LocalId,
@@ -492,7 +537,7 @@ public class GoogleDriveSyncService : ISyncService
 </head>
 <body>
   <div class='card'>
-    <h2 style='color:#2563eb;'>Completing Authentication...</h2>
+    <h2 style='color:#0d9488;'>Completing Authentication...</h2>
     <p>Please wait while Wadd connects your account.</p>
   </div>
   <script>
@@ -506,7 +551,7 @@ public class GoogleDriveSyncService : ISyncService
 
     fetch('/callback?id_token=' + encodeURIComponent(idToken) + '&access_token=' + encodeURIComponent(accessToken) + '&code=' + encodeURIComponent(code) + '&state=' + encodeURIComponent(state) + '&error=' + encodeURIComponent(error))
       .then(function() {
-        document.body.innerHTML = ""<div class='card'><h2 style='color:#2563eb;'>Authentication Successful!</h2><p>You can close this tab and return to Wadd.</p></div>"";
+        document.body.innerHTML = ""<div class='card'><h2 style='color:#0d9488;'>Authentication Successful!</h2><p>You can close this tab and return to Wadd.</p></div>"";
       });
   </script>
 </body>
@@ -625,6 +670,11 @@ public class GoogleDriveSyncService : ISyncService
                     ["grant_type"] = "refresh_token"
                 };
 
+                if (!string.IsNullOrWhiteSpace(GoogleClientSecret))
+                {
+                    dict["client_secret"] = GoogleClientSecret;
+                }
+
                 using var request = new HttpRequestMessage(HttpMethod.Post, tokenUrl)
                 {
                     Content = new FormUrlEncodedContent(dict)
@@ -640,6 +690,10 @@ public class GoogleDriveSyncService : ISyncService
                     if (root.TryGetProperty("access_token", out var atProp))
                     {
                         _authRecord.AccessToken = atProp.GetString() ?? string.Empty;
+                        if (root.TryGetProperty("refresh_token", out var newRtProp) && !string.IsNullOrWhiteSpace(newRtProp.GetString()))
+                        {
+                            _authRecord.RefreshToken = newRtProp.GetString()!;
+                        }
                         var expSec = root.TryGetProperty("expires_in", out var exp) ? exp.GetInt32() : 3600;
                         _authRecord.TokenExpiresAtUtc = DateTime.UtcNow.AddSeconds(Math.Max(300, expSec - 60));
                         SaveAuthRecord();
@@ -1242,6 +1296,29 @@ public class GoogleDriveSyncService : ISyncService
             throw new InvalidOperationException($"Google Drive API {actionName} failed ({response.StatusCode}): {content}");
         }
     }
+
+    private static string GeneratePkceCodeVerifier()
+    {
+        var bytes = new byte[32];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(bytes);
+        return Base64UrlEncode(bytes);
+    }
+
+    private static string GeneratePkceCodeChallenge(string codeVerifier)
+    {
+        using var sha256 = SHA256.Create();
+        var hash = sha256.ComputeHash(Encoding.ASCII.GetBytes(codeVerifier));
+        return Base64UrlEncode(hash);
+    }
+
+    private static string Base64UrlEncode(byte[] bytes)
+    {
+        return Convert.ToBase64String(bytes)
+            .TrimEnd('=')
+            .Replace('+', '-')
+            .Replace('/', '_');
+    }
 }
 
 public class UserAuthRecord
@@ -1250,6 +1327,7 @@ public class UserAuthRecord
     public string UserEmail { get; set; } = string.Empty;
     public string UserName { get; set; } = string.Empty;
     public string GoogleClientId { get; set; } = string.Empty;
+    public string GoogleClientSecret { get; set; } = string.Empty;
     public string FirebaseApiKey { get; set; } = string.Empty;
     public string FirebaseProjectId { get; set; } = string.Empty;
     public string AccessToken { get; set; } = string.Empty;
