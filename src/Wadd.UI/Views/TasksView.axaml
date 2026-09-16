@@ -1095,7 +1095,7 @@
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:TodoItemViewModel">
                 <Border Classes="task-row" Classes.completed="{Binding IsCompleted}">
-                  <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                  <Grid ColumnDefinitions="Auto,*,Auto">
                     <!-- Checkbox -->
                     <CheckBox Grid.Column="0"
                               Classes="task-checkbox"
@@ -1217,15 +1217,8 @@
                       </StackPanel>
                     </Button>
 
-                    <!-- Timestamp -->
-                    <TextBlock Grid.Column="2"
-                               Text="{Binding CreatedAt, StringFormat='{}{0:MMM d}'}"
-                               Classes="small"
-                               VerticalAlignment="Center"
-                               Margin="14,0,6,0"/>
-
                     <!-- Delete -->
-                    <Button Grid.Column="3"
+                    <Button Grid.Column="2"
                             Classes="danger"
                             Command="{Binding $parent[UserControl].DataContext.DeleteTodoCommand}"
                             CommandParameter="{Binding}"
