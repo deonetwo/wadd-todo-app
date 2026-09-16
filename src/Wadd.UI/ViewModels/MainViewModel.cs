@@ -1953,8 +1953,10 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
+    private bool _isApplyingPreset;
+
     [ObservableProperty]
-    private string _completedDateFilterPreset = "All";
+    private string _completedDateFilterPreset = "Today";
 
     [ObservableProperty]
     private DateTime? _completedDateFilterStartDate;
@@ -1974,6 +1976,8 @@ public partial class MainViewModel : ViewModelBase
 
     partial void OnCompletedDateFilterStartDateChanged(DateTime? value)
     {
+        if (_isApplyingPreset) return;
+
         if (value.HasValue && CompletedDateFilterEndDate.HasValue && value.Value.Date > CompletedDateFilterEndDate.Value.Date)
         {
             CompletedDateFilterEndDate = value.Value.Date;
@@ -1990,6 +1994,8 @@ public partial class MainViewModel : ViewModelBase
 
     partial void OnCompletedDateFilterEndDateChanged(DateTime? value)
     {
+        if (_isApplyingPreset) return;
+
         if (value.HasValue && CompletedDateFilterStartDate.HasValue && value.Value.Date < CompletedDateFilterStartDate.Value.Date)
         {
             CompletedDateFilterStartDate = value.Value.Date;
@@ -2106,36 +2112,44 @@ public partial class MainViewModel : ViewModelBase
 
     private void ApplyCompletedDatePreset(string preset)
     {
-        var today = DateTime.Today;
-        switch (preset)
+        _isApplyingPreset = true;
+        try
         {
-            case "Today":
-                CompletedDateFilterStartDate = today;
-                CompletedDateFilterEndDate = today;
-                break;
-            case "Yesterday":
-                CompletedDateFilterStartDate = today.AddDays(-1);
-                CompletedDateFilterEndDate = today.AddDays(-1);
-                break;
-            case "7Days":
-                CompletedDateFilterStartDate = today.AddDays(-6);
-                CompletedDateFilterEndDate = today;
-                break;
-            case "30Days":
-                CompletedDateFilterStartDate = today.AddDays(-29);
-                CompletedDateFilterEndDate = today;
-                break;
-            case "ThisMonth":
-                CompletedDateFilterStartDate = new DateTime(today.Year, today.Month, 1);
-                CompletedDateFilterEndDate = new DateTime(today.Year, today.Month, DateTime.DaysInMonth(today.Year, today.Month));
-                break;
-            case "Custom":
-                break;
-            case "All":
-            default:
-                CompletedDateFilterStartDate = null;
-                CompletedDateFilterEndDate = null;
-                break;
+            var today = DateTime.Today;
+            switch (preset)
+            {
+                case "Today":
+                    CompletedDateFilterStartDate = today;
+                    CompletedDateFilterEndDate = today;
+                    break;
+                case "Yesterday":
+                    CompletedDateFilterStartDate = today.AddDays(-1);
+                    CompletedDateFilterEndDate = today.AddDays(-1);
+                    break;
+                case "7Days":
+                    CompletedDateFilterStartDate = today.AddDays(-6);
+                    CompletedDateFilterEndDate = today;
+                    break;
+                case "30Days":
+                    CompletedDateFilterStartDate = today.AddDays(-29);
+                    CompletedDateFilterEndDate = today;
+                    break;
+                case "ThisMonth":
+                    CompletedDateFilterStartDate = new DateTime(today.Year, today.Month, 1);
+                    CompletedDateFilterEndDate = new DateTime(today.Year, today.Month, DateTime.DaysInMonth(today.Year, today.Month));
+                    break;
+                case "Custom":
+                    break;
+                case "All":
+                default:
+                    CompletedDateFilterStartDate = null;
+                    CompletedDateFilterEndDate = null;
+                    break;
+            }
+        }
+        finally
+        {
+            _isApplyingPreset = false;
         }
     }
 
@@ -2149,8 +2163,8 @@ public partial class MainViewModel : ViewModelBase
         {
             return CompletedDateFilterPreset switch
             {
-                "Today" => "Completed: Today",
-                "Yesterday" => "Completed: Yesterday",
+                "Today" => "Today",
+                "Yesterday" => "Yesterday",
                 "7Days" => "Last 7 Days",
                 "30Days" => "Last 30 Days",
                 "ThisMonth" => "This Month",
@@ -3136,6 +3150,7 @@ public partial class MainViewModel : ViewModelBase
         _selectedTasksLayoutOption = TasksLayoutOptions[0];
         LoadUserSettings();
         StartReminderChecker();
+        ApplyCompletedDatePreset("Today");
 
         IConflictRepository conflictRepo;
         if (_todoService is SQLiteTodoService sqliteSvc)
@@ -3232,6 +3247,10 @@ public partial class MainViewModel : ViewModelBase
         if (today != _lastRecordedDate)
         {
             _lastRecordedDate = today;
+            if (CompletedDateFilterPreset != "Custom" && CompletedDateFilterPreset != "All")
+            {
+                ApplyCompletedDatePreset(CompletedDateFilterPreset);
+            }
             UpdateSubCollections();
             UpdateAvailableCategories();
             GenerateCalendarGrid();
