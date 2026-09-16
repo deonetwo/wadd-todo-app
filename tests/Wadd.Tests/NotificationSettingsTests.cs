@@ -652,4 +652,74 @@ public class NotificationSettingsTests
             }
         }
     }
+
+    [Fact]
+    public void MainViewModel_CheckReminders_RepeatingNotifications_FiresAfterInterval()
+    {
+        var mockService = new MockNotificationService();
+        var vm = new MainViewModel(
+            new Wadd.Services.InMemoryTodoService(),
+            new Wadd.Services.ThemeService(),
+            new Wadd.Services.SyncService(),
+            new Wadd.Services.ExcelExportService(),
+            new Wadd.Services.SQLiteGoalService(),
+            new Wadd.Services.WindowsStartupService(),
+            new Wadd.Services.AiGoalService(new System.Net.Http.HttpClient()),
+            mockService);
+
+        vm.EnableNotifications = true;
+        vm.NotifyOnTaskDueDate = true;
+        vm.NotificationRepeatIntervalMinutes = 30;
+
+        var task = new TodoItemViewModel(new TodoItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Today Task to Repeat",
+            DueDate = DateTime.Today
+        });
+
+        vm.TodoItems.Add(task);
+
+        // First check: fires initial notification and records last notified time
+        vm.CheckReminders();
+        Assert.Single(mockService.ShownNotifications);
+        Assert.Equal("Due Today: Today Task to Repeat", mockService.ShownNotifications[0].Title);
+
+        mockService.ShownNotifications.Clear();
+
+        // Immediate subsequent check before interval: does not fire
+        vm.CheckReminders();
+        Assert.Empty(mockService.ShownNotifications);
+    }
+
+    [Fact]
+    public void MainViewModel_CheckReminders_UndatedTask_DoesNotTriggerNotification()
+    {
+        var mockService = new MockNotificationService();
+        var vm = new MainViewModel(
+            new Wadd.Services.InMemoryTodoService(),
+            new Wadd.Services.ThemeService(),
+            new Wadd.Services.SyncService(),
+            new Wadd.Services.ExcelExportService(),
+            new Wadd.Services.SQLiteGoalService(),
+            new Wadd.Services.WindowsStartupService(),
+            new Wadd.Services.AiGoalService(new System.Net.Http.HttpClient()),
+            mockService);
+
+        vm.EnableNotifications = true;
+        vm.NotifyOnTaskDueDate = true;
+
+        var undatedTask = new TodoItemViewModel(new TodoItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Undated Task",
+            DueDate = null,
+            ReminderAt = null
+        });
+
+        vm.TodoItems.Add(undatedTask);
+        vm.CheckReminders();
+
+        Assert.Empty(mockService.ShownNotifications);
+    }
 }

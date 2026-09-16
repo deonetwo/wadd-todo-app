@@ -42,9 +42,9 @@ public class WindowsNotificationService : INotificationService
         }
 
         // 2. Dispatch native Windows toast banner
-        if (OperatingSystem.IsWindows())
+        if (OperatingSystem.IsWindows() && settings.WindowsToastNotifications)
         {
-            await Task.Run(() => DispatchNativeWindowsToast(title, message, settings.PlayNotificationSound));
+            await Task.Run(() => DispatchNativeWindowsToast(title, message, settings.PlayNotificationSound, tag));
         }
     }
 
@@ -132,7 +132,7 @@ public class WindowsNotificationService : INotificationService
         return null;
     }
 
-    private static void DispatchNativeWindowsToast(string title, string message, bool playSound)
+    private static void DispatchNativeWindowsToast(string title, string message, bool playSound, string? tag = null)
     {
         try
         {
@@ -146,7 +146,9 @@ public class WindowsNotificationService : INotificationService
 
             // The logo is displayed at the top header via the AUMID IconUri registry setting;
             // no bottom/body image is added per user requirement.
-            var toastXml = $"<toast><visual><binding template=\"ToastGeneric\"><text>{safeTitle}</text><text>{safeMessage}</text></binding></visual>{audioXml}</toast>";
+            var toastXml = $"<toast scenario=\"reminder\"><visual><binding template=\"ToastGeneric\"><text>{safeTitle}</text><text>{safeMessage}</text></binding></visual>{audioXml}</toast>";
+
+            var uniqueTag = (string.IsNullOrWhiteSpace(tag) ? Guid.NewGuid().ToString() : tag).Replace("'", "''");
 
             // PowerShell script using WinRT ToastNotificationManager with fresh AUMID registration and fallback
             var escapedLogoPath = logoPath?.Replace("'", "''") ?? string.Empty;
@@ -170,6 +172,9 @@ $xmlString = @'
 $xml = [Windows.Data.Xml.Dom.XmlDocument]::new()
 $xml.LoadXml($xmlString)
 $toast = [Windows.UI.Notifications.ToastNotification]::new($xml)
+$toast.Tag = '{uniqueTag}'
+$toast.Group = 'WaddTasks'
+$toast.ExpirationTime = [DateTimeOffset]::Now.AddDays(2)
 
 try {{
     [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('Wadd.Todo').Show($toast)

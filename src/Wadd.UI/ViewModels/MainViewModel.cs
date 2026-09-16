@@ -710,6 +710,9 @@ public partial class MainViewModel : ViewModelBase
             if (item.IsCompleted)
             {
                 _lastNotifiedTimes.Remove(item.Id);
+                _notifiedDueDateIds.Remove(item.Id);
+                _notifiedReminderIds.Remove(item.Id);
+                _notifiedOverdueIds.Remove(item.Id);
                 continue;
             }
 
@@ -727,7 +730,7 @@ public partial class MainViewModel : ViewModelBase
                     {
                         _notifiedReminderIds.Add(item.Id);
                         _lastNotifiedTimes[item.Id] = now;
-                        var body = item.HasDescription
+                        var body = (WindowsNotificationIncludeNotes && item.HasDescription)
                             ? $"{item.Title} - {item.DescriptionPreview}"
                             : item.Title;
                         pendingAlerts.Add((item, TaskNotificationCategory.Reminder, $"Reminder: {item.Title}", body));
@@ -736,11 +739,15 @@ public partial class MainViewModel : ViewModelBase
                     else if (shouldRepeat)
                     {
                         _lastNotifiedTimes[item.Id] = now;
-                        var body = item.HasDescription
+                        var body = (WindowsNotificationIncludeNotes && item.HasDescription)
                             ? $"{item.Title} - {item.DescriptionPreview}"
                             : item.Title;
                         pendingAlerts.Add((item, TaskNotificationCategory.Reminder, $"Reminder: {item.Title}", body));
                         continue;
+                    }
+                    else if (!_lastNotifiedTimes.ContainsKey(item.Id))
+                    {
+                        _lastNotifiedTimes[item.Id] = now;
                     }
                 }
             }
@@ -757,7 +764,7 @@ public partial class MainViewModel : ViewModelBase
                     {
                         _notifiedOverdueIds.Add(item.Id);
                         _lastNotifiedTimes[item.Id] = now;
-                        var body = item.HasDescription
+                        var body = (WindowsNotificationIncludeNotes && item.HasDescription)
                             ? $"{item.Title} - {item.DescriptionPreview}"
                             : item.Title;
                         pendingAlerts.Add((item, TaskNotificationCategory.Overdue, $"Overdue: {item.Title}", body));
@@ -766,11 +773,15 @@ public partial class MainViewModel : ViewModelBase
                     else if (shouldRepeat)
                     {
                         _lastNotifiedTimes[item.Id] = now;
-                        var body = item.HasDescription
+                        var body = (WindowsNotificationIncludeNotes && item.HasDescription)
                             ? $"{item.Title} - {item.DescriptionPreview}"
                             : item.Title;
                         pendingAlerts.Add((item, TaskNotificationCategory.Overdue, $"Overdue: {item.Title}", body));
                         continue;
+                    }
+                    else if (!_lastNotifiedTimes.ContainsKey(item.Id))
+                    {
+                        _lastNotifiedTimes[item.Id] = now;
                     }
                 }
             }
@@ -782,7 +793,7 @@ public partial class MainViewModel : ViewModelBase
                 {
                     _notifiedDueDateIds.Add(item.Id);
                     _lastNotifiedTimes[item.Id] = now;
-                    var body = item.HasDescription
+                    var body = (WindowsNotificationIncludeNotes && item.HasDescription)
                         ? $"{item.Title} - {item.DescriptionPreview}"
                         : item.Title;
                     pendingAlerts.Add((item, TaskNotificationCategory.DueToday, $"Due Today: {item.Title}", body));
@@ -790,10 +801,14 @@ public partial class MainViewModel : ViewModelBase
                 else if (shouldRepeat)
                 {
                     _lastNotifiedTimes[item.Id] = now;
-                    var body = item.HasDescription
+                    var body = (WindowsNotificationIncludeNotes && item.HasDescription)
                         ? $"{item.Title} - {item.DescriptionPreview}"
                         : item.Title;
                     pendingAlerts.Add((item, TaskNotificationCategory.DueToday, $"Due Today: {item.Title}", body));
+                }
+                else if (!_lastNotifiedTimes.ContainsKey(item.Id))
+                {
+                    _lastNotifiedTimes[item.Id] = now;
                 }
             }
         }
@@ -3147,6 +3162,13 @@ public partial class MainViewModel : ViewModelBase
         _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
         _goalsVM = new GoalsViewModel(_goalService, _aiGoalService);
         _goalsVM.StatusNotificationRequested = (msg, type) => ShowStatusBubble(msg, type);
+        WindowsNotificationService.NotificationTriggered += (title, message) =>
+        {
+            Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                ShowStatusBubble(title, NotificationBubbleType.Info);
+            });
+        };
         _selectedTasksLayoutOption = TasksLayoutOptions[0];
         LoadUserSettings();
         StartReminderChecker();
