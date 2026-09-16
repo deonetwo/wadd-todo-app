@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Input.Platform;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -10,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Wadd.Core.Enums;
 using Wadd.Core.Helpers;
 using Wadd.Core.Interfaces;
+using Wadd.Core.Logging;
 using Wadd.Core.Models;
 using Wadd.Services;
 using Wadd.UI.Views;
@@ -240,7 +242,7 @@ public partial class MainViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Trace.WriteLine($"[MainViewModel] LoadAvailableModelsAsync error: {ex.Message}");
+            AppLogger.LogError("MainViewModel", "LoadAvailableModelsAsync error", ex);
         }
         finally
         {
@@ -4213,6 +4215,90 @@ public partial class MainViewModel
     {
         int diff = (7 + (date.DayOfWeek - DayOfWeek.Monday)) % 7;
         return date.AddDays(6 - diff).Date;
+    }
+
+    public string CurrentLogFilePath => AppDataHelper.GetCurrentLogFilePath();
+    public string LogsDirectoryPath => AppDataHelper.GetLogsDirectory();
+
+    [RelayCommand]
+    private async Task CopyDiagnosticsLogsAsync()
+    {
+        try
+        {
+            var logsText = AppLogger.GetRecentLogsText();
+            if (string.IsNullOrWhiteSpace(logsText))
+            {
+                logsText = "No log entries recorded yet.";
+            }
+
+            var topLevel = TopLevel.GetTopLevel(
+                (Avalonia.Application.Current?.ApplicationLifetime as ISingleViewApplicationLifetime)?.MainView ??
+                (Avalonia.Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow);
+
+            if (topLevel?.Clipboard != null)
+            {
+                await topLevel.Clipboard.SetTextAsync(logsText);
+                ShowStatusBubble("Diagnostics logs copied to clipboard.", NotificationBubbleType.Success);
+            }
+            else
+            {
+                ShowStatusBubble("Clipboard is not available on this platform.", NotificationBubbleType.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            AppLogger.LogError("MainViewModel", "Failed to copy diagnostics logs", ex);
+            ShowStatusBubble($"Failed to copy logs: {ex.Message}", NotificationBubbleType.Error);
+        }
+    }
+
+    [RelayCommand]
+    private void OpenLogsFolder()
+    {
+        try
+        {
+            var folder = AppDataHelper.GetLogsDirectory();
+            if (!Directory.Exists(folder))
+            {
+                Directory.CreateDirectory(folder);
+            }
+
+            if (OperatingSystem.IsWindows())
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = folder,
+                    UseShellExecute = true
+                });
+            }
+            else if (OperatingSystem.IsMacOS())
+            {
+                System.Diagnostics.Process.Start("open", folder);
+            }
+            else if (OperatingSystem.IsLinux())
+            {
+                System.Diagnostics.Process.Start("xdg-open", folder);
+            }
+        }
+        catch (Exception ex)
+        {
+            AppLogger.LogError("MainViewModel", "Failed to open logs folder", ex);
+            ShowStatusBubble($"Failed to open logs folder: {ex.Message}", NotificationBubbleType.Error);
+        }
+    }
+
+    [RelayCommand]
+    private void ClearLogs()
+    {
+        try
+        {
+            AppLogger.ClearRecentLogs();
+            ShowStatusBubble("Recent logs buffer cleared.", NotificationBubbleType.Info);
+        }
+        catch (Exception ex)
+        {
+            AppLogger.LogError("MainViewModel", "Failed to clear recent logs", ex);
+        }
     }
 }
 

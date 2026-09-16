@@ -30,16 +30,13 @@ internal static class Program
         AppDomain.CurrentDomain.UnhandledException += (s, e) =>
         {
             var ex = e.ExceptionObject as Exception;
-            var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "crash.log");
-            File.WriteAllText(logPath, $"[CRASH] {DateTime.Now}\nException: {ex?.ToString()}\n");
-            Console.WriteLine($"[CRASH] {ex}");
+            Wadd.Core.Logging.AppLogger.LogCritical("Program", "Fatal AppDomain unhandled exception", ex);
         };
 
         TaskScheduler.UnobservedTaskException += (s, e) =>
         {
-            var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "crash.log");
-            File.AppendAllText(logPath, $"[UNOBSERVED EXCEPTION] {DateTime.Now}\nException: {e.Exception}\n");
-            Console.WriteLine($"[UNOBSERVED EXCEPTION] {e.Exception}");
+            Wadd.Core.Logging.AppLogger.LogError("Program", "Unobserved task exception", e.Exception);
+            e.SetObserved();
         };
 
         bool isNewInstance;
@@ -67,7 +64,7 @@ internal static class Program
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Trace.WriteLine($"[SingleInstance] Failed to signal existing instance: {ex.Message}");
+                    Wadd.Core.Logging.AppLogger.LogWarning("SingleInstance", "Failed to signal existing instance", ex);
                 }
             }
             return;
@@ -94,7 +91,7 @@ internal static class Program
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Trace.WriteLine($"[SingleInstance] Failed to register bring-to-front event: {ex.Message}");
+            Wadd.Core.Logging.AppLogger.LogError("SingleInstance", "Failed to register bring-to-front event", ex);
         }
 
         try
@@ -103,9 +100,7 @@ internal static class Program
         }
         catch (Exception ex)
         {
-            var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "crash.log");
-            File.WriteAllText(logPath, $"[FATAL CRASH] {DateTime.Now}\nException: {ex}\n");
-            Console.WriteLine($"[FATAL CRASH] {ex}");
+            Wadd.Core.Logging.AppLogger.LogCritical("Program", "Fatal desktop startup crash", ex);
             throw;
         }
         finally

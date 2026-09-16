@@ -126,7 +126,7 @@ public class AndroidNotificationService : INotificationService
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.WriteLine($"[AndroidNotificationService] Error loading large icon: {ex.Message}");
+                Wadd.Core.Logging.AppLogger.LogWarning("AndroidNotificationService", "Error loading large icon", ex);
             }
 
             var notificationId = !string.IsNullOrWhiteSpace(tag) ? tag.GetHashCode() : (int)DateTime.UtcNow.Ticks;
@@ -134,7 +134,7 @@ public class AndroidNotificationService : INotificationService
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Trace.WriteLine($"[AndroidNotificationService] Error posting notification: {ex.Message}");
+            Wadd.Core.Logging.AppLogger.LogError("AndroidNotificationService", "Error posting notification", ex);
         }
     }
 
@@ -158,7 +158,7 @@ public class AndroidNotificationService : INotificationService
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Trace.WriteLine($"[AndroidNotificationService] Error cancelling notification: {ex.Message}");
+            Wadd.Core.Logging.AppLogger.LogError("AndroidNotificationService", "Error cancelling notification", ex);
         }
 
         return Task.CompletedTask;

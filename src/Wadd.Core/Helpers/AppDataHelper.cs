@@ -20,4 +20,16 @@ public static class AppDataHelper
     {
         return Path.Combine(GetWaddDirectory(), fileName);
     }
+
+    public static string GetLogsDirectory()
+    {
+        var logsDir = Path.Combine(GetWaddDirectory(), "Logs");
+        Directory.CreateDirectory(logsDir);
+        return logsDir;
+    }
+
+    public static string GetCurrentLogFilePath()
+    {
+        return Path.Combine(GetLogsDirectory(), $"wadd-{DateTime.Now:yyyy-MM-dd}.log");
+    }
 }

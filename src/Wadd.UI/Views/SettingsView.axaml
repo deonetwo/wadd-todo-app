@@ -962,7 +962,71 @@
         </StackPanel>
       </Border>
 
-      <!-- 7. About Application (Informational - Bottom) -->
+      <!-- 7. Diagnostics & Logs -->
+      <Border Classes="content-block">
+        <StackPanel Spacing="16">
+          <TextBlock Text="DIAGNOSTICS &amp; LOGS" Classes="micro"/>
+          <StackPanel Spacing="4">
+            <TextBlock Text="Application Logs &amp; Tracing" Classes="heading"/>
+            <TextBlock Text="View and export diagnostic logs for problem solving and troubleshooting."
+                       Classes="small"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+          </StackPanel>
+
+          <!-- Current Log File Info -->
+          <Border Background="{DynamicResource AppSurfaceSubtleBrush}"
+                  BorderBrush="{DynamicResource AppBorderBrush}"
+                  BorderThickness="1"
+                  CornerRadius="8"
+                  Padding="12,10">
+            <StackPanel Spacing="4">
+              <TextBlock Text="Log File Location" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              <TextBlock Text="{Binding CurrentLogFilePath}"
+                         Classes="small"
+                         FontFamily="Cascadia Code,Consolas,Courier New,monospace"
+                         TextWrapping="Wrap"
+                         Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+            </StackPanel>
+          </Border>
+
+          <!-- Action Buttons -->
+          <WrapPanel Orientation="Horizontal">
+            <Button Classes="outline"
+                    Command="{Binding CopyDiagnosticsLogsCommand}"
+                    Margin="0,0,8,8"
+                    ToolTip.Tip="Copy recent logs from memory to clipboard">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <PathIcon Data="{StaticResource DocumentIconData}" Width="13" Height="13"/>
+                <TextBlock Text="Copy Recent Logs"/>
+              </StackPanel>
+            </Button>
+
+            <Button Classes="outline"
+                    Command="{Binding OpenLogsFolderCommand}"
+                    IsVisible="{Binding IsDesktopPlatform}"
+                    Margin="0,0,8,8"
+                    ToolTip.Tip="Open the folder containing persistent log files">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <PathIcon Data="{StaticResource FolderIconData}" Width="13" Height="13"/>
+                <TextBlock Text="Open Logs Folder"/>
+              </StackPanel>
+            </Button>
+
+            <Button Classes="btn-text"
+                    Command="{Binding ClearLogsCommand}"
+                    Margin="0,0,8,8"
+                    ToolTip.Tip="Clear the in-memory log buffer">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <PathIcon Data="{StaticResource TrashIconData}" Width="12" Height="12" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                <TextBlock Text="Clear Recent Buffer" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </StackPanel>
+            </Button>
+          </WrapPanel>
+        </StackPanel>
+      </Border>
+
+      <!-- 8. About Application (Informational - Bottom) -->
       <Border Classes="content-block">
         <StackPanel Spacing="14">
           <TextBlock Text="ABOUT APPLICATION" Classes="micro"/>

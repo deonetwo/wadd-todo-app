@@ -93,7 +93,7 @@ public class AiGoalService : IAiGoalService
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.WriteLine($"[AiGoalService] Live AI call failed, falling back to smart heuristic: {ex.Message}");
+                Wadd.Core.Logging.AppLogger.LogWarning("AiGoalService", "Live AI call failed, falling back to smart heuristic", ex);
             }
         }
 
@@ -128,7 +128,7 @@ public class AiGoalService : IAiGoalService
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.WriteLine($"[AiGoalService] Live AI milestones call failed, falling back to smart heuristic: {ex.Message}");
+                Wadd.Core.Logging.AppLogger.LogWarning("AiGoalService", "Live AI milestones call failed, falling back to smart heuristic", ex);
             }
         }
 
@@ -166,7 +166,7 @@ public class AiGoalService : IAiGoalService
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.WriteLine($"[AiGoalService] Live AI journal call failed, falling back to smart heuristic: {ex.Message}");
+                Wadd.Core.Logging.AppLogger.LogWarning("AiGoalService", "Live AI journal call failed, falling back to smart heuristic", ex);
             }
         }
 
@@ -192,7 +192,7 @@ public class AiGoalService : IAiGoalService
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Trace.WriteLine($"[AiGoalService] Fetch live models failed for {targetProvider}: {ex.Message}");
+            Wadd.Core.Logging.AppLogger.LogWarning("AiGoalService", $"Fetch live models failed for {targetProvider}", ex);
         }
 
         return GetCuratedFallbackModels(targetProvider);

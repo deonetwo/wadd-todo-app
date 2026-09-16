@@ -58,7 +58,7 @@ public class TodayTasksRemoteViewsFactory : Java.Lang.Object, RemoteViewsService
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Trace.WriteLine($"Error fetching tasks for widget: {ex.Message}");
+            Wadd.Core.Logging.AppLogger.LogError("TodayTasksWidgetService", "Error fetching tasks for widget", ex);
             _todayTasks = new List<TodoItem>();
         }
     }

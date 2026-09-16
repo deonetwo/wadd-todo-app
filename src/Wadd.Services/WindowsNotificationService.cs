@@ -38,7 +38,7 @@ public class WindowsNotificationService : INotificationService
         }
         catch (Exception ex)
         {
-            Trace.WriteLine($"[WindowsNotificationService] Error triggering in-app notification: {ex.Message}");
+            Wadd.Core.Logging.AppLogger.LogError("WindowsNotificationService", "Error triggering in-app notification", ex);
         }
 
         // 2. Dispatch native Windows toast banner
@@ -68,7 +68,7 @@ public class WindowsNotificationService : INotificationService
         }
         catch (Exception ex)
         {
-            Trace.WriteLine($"[WindowsNotificationService] Could not play notification chime: {ex.Message}");
+            Wadd.Core.Logging.AppLogger.LogWarning("WindowsNotificationService", "Could not play notification chime", ex);
         }
     }
 
@@ -126,7 +126,7 @@ public class WindowsNotificationService : INotificationService
         }
         catch (Exception ex)
         {
-            Trace.WriteLine($"[WindowsNotificationService] Could not prepare logo on disk: {ex.Message}");
+            Wadd.Core.Logging.AppLogger.LogWarning("WindowsNotificationService", "Could not prepare logo on disk", ex);
         }
 
         return null;
@@ -207,13 +207,13 @@ try {{
                 process.WaitForExit(3000);
                 if (!string.IsNullOrWhiteSpace(stdErr))
                 {
-                    Trace.WriteLine($"[WindowsNotificationService] Toast script error: {stdErr}");
+                    Wadd.Core.Logging.AppLogger.LogWarning("WindowsNotificationService", $"Toast script error: {stdErr}");
                 }
             }
         }
         catch (Exception ex)
         {
-            Trace.WriteLine($"[WindowsNotificationService] Error sending native Windows toast: {ex.Message}");
+            Wadd.Core.Logging.AppLogger.LogError("WindowsNotificationService", "Error sending native Windows toast", ex);
         }
     }
 }

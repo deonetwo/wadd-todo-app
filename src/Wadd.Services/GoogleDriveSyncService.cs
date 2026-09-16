@@ -303,7 +303,7 @@ public class GoogleDriveSyncService : ISyncService
 
             if (!string.IsNullOrWhiteSpace(nativeResult.ErrorMessage))
             {
-                Trace.WriteLine($"[ERROR] Native Google Sign-In failed: {nativeResult.ErrorMessage}");
+                Wadd.Core.Logging.AppLogger.LogError("GoogleDriveSyncService", $"Native Google Sign-In failed: {nativeResult.ErrorMessage}");
                 throw new InvalidOperationException($"Native Google Sign-In failed: {nativeResult.ErrorMessage}");
             }
         }
@@ -625,12 +625,12 @@ public class GoogleDriveSyncService : ISyncService
                 }
                 else
                 {
-                    Trace.WriteLine($"[WARN] Google token refresh failed ({response.StatusCode}): {json}");
+                    Wadd.Core.Logging.AppLogger.LogWarning("GoogleDriveSyncService", $"Google token refresh failed ({response.StatusCode}): {json}");
                 }
             }
             catch (Exception ex)
             {
-                Trace.WriteLine($"[WARN] Exception during Google token refresh: {ex.Message}");
+                Wadd.Core.Logging.AppLogger.LogWarning("GoogleDriveSyncService", "Exception during Google token refresh", ex);
             }
         }
 
@@ -678,7 +678,7 @@ public class GoogleDriveSyncService : ISyncService
             }
             catch (Exception ex)
             {
-                Trace.WriteLine($"[WARN] Exception during Firebase token refresh: {ex.Message}");
+                Wadd.Core.Logging.AppLogger.LogWarning("GoogleDriveSyncService", "Exception during Firebase token refresh", ex);
             }
         }
 
@@ -709,7 +709,7 @@ public class GoogleDriveSyncService : ISyncService
         }
         catch (Exception ex)
         {
-            Trace.WriteLine($"[WARN] Avalonia TopLevel.Launcher failed, falling back to process launcher: {ex.Message}");
+            Wadd.Core.Logging.AppLogger.LogWarning("GoogleDriveSyncService", "Avalonia TopLevel.Launcher failed, falling back to process launcher", ex);
         }
 
         if (OperatingSystem.IsAndroid())
@@ -742,7 +742,7 @@ public class GoogleDriveSyncService : ISyncService
             }
             catch (Exception ex)
             {
-                Trace.WriteLine($"[WARN] Native Android intent launch failed: {ex.Message}");
+                Wadd.Core.Logging.AppLogger.LogWarning("GoogleDriveSyncService", "Native Android intent launch failed", ex);
             }
         }
 

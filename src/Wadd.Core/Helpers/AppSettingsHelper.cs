@@ -31,7 +31,7 @@ public static class AppSettingsHelper
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Trace.WriteLine($"[AppSettingsHelper] Error loading settings: {ex.Message}");
+            Wadd.Core.Logging.AppLogger.LogError("AppSettingsHelper", "Error loading settings", ex);
         }
 
         return new AppSettingsData();
@@ -47,7 +47,7 @@ public static class AppSettingsHelper
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Trace.WriteLine($"[AppSettingsHelper] Error saving settings: {ex.Message}");
+            Wadd.Core.Logging.AppLogger.LogError("AppSettingsHelper", "Error saving settings", ex);
         }
     }
 }

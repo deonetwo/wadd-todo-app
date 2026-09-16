@@ -30,7 +30,7 @@ public partial class TasksView : UserControl
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Trace.WriteLine($"Error during pull-to-refresh: {ex.Message}");
+            Wadd.Core.Logging.AppLogger.LogError("TasksView", "Error during pull-to-refresh", ex);
         }
         finally
         {

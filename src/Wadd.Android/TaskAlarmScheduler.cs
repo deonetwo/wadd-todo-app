@@ -53,7 +53,7 @@ public static class TaskAlarmScheduler
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Trace.WriteLine($"[TaskAlarmScheduler] SchedulePeriodicCheck error: {ex.Message}");
+            Wadd.Core.Logging.AppLogger.LogError("TaskAlarmScheduler", "SchedulePeriodicCheck error", ex);
         }
     }
 
@@ -103,7 +103,7 @@ public static class TaskAlarmScheduler
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Trace.WriteLine($"[TaskAlarmScheduler] ScheduleAlarm error: {ex.Message}");
+            Wadd.Core.Logging.AppLogger.LogError("TaskAlarmScheduler", "ScheduleAlarm error", ex);
         }
     }
 
@@ -133,7 +133,7 @@ public static class TaskAlarmScheduler
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Trace.WriteLine($"[TaskAlarmScheduler] CancelAlarm error: {ex.Message}");
+            Wadd.Core.Logging.AppLogger.LogError("TaskAlarmScheduler", "CancelAlarm error", ex);
         }
     }
 
@@ -210,7 +210,7 @@ public static class TaskAlarmScheduler
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.WriteLine($"[TaskAlarmScheduler] RescheduleAll error: {ex.Message}");
+                Wadd.Core.Logging.AppLogger.LogError("TaskAlarmScheduler", "RescheduleAll error", ex);
             }
         });
     }

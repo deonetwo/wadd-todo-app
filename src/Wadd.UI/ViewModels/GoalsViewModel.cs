@@ -426,7 +426,7 @@ public partial class GoalsViewModel : ViewModelBase
             var msg = $"Could not auto-generate: {ex.Message}";
             AiStatusMessage = msg;
             NotifyStatus(msg, NotificationBubbleType.Error);
-            System.Diagnostics.Trace.WriteLine($"[GoalsViewModel] AutoFillGoalWithAi error: {ex}");
+            Wadd.Core.Logging.AppLogger.LogError("GoalsViewModel", "AutoFillGoalWithAi error", ex);
         }
         finally
         {
@@ -575,14 +575,31 @@ public partial class GoalsViewModel : ViewModelBase
 
     #region Milestone Commands
 
+    private int _loadMilestonesVersion;
+
     private async Task LoadMilestonesAndJournalForSelectedGoalAsync()
     {
+        var targetGoal = SelectedGoal;
+        if (targetGoal == null)
+        {
+            CurrentMilestones.Clear();
+            CurrentJournalEntries.Clear();
+            return;
+        }
+
+        int currentVersion = Interlocked.Increment(ref _loadMilestonesVersion);
+
+        var milestones = (await _goalService.GetMilestonesForGoalAsync(targetGoal.Id)).ToList();
+        var journalEntries = (await _goalService.GetJournalEntriesAsync(targetGoal.Id)).ToList();
+
+        if (currentVersion != _loadMilestonesVersion || SelectedGoal?.Id != targetGoal.Id)
+        {
+            return;
+        }
+
         CurrentMilestones.Clear();
         CurrentJournalEntries.Clear();
 
-        if (SelectedGoal == null) return;
-
-        var milestones = await _goalService.GetMilestonesForGoalAsync(SelectedGoal.Id);
         int completed = 0;
         int total = 0;
 
@@ -593,12 +610,11 @@ public partial class GoalsViewModel : ViewModelBase
             CurrentMilestones.Add(new GoalMilestoneItemViewModel(m));
         }
 
-        SelectedGoal.UpdateMilestonesSummary(completed, total);
+        targetGoal.UpdateMilestonesSummary(completed, total);
 
-        var journalEntries = await _goalService.GetJournalEntriesAsync(SelectedGoal.Id);
         foreach (var j in journalEntries)
         {
-            CurrentJournalEntries.Add(new JournalEntryItemViewModel(j, SelectedGoal.Title));
+            CurrentJournalEntries.Add(new JournalEntryItemViewModel(j, targetGoal.Title));
         }
     }
 
@@ -760,7 +776,7 @@ public partial class GoalsViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Trace.WriteLine($"[GoalsViewModel] AppendNextMilestonesWithAi error: {ex}");
+            Wadd.Core.Logging.AppLogger.LogError("GoalsViewModel", "AppendNextMilestonesWithAi error", ex);
         }
         finally
         {
@@ -820,7 +836,7 @@ public partial class GoalsViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Trace.WriteLine($"[GoalsViewModel] ReplaceAllMilestonesWithAi error: {ex}");
+            Wadd.Core.Logging.AppLogger.LogError("GoalsViewModel", "ReplaceAllMilestonesWithAi error", ex);
         }
         finally
         {
@@ -895,7 +911,7 @@ public partial class GoalsViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Trace.WriteLine($"[GoalsViewModel] GenerateJournalDraftWithAi error: {ex}");
+            Wadd.Core.Logging.AppLogger.LogError("GoalsViewModel", "GenerateJournalDraftWithAi error", ex);
         }
         finally
         {

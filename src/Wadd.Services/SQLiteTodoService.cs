@@ -441,7 +441,7 @@ public class SQLiteTodoService : ITodoService
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Trace.WriteLine($"Failed to write sync log: {ex.Message}");
+            Wadd.Core.Logging.AppLogger.LogError("SQLiteTodoService", "Failed to write sync log", ex);
         }
     }
 

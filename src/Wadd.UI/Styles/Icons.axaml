@@ -33,4 +33,6 @@
   <Geometry x:Key="BookIconData">M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z</Geometry>
   <Geometry x:Key="UndoIconData">M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z</Geometry>
   <Geometry x:Key="FilterIconData">M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z</Geometry>
+  <Geometry x:Key="FolderIconData">M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z</Geometry>
+  <Geometry x:Key="DocumentIconData">M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z</Geometry>
 </ResourceDictionary>

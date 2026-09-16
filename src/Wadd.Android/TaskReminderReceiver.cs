@@ -48,7 +48,7 @@ public class TaskReminderReceiver : BroadcastReceiver
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Trace.WriteLine($"[TaskReminderReceiver] Error handling task alarm: {ex.Message}");
+                    Wadd.Core.Logging.AppLogger.LogError("TaskReminderReceiver", "Error handling task alarm", ex);
                 }
                 finally
                 {
@@ -197,7 +197,7 @@ public class TaskReminderReceiver : BroadcastReceiver
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Trace.WriteLine($"[TaskReminderReceiver] Error saving notified time: {ex.Message}");
+            Wadd.Core.Logging.AppLogger.LogError("TaskReminderReceiver", "Error saving notified time", ex);
         }
     }
 
@@ -210,7 +210,7 @@ public class TaskReminderReceiver : BroadcastReceiver
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Trace.WriteLine($"[TaskReminderReceiver] Error clearing notified time: {ex.Message}");
+            Wadd.Core.Logging.AppLogger.LogError("TaskReminderReceiver", "Error clearing notified time", ex);
         }
     }
 }

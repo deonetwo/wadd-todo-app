@@ -51,6 +51,11 @@ public class MainActivity : AvaloniaMainActivity
     {
         Instance = this;
         SQLitePCL.Batteries_V2.Init();
+        global::Android.Runtime.AndroidEnvironment.UnhandledExceptionRaiser += (s, e) =>
+        {
+            Wadd.Core.Logging.AppLogger.LogCritical("AndroidEnvironment", "Unhandled Android runtime exception", e.Exception);
+        };
+
         base.OnCreate(savedInstanceState);
         HandleIntent(Intent);
         RequestNotificationPermissionIfRequired();
@@ -66,7 +71,7 @@ public class MainActivity : AvaloniaMainActivity
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Trace.WriteLine($"[MainActivity] Error rescheduling alarms on db change: {ex.Message}");
+            Wadd.Core.Logging.AppLogger.LogError("MainActivity", "Error rescheduling alarms on database change", ex);
         }
     }
 
@@ -87,7 +92,7 @@ public class MainActivity : AvaloniaMainActivity
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Trace.WriteLine($"Error refreshing widget on resume: {ex.Message}");
+            Wadd.Core.Logging.AppLogger.LogError("MainActivity", "Error refreshing widget on resume", ex);
         }
     }
 
@@ -126,7 +131,7 @@ public class MainActivity : AvaloniaMainActivity
                         }
                         catch (Exception ex)
                         {
-                            System.Diagnostics.Trace.WriteLine($"[WARN] GoogleAuthUtil.GetToken error: {ex.Message}");
+                            Wadd.Core.Logging.AppLogger.LogWarning("MainActivity", "GoogleAuthUtil.GetToken error", ex);
                         }
 
                         tcs.TrySetResult(new Wadd.Core.Interfaces.NativeAuthResult
@@ -156,6 +161,7 @@ public class MainActivity : AvaloniaMainActivity
                 }
                 catch (Exception ex)
                 {
+                    Wadd.Core.Logging.AppLogger.LogError("MainActivity", "Google Sign-In callback error", ex);
                     tcs.TrySetResult(new Wadd.Core.Interfaces.NativeAuthResult
                     {
                         IsSuccess = false,
@@ -201,7 +207,7 @@ public class MainActivity : AvaloniaMainActivity
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.WriteLine($"[MainActivity] RequestNotificationPermissionAsync error: {ex.Message}");
+                Wadd.Core.Logging.AppLogger.LogError("MainActivity", "RequestNotificationPermissionAsync error", ex);
                 tcs.TrySetResult(false);
             }
         });

@@ -211,7 +211,7 @@ public class TodayTasksWidgetProvider : AppWidgetProvider
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Trace.WriteLine($"Error fetching tasks for widget: {ex.Message}");
+            Wadd.Core.Logging.AppLogger.LogError("TodayTasksWidgetProvider", "Error fetching tasks for widget", ex);
             return new List<TodoItem>();
         }
     }
@@ -228,7 +228,7 @@ public class TodayTasksWidgetProvider : AppWidgetProvider
             var targetPkg = intent.Package ?? intent.Component?.PackageName;
             if (!string.IsNullOrEmpty(targetPkg) && targetPkg != context.PackageName)
             {
-                System.Diagnostics.Trace.WriteLine($"Security Warning: Ignored untrusted broadcast intent from package '{targetPkg}'");
+                Wadd.Core.Logging.AppLogger.LogWarning("TodayTasksWidgetProvider", $"Security Warning: Ignored untrusted broadcast intent from package '{targetPkg}'");
                 return;
             }
         }
@@ -314,7 +314,7 @@ public class TodayTasksWidgetProvider : AppWidgetProvider
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Trace.WriteLine($"Error toggling task from widget: {ex.Message}");
+                    Wadd.Core.Logging.AppLogger.LogError("TodayTasksWidgetProvider", "Error toggling task from widget", ex);
                 }
             }
         }

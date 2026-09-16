@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using Wadd.Core.Interfaces;
+using Wadd.Core.Logging;
 
 namespace Wadd.Services;
 
@@ -23,7 +24,7 @@ public class WindowsStartupService : IStartupService
         }
         catch (Exception ex)
         {
-            Trace.WriteLine($"[WindowsStartupService] Error checking startup key: {ex.Message}");
+            AppLogger.LogError("WindowsStartupService", "Error checking startup key", ex);
             return false;
         }
     }
@@ -66,7 +67,7 @@ public class WindowsStartupService : IStartupService
         }
         catch (Exception ex)
         {
-            Trace.WriteLine($"[WindowsStartupService] Error setting startup key: {ex.Message}");
+            AppLogger.LogError("WindowsStartupService", "Error setting startup key", ex);
         }
     }
 }

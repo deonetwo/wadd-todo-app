@@ -25,6 +25,24 @@ public partial class App : Application
         System.Threading.Thread.CurrentThread.CurrentCulture = enUSInfo;
         System.Threading.Thread.CurrentThread.CurrentUICulture = enUSInfo;
 
+        AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+        {
+            if (e.ExceptionObject is Exception ex)
+            {
+                Wadd.Core.Logging.AppLogger.LogCritical("AppDomain", "Unhandled domain exception occurred", ex);
+            }
+            else
+            {
+                Wadd.Core.Logging.AppLogger.LogCritical("AppDomain", $"Unhandled exception object: {e.ExceptionObject}");
+            }
+        };
+
+        TaskScheduler.UnobservedTaskException += (s, e) =>
+        {
+            Wadd.Core.Logging.AppLogger.LogError("TaskScheduler", "Unobserved task exception occurred", e.Exception);
+            e.SetObserved();
+        };
+
         AvaloniaXamlLoader.Load(this);
     }
 
@@ -148,7 +166,7 @@ public partial class App : Application
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.WriteLine($"[App] Error loading tray icon: {ex.Message}");
+                Wadd.Core.Logging.AppLogger.LogWarning("App", "Error loading tray icon", ex);
             }
 
             _trayIcon.Clicked += (s, e) => ShowMainWindow(desktop);
@@ -178,7 +196,7 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Trace.WriteLine($"[App] Error setting up system tray: {ex.Message}");
+            Wadd.Core.Logging.AppLogger.LogError("App", "Error setting up system tray", ex);
         }
     }
 
