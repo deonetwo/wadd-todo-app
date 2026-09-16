@@ -155,7 +155,7 @@ public partial class App : Application
 
             var menu = new NativeMenu();
 
-            var openItem = new NativeMenuItem("Open Wadd");
+            var openItem = new NativeMenuItem("Open Wadd ToDo");
             openItem.Click += (s, e) => ShowMainWindow(desktop);
             menu.Add(openItem);
 

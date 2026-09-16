@@ -6,6 +6,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <NuGetAuditMode>all</NuGetAuditMode>
+    <AssemblyName>Wadd-ToDo</AssemblyName>
+    <Product>Wadd - ToDo Application</Product>
+    <Title>Wadd - ToDo Application</Title>
+    <AssemblyTitle>Wadd - ToDo Application</AssemblyTitle>
+    <Description>Fast, minimalist, offline-first ToDo and task management application.</Description>
     <ApplicationIcon>..\Wadd.UI\Assets\logo.ico</ApplicationIcon>
     <Version>1.4.1</Version>
     <AssemblyVersion>1.4.1.0</AssemblyVersion>

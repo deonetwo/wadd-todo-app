@@ -5,7 +5,7 @@
         xmlns:views="clr-namespace:Wadd.UI.Views;assembly=Wadd.UI"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
         x:Class="Wadd.UI.Views.MainWindow"
-        Title="Wadd"
+        Title="Wadd - ToDo Application"
         Icon="avares://Wadd.UI/Assets/logo.ico"
         Width="1000" Height="700"
         MinWidth="380" MinHeight="550"
