@@ -127,4 +127,59 @@ public class UpcomingTasksFilterTests
         Assert.True(MainViewModel.PassesUpcomingRangeFilter(vm, today, "Next7Days"));
         Assert.True(MainViewModel.PassesUpcomingRangeFilter(vm, today, "All"));
     }
+
+    [Fact]
+    public void TodayTasks_PrioritizesTasksWithDueDateFirst()
+    {
+        var vm = new MainViewModel();
+        var today = DateTime.Today;
+
+        var undatedTask = new TodoItemViewModel(new TodoItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Undated Task",
+            DueDate = null,
+            ReminderAt = null
+        });
+
+        var taskDueToday = new TodoItemViewModel(new TodoItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Task Due Today",
+            DueDate = today
+        });
+
+        var taskOverdue = new TodoItemViewModel(new TodoItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Overdue Task",
+            DueDate = today.AddDays(-1)
+        });
+
+        var taskReminderOnly = new TodoItemViewModel(new TodoItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Reminder Only Task",
+            DueDate = null,
+            ReminderAt = today.AddHours(14)
+        });
+
+        // Add in random order
+        vm.TodoItems.Clear();
+        vm.TodoItems.Add(undatedTask);
+        vm.TodoItems.Add(taskDueToday);
+        vm.TodoItems.Add(taskReminderOnly);
+        vm.TodoItems.Add(taskOverdue);
+
+        // Trigger subcollection update
+        vm.SetCompletedDateFilterPresetCommand.Execute("All");
+        vm.SetCompletedDateFilterPresetCommand.Execute("Today");
+
+        // Verify order: Overdue first, then Due Today, then Reminder only, then Undated
+        Assert.Equal(4, vm.TodayTodoItems.Count);
+        Assert.Equal("Overdue Task", vm.TodayTodoItems[0].Title);
+        Assert.Equal("Task Due Today", vm.TodayTodoItems[1].Title);
+        Assert.Equal("Reminder Only Task", vm.TodayTodoItems[2].Title);
+        Assert.Equal("Undated Task", vm.TodayTodoItems[3].Title);
+    }
 }

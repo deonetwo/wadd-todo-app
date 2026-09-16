@@ -2591,10 +2591,16 @@ public partial class MainViewModel : ViewModelBase
         var completedItems = filteredItems.Where(x => x.IsCompleted).ToList();
 
         // Today tasks: active tasks with DueDate <= today OR ReminderAt <= today OR without any dates
+        // Prioritize tasks that have a due date first (earliest due date first), then reminder, then undated
         var freshStandard = activeItems.Where(x =>
             (x.DueDate.HasValue && x.DueDate.Value.Date <= today) ||
             (x.ReminderAt.HasValue && x.ReminderAt.Value.Date <= today) ||
-            (!x.DueDate.HasValue && !x.ReminderAt.HasValue)).ToList();
+            (!x.DueDate.HasValue && !x.ReminderAt.HasValue))
+            .OrderBy(x => !x.DueDate.HasValue)
+            .ThenBy(x => x.DueDate)
+            .ThenBy(x => !x.ReminderAt.HasValue)
+            .ThenBy(x => x.ReminderAt)
+            .ToList();
 
         // Upcoming tasks: active tasks (both one-off and recurring) due or reminded strictly in the future, filtered by range preset and sorted by nearest due date
         var allUpcoming = activeItems
