@@ -6,6 +6,7 @@ using Android.Content.PM;
 using Android.OS;
 using Wadd.Core.Helpers;
 using Wadd.Core.Interfaces;
+using Wadd.Core.Models;
 
 namespace Wadd.Android;
 
@@ -56,12 +57,18 @@ public class AndroidNotificationService : INotificationService
             }
         }
 
+        PostNativeNotification(context, title, message, tag, settings);
+        return Task.CompletedTask;
+    }
+
+    public static void PostNativeNotification(Context context, string title, string message, string? tag, AppSettingsData settings)
+    {
         try
         {
             var notificationManager = (NotificationManager?)context.GetSystemService(Context.NotificationService);
             if (notificationManager == null)
             {
-                return Task.CompletedTask;
+                return;
             }
 
             // Ensure notification channel exists (API 26+)
@@ -88,11 +95,17 @@ public class AndroidNotificationService : INotificationService
             // Create intent to bring MainActivity to foreground on tap
             var intent = new Intent(context, typeof(MainActivity));
             intent.AddFlags(ActivityFlags.ClearTop | ActivityFlags.SingleTop);
+            var pendingFlags = PendingIntentFlags.UpdateCurrent;
+            if (OperatingSystem.IsAndroidVersionAtLeast(31))
+            {
+                pendingFlags |= PendingIntentFlags.Immutable;
+            }
+
             var pendingIntent = PendingIntent.GetActivity(
                 context,
                 0,
                 intent,
-                PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Immutable);
+                pendingFlags);
 
             var builder = new Notification.Builder(context, ChannelId)
                 .SetContentTitle(title)
@@ -123,8 +136,6 @@ public class AndroidNotificationService : INotificationService
         {
             System.Diagnostics.Trace.WriteLine($"[AndroidNotificationService] Error posting notification: {ex.Message}");
         }
-
-        return Task.CompletedTask;
     }
 
     public Task CancelNotificationAsync(string tag)
@@ -139,6 +150,11 @@ public class AndroidNotificationService : INotificationService
         {
             var notificationManager = (NotificationManager?)context.GetSystemService(Context.NotificationService);
             notificationManager?.Cancel(tag, tag.GetHashCode());
+
+            if (Guid.TryParse(tag, out var taskId))
+            {
+                TaskAlarmScheduler.CancelAlarm(context, taskId);
+            }
         }
         catch (Exception ex)
         {

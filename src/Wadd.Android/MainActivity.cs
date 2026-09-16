@@ -54,6 +54,20 @@ public class MainActivity : AvaloniaMainActivity
         base.OnCreate(savedInstanceState);
         HandleIntent(Intent);
         RequestNotificationPermissionIfRequired();
+        Wadd.Core.Helpers.WaddDatabaseNotifier.DataChanged += OnDatabaseChanged;
+        TaskAlarmScheduler.RescheduleAll(this);
+    }
+
+    private void OnDatabaseChanged(object? sender, EventArgs e)
+    {
+        try
+        {
+            TaskAlarmScheduler.RescheduleAll(this);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Trace.WriteLine($"[MainActivity] Error rescheduling alarms on db change: {ex.Message}");
+        }
     }
 
     protected override void OnNewIntent(global::Android.Content.Intent? intent)
@@ -69,6 +83,7 @@ public class MainActivity : AvaloniaMainActivity
         {
             TodayTasksWidgetProvider.TriggerRefresh(this);
             Wadd.Core.Helpers.WaddDatabaseNotifier.NotifyDataChanged();
+            TaskAlarmScheduler.RescheduleAll(this);
         }
         catch (Exception ex)
         {
@@ -210,17 +225,20 @@ public class MainActivity : AvaloniaMainActivity
     {
         base.OnPause();
         App.SaveThemeAndSettings();
+        TaskAlarmScheduler.RescheduleAll(this);
     }
 
     protected override void OnStop()
     {
         base.OnStop();
         App.SaveThemeAndSettings();
+        TaskAlarmScheduler.RescheduleAll(this);
     }
 
     protected override void OnDestroy()
     {
         base.OnDestroy();
+        Wadd.Core.Helpers.WaddDatabaseNotifier.DataChanged -= OnDatabaseChanged;
         App.SaveThemeAndSettings();
     }
 }
