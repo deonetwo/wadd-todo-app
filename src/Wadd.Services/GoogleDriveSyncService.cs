@@ -1452,14 +1452,17 @@ public class GoogleDriveSyncService : ISyncService
                     return;
                 }
 
+                Wadd.Core.Logging.AppLogger.LogWarning("GoogleDriveSyncService", $"Google session expired on '{actionName}' ({response.StatusCode}): {content}");
                 throw new InvalidOperationException("Google session expired. Please click 'Connect Google Drive Account' in Settings to refresh your connection.");
             }
 
             if (response.StatusCode == System.Net.HttpStatusCode.Forbidden || content.Contains("drive.googleapis.com") || content.Contains("API has not been used"))
             {
+                Wadd.Core.Logging.AppLogger.LogError("GoogleDriveSyncService", $"Google Drive API is disabled for '{actionName}' ({response.StatusCode}): {content}");
                 throw new InvalidOperationException("Google Drive API is disabled in your Google Cloud Console project. Please open Google Cloud Console > Enabled APIs & Services > Enable 'Google Drive API'.");
             }
 
+            Wadd.Core.Logging.AppLogger.LogError("GoogleDriveSyncService", $"Google Drive API {actionName} failed ({response.StatusCode}): {content}");
             throw new InvalidOperationException($"Google Drive API {actionName} failed ({response.StatusCode}): {content}");
         }
     }

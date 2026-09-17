@@ -3688,6 +3688,7 @@ public partial class MainViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            AppLogger.LogError("Export", $"Export failed: {ex.Message}", ex);
             StatusMessage = $"Export failed: {ex.Message}";
         }
     }
@@ -3707,6 +3708,7 @@ public partial class MainViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            AppLogger.LogError("GoogleAuth", $"Sign-in failed: {ex.Message}", ex);
             StatusMessage = $"Sign-in failed: {ex.Message}";
         }
     }
@@ -3722,6 +3724,7 @@ public partial class MainViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            AppLogger.LogError("GoogleAuth", $"Sign-out failed: {ex.Message}", ex);
             StatusMessage = $"Sign-out failed: {ex.Message}";
         }
     }
@@ -3762,6 +3765,7 @@ public partial class MainViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            AppLogger.LogError("Sync", $"Manual sync failed: {ex.Message}", ex);
             UpdateGoogleAuthState();
             StatusMessage = $"Sync failed: {ex.Message}";
         }
@@ -3818,9 +3822,9 @@ public partial class MainViewModel : ViewModelBase
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Silent error handling for background auto sync
+            AppLogger.LogWarning("Sync", $"Auto sync background failed: {ex.Message}");
         }
         finally
         {
