@@ -12,9 +12,9 @@
     <AssemblyTitle>Wadd - ToDo Application</AssemblyTitle>
     <Description>Fast, minimalist, offline-first ToDo and task management application.</Description>
     <ApplicationIcon>..\Wadd.UI\Assets\logo.ico</ApplicationIcon>
-    <Version>1.4.1</Version>
-    <AssemblyVersion>1.4.1.0</AssemblyVersion>
-    <FileVersion>1.4.1.0</FileVersion>
+    <Version>1.4.3</Version>
+    <AssemblyVersion>1.4.3.0</AssemblyVersion>
+    <FileVersion>1.4.3.0</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
