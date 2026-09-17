@@ -28,6 +28,7 @@ public partial class MainViewModel : ViewModelBase
     private readonly IStartupService _startupService;
     private readonly IAiGoalService _aiGoalService;
     private readonly INotificationService _notificationService;
+    private readonly IAudioService _audioService;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsCustomAiProvider))]
@@ -550,6 +551,14 @@ public partial class MainViewModel : ViewModelBase
     private bool _playNotificationSound = true;
 
     partial void OnPlayNotificationSoundChanged(bool value)
+    {
+        SaveUserSettings();
+    }
+
+    [ObservableProperty]
+    private bool _playTaskCompletedSound = true;
+
+    partial void OnPlayTaskCompletedSoundChanged(bool value)
     {
         SaveUserSettings();
     }
@@ -3154,11 +3163,12 @@ public partial class MainViewModel : ViewModelBase
         App.Services?.GetService<IGoalService>() ?? new SQLiteGoalService(),
         App.Services?.GetService<IStartupService>() ?? new WindowsStartupService(),
         App.Services?.GetService<IAiGoalService>() ?? new Wadd.Services.AiGoalService(new System.Net.Http.HttpClient()),
-        App.Services?.GetService<INotificationService>() ?? new WindowsNotificationService())
+        App.Services?.GetService<INotificationService>() ?? new WindowsNotificationService(),
+        App.Services?.GetService<IAudioService>() ?? new Wadd.Services.AudioService())
     {
     }
 
-    public MainViewModel(ITodoService todoService, IThemeService themeService, ISyncService syncService, IExportService exportService, IGoalService goalService, IStartupService startupService, IAiGoalService aiGoalService, INotificationService notificationService)
+    public MainViewModel(ITodoService todoService, IThemeService themeService, ISyncService syncService, IExportService exportService, IGoalService goalService, IStartupService startupService, IAiGoalService aiGoalService, INotificationService notificationService, IAudioService? audioService = null)
     {
         _todoService = todoService ?? throw new ArgumentNullException(nameof(todoService));
         _themeService = themeService ?? throw new ArgumentNullException(nameof(themeService));
@@ -3168,7 +3178,8 @@ public partial class MainViewModel : ViewModelBase
         _startupService = startupService ?? throw new ArgumentNullException(nameof(startupService));
         _aiGoalService = aiGoalService ?? throw new ArgumentNullException(nameof(aiGoalService));
         _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
-        _goalsVM = new GoalsViewModel(_goalService, _aiGoalService);
+        _audioService = audioService ?? App.Services?.GetService<IAudioService>() ?? new Wadd.Services.AudioService();
+        _goalsVM = new GoalsViewModel(_goalService, _aiGoalService, _audioService);
         _goalsVM.StatusNotificationRequested = (msg, type) => ShowStatusBubble(msg, type);
         WindowsNotificationService.NotificationTriggered += (title, message) =>
         {
@@ -3606,6 +3617,12 @@ public partial class MainViewModel : ViewModelBase
     private async Task ToggleTodoAsync(TodoItemViewModel? itemVm)
     {
         if (itemVm == null) return;
+
+        // Trigger completed sound instantly the moment the user checks the task
+        if (!itemVm.IsCompleted)
+        {
+            _audioService.PlayCompletedSound();
+        }
 
         lock (_togglingTaskIds)
         {
@@ -4156,6 +4173,7 @@ public partial class MainViewModel
         NotificationRepeatIntervalMinutes = settings.NotificationRepeatIntervalMinutes;
         SelectedNotificationRepeatIntervalOption = NotificationRepeatIntervalOptions.FirstOrDefault(x => x.Minutes == settings.NotificationRepeatIntervalMinutes) ?? NotificationRepeatIntervalOptions[0];
         PlayNotificationSound = settings.PlayNotificationSound;
+        PlayTaskCompletedSound = settings.PlayTaskCompletedSound;
         WindowsToastNotifications = true; // Always on
         WindowsNotificationIncludeNotes = true; // Always on
         AndroidVibration = settings.AndroidVibration;
@@ -4184,6 +4202,7 @@ public partial class MainViewModel
         settings.NotificationLeadTimeMinutes = NotificationLeadTimeMinutes;
         settings.NotificationRepeatIntervalMinutes = NotificationRepeatIntervalMinutes;
         settings.PlayNotificationSound = PlayNotificationSound;
+        settings.PlayTaskCompletedSound = PlayTaskCompletedSound;
         settings.WindowsToastNotifications = true; // Always on
         settings.WindowsNotificationIncludeNotes = true; // Always on
         settings.AndroidVibration = AndroidVibration;

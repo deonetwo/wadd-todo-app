@@ -24,6 +24,7 @@ public class AppSettingsData
     public int NotificationLeadTimeMinutes { get; set; } = 0;
     public int NotificationRepeatIntervalMinutes { get; set; } = 0;
     public bool PlayNotificationSound { get; set; } = true;
+    public bool PlayTaskCompletedSound { get; set; } = true;
 
     // Windows Desktop Notification Settings
     public bool WindowsToastNotifications { get; set; } = true;

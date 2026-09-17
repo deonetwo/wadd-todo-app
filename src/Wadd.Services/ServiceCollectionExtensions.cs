@@ -21,6 +21,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IGoalService>(sp => new SQLiteGoalService(((SQLiteTodoService)sp.GetRequiredService<ITodoService>()).DatabaseConnection));
         services.AddSingleton<IStartupService, WindowsStartupService>();
         services.AddSingleton<IAiGoalService, AiGoalService>();
+        services.AddSingleton<IAudioService, AudioService>();
         services.AddSingleton<INotificationService, WindowsNotificationService>();
 
         return services;

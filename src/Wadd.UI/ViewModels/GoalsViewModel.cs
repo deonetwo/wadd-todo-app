@@ -28,6 +28,7 @@ public partial class GoalsViewModel : ViewModelBase
 {
     private readonly IGoalService _goalService;
     private readonly IAiGoalService _aiGoalService;
+    private readonly IAudioService? _audioService;
 
     public ObservableCollection<LifeGoalItemViewModel> Goals { get; } = new();
     public ObservableCollection<LifeGoalItemViewModel> FilteredGoals { get; } = new();
@@ -139,14 +140,15 @@ public partial class GoalsViewModel : ViewModelBase
     private string _newJournalContent = string.Empty;
 
     public GoalsViewModel(IGoalService goalService)
-        : this(goalService, new Wadd.Services.AiGoalService(new System.Net.Http.HttpClient()))
+        : this(goalService, new Wadd.Services.AiGoalService(new System.Net.Http.HttpClient()), null)
     {
     }
 
-    public GoalsViewModel(IGoalService goalService, IAiGoalService aiGoalService)
+    public GoalsViewModel(IGoalService goalService, IAiGoalService aiGoalService, IAudioService? audioService = null)
     {
         _goalService = goalService ?? throw new ArgumentNullException(nameof(goalService));
         _aiGoalService = aiGoalService ?? throw new ArgumentNullException(nameof(aiGoalService));
+        _audioService = audioService;
         _ = InitializeAsync();
     }
 
@@ -577,6 +579,11 @@ public partial class GoalsViewModel : ViewModelBase
 
         await _goalService.SaveGoalAsync(target.Model);
         OnPropertyChanged(nameof(SelectedGoal));
+
+        if (newAchievedState)
+        {
+            _audioService?.PlayCompletedSound();
+        }
     }
 
     #region Milestone Commands
@@ -651,6 +658,12 @@ public partial class GoalsViewModel : ViewModelBase
     private async Task ToggleMilestoneAsync(GoalMilestoneItemViewModel? milestoneVm)
     {
         if (milestoneVm == null || SelectedGoal == null) return;
+
+        bool isCompleting = milestoneVm.IsCompleted;
+        if (isCompleting)
+        {
+            _audioService?.PlayCompletedSound();
+        }
 
         await _goalService.SaveMilestoneAsync(milestoneVm.Model);
         UpdateSelectedGoalProgress();

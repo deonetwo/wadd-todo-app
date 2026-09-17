@@ -41,10 +41,24 @@ public class WindowsNotificationService : INotificationService
             Wadd.Core.Logging.AppLogger.LogError("WindowsNotificationService", "Error triggering in-app notification", ex);
         }
 
-        // 2. Dispatch native Windows toast banner
+        // 2. Play custom notification sound (notification.mp3)
+        if (settings.PlayNotificationSound)
+        {
+            try
+            {
+                var audioService = new AudioService();
+                audioService.PlayNotificationSound();
+            }
+            catch (Exception ex)
+            {
+                Wadd.Core.Logging.AppLogger.LogWarning("WindowsNotificationService", "Failed to play notification sound", ex);
+            }
+        }
+
+        // 3. Dispatch native Windows toast banner (with silent audio so it does not collide with notification.mp3)
         if (OperatingSystem.IsWindows() && settings.WindowsToastNotifications)
         {
-            await Task.Run(() => DispatchNativeWindowsToast(title, message, settings.PlayNotificationSound, tag));
+            await Task.Run(() => DispatchNativeWindowsToast(title, message, false, tag));
         }
     }
 
