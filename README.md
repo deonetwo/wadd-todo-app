@@ -1,531 +1,243 @@
-# Wadd - To-Do Application
+# Wadd: To-Do Application
 
-**Wadd** is a cross-platform To-Do application built with **.NET** and **Avalonia UI**, targeting **Windows** and **Android**. The project architecture strictly adheres to **Clean Architecture** and **MVVM (Model-View-ViewModel)** principles.
+**Wadd** is a cross-platform To-Do application built with **.NET 10** and **Avalonia UI**, targeting **Windows** and **Android**. The project architecture adheres strictly to **Clean Architecture** and **MVVM (Model-View-ViewModel)** principles.
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 - **Framework**: [.NET 10.0](https://dotnet.microsoft.com/)
-- **UI Framework**: [Avalonia UI](https://avaloniaui.net/) (Cross-platform XAML UI toolkit)
-- **Theme Package**: [Semi.Avalonia](https://github.com/irihist/Semi.Avalonia) (Modern Control Styling & Design Tokens)
-- **MVVM Framework**: [CommunityToolkit.Mvvm](https://learn.microsoft.com/en-us/dotnet/communitytoolkit/mvvm/)
+- **UI Framework**: [Avalonia UI 11.2](https://avaloniaui.net/) (Cross-platform XAML UI toolkit)
+- **Theme Package**: [Semi.Avalonia 11.2](https://github.com/irihist/Semi.Avalonia) (Modern control styling and design tokens)
+- **MVVM Framework**: [CommunityToolkit.Mvvm 8.4](https://learn.microsoft.com/en-us/dotnet/communitytoolkit/mvvm/)
 - **Database Engine**: [sqlite-net-pcl](https://github.com/praeclarum/sqlite-net) with [SQLitePCLRaw.bundle_e_sqlite3](https://github.com/ericsink/SQLitePCL.raw) (Embedded SQLite C-Engine)
+- **Spreadsheet Engine**: [MiniExcel](https://github.com/mini-excel/MiniExcel) (Zero-dependency fast XLSX exporter)
+- **OAuth Proxy Backend**: [Cloudflare Workers](https://workers.cloudflare.com/) (Serverless OAuth code and token exchange proxy)
 - **Dependency Injection**: [Microsoft.Extensions.DependencyInjection](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection)
 - **Language**: C# 12+
 
 ---
 
-## 📱 Target Platforms
+## Target Platforms
 
-- **Windows** (Desktop Entry Point: `Wadd.Desktop`)
-- **Android** (Mobile Entry Point: `Wadd.Android`)
-
----
-
-## ✨ Key Features
-
-- **🎯 Life Goals & Reflection Journal**: Organize long-term vision targets into categories (Health, Career, Finance, Personal) with sequential milestone checklists and record daily reflective journal entries with mood tags. Features dynamic progress calculation `(completed / total) * 100`, soft-deletion tombstones (`IsDeleted`, `DeletedAt`, `UpdatedAt`), and cross-platform desktop/mobile support.
-- **🏷️ Optional Task Categories & Tags Management**: Assign multi-tag category badges to tasks, filter views dynamically via toolbar category dropdowns, and manage tags globally (create, inline rename, delete) via a dedicated **Tags Management** view (`TagsManagementView.axaml`).
-- **📅 Calendar & Timeline View**: Interactive 42-cell month grid with micro status indicators, recurring habit occurrence calculations (`RecurrenceEvaluator`), overflow badges (`+X more`), and a toggleable Right Detail Sidebar panel.
-- **🎨 Dynamic Theme Engine**: Smooth Light / Dark mode switching using Semi.Avalonia design tokens.
-- **📐 Responsive Dual Layout**: Adaptive responsive UI supporting desktop multi-column view and compact mobile layout.
+- **Windows Desktop** (Entry Point: `src/Wadd.Desktop/`)
+- **Android Mobile** (Entry Point: `src/Wadd.Android/`)
 
 ---
 
-## 🗄️ Database & Persistence Architecture (SQLite)
+## Key Features
 
-All application state is locally persisted in SQLite (`wadd.db`) stored under `Environment.SpecialFolder.LocalApplicationData` (`AppDataHelper.GetWaddDirectory()`). All domain models support offline tombstone soft-deletion for local-first sync capabilities.
-
-### Life Goals & Journal Schema
-
-| Entity | Fields | Description |
-|---|---|---|
-| `LifeGoal` | `Id` (GUID string), `Title` (string), `Description` (string?), `Category` (string), `TargetDate` (DateTime?), `IsAchieved` (bool), `CreatedAt` (UTC), `UpdatedAt` (UTC), `IsDeleted` (bool), `DeletedAt` (UTC) | Long-term life vision goal targets |
-| `GoalMilestone` | `Id` (GUID string), `GoalId` (string FK), `Title` (string), `IsCompleted` (bool), `OrderIndex` (int), `UpdatedAt` (UTC), `IsDeleted` (bool), `DeletedAt` (UTC) | Sequential milestone sub-tasks |
-| `JournalEntry` | `Id` (GUID string), `GoalId` (string? optional FK), `Title` (string), `Content` (string), `Mood` (string? emoji/label tag), `EntryDate` (UTC), `UpdatedAt` (UTC), `IsDeleted` (bool), `DeletedAt` (UTC) | Reflective thoughts & journal history |
-
----
-
-## 📌 Roadmap & Upcoming Features (TODO)
-
-- [ ] **Task Strikethrough Formatting**: Add horizontal line (`TextDecorations="Strikethrough"`) on task title when completing a task.
+- **Life Goals and Reflection Journal**: Organize long-term vision targets into categories (Health, Career, Finance, Personal) with sequential milestone checklists and record daily reflective journal entries with mood tags. Features dynamic progress calculation `(completed / total) * 100`, soft-deletion tombstones (`IsDeleted`, `DeletedAt`, `UpdatedAt`), and cross-platform desktop/mobile support.
+- **AI Goal Coaching and Milestone Breakdown**: Interactive AI assistant powered by `AiGoalService` supporting Google Gemini, OpenAI, Anthropic, OpenRouter, and Custom API endpoints to generate milestone checklists and reflective journal drafts with automatic heuristic fallback.
+- **Task Categories and Tags Management**: Assign multi-tag category badges to tasks, filter views dynamically via toolbar category dropdowns, and manage tags globally (create, inline rename, delete) via a dedicated **Tags Management** view.
+- **Calendar and Timeline View**: Interactive 42-cell month grid with status indicators, recurring habit occurrence calculations (`RecurrenceEvaluator`), overflow badges (`+X more`), and a toggleable right detail sidebar panel.
+- **Google Drive Cloud Sync with Cloudflare OAuth Proxy**: Isolated data synchronization using Google Drive's hidden `appDataFolder` space. Client secrets are secured through a serverless Cloudflare Worker proxy with PKCE code exchange and background token refresh.
+- **Conflict Resolution Center**: Automatic field-level merging for non-overlapping edits, with a visual side-by-side conflict resolver dialog for simultaneous edits.
+- **Excel Data Export**: Direct streaming export of tasks to `.xlsx` using MiniExcel with zero external Office dependencies.
+- **Desktop System Integration**: Windows system tray with minimize-to-tray, single-instance process lock via mutex, native toast notifications with sound chime, and auto-start on Windows boot via Registry.
+- **Structured Diagnostics Logging**: In-app live diagnostic log inspector in Settings and daily rolling disk logs stored at `%LOCALAPPDATA%\Wadd\Logs\wadd-YYYY-MM-DD.log`.
 
 ---
 
-## 📅 Calendar & Timeline View Architecture
+## Database and Persistence Architecture (SQLite)
 
-Wadd features a clean, responsive **Calendar & Timeline View** (`CalendarView.axaml` and `CalendarViewModel` / `CalendarDayViewModel`) designed for month-grid scheduling, habit tracking, overflow task management, and deep daily task detail inspection.
+All application state is locally persisted in an embedded SQLite database (`wadd.db`) stored under `Environment.SpecialFolder.LocalApplicationData` (`AppDataHelper.GetWaddDirectory()`). All domain models support offline tombstone soft-deletion for local-first sync capabilities.
 
-```mermaid
-graph TD
-    A["CalendarView.axaml (UI Grid)"] --> B["MainViewModel (Calendar State & Navigation)"]
-    B --> C["CalendarDayViewModel (Cell ViewModels)"]
-    B --> D["RecurrenceEvaluator (Occurrence Engine)"]
-    C --> E["CalendarDayModel (Domain Model)"]
-    D --> F["TodoItem Collection (Domain Tasks)"]
-    B --> G["Right Detail Sidebar (Width=340)"]
-```
+### Entity Schema Overview
 
-### 1. 42-Cell Month Grid & Navigation
-- **Grid Layout**: Displays a 6-week x 7-day (42 cells) month grid via `UniformGrid Columns="7"`.
-- **Navigation Controls**:
-  - `PreviousMonthCommand` & `NextMonthCommand`: Navigates to previous/next month and recalculates day cells.
-  - `JumpToTodayCommand`: Resets grid view to `DateTime.Today` and highlights the current day cell.
-
-### 2. Recurring Task Occurrence Engine (`RecurrenceEvaluator`)
-- **API**: `RecurrenceEvaluator.GetTasksForDate(DateTime date, IEnumerable<TodoItem> allTasks)`
-- **Evaluation Rules**:
-  - **Standard Tasks**: Matches if `DueDate` or `ReminderAt` falls on target date.
-  - **Recurring Tasks (`IsRecurring == true`)**: Evaluates start date (`DueDate` or `ReminderAt` or `CreatedAt`) and evaluates recurrence rule:
-    - `Daily`: Matches every day after start date.
-    - `Weekdays`: Matches Monday–Friday.
-    - `Weekly`: Matches same day of week as start date.
-    - `Monthly`: Matches same day of month as start date.
-    - `Yearly`: Matches same month and day as start date.
-    - `Custom`: Evaluates `CustomRecurrenceInterval`, `CustomRecurrenceUnit` (`Days`, `Weeks`, `Months`, `Years`), and `CustomWeeklyDays` (e.g., `Mon,Wed,Fri`).
-
-### 3. Day Cell Model & Status Badges (`CalendarDayModel`)
-Each cell renders:
-- **Header**: Day number text (`DayNumberText`) with a highlighted `TODAY` pill badge if `IsToday == true`.
-- **Task Status Badges**: Mini status pills for visible tasks (max 2 visible per cell):
-  - Green indicator dot (`#10B981`) for completed tasks.
-  - Primary blue dot (`#3B82F6`) for pending tasks.
-  - 🔄 Icon for recurring habit tasks.
-- **Overflow Badge (`HasOverflow`)**: Renders a subtle `+X more` highlight badge when a day has more than 2 scheduled tasks.
-
-### 4. Right Detail Sidebar Panel
-- **Toggle Control**: Controlled via `IsSidebarOpen` (`bool`).
-- **Date Detail Selection**: Clicking any day cell (`SelectDayCommand`) highlights the day cell with an active primary border, populates `SelectedDateTasks` with full task details for that date, and slides open the right detail panel (`Width="340"`).
-- **Interactive Actions**: Users can check off tasks (`ToggleTodoCommand`), view task details, or delete tasks directly from the sidebar.
+| Entity | Primary Key | Key Fields | Description |
+|---|---|---|---|
+| `TodoItem` | `Id` (`Guid`) | `Title`, `Description`, `Category`, `IsCompleted`, `Priority`, `DueDate`, `ReminderAt`, `IsRecurring`, `RecurrenceType`, `Version`, `IsDeleted` | Main task item with priority and recurrence |
+| `LifeGoal` | `Id` (`string`) | `Title`, `Description`, `Category`, `TargetDate`, `IsAchieved`, `CreatedAt`, `UpdatedAt`, `IsDeleted` | Long-term life vision targets |
+| `GoalMilestone` | `Id` (`string`) | `GoalId`, `Title`, `IsCompleted`, `OrderIndex`, `UpdatedAt`, `IsDeleted` | Sequential milestone sub-tasks for goals |
+| `JournalEntry` | `Id` (`string`) | `GoalId`, `Title`, `Content`, `Mood`, `EntryDate`, `UpdatedAt`, `IsDeleted` | Daily reflective thoughts and mood history |
+| `SyncLog` | `Id` (`Guid`) | `TableName`, `RecordId`, `Operation`, `PayloadJson`, `Timestamp`, `DeviceId`, `Synced`, `Revision` | Local mutation history for cloud replication |
+| `SyncConflict` | `Id` (`Guid`) | `TableName`, `RecordId`, `LocalVersionJson`, `CloudVersionJson`, `ConflictingFieldsJson`, `Status`, `ResolutionType` | Unresolved data collision records |
 
 ---
 
-## 💾 Data Architecture
+## Cloud Sync and OAuth Architecture
 
-Wadd uses an embedded, local **SQLite** database powered by `sqlite-net-pcl` and `SQLitePCLRaw.bundle_e_sqlite3`.
+Wadd uses an offline-first synchronization architecture connecting to Google Drive through an isolated serverless OAuth proxy.
 
-### 1. Local Database Storage Path
-The database file `wadd.db` is stored locally in the platform's local application data folder:
-- **Location Path**: `Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Wadd", "wadd.db")`
-- **Windows Target**: `%LOCALAPPDATA%\Wadd\wadd.db`
-- **Android Target**: `/data/user/0/com.wadd.todoapp/files/Wadd/wadd.db`
-
-### 2. Entity Schema (`TodoItem`)
-
-The `TodoItem` entity is mapped directly to SQLite:
-
-| Property | C# Type | SQLite Column Attributes | Description |
-| :--- | :--- | :--- | :--- |
-| `Id` | `Guid` | `[PrimaryKey]` | Unique identifier for each To-Do item |
-| `Title` | `string` | `NOT NULL` | Task title |
-| `Description` | `string` | `NULL` | Optional task description |
-| `Category` | `string?` | `TEXT` | Optional category tag assigned to task |
-| `IsCompleted` | `bool` | `INTEGER` (`0`/`1`) | Completion status |
-| `Priority` | `TodoPriority` | `INTEGER` | Priority level (`Low`, `Medium`, `High`, `Critical`) |
-| `CreatedAt` | `DateTime` | `DATETIME` | UTC timestamp when item was created |
-| `UpdatedAt` | `DateTime?` | `DATETIME` | Optional UTC timestamp of last update |
-| `DueDate` | `DateTime?` | `DATETIME` | Optional due date timestamp |
-| `ReminderAt` | `DateTime?` | `DATETIME` | Optional reminder date and time timestamp |
-| `IsRecurring` | `bool` | `INTEGER` (`0`/`1`) | Recurrence flag |
-| `RecurrenceType` | `string` | `TEXT` | Recurrence rule pattern (`None`, `Daily`, `Weekdays`, `Weekly`, `Monthly`, `Yearly`, `Custom`) |
-| `CustomRecurrenceInterval` | `int?` | `INTEGER` | Custom recurrence frequency interval (e.g., `2`) |
-| `CustomRecurrenceUnit` | `string?` | `TEXT` | Custom recurrence frequency unit (`Days`, `Weeks`, `Months`, `Years`) |
-| `CustomWeeklyDays` | `string?` | `TEXT` | Comma-separated selected weekdays when unit is `Weeks` (e.g., `Monday,Wednesday,Friday`) |
-
-### 3. Dependency Injection Architecture
-
-Services and ViewModels are registered using `Microsoft.Extensions.DependencyInjection` via extension methods in `Wadd.Services`:
-
-```csharp
-// Service Registration (ServiceCollectionExtensions.cs)
-services.AddSingleton<ITodoService, SQLiteTodoService>();
-services.AddSingleton<IThemeService, ThemeService>();
-services.AddSingleton<ISyncService, SyncService>();
-services.AddSingleton<IExportService, ExcelExportService>();
-services.AddSingleton<ITracingService, TracingService>();
-```
-
----
-
-## 📊 Export Functionality
-
-Wadd provides local data export capabilities using `ExcelExportService` (implementing `IExportService` in `Wadd.Services`) powered by [MiniExcel](https://github.com/mini-excel/MiniExcel).
-
-### 1. How Excel Exports Work
-- **Service API**: `IExportService.ExportToExcelAsync(IEnumerable<TodoItem> items, string filePath, CancellationToken cancellationToken = default)`
-- **Column Mapping**: Formats exported items into standardized columns:
-  - `ID`: Unique task identifier (`Guid`)
-  - `Title`: Task title
-  - `Description`: Task description
-  - `Status`: Task completion status (`Completed` or `Pending`)
-  - `Due Date`: Scheduled due date timestamp
-  - `Reminder`: Scheduled reminder timestamp
-  - `Recurrence`: Formatted recurrence schedule description
-  - `Category`: Assigned task category tag
-  - `Created Date`: Creation UTC timestamp formatted as `yyyy-MM-dd HH:mm:ss`
-- **Platform-Safe Access & Streaming**: Streams data directly to `.xlsx` files with a minimal memory footprint. Missing target directories are automatically created (`Directory.CreateDirectory`) prior to file writing, ensuring safe operation on all target OS platforms.
-
-### 2. Local Storage Output Paths
-
-Export files are saved locally to platform-safe directory locations:
-
-- **Windows Target**:
-  - Path: `Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Wadd", "Exports", "todo_export.xlsx")`
-  - Resolved Location: `%LOCALAPPDATA%\Wadd\Exports\todo_export.xlsx`
-- **Android Target**:
-  - Path: `Path.Combine(FileSystem.AppDataDirectory, "Wadd", "Exports", "todo_export.xlsx")`
-  - Resolved Location: `/data/user/0/com.wadd.todoapp/files/Wadd/Exports/todo_export.xlsx`
-
----
-
-## 🔄 Offline-First Multi-Device Synchronization Engine
-
-Wadd features a robust **Offline-First Multi-Device Synchronization Engine** powered by `GoogleDriveSyncService` (implementing `ISyncService` in `Wadd.Services`) with incremental syncing, automatic field-level merging, soft deletes, sync logging, and a dedicated **Conflict Resolution Center UI**.
-
----
-
-### 1. Architectural Principles & Workflow
+### 1. Sync Workflow Diagram
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant LocalDB as Local SQLite DB (wadd.db)
-    participant SyncLog as SQLite SyncLog Table
-    participant Engine as Wadd Sync Engine
-    participant Drive as Google Drive ("Wadd ToDo Sync Data")
-    participant ConflictRepo as SQLite Conflict Repository
+    participant App as Wadd Desktop / Mobile
+    participant Proxy as Cloudflare Worker Proxy
+    participant GoogleAuth as Google OAuth 2.0
+    participant Drive as Google Drive (appDataFolder)
 
-    LocalDB->>SyncLog: Log local mutations (INSERT, UPDATE, DELETE)
-    Engine->>Drive: Ensure parent folder "Wadd ToDo Sync Data" & warning file exist
-    Engine->>Drive: Download remote "wadd_cloud_metadata.json" & "wadd_sync_logs.json"
-    Engine->>SyncLog: Fetch pending local change logs
-    Engine->>Engine: Replay remote logs & compare local vs cloud record versions
-    alt Non-overlapping field modifications
-        Engine->>LocalDB: Apply automatic field-level merge (upsert)
-    else Overlapping field modifications
-        Engine->>ConflictRepo: Store unresolved conflict & show UI notification
-    end
-    Engine->>SyncLog: Mark pending logs as synced
-    Engine->>Drive: Upload consolidated cloud metadata & incremental sync logs
+    Note over App,GoogleAuth: One-Time Authentication (PKCE Flow)
+    App->>GoogleAuth: Open Browser with code_challenge (PKCE)
+    GoogleAuth-->>App: Return authorization code via loopback
+    App->>Proxy: POST /api/oauth/exchange (code + code_verifier)
+    Proxy->>GoogleAuth: Exchange code + client_secret
+    GoogleAuth-->>Proxy: Return access_token + refresh_token
+    Proxy-->>App: Store tokens locally (google_user_auth.json)
+
+    Note over App,Drive: Direct Sync Cycles (Zero Proxy Overhead)
+    App->>Drive: GET /drive/v3/files?spaces=appDataFolder
+    Drive-->>App: List of remote {taskId}.json files
+    App->>App: Compare local versions against cloud timestamps
+    App->>Drive: Parallel Upload/Download modified tasks
+    App->>App: Mark local SyncLog entries as synced
 ```
 
----
+### 2. Cloudflare Worker OAuth Proxy
 
-### 2. Google Drive Folder & File Structure
+The Cloudflare Worker proxy (`serverless/cloudflare-worker/`) isolates the Google Client Secret from client binaries:
 
-Sync data is safely isolated in a dedicated parent folder on Google Drive rather than the root directory:
+- **Base URL**: `https://wadd-oauth-proxy.djpramono-dev.workers.dev`
+- **Endpoints**:
+  - `POST /api/oauth/exchange`: Exchanges PKCE authorization code and `code_verifier` for Google access and refresh tokens.
+  - `POST /api/oauth/refresh`: Uses stored permanent refresh token to obtain fresh access tokens.
+  - `GET /health`: Health check endpoint returning service status.
+- **Security**:
+  - Client secret (`GOOGLE_CLIENT_SECRET`) is stored securely as an encrypted Cloudflare secret.
+  - Supports optional proxy authentication via `APP_PROXY_SECRET` / `X-Proxy-Secret` header.
 
-- **Parent Folder Name**: `Wadd ToDo Sync Data` (`application/vnd.google-apps.folder`)
-- **Warning File**: `⚠️_WARNING_DO_NOT_DELETE_WADD_SYNC_FOLDER.txt`
-  - *Contains instructions warning users not to delete or tamper with the folder.*
-- **Cloud Metadata (`wadd_cloud_metadata.json`)**:
-  - `latest_revision`: Incremental revision counter.
-  - `schema_version`: Data schema version identifier.
-  - `last_sync`: Timestamp of last successful synchronization.
-  - `registered_devices`: List of all synced devices (`DeviceId`, `DeviceName`, `Platform`, `LastSyncedAt`).
-- **Sync Logs (`wadd_sync_logs.json`)**:
-  - Incremental list of sync operations across all registered devices.
+### 3. Google Drive AppData Storage
 
----
-
-### 3. Database Schema Extensions & New Tables
-
-#### A. Extended `TodoItem` Schema
-- `Version` (`long`): Monotonically increasing record version number.
-- `IsDeleted` (`bool`): Soft delete indicator (records are soft-deleted to propagate deletions to other devices).
-
-#### B. Sync Log Table (`SyncLog`)
-- `Id` (`Guid`): Unique log entry ID.
-- `TableName` (`string`): Target table name (`TodoItem`).
-- `RecordId` (`Guid`): Target record ID.
-- `Operation` (`int`): `0 = Insert`, `1 = Update`, `2 = Delete`.
-- `PayloadJson` (`string`): Serialized record JSON payload.
-- `Timestamp` (`DateTime`): UTC modification timestamp.
-- `DeviceId` (`string`): Originating device ID.
-- `Synced` (`bool`): Local sync state flag.
-- `Revision` (`long`): Incremental revision index.
-
-#### C. Conflict Table (`SyncConflict`)
-- `Id` (`Guid`): Conflict identifier.
-- `TableName` (`string`): Affected table name.
-- `RecordId` (`Guid`): Affected record ID.
-- `LocalVersionJson` (`string`): Serialized local record version.
-- `CloudVersionJson` (`string`): Serialized cloud record version.
-- `LocalUpdatedAt` (`DateTime`): Local modification timestamp.
-- `CloudUpdatedAt` (`DateTime`): Cloud modification timestamp.
-- `OriginatingDeviceId` (`string`): Originating device ID.
-- `ConflictingFieldsJson` (`string`): List of conflicting field names.
-- `Status` (`int`): `0 = Unresolved`, `1 = Resolved`.
-- `ResolvedAt` (`DateTime?`): Resolution timestamp.
-- `ResolutionType` (`int?`): `0 = KeepLocal`, `1 = KeepCloud`, `2 = ManualMerge`.
-- `ResolvedVersionJson` (`string?`): Resulting merged record payload.
+Tasks are stored in Google Drive's hidden `appDataFolder` space (`drive.appdata` scope):
+- **Private and Isolated**: Files stored in `appDataFolder` are hidden from the user's regular Google Drive files, preventing accidental deletion or clutter.
+- **File Format**: Each task is serialized as `{taskId}.json`, allowing fast incremental downloads and parallel updates.
+- **Metadata**: Global cloud state is stored in `wadd_cloud_metadata.json`.
 
 ---
 
-### 4. Conflict Detection & Task Conflict Dialog Workflow
+## AI Goal Coaching and Reflection Engine
 
-1. **Automatic Field-Level Merging**:
-   - When different devices modify distinct properties of the same task (e.g. Device A edits `Title` while Device B edits `Priority`), Wadd merges both changes automatically without requiring user intervention.
-2. **Task Conflict Dialog (`TaskConflictDialog.axaml`)**:
-   - If both devices modify the exact same property to conflicting values, Wadd prompts the user for review.
-   - **Default Choice Behavior**: **Option 1: Local Device** (`SelectLocalVersion`) is **SELECTED BY DEFAULT** upon opening or navigating to a task index.
-   - **Location Context Badges**:
-     - `📱 Option 1: Local Device`
-     - `☁️ Option 2: Cloud (Google Drive)`
-   - **Deletion Alert Boxes**: Highlighted red alert boxes (`"🗑️ Task Deleted Locally"` / `"🗑️ Task Deleted in Cloud"`) display when `IsDeleted == true`.
-   - **Active Task Details**: Displays Name, Status (`Completed` / `In Progress`), and Priority (`High` / `Medium` / `Low`).
-   - **Navigation**: `[Previous]` and `[Continue]` buttons for smooth conflict navigation.
+The `AiGoalService` provides AI assistance for goal breakdown and journaling:
 
----
-
-### 5. Setting Up Google OAuth 2.0 Client ID
-
-To connect Wadd to your own Google Cloud project:
-
-1. Open **[Google Cloud Console Credentials](https://console.cloud.google.com/apis/credentials)**.
-2. Click **+ CREATE CREDENTIALS** > **OAuth client ID**.
-3. Select Application type: **Desktop app** (or **Web application** with Redirect URI `http://localhost:5001/`).
-4. Copy your generated **Client ID** (e.g. `1234567890-xyz.apps.googleusercontent.com`).
+- **Supported Providers**:
+  - Google Gemini (Default)
+  - OpenAI (GPT-4o, GPT-4o-mini)
+  - Anthropic (Claude 3.5 Sonnet, Claude 3.5 Haiku)
+  - OpenRouter (Meta Llama, Mistral, Qwen, etc.)
+  - Custom Base URL (Self-hosted or local LLM endpoints)
+- **Features**:
+  - **Auto-Fill Goal**: Generates comprehensive goal descriptions and target timelines from short titles.
+  - **Milestone Generation**: Breaks goals into actionable sequential checklists.
+  - **Journal Drafts**: Generates structured reflection drafts based on goal progress and mood tags.
+  - **Smart Fallback**: Built-in deterministic heuristic fallback ensures features work offline even without API keys.
 
 ---
 
-### 3. Configuring `GOOGLE_CLIENT_ID` Environment Variable
+## Calendar and Timeline Engine
 
-You can set the `GOOGLE_CLIENT_ID` environment variable so Wadd loads it automatically without requiring input in the Settings UI:
+The Calendar view (`src/Wadd.UI/Views/CalendarView.axaml`) provides month-grid scheduling and habit tracking:
 
-#### Windows (PowerShell)
-```powershell
-[System.Environment]::SetEnvironmentVariable("GOOGLE_CLIENT_ID", "YOUR_CLIENT_ID.apps.googleusercontent.com", "User")
-```
-
-#### Windows (Command Prompt)
-```cmd
-setx GOOGLE_CLIENT_ID "YOUR_CLIENT_ID.apps.googleusercontent.com"
-```
-
-#### Linux / macOS (`~/.bashrc` or `~/.zshrc`)
-```bash
-export GOOGLE_CLIENT_ID="YOUR_CLIENT_ID.apps.googleusercontent.com"
-```
-
-> [!TIP]
-> **In-App Settings UI**:
-> Alternatively, you can paste your Client ID directly into Wadd's **Settings** > **CLOUD SYNC** tab. The Client ID will be saved locally in `%LOCALAPPDATA%\Wadd\google_user_auth.json`.
-
-### 3. App Settings Instructions for Endpoint Configuration
-
-To configure Wadd to connect to your deployed Google Apps Script endpoint:
-
-- **Environment Variable**: Set the environment variable `WADD_SYNC_URL`:
-  ```bash
-  # Windows PowerShell
-  $env:WADD_SYNC_URL="https://script.google.com/macros/s/<DEPLOYMENT_ID>/exec"
-
-  # Linux / macOS
-  export WADD_SYNC_URL="https://script.google.com/macros/s/<DEPLOYMENT_ID>/exec"
-  ```
-- **Service Property**: Alternatively, set `GoogleDriveSyncService.WebAppUrl` directly via Dependency Injection in `ServiceCollectionExtensions.cs`.
+- **42-Cell Month Grid**: Responsive 6-week grid rendering day cells, status dots, and habit icons.
+- **Recurrence Engine (`RecurrenceEvaluator`)**: Evaluates scheduled tasks and recurring rules (`Daily`, `Weekdays`, `Weekly`, `Monthly`, `Yearly`, `Custom`).
+- **Sidebar Inspection**: Selecting any day cell displays a sliding detail panel (`Width="340"`) showing all tasks due on that date with quick toggle and delete actions.
 
 ---
 
-## 📐 Responsive Layout & Dual View Modes
+## Diagnostics and Application Logging
 
-Wadd features an adaptive user interface designed to render smoothly across desktop monitors, mini desktop windows, and mobile Android screens.
+Wadd includes a centralized diagnostic logging system via `AppLogger`:
 
-### Window Constraints
-- **Minimum Width**: `380px`
-- **Minimum Height**: `550px`
-- **Default Desktop Dimensions**: `1000px x 700px`
+- **Disk Log Storage**: Logs are automatically written to `%LOCALAPPDATA%\Wadd\Logs\wadd-YYYY-MM-DD.log`.
+- **In-App Inspector**: Open **Settings** > **Diagnostics** to view live logs, copy diagnostic text, or open the log folder directly.
+- **Recorded Events**: Unhandled exceptions, sync errors, Google Drive API response codes, notification failures, and startup events.
 
-### View Modes & Breakpoints
+---
 
-| View Mode | Breakpoint | Navigation Layout | Content Layout |
-| :--- | :--- | :--- | :--- |
-| **Wide Desktop View** | Width >= `720px` | Fixed 250px Left Navigation Bar | Multi-Column Card Grid with expanded top bar |
-| **Portrait Mini View** | Width < `720px` | Bottom Navigation Bar + Collapsible Overlay Drawer | Single-Column Stacked Cards with compact header |
-
-### UI Shell Wireframe Layout Overview
+## Project Solution Structure
 
 ```text
-+-------------------------------------------------------------------------------------------------+
-|  [Logo] Wadd ToDo [APP]   |  🟢 Local Storage Mode (Saved to local storage · Updated just now)   | ☀️ 🌙 🖥️|
-+-------------------------------------------------------------------------------------------------+
-| NAVIGATION        | MAIN CONTENT PANEL                                                          |
-|                   | +-------------------------------------------------------------------------+ |
-| 📋 Tasks          | | Task Management (Local Storage / Cloud Synced)                          | |
-| 📊 Calendar (PH)  | | [ Title TextBox                        ]  [ Add Task ]                  | |
-| 🔍 Tracing (PH)   | +-------------------------------------------------------------------------+ |
-|                   | +-------------------------------------------------------------------------+ |
-|                   | | Stored Todo Items                                          [ Reload 🔄 ]| |
-|                   | | [x] Buy Groceries                                           [ Delete 🗑️ ]| |
-|                   | | [ ] Finish Report                                           [ Delete 🗑️ ]| |
-|                   | +-------------------------------------------------------------------------+ |
-| ----------------- | +-------------------------------------------------------------------------+ |
-| STORAGE & SYNC    | | 🔍 Tracing Area Placeholder (Wireframe Control Box)                     | |
-| Local Storage Mode| | [ Trace Logs: Active ]  [ Latency: 0.2ms ]  [ Memory: Safe ]              | |
-| Updated just now  | +-------------------------------------------------------------------------+ |
-+-------------------------------------------------------------------------------------------------+
+wadd-todo-app/
+├── serverless/
+│   └── cloudflare-worker/             # Cloudflare Worker OAuth Proxy
+│       ├── src/index.js               # OAuth code exchange and token refresh proxy
+│       ├── wrangler.toml              # Worker deployment configuration
+│       └── README.md                  # Proxy setup and deployment guide
+│
+├── src/
+│   ├── Wadd.Core/                     # Domain Layer (Class Library)
+│   │   ├── Enums/                     # TodoPriority, ThemeMode, RecurrenceType
+│   │   ├── Models/                    # TodoItem, LifeGoal, GoalMilestone, JournalEntry
+│   │   ├── Logging/                   # AppLogger structured logging engine
+│   │   ├── Helpers/                   # AppDataHelper, AppSettingsHelper, RecurrenceEvaluator
+│   │   └── Interfaces/                # ITodoService, ISyncService, IAiGoalService, etc.
+│   │
+│   ├── Wadd.Services/                 # Infrastructure Layer (Class Library)
+│   │   ├── SQLiteTodoService.cs       # Async SQLite database implementation
+│   │   ├── GoogleDriveSyncService.cs  # Google Drive appDataFolder sync and PKCE OAuth
+│   │   ├── AiGoalService.cs           # Multi-provider AI goal assistant
+│   │   ├── ExcelExportService.cs      # MiniExcel XLSX streaming exporter
+│   │   ├── WindowsNotificationService.cs # Windows native toast notifications
+│   │   ├── WindowsStartupService.cs   # Windows Registry startup management
+│   │   └── ServiceCollectionExtensions.cs # Dependency injection registration
+│   │
+│   ├── Wadd.UI/                       # Presentation Layer (Avalonia XAML Shared UI)
+│   │   ├── ViewModels/                # MainViewModel, GoalsViewModel, SettingsViewModel
+│   │   ├── Views/                     # TasksView, GoalsView, CalendarView, SettingsView
+│   │   ├── Styles/                    # Semi.Avalonia styling tokens, typography, colors
+│   │   └── App.axaml                  # Application lifetime and resource dictionaries
+│   │
+│   ├── Wadd.Desktop/                  # Windows Desktop Executable Entry Point
+│   │   ├── Program.cs                 # Mutex lock, bring-to-front IPC, startup lifecycle
+│   │   └── Wadd.Desktop.csproj
+│   │
+│   └── Wadd.Android/                  # Android Mobile Executable Entry Point
+│       ├── MainActivity.cs            # Android activity lifecycle
+│       └── Wadd.Android.csproj
+│
+└── tests/
+    └── Wadd.Tests/                    # Unit Tests (xUnit + FluentAssertions)
+        ├── SQLiteTodoServiceTests.cs
+        ├── GoogleOAuthSyncTests.cs
+        ├── GoalsAndJournalTests.cs
+        └── RecurrenceEvaluatorTests.cs
 ```
 
 ---
 
-## 🏗️ Project Solution Structure
+## Configuration and Environment Variables
 
-The solution follows Clean Architecture with clear separation of concerns across 5 dedicated projects:
+Configuration values can be set via a `.env` file in the project root or system environment variables:
 
-```text
-Wadd/
-├── Wadd.sln                           # Solution File
-├── README.md                          # Solution Documentation
-└── src/
-    ├── Wadd.Core/                     # Class Library (Domain Layer)
-    │   ├── Enums/                     # Enums (e.g., TodoPriority, ThemeMode)
-    │   ├── Models/                    # Domain Models (e.g., TodoItem)
-    │   └── Interfaces/                # Core Interfaces
-    │       ├── ITodoService.cs        # CRUD operations for Todo items
-    │       ├── ISyncService.cs        # Sync engine interface with SyncAsync
-    │       ├── IExportService.cs       # Export to Excel interface
-    │       ├── ITracingService.cs     # Tracing & telemetry placeholder
-    │       └── IThemeService.cs       # Theme management interface
-    │
-    ├── Wadd.Services/                 # Class Library (Infrastructure Layer)
-    │   ├── SQLiteTodoService.cs       # Async SQLite database service implementation
-    │   ├── InMemoryTodoService.cs     # Fallback in-memory service
-    │   ├── GoogleDriveSyncService.cs  # Google Apps Script HTTP sync engine implementation
-    │   ├── SyncService.cs             # Sync engine service alias
-    │   ├── ExcelExportService.cs      # MiniExcel local data export implementation
-    │   ├── TracingService.cs          # Diagnostics & tracing service
-    │   ├── ThemeService.cs            # Dynamic theme switching implementation
-    │   └── ServiceCollectionExtensions.cs # Dependency Injection extensions
-    │
-    ├── Wadd.UI/                       # Class Library (Presentation / Shared UI)
-    │   ├── ViewModels/                # MVVM ViewModels (CommunityToolkit.Mvvm)
-    │   │   ├── ViewModelBase.cs
-    │   │   ├── TodoItemViewModel.cs   # Observable wrapper for TodoItem domain models
-    │   │   └── MainViewModel.cs
-    │   ├── Views/                     # Shared Avalonia Views & Controls
-    │   │   ├── MainView.axaml         # Dual-view responsive layout with live tasks
-    │   │   └── MainWindow.axaml       # Min-size constrained desktop window
-    │   ├── Styles/                    # Design System & Styling Resources
-    │   │   ├── ColorTokens.axaml      # Dynamic Light & Dark Mode palette
-    │   │   ├── Typography.axaml       # Cross-platform typography hierarchy
-    │   │   └── ComponentStyles.axaml  # Control styles & pseudoclasses
-    │   └── App.axaml                  # Avalonia Application, DI & Theme registration
-    │
-    ├── Wadd.Desktop/                  # Executable (Windows Entry Point)
-    │   ├── Program.cs                 # Desktop application entry point
-    │   └── Wadd.Desktop.csproj        # Desktop project setup with Avalonia.Desktop
-    │
-    └── Wadd.Android/                  # Executable (Android Entry Point)
-        ├── MainActivity.cs            # Android Activity entry point
-        ├── Properties/                # AndroidManifest.xml
-        └── Wadd.Android.csproj        # Android project setup with Avalonia.Android
-```
-
-### Layer Dependencies
-
-```mermaid
-graph TD
-    Desktop["Wadd.Desktop (Executable)"] --> UI["Wadd.UI (Class Library)"]
-    Android["Wadd.Android (Executable)"] --> UI
-    UI --> Core["Wadd.Core (Class Library)"]
-    UI --> Services["Wadd.Services (Class Library)"]
-    Services --> Core
-```
+| Variable | Default Value | Description |
+|---|---|---|
+| `GOOGLE_CLIENT_ID` | Built-in Client ID | Google OAuth 2.0 Client ID |
+| `OAUTH_PROXY_URL` | `https://wadd-oauth-proxy.djpramono-dev.workers.dev/api/oauth/exchange` | Cloudflare Worker OAuth exchange endpoint |
+| `OAUTH_PROXY_SECRET` | *(Optional)* | Header secret for proxy authorization (`X-Proxy-Secret`) |
+| `GEMINI_API_KEY` | *(Optional)* | Google Gemini API key for AI features |
+| `OPENAI_API_KEY` | *(Optional)* | OpenAI API key |
+| `ANTHROPIC_API_KEY` | *(Optional)* | Anthropic API key |
+| `OPENROUTER_API_KEY` | *(Optional)* | OpenRouter API key |
 
 ---
 
-## 🎨 Styling & Theme System
-
-Wadd uses a centralized design token architecture registered in `App.axaml`. Theme variants dynamically respond to system preferences or explicit user overrides.
-
-### 1. Dynamic Color Tokens (`ColorTokens.axaml`)
-
-Brushes adapt automatically when `RequestedThemeVariant` switches between `Light` and `Dark`:
-
-| Token Name | Light Mode | Dark Mode | Description |
-| :--- | :--- | :--- | :--- |
-| `AppBackgroundBrush` | `#F8F9FA` | `#0F172A` | Primary window / view background |
-| `AppSurfaceBrush` | `#FFFFFF` | `#1E293B` | Card, sidebar, and header surfaces |
-| `AppPrimaryBrush` | `#2563EB` | `#3B82F6` | Primary action color / accents |
-| `AppPrimaryHoverBrush` | `#1D4ED8` | `#60A5FA` | Hover state for primary controls |
-| `AppTextPrimaryBrush` | `#1E293B` | `#F8FAFC` | High-contrast body & title text |
-| `AppTextSecondaryBrush` | `#64748B` | `#94A3B8` | Muted caption & subheader text |
-| `AppBorderBrush` | `#E2E8F0` | `#334155` | Dividers and container borders |
-| `AppMenuSelectedBrush` | `#EFF6FF` | `#334155` | Selected & hover state in menus |
-
----
-
-## 🚀 Setup and Build Instructions
+## Build and Run Instructions
 
 ### Prerequisites
 - [.NET 10.0 SDK](https://dotnet.microsoft.com/download) or higher installed.
-- (Optional for Android) .NET Android Workload: Run `dotnet workload restore` or `dotnet workload install android`.
 
----
+### 1. Running the Windows Desktop App
 
-### Running `Wadd.Desktop` (Windows Target)
-
-#### 1. Command Line Interface (CLI)
-```bash
-# Restore & Build Desktop Executable
-dotnet build src/Wadd.Desktop/Wadd.Desktop.csproj
-
-# Run Desktop Application Shell
+```powershell
+# Run in Debug mode
 dotnet run --project src/Wadd.Desktop/Wadd.Desktop.csproj
+
+# Run in optimized Release mode
+dotnet run -c Release --project src/Wadd.Desktop/Wadd.Desktop.csproj
 ```
 
-#### 2. IDE (Visual Studio / VS Code / JetBrains Rider)
-- **Visual Studio**:
-  1. Open `Wadd.sln`.
-  2. Set `Wadd.Desktop` as the Startup Project in Solution Explorer.
-  3. Press `F5` (Start Debugging) or `Ctrl + F5` (Start Without Debugging).
-- **VS Code**:
-  1. Open workspace folder.
-  2. Use C# Dev Kit or press `F5` with .NET Core launch configuration targeting `src/Wadd.Desktop/bin/Debug/net10.0/Wadd.Desktop.dll`.
-- **Rider**:
-  1. Select `Wadd.Desktop` run configuration.
-  2. Click **Run** (`Shift + F10`) or **Debug** (`Shift + F9`).
+### 2. Running Automated Unit Tests
 
----
-
-### Running `Wadd.Android` (Mobile Target)
-
-#### 1. Prerequisites Setup
-```bash
-# Restore required Android workloads
-dotnet workload restore
+```powershell
+dotnet test tests/Wadd.Tests/Wadd.Tests.csproj
 ```
 
-#### 2. Command Line Interface (CLI)
-```bash
-# Build Android APK / Package
-dotnet build src/Wadd.Android/Wadd.Android.csproj
+### 3. Deploying the Cloudflare Worker OAuth Proxy
 
-# Run / Deploy to connected Android Emulator or Physical Device
-dotnet run --project src/Wadd.Android/Wadd.Android.csproj -f net10.0-android
-```
-
-#### 3. IDE (Visual Studio / Rider)
-- **Visual Studio**:
-  1. Set `Wadd.Android` as Startup Project.
-  2. Select active Android Emulator or connected physical device from target dropdown.
-  3. Press `F5`.
-- **Rider**:
-  1. Select `Wadd.Android` run configuration and choose target Android device/emulator.
-  2. Click **Run** (`Shift + F10`).
-
----
-
-### Building Solution & Core Libraries
-
-```bash
-# Build Core & Service Libraries
-dotnet build src/Wadd.Core/Wadd.Core.csproj
-dotnet build src/Wadd.Services/Wadd.Services.csproj
-dotnet build src/Wadd.UI/Wadd.UI.csproj
-
-# Build Entire Solution
-dotnet build Wadd.sln
+```powershell
+cd serverless/cloudflare-worker
+npx wrangler deploy
+npx wrangler secret put GOOGLE_CLIENT_SECRET
 ```
