@@ -211,7 +211,8 @@ public partial class GoalsViewModel : ViewModelBase
 
     private void UpdateCategories()
     {
-        var activeCategories = Goals
+        var activeCategories = (Goals ?? Enumerable.Empty<LifeGoalItemViewModel>())
+            .Where(g => g != null)
             .Select(g => g.Category)
             .Where(c => !string.IsNullOrWhiteSpace(c) && !c.Equals("Uncategorized", StringComparison.OrdinalIgnoreCase))
             .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -247,9 +248,14 @@ public partial class GoalsViewModel : ViewModelBase
 
     private void SyncCategoryFilterSelection()
     {
-        foreach (var item in Categories)
+        if (Categories == null) return;
+        var snapshot = Categories.ToList();
+        foreach (var item in snapshot)
         {
-            item.IsSelected = item.Name.Equals(SelectedCategoryFilter, StringComparison.OrdinalIgnoreCase);
+            if (item != null)
+            {
+                item.IsSelected = !string.IsNullOrEmpty(SelectedCategoryFilter) && string.Equals(item.Name, SelectedCategoryFilter, StringComparison.OrdinalIgnoreCase);
+            }
         }
     }
 

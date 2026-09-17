@@ -9,8 +9,6 @@ using Wadd.Core.Models;
 
 namespace Wadd.Services;
 
-
-
 public class GoogleDriveSyncService : ISyncService
 {
     private readonly ITodoService _todoService;
@@ -22,8 +20,6 @@ public class GoogleDriveSyncService : ISyncService
     private readonly INativeGoogleAuthService? _nativeAuthService;
     private UserAuthRecord? _authRecord;
     private readonly string _authFilePath;
-
-
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -139,7 +135,53 @@ public class GoogleDriveSyncService : ISyncService
         }
     }
 
-    public string WebAppUrl { get; set; }
+    public string OAuthProxyUrl
+    {
+        get
+        {
+            var envVal = Environment.GetEnvironmentVariable("OAUTH_PROXY_URL");
+            if (!string.IsNullOrWhiteSpace(envVal)) return envVal.Trim().TrimEnd('/');
+
+            if (!string.IsNullOrWhiteSpace(_authRecord?.OAuthProxyUrl))
+                return _authRecord.OAuthProxyUrl.TrimEnd('/');
+
+            var compiledVal = GetAssemblyMetadata("OAuthProxyUrl");
+            if (!string.IsNullOrWhiteSpace(compiledVal)) return compiledVal.Trim().TrimEnd('/');
+
+            return string.Empty;
+        }
+        set
+        {
+            _authRecord ??= new UserAuthRecord();
+            _authRecord.OAuthProxyUrl = value;
+            SaveAuthRecord();
+        }
+    }
+
+    public string OAuthProxySecret
+    {
+        get
+        {
+            var envVal = Environment.GetEnvironmentVariable("OAUTH_PROXY_SECRET");
+            if (!string.IsNullOrWhiteSpace(envVal)) return envVal.Trim();
+
+            if (!string.IsNullOrWhiteSpace(_authRecord?.OAuthProxySecret))
+                return _authRecord.OAuthProxySecret;
+
+            var compiledVal = GetAssemblyMetadata("OAuthProxySecret");
+            if (!string.IsNullOrWhiteSpace(compiledVal)) return compiledVal.Trim();
+
+            return string.Empty;
+        }
+        set
+        {
+            _authRecord ??= new UserAuthRecord();
+            _authRecord.OAuthProxySecret = value;
+            SaveAuthRecord();
+        }
+    }
+
+    public string WebAppUrl { get; set; } = string.Empty;
 
     public int UnresolvedConflictCount { get; private set; }
     public event EventHandler? ConflictCountChanged;
@@ -174,13 +216,7 @@ public class GoogleDriveSyncService : ISyncService
         _conflictEngine = conflictEngine ?? new ConflictResolutionEngine();
 
         LoadEnvFile();
-
         _authFilePath = Wadd.Core.Helpers.AppDataHelper.GetWaddFilePath("google_user_auth.json");
-
-        WebAppUrl = webAppUrl 
-            ?? Environment.GetEnvironmentVariable("WADD_SYNC_URL") 
-            ?? string.Empty;
-
         LoadAuthRecord();
         _ = RefreshConflictCountAsync();
     }
@@ -285,6 +321,7 @@ public class GoogleDriveSyncService : ISyncService
                     UserEmail = !string.IsNullOrWhiteSpace(fbSession.Email) ? fbSession.Email : (nativeResult.Email ?? string.Empty),
                     UserName = !string.IsNullOrWhiteSpace(fbSession.DisplayName) ? fbSession.DisplayName : (nativeResult.DisplayName ?? string.Empty),
                     GoogleClientId = GoogleClientId,
+                    GoogleClientSecret = GoogleClientSecret,
                     FirebaseApiKey = FirebaseApiKey,
                     FirebaseProjectId = FirebaseProjectId,
                     AccessToken = !string.IsNullOrWhiteSpace(nativeResult.AccessToken) ? nativeResult.AccessToken : fbSession.OAuthAccessToken,
@@ -311,6 +348,7 @@ public class GoogleDriveSyncService : ISyncService
         var localRedirectUri = "http://localhost:5001/";
         var redirectUri = localRedirectUri;
         var state = Guid.NewGuid().ToString("N");
+        var (codeVerifier, codeChallenge) = GeneratePkceCodes();
 
         var listener = new HttpListener();
         listener.Prefixes.Add(localRedirectUri);
@@ -319,21 +357,39 @@ public class GoogleDriveSyncService : ISyncService
         try
         {
             var nonce = Guid.NewGuid().ToString("N");
-            var authUrl = $"https://accounts.google.com/o/oauth2/v2/auth?" +
-                          $"client_id={Uri.EscapeDataString(GoogleClientId)}&" +
-                          $"redirect_uri={Uri.EscapeDataString(redirectUri)}&" +
-                          $"response_type=token%20id_token&" +
-                          $"scope={Uri.EscapeDataString("openid email profile https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file")}&" +
-                          $"prompt=select_account&" +
-                          $"nonce={Uri.EscapeDataString(nonce)}&" +
-                          $"state={Uri.EscapeDataString(state)}";
+            var hasOAuthBackend = !string.IsNullOrWhiteSpace(OAuthProxyUrl) || !string.IsNullOrWhiteSpace(GoogleClientSecret);
+
+            // If an OAuth proxy (Cloudflare Worker) or client secret is configured, use PKCE Authorization Code flow to acquire a refresh token.
+            // If neither is configured, fallback to Implicit Token flow.
+            var authUrl = hasOAuthBackend
+                ? $"https://accounts.google.com/o/oauth2/v2/auth?" +
+                  $"client_id={Uri.EscapeDataString(GoogleClientId)}&" +
+                  $"redirect_uri={Uri.EscapeDataString(redirectUri)}&" +
+                  $"response_type=code&" +
+                  $"access_type=offline&" +
+                  $"prompt=consent&" +
+                  $"code_challenge={Uri.EscapeDataString(codeChallenge)}&" +
+                  $"code_challenge_method=S256&" +
+                  $"scope={Uri.EscapeDataString("openid email profile https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file")}&" +
+                  $"nonce={Uri.EscapeDataString(nonce)}&" +
+                  $"state={Uri.EscapeDataString(state)}"
+                : $"https://accounts.google.com/o/oauth2/v2/auth?" +
+                  $"client_id={Uri.EscapeDataString(GoogleClientId)}&" +
+                  $"redirect_uri={Uri.EscapeDataString(redirectUri)}&" +
+                  $"response_type=token%20id_token&" +
+                  $"prompt=select_account&" +
+                  $"scope={Uri.EscapeDataString("openid email profile https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file")}&" +
+                  $"nonce={Uri.EscapeDataString(nonce)}&" +
+                  $"state={Uri.EscapeDataString(state)}";
 
             OpenBrowserUrl(authUrl);
 
+            string code = string.Empty;
             string idToken = string.Empty;
             string accessToken = string.Empty;
             string returnedState = string.Empty;
             string error = string.Empty;
+            int expiresInSeconds = 3600;
 
             var timeoutTask = Task.Delay(TimeSpan.FromMinutes(3), cancellationToken);
 
@@ -350,14 +406,34 @@ public class GoogleDriveSyncService : ISyncService
                 var request = context.Request;
                 var response = context.Response;
 
-                if (request.Url?.AbsolutePath == "/callback")
+                var qCode = request.QueryString["code"];
+                var qError = request.QueryString["error"];
+                var qExpiresIn = request.QueryString["expires_in"];
+                if (!string.IsNullOrEmpty(qExpiresIn) && int.TryParse(qExpiresIn, out var parsedExp) && parsedExp > 0)
                 {
+                    expiresInSeconds = parsedExp;
+                }
+
+                if (!string.IsNullOrEmpty(qCode) || !string.IsNullOrEmpty(qError))
+                {
+                    code = qCode ?? string.Empty;
+                    idToken = request.QueryString["id_token"] ?? string.Empty;
+                    accessToken = request.QueryString["access_token"] ?? string.Empty;
+                    returnedState = request.QueryString["state"] ?? string.Empty;
+                    error = qError ?? string.Empty;
+
+                    SendHtmlResponse(response, "Sign-in Successful!", "<h2 style='color:#0d9488;'>Authentication Successful!</h2><p>Wadd ToDo has been successfully connected to your Google Drive.</p><p>You may now close this browser tab and return to Wadd.</p>");
+                    break;
+                }
+                else if (request.Url?.AbsolutePath == "/callback")
+                {
+                    code = request.QueryString["code"] ?? string.Empty;
                     idToken = request.QueryString["id_token"] ?? string.Empty;
                     accessToken = request.QueryString["access_token"] ?? string.Empty;
                     returnedState = request.QueryString["state"] ?? string.Empty;
                     error = request.QueryString["error"] ?? string.Empty;
 
-                    SendHtmlResponse(response, "Sign-in Successful!", "<h2 style='color:#0d9488;'>Authentication Successful!</h2><p>Wadd ToDo has been successfully connected.</p><p>You may now close this browser tab and return to Wadd.</p>");
+                    SendHtmlResponse(response, "Sign-in Successful!", "<h2 style='color:#0d9488;'>Authentication Successful!</h2><p>Wadd ToDo has been successfully connected to your Google Drive.</p><p>You may now close this browser tab and return to Wadd.</p>");
                     break;
                 }
                 else
@@ -372,15 +448,30 @@ public class GoogleDriveSyncService : ISyncService
             }
 
             string googleAccessToken = accessToken;
+            string googleRefreshToken = string.Empty;
             string googleIdToken = idToken;
-            int expiresInSeconds = 3600;
 
-            if (string.IsNullOrWhiteSpace(googleAccessToken) && !string.IsNullOrWhiteSpace(googleIdToken))
+            // Exchange authorization code if present (via Cloudflare Worker proxy or direct endpoint)
+            if (!string.IsNullOrWhiteSpace(code) && hasOAuthBackend)
             {
-                var fbEarly = await ExchangeGoogleIdTokenWithFirebaseAsync(googleIdToken, string.Empty, redirectUri, cancellationToken);
-                if (!string.IsNullOrWhiteSpace(fbEarly.OAuthAccessToken))
+                try
                 {
-                    googleAccessToken = fbEarly.OAuthAccessToken;
+                    var tokenResult = await ExchangeAuthorizationCodeAsync(code, codeVerifier, redirectUri, cancellationToken);
+                    googleAccessToken = tokenResult.AccessToken;
+                    googleRefreshToken = tokenResult.RefreshToken;
+                    if (!string.IsNullOrWhiteSpace(tokenResult.IdToken))
+                    {
+                        googleIdToken = tokenResult.IdToken;
+                    }
+                    expiresInSeconds = tokenResult.ExpiresIn;
+                }
+                catch (Exception ex)
+                {
+                    Wadd.Core.Logging.AppLogger.LogWarning("GoogleDriveSyncService", "Authorization code exchange failed", ex);
+                    if (string.IsNullOrWhiteSpace(googleAccessToken))
+                    {
+                        throw;
+                    }
                 }
             }
 
@@ -390,19 +481,23 @@ public class GoogleDriveSyncService : ISyncService
             }
 
             var userInfo = await FetchUserInfoAsync(googleAccessToken, cancellationToken);
-            var fbSession = await ExchangeGoogleIdTokenWithFirebaseAsync(googleIdToken, googleAccessToken, redirectUri, cancellationToken);
+            var fbSession = !string.IsNullOrWhiteSpace(googleIdToken)
+                ? await ExchangeGoogleIdTokenWithFirebaseAsync(googleIdToken, googleAccessToken, redirectUri, cancellationToken)
+                : (FirebaseIdToken: string.Empty, FirebaseRefreshToken: string.Empty, LocalId: string.Empty, Email: userInfo.Email, DisplayName: userInfo.Name, OAuthAccessToken: googleAccessToken);
 
             _authRecord = new UserAuthRecord
             {
                 IsSignedIn = true,
-                UserEmail = !string.IsNullOrWhiteSpace(fbSession.Email) ? fbSession.Email : userInfo.Email,
-                UserName = !string.IsNullOrWhiteSpace(fbSession.DisplayName) ? fbSession.DisplayName : userInfo.Name,
+                UserEmail = !string.IsNullOrWhiteSpace(userInfo.Email) ? userInfo.Email : fbSession.Email,
+                UserName = !string.IsNullOrWhiteSpace(userInfo.Name) ? userInfo.Name : fbSession.DisplayName,
                 GoogleClientId = GoogleClientId,
                 GoogleClientSecret = GoogleClientSecret,
+                OAuthProxyUrl = OAuthProxyUrl,
+                OAuthProxySecret = OAuthProxySecret,
                 FirebaseApiKey = FirebaseApiKey,
                 FirebaseProjectId = FirebaseProjectId,
-                AccessToken = !string.IsNullOrWhiteSpace(googleAccessToken) ? googleAccessToken : fbSession.OAuthAccessToken,
-                RefreshToken = _authRecord?.RefreshToken ?? string.Empty,
+                AccessToken = googleAccessToken,
+                RefreshToken = !string.IsNullOrWhiteSpace(googleRefreshToken) ? googleRefreshToken : (_authRecord?.RefreshToken ?? string.Empty),
                 FirebaseIdToken = fbSession.FirebaseIdToken,
                 FirebaseRefreshToken = fbSession.FirebaseRefreshToken,
                 FirebaseLocalId = fbSession.LocalId,
@@ -418,6 +513,114 @@ public class GoogleDriveSyncService : ISyncService
         {
             try { listener.Stop(); } catch { }
         }
+    }
+
+    private static (string CodeVerifier, string CodeChallenge) GeneratePkceCodes()
+    {
+        var bytes = new byte[32];
+        RandomNumberGenerator.Fill(bytes);
+        var codeVerifier = Base64UrlEncode(bytes);
+
+        var challengeBytes = SHA256.HashData(Encoding.ASCII.GetBytes(codeVerifier));
+        var codeChallenge = Base64UrlEncode(challengeBytes);
+
+        return (codeVerifier, codeChallenge);
+    }
+
+    private static string Base64UrlEncode(byte[] input)
+    {
+        return Convert.ToBase64String(input)
+            .TrimEnd('=')
+            .Replace('+', '-')
+            .Replace('/', '_');
+    }
+
+    private async Task<(string AccessToken, string RefreshToken, string IdToken, int ExpiresIn)> ExchangeAuthorizationCodeAsync(
+        string code,
+        string codeVerifier,
+        string redirectUri,
+        CancellationToken cancellationToken)
+    {
+        // 1. If Cloudflare Worker OAuth proxy is configured, delegate token exchange to the proxy
+        if (!string.IsNullOrWhiteSpace(OAuthProxyUrl))
+        {
+            var proxyUrl = $"{OAuthProxyUrl}/api/auth/token";
+            var payload = new
+            {
+                code = code,
+                code_verifier = codeVerifier,
+                redirect_uri = redirectUri,
+                client_id = GoogleClientId
+            };
+
+            using var proxyReq = new HttpRequestMessage(HttpMethod.Post, proxyUrl)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json")
+            };
+
+            if (!string.IsNullOrWhiteSpace(OAuthProxySecret))
+            {
+                proxyReq.Headers.Add("x-app-secret", OAuthProxySecret);
+            }
+
+            var proxyResp = await _httpClient.SendAsync(proxyReq, cancellationToken);
+            var proxyJson = await proxyResp.Content.ReadAsStringAsync(cancellationToken);
+
+            if (!proxyResp.IsSuccessStatusCode)
+            {
+                Wadd.Core.Logging.AppLogger.LogError("GoogleDriveSyncService", $"OAuth proxy code exchange failed ({proxyResp.StatusCode}): {proxyJson}");
+                throw new InvalidOperationException($"OAuth proxy code exchange failed: {proxyJson}");
+            }
+
+            using var proxyDoc = JsonDocument.Parse(proxyJson);
+            var proxyRoot = proxyDoc.RootElement;
+            var proxyAccessToken = proxyRoot.TryGetProperty("access_token", out var pat) ? pat.GetString() ?? "" : "";
+            var proxyRefreshToken = proxyRoot.TryGetProperty("refresh_token", out var prt) ? prt.GetString() ?? "" : "";
+            var proxyIdToken = proxyRoot.TryGetProperty("id_token", out var pit) ? pit.GetString() ?? "" : "";
+            var proxyExpiresIn = proxyRoot.TryGetProperty("expires_in", out var pexp) ? pexp.GetInt32() : 3600;
+
+            return (proxyAccessToken, proxyRefreshToken, proxyIdToken, proxyExpiresIn);
+        }
+
+        // 2. Direct Google OAuth token endpoint (used when client_secret is configured locally)
+        var tokenUrl = "https://oauth2.googleapis.com/token";
+        var dict = new Dictionary<string, string>
+        {
+            ["client_id"] = GoogleClientId,
+            ["code"] = code,
+            ["code_verifier"] = codeVerifier,
+            ["grant_type"] = "authorization_code",
+            ["redirect_uri"] = redirectUri
+        };
+
+        if (!string.IsNullOrWhiteSpace(GoogleClientSecret))
+        {
+            dict["client_secret"] = GoogleClientSecret;
+        }
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, tokenUrl)
+        {
+            Content = new FormUrlEncodedContent(dict)
+        };
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            Wadd.Core.Logging.AppLogger.LogError("GoogleDriveSyncService", $"Google OAuth code exchange failed ({response.StatusCode}): {json}");
+            throw new InvalidOperationException($"Google OAuth code exchange failed: {json}");
+        }
+
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+
+        var accessToken = root.TryGetProperty("access_token", out var at) ? at.GetString() ?? "" : "";
+        var refreshToken = root.TryGetProperty("refresh_token", out var rt) ? rt.GetString() ?? "" : "";
+        var idToken = root.TryGetProperty("id_token", out var it) ? it.GetString() ?? "" : "";
+        var expiresIn = root.TryGetProperty("expires_in", out var exp) ? exp.GetInt32() : 3600;
+
+        return (accessToken, refreshToken, idToken, expiresIn);
     }
 
     private static void SendHtmlResponse(HttpListenerResponse response, string title, string bodyHtml)
@@ -445,7 +648,6 @@ public class GoogleDriveSyncService : ISyncService
         response.OutputStream.Close();
     }
 
-
     private static void SendHtmlBridgePage(HttpListenerResponse response)
     {
         var html = @"<!DOCTYPE html>
@@ -471,8 +673,9 @@ public class GoogleDriveSyncService : ISyncService
     var code = params.get('code') || hash.get('code') || '';
     var state = params.get('state') || hash.get('state') || '';
     var error = params.get('error') || hash.get('error') || '';
+    var expiresIn = params.get('expires_in') || hash.get('expires_in') || '3600';
 
-    fetch('/callback?id_token=' + encodeURIComponent(idToken) + '&access_token=' + encodeURIComponent(accessToken) + '&code=' + encodeURIComponent(code) + '&state=' + encodeURIComponent(state) + '&error=' + encodeURIComponent(error))
+    fetch('/callback?id_token=' + encodeURIComponent(idToken) + '&access_token=' + encodeURIComponent(accessToken) + '&code=' + encodeURIComponent(code) + '&state=' + encodeURIComponent(state) + '&expires_in=' + encodeURIComponent(expiresIn) + '&error=' + encodeURIComponent(error))
       .then(function() {
         document.body.innerHTML = ""<div class='card'><h2 style='color:#0d9488;'>Authentication Successful!</h2><p>You can close this tab and return to Wadd.</p></div>"";
       });
@@ -580,52 +783,99 @@ public class GoogleDriveSyncService : ISyncService
 
         if (_authRecord == null) return false;
 
-        // 1. Try refreshing Google Access Token via Google OAuth Refresh Token
+        // Refresh Google Drive Access Token via Cloudflare Worker OAuth Proxy or Google OAuth Refresh Token
         if (!string.IsNullOrWhiteSpace(_authRecord.RefreshToken))
         {
             try
             {
-                var tokenUrl = "https://oauth2.googleapis.com/token";
-                var dict = new Dictionary<string, string>
+                if (!string.IsNullOrWhiteSpace(OAuthProxyUrl))
                 {
-                    ["client_id"] = GoogleClientId,
-                    ["refresh_token"] = _authRecord.RefreshToken,
-                    ["grant_type"] = "refresh_token"
-                };
-
-                if (!string.IsNullOrWhiteSpace(GoogleClientSecret))
-                {
-                    dict["client_secret"] = GoogleClientSecret;
-                }
-
-                using var request = new HttpRequestMessage(HttpMethod.Post, tokenUrl)
-                {
-                    Content = new FormUrlEncodedContent(dict)
-                };
-
-                var response = await _httpClient.SendAsync(request, cancellationToken);
-                var json = await response.Content.ReadAsStringAsync(cancellationToken);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    using var doc = JsonDocument.Parse(json);
-                    var root = doc.RootElement;
-                    if (root.TryGetProperty("access_token", out var atProp))
+                    var proxyRefreshUrl = $"{OAuthProxyUrl}/api/auth/refresh";
+                    var payload = new
                     {
-                        _authRecord.AccessToken = atProp.GetString() ?? string.Empty;
-                        if (root.TryGetProperty("refresh_token", out var newRtProp) && !string.IsNullOrWhiteSpace(newRtProp.GetString()))
+                        refresh_token = _authRecord.RefreshToken,
+                        client_id = GoogleClientId
+                    };
+
+                    using var proxyReq = new HttpRequestMessage(HttpMethod.Post, proxyRefreshUrl)
+                    {
+                        Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json")
+                    };
+
+                    if (!string.IsNullOrWhiteSpace(OAuthProxySecret))
+                    {
+                        proxyReq.Headers.Add("x-app-secret", OAuthProxySecret);
+                    }
+
+                    var proxyResp = await _httpClient.SendAsync(proxyReq, cancellationToken);
+                    var proxyJson = await proxyResp.Content.ReadAsStringAsync(cancellationToken);
+
+                    if (proxyResp.IsSuccessStatusCode)
+                    {
+                        using var doc = JsonDocument.Parse(proxyJson);
+                        var root = doc.RootElement;
+                        if (root.TryGetProperty("access_token", out var atProp))
                         {
-                            _authRecord.RefreshToken = newRtProp.GetString()!;
+                            _authRecord.AccessToken = atProp.GetString() ?? string.Empty;
+                            if (root.TryGetProperty("refresh_token", out var newRtProp) && !string.IsNullOrWhiteSpace(newRtProp.GetString()))
+                            {
+                                _authRecord.RefreshToken = newRtProp.GetString()!;
+                            }
+                            var expSec = root.TryGetProperty("expires_in", out var exp) ? exp.GetInt32() : 3600;
+                            _authRecord.TokenExpiresAtUtc = DateTime.UtcNow.AddSeconds(Math.Max(300, expSec - 60));
+                            SaveAuthRecord();
+                            return true;
                         }
-                        var expSec = root.TryGetProperty("expires_in", out var exp) ? exp.GetInt32() : 3600;
-                        _authRecord.TokenExpiresAtUtc = DateTime.UtcNow.AddSeconds(Math.Max(300, expSec - 60));
-                        SaveAuthRecord();
-                        return true;
+                    }
+                    else
+                    {
+                        Wadd.Core.Logging.AppLogger.LogWarning("GoogleDriveSyncService", $"OAuth proxy token refresh failed ({proxyResp.StatusCode}): {proxyJson}");
                     }
                 }
                 else
                 {
-                    Wadd.Core.Logging.AppLogger.LogWarning("GoogleDriveSyncService", $"Google token refresh failed ({response.StatusCode}): {json}");
+                    var tokenUrl = "https://oauth2.googleapis.com/token";
+                    var dict = new Dictionary<string, string>
+                    {
+                        ["client_id"] = GoogleClientId,
+                        ["refresh_token"] = _authRecord.RefreshToken,
+                        ["grant_type"] = "refresh_token"
+                    };
+
+                    if (!string.IsNullOrWhiteSpace(GoogleClientSecret))
+                    {
+                        dict["client_secret"] = GoogleClientSecret;
+                    }
+
+                    using var request = new HttpRequestMessage(HttpMethod.Post, tokenUrl)
+                    {
+                        Content = new FormUrlEncodedContent(dict)
+                    };
+
+                    var response = await _httpClient.SendAsync(request, cancellationToken);
+                    var json = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        using var doc = JsonDocument.Parse(json);
+                        var root = doc.RootElement;
+                        if (root.TryGetProperty("access_token", out var atProp))
+                        {
+                            _authRecord.AccessToken = atProp.GetString() ?? string.Empty;
+                            if (root.TryGetProperty("refresh_token", out var newRtProp) && !string.IsNullOrWhiteSpace(newRtProp.GetString()))
+                            {
+                                _authRecord.RefreshToken = newRtProp.GetString()!;
+                            }
+                            var expSec = root.TryGetProperty("expires_in", out var exp) ? exp.GetInt32() : 3600;
+                            _authRecord.TokenExpiresAtUtc = DateTime.UtcNow.AddSeconds(Math.Max(300, expSec - 60));
+                            SaveAuthRecord();
+                            return true;
+                        }
+                    }
+                    else
+                    {
+                        Wadd.Core.Logging.AppLogger.LogWarning("GoogleDriveSyncService", $"Google token refresh failed ({response.StatusCode}): {json}");
+                    }
                 }
             }
             catch (Exception ex)
@@ -634,7 +884,7 @@ public class GoogleDriveSyncService : ISyncService
             }
         }
 
-        // 2. Try refreshing Firebase Id Token via Firebase Refresh Token
+        // Also refresh Firebase session if Firebase API key and refresh token are present
         if (!string.IsNullOrWhiteSpace(_authRecord.FirebaseRefreshToken) && !string.IsNullOrWhiteSpace(FirebaseApiKey))
         {
             try
@@ -670,10 +920,7 @@ public class GoogleDriveSyncService : ISyncService
                     {
                         _authRecord.FirebaseLocalId = uidProp.GetString() ?? _authRecord.FirebaseLocalId;
                     }
-                    var expSec = root.TryGetProperty("expires_in", out var exp) ? int.Parse(exp.GetString() ?? "3600") : 3600;
-                    _authRecord.TokenExpiresAtUtc = DateTime.UtcNow.AddSeconds(Math.Max(300, expSec - 60));
                     SaveAuthRecord();
-                    return true;
                 }
             }
             catch (Exception ex)
@@ -684,7 +931,6 @@ public class GoogleDriveSyncService : ISyncService
 
         return false;
     }
-
 
     private static void OpenBrowserUrl(string url)
     {
@@ -784,7 +1030,7 @@ public class GoogleDriveSyncService : ISyncService
     }
 
     // =========================================================================
-    //  OFFLINE-FIRST INCREMENTAL MULTI-DEVICE SYNCHRONIZATION ENGINE
+    //  OFFLINE-FIRST INCREMENTAL GOOGLE DRIVE SYNCHRONIZATION ENGINE
     // =========================================================================
 
     private readonly SemaphoreSlim _syncLock = new(1, 1);
@@ -823,7 +1069,6 @@ public class GoogleDriveSyncService : ISyncService
 
         if (string.IsNullOrWhiteSpace(_authRecord.AccessToken))
         {
-            // If refresh token exists, attempt refresh
             if (!string.IsNullOrWhiteSpace(_authRecord.RefreshToken))
             {
                 await TryRefreshTokenAsync(cancellationToken);
@@ -831,7 +1076,7 @@ public class GoogleDriveSyncService : ISyncService
 
             if (string.IsNullOrWhiteSpace(_authRecord.AccessToken))
             {
-                throw new InvalidOperationException("Google authorization token missing. Please sign in with Google in Settings.");
+                throw new InvalidOperationException("Google authorization token missing. Please click 'Connect Google Drive Account' in Settings.");
             }
         }
 
@@ -841,7 +1086,7 @@ public class GoogleDriveSyncService : ISyncService
             var syncStartUtc = DateTime.UtcNow;
             var token = _authRecord.AccessToken;
 
-            // 1. Fetch full remote file metadata list from appDataFolder (1 single HTTP GET request ~150ms)
+            // 1. Fetch full remote file metadata list from Google Drive appDataFolder (1 single HTTP GET request ~150ms)
             var remoteFiles = await ListAppDataFolderFilesAsync(token, cancellationToken);
             var remoteFileMap = remoteFiles.ToDictionary(f => f.Name, f => f, StringComparer.OrdinalIgnoreCase);
 
@@ -1194,7 +1439,6 @@ public class GoogleDriveSyncService : ISyncService
         }
     }
 
-
     private async Task EnsureDriveSuccessAsync(HttpResponseMessage response, string actionName)
     {
         if (!response.IsSuccessStatusCode)
@@ -1228,6 +1472,8 @@ public class UserAuthRecord
     public string UserName { get; set; } = string.Empty;
     public string GoogleClientId { get; set; } = string.Empty;
     public string GoogleClientSecret { get; set; } = string.Empty;
+    public string OAuthProxyUrl { get; set; } = string.Empty;
+    public string OAuthProxySecret { get; set; } = string.Empty;
     public string FirebaseApiKey { get; set; } = string.Empty;
     public string FirebaseProjectId { get; set; } = string.Empty;
     public string AccessToken { get; set; } = string.Empty;

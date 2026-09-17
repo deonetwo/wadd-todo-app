@@ -8,6 +8,8 @@
     <GoogleClientSecret Condition="'$(GoogleClientSecret)' == ''">$(GOOGLE_CLIENT_SECRET)</GoogleClientSecret>
     <FirebaseApiKey Condition="'$(FirebaseApiKey)' == ''">$(FIREBASE_API_KEY)</FirebaseApiKey>
     <FirebaseProjectId Condition="'$(FirebaseProjectId)' == ''">$(FIREBASE_PROJECT_ID)</FirebaseProjectId>
+    <OAuthProxyUrl Condition="'$(OAuthProxyUrl)' == ''">$(OAUTH_PROXY_URL)</OAuthProxyUrl>
+    <OAuthProxySecret Condition="'$(OAuthProxySecret)' == ''">$(OAUTH_PROXY_SECRET)</OAuthProxySecret>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
@@ -40,6 +42,20 @@
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
       <_Parameter1>FirebaseProjectId</_Parameter1>
       <_Parameter2>$(FirebaseProjectId)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(OAuthProxyUrl)' != ''">
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>OAuthProxyUrl</_Parameter1>
+      <_Parameter2>$(OAuthProxyUrl)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(OAuthProxySecret)' != ''">
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>OAuthProxySecret</_Parameter1>
+      <_Parameter2>$(OAuthProxySecret)</_Parameter2>
     </AssemblyAttribute>
   </ItemGroup>
 </Project>
