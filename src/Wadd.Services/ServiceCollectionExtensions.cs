@@ -31,6 +31,13 @@ public static class ServiceCollectionExtensions
                 {
                     services.AddSingleton(typeof(INotificationService), androidNotifType);
                 }
+
+                var androidAudioType = Type.GetType("Wadd.Android.AndroidAudioService, Wadd.Android")
+                                      ?? System.Reflection.Assembly.GetEntryAssembly()?.GetType("Wadd.Android.AndroidAudioService");
+                if (androidAudioType != null)
+                {
+                    services.AddSingleton(typeof(IAudioService), androidAudioType);
+                }
             }
             _sharedServiceProvider = services.BuildServiceProvider();
             return _sharedServiceProvider;
