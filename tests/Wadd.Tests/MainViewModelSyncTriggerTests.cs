@@ -90,7 +90,7 @@ public class MainViewModelSyncTriggerTests : IDisposable
     private MainViewModel CreateViewModel(ISyncService syncService)
     {
         var todoSvc = new SQLiteTodoService(_testDbPath);
-        var goalSvc = new SQLiteGoalService(_testDbPath);
+        var goalSvc = new SQLiteGoalService(todoSvc.DatabaseConnection);
         return new MainViewModel(
             todoSvc,
             new ThemeService(),

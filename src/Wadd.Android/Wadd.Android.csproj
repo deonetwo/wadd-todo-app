@@ -31,6 +31,9 @@
     <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3.android" Version="2.1.12" />
     <PackageReference Include="Xamarin.GooglePlayServices.Auth" Version="120.7.0.1" />
     <PackageReference Include="Xamarin.AndroidX.Work.Runtime" Version="2.9.1.1" />
+    <PackageReference Include="Xamarin.AndroidX.Lifecycle.LiveData" Version="2.10.0.2" />
+    <PackageReference Include="Xamarin.AndroidX.Lifecycle.Service" Version="2.10.0.2" />
+    <PackageReference Include="Xamarin.AndroidX.Lifecycle.LiveData.Core.Ktx" Version="2.10.0.2" />
   </ItemGroup>
 
   <ItemGroup>

@@ -46,17 +46,7 @@ public class SyncWorker : Worker
                 // Notify today tasks widget so home-screen reflects synced data
                 try
                 {
-                    var appWidgetManager = AppWidgetManager.GetInstance(ApplicationContext);
-                    if (appWidgetManager != null)
-                    {
-                        var componentName = new ComponentName(ApplicationContext, Java.Lang.Class.FromType(typeof(TodayTasksWidgetProvider)));
-                        var appWidgetIds = appWidgetManager.GetAppWidgetIds(componentName);
-                        if (appWidgetIds != null && appWidgetIds.Length > 0)
-                        {
-                            appWidgetManager.NotifyAppWidgetViewDataChanged(appWidgetIds, Resource.Id.widget_task_list);
-                            TodayTasksWidgetProvider.TriggerRefresh(ApplicationContext);
-                        }
-                    }
+                    TodayTasksWidgetProvider.TriggerRefresh(ApplicationContext);
                 }
                 catch (Exception widgetEx)
                 {
