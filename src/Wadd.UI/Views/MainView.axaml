@@ -2093,5 +2093,88 @@
       </Grid>
     </Border>
 
+    <!-- Delete Confirmation Warning Modal Overlay (Clean & Minimal) -->
+    <Border x:Name="DeleteConfirmationOverlay"
+            IsVisible="{Binding IsDeleteConfirmationOpen}"
+            ZIndex="3000"
+            Background="#80000000">
+      <Grid>
+        <!-- Dismiss Backdrop Overlay -->
+        <Border Background="Transparent" PointerPressed="OnDeleteConfirmationBackgroundPressed"/>
+
+        <!-- Modal Dialog Card (Minimal, compact, responsive) -->
+        <Border Background="{DynamicResource AppSurfaceElevatedBrush}"
+                BorderBrush="{DynamicResource AppBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="14"
+                Padding="20,18"
+                MaxWidth="340"
+                Margin="24"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Center"
+                BoxShadow="0 12 36 0 #50000000">
+          <StackPanel Spacing="10">
+
+            <!-- Title -->
+            <TextBlock Text="{Binding DeleteConfirmationTitle}"
+                       FontSize="15"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+
+            <!-- Target Item Name -->
+            <TextBlock Text="{Binding DeleteConfirmationItemName}"
+                       FontSize="13"
+                       FontWeight="Medium"
+                       Foreground="{DynamicResource AppTextPrimaryBrush}"
+                       TextWrapping="Wrap"
+                       MaxLines="2"
+                       TextTrimming="CharacterEllipsis"
+                       IsVisible="{Binding DeleteConfirmationItemName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+
+            <!-- Warning Explanatory Text -->
+            <TextBlock Text="{Binding DeleteConfirmationMessage}"
+                       FontSize="12"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"
+                       TextWrapping="Wrap"
+                       LineHeight="16"/>
+
+            <!-- Action Buttons: Cancel and Delete -->
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,8,0,0">
+              <!-- Cancel Button -->
+              <Button Grid.Column="0"
+                      Classes="outline"
+                      Command="{Binding CancelDeleteCommand}"
+                      MinHeight="38"
+                      CornerRadius="8"
+                      HorizontalAlignment="Stretch"
+                      HorizontalContentAlignment="Center"
+                      VerticalContentAlignment="Center">
+                <TextBlock Text="{loc:Localize Common_Cancel}"
+                           FontSize="13"
+                           FontWeight="Medium"
+                           Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+              </Button>
+
+              <!-- Confirm Delete Button -->
+              <Button Grid.Column="1"
+                      Classes="btn-danger-solid"
+                      Command="{Binding ConfirmDeleteCommand}"
+                      MinHeight="38"
+                      CornerRadius="8"
+                      HorizontalAlignment="Stretch"
+                      HorizontalContentAlignment="Center"
+                      VerticalContentAlignment="Center">
+                <TextBlock Text="{loc:Localize Common_Delete}"
+                           FontSize="13"
+                           FontWeight="SemiBold"
+                           Foreground="#FFFFFF"/>
+              </Button>
+            </Grid>
+
+          </StackPanel>
+        </Border>
+      </Grid>
+    </Border>
+
   </Panel>
 </UserControl>

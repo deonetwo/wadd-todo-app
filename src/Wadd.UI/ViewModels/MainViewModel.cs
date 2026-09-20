@@ -896,6 +896,13 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     private bool _isConflictDialogVisible;
 
+    [ObservableProperty] private bool _isDeleteConfirmationOpen;
+    [ObservableProperty] private string _deleteConfirmationTitle = string.Empty;
+    [ObservableProperty] private string _deleteConfirmationMessage = string.Empty;
+    [ObservableProperty] private string _deleteConfirmationItemName = string.Empty;
+    [ObservableProperty] private string _deleteConfirmationItemDetails = string.Empty;
+    private TaskCompletionSource<bool>? _deleteConfirmationTcs;
+
     [ObservableProperty]
     private string _currentDateFormatted = DateTime.Now.ToString("dddd, MMMM d").ToUpperInvariant();
 
@@ -3019,6 +3026,15 @@ public partial class MainViewModel : ViewModelBase
     {
         if (SelectedDay == null) return;
 
+        var lm = Wadd.UI.Localization.LocalizationManager.Instance;
+        var title = lm["Dialog_Delete_Note_Title"];
+        var msg = lm["Dialog_Delete_Note_Msg"];
+        var itemName = SelectedDay.Date.ToString("D");
+        var itemDetails = !string.IsNullOrWhiteSpace(SelectedDayNoteText) ? SelectedDayNoteText : string.Empty;
+
+        var confirmed = await RequestDeleteConfirmationAsync(title, msg, itemName, itemDetails);
+        if (!confirmed) return;
+
         var dateKey = SelectedDay.Date.ToString("yyyy-MM-dd");
         await _todoService.DeleteDateNoteAsync(SelectedDay.Date);
 
@@ -3226,6 +3242,7 @@ public partial class MainViewModel : ViewModelBase
         _goalsVM = new GoalsViewModel(_goalService, _aiGoalService, _audioService);
         _goalsVM.StatusNotificationRequested = (msg, type) => ShowStatusBubble(msg, type);
         _goalsVM.DataMutated += () => RequestDebouncedAutoSync();
+        _goalsVM.ConfirmDeleteRequested = (title, msg, itemName, details) => RequestDeleteConfirmationAsync(title, msg, itemName, details);
         WindowsNotificationService.NotificationTriggered += (title, message) =>
         {
             Dispatcher.UIThread.InvokeAsync(() =>
@@ -3732,6 +3749,18 @@ public partial class MainViewModel : ViewModelBase
     private async Task DeleteTodoAsync(TodoItemViewModel? itemVm)
     {
         if (itemVm == null) return;
+
+        var lm = Wadd.UI.Localization.LocalizationManager.Instance;
+        var title = lm["Dialog_Delete_Task_Title"];
+        var msg = lm["Dialog_Delete_Task_Msg"];
+        var itemName = itemVm.Title;
+        var itemDetails = !string.IsNullOrWhiteSpace(itemVm.DueDateFormatted)
+            ? itemVm.DueDateFormatted
+            : (itemVm.HasDescription ? itemVm.DescriptionPreview : string.Empty);
+
+        var confirmed = await RequestDeleteConfirmationAsync(title, msg, itemName, itemDetails);
+        if (!confirmed) return;
+
         try
         {
             await _todoService.DeleteTodoAsync(itemVm.Id);
@@ -3753,6 +3782,33 @@ public partial class MainViewModel : ViewModelBase
                 StatusMessage = $"Error deleting task: {ex.Message}";
             });
         }
+    }
+
+    public Task<bool> RequestDeleteConfirmationAsync(string title, string message, string itemName, string itemDetails = "")
+    {
+        _deleteConfirmationTcs?.TrySetResult(false);
+        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        DeleteConfirmationTitle = title;
+        DeleteConfirmationMessage = message;
+        DeleteConfirmationItemName = itemName;
+        DeleteConfirmationItemDetails = itemDetails;
+        _deleteConfirmationTcs = tcs;
+        IsDeleteConfirmationOpen = true;
+        return tcs.Task;
+    }
+
+    [RelayCommand]
+    private void ConfirmDelete()
+    {
+        IsDeleteConfirmationOpen = false;
+        _deleteConfirmationTcs?.TrySetResult(true);
+    }
+
+    [RelayCommand]
+    private void CancelDelete()
+    {
+        IsDeleteConfirmationOpen = false;
+        _deleteConfirmationTcs?.TrySetResult(false);
     }
 
     [RelayCommand]
@@ -3938,6 +3994,7 @@ public partial class MainViewModel : ViewModelBase
 
     private void CloseAllOverlays()
     {
+        CancelDelete();
         IsMobileMoreSheetOpen = false;
         IsMobileTagFilterSheetOpen = false;
         IsMobileCategorySheetOpen = false;
@@ -4082,6 +4139,13 @@ public partial class MainViewModel : ViewModelBase
     {
         if (string.IsNullOrWhiteSpace(tagName)) return;
         var tag = tagName.Trim();
+
+        var lm = Wadd.UI.Localization.LocalizationManager.Instance;
+        var title = lm["Dialog_Delete_Tag_Title"];
+        var msg = lm["Dialog_Delete_Tag_Msg"];
+
+        var confirmed = await RequestDeleteConfirmationAsync(title, msg, $"#{tag}");
+        if (!confirmed) return;
 
         _tagCreatedTimes.Remove(tag);
         _customEmptyTags.RemoveAll(x => x.Equals(tag, StringComparison.OrdinalIgnoreCase));

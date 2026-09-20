@@ -266,6 +266,34 @@
     <Setter Property="Foreground" Value="{DynamicResource AppAccentDangerBrush}"/>
   </Style>
 
+  <!-- Solid Danger Button: High visibility destructive confirmation -->
+  <Style Selector="Button.btn-danger-solid">
+    <Setter Property="Background"              Value="{DynamicResource AppAccentDangerBrush}"/>
+    <Setter Property="Foreground"              Value="#FFFFFF"/>
+    <Setter Property="FontWeight"              Value="SemiBold"/>
+    <Setter Property="BorderThickness"         Value="0"/>
+    <Setter Property="CornerRadius"            Value="8"/>
+    <Setter Property="Padding"                 Value="12,8"/>
+    <Setter Property="MinHeight"               Value="38"/>
+    <Setter Property="Cursor"                  Value="Hand"/>
+    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    <Setter Property="VerticalContentAlignment"   Value="Center"/>
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.15"/>
+        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.10"/>
+      </Transitions>
+    </Setter>
+  </Style>
+  <Style Selector="Button.btn-danger-solid:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="#E11D48"/>
+    <Setter Property="Foreground" Value="#FFFFFF"/>
+  </Style>
+  <Style Selector="Button.btn-danger-solid:pressed">
+    <Setter Property="RenderTransform" Value="scale(0.97)"/>
+    <Setter Property="Opacity" Value="0.9"/>
+  </Style>
+
   <!-- Add Note Button -->
   <Style Selector="Button.add-note-btn">
     <Setter Property="Background"              Value="Transparent"/>

@@ -322,4 +322,17 @@
   <data name="Goals_Category" xml:space="preserve"><value>Kategori</value></data>
   <data name="Goals_TargetDate" xml:space="preserve"><value>Target Tanggal Selesai</value></data>
   <data name="Goals_VisionDescription" xml:space="preserve"><value>Visi &amp; Deskripsi</value></data>
+  <data name="Dialog_Delete_WarningTitle" xml:space="preserve"><value>Konfirmasi Hapus</value></data>
+  <data name="Dialog_Delete_Task_Title" xml:space="preserve"><value>Hapus Tugas?</value></data>
+  <data name="Dialog_Delete_Task_Msg" xml:space="preserve"><value>Tindakan ini tidak dapat dibatalkan.</value></data>
+  <data name="Dialog_Delete_Goal_Title" xml:space="preserve"><value>Hapus Sasaran?</value></data>
+  <data name="Dialog_Delete_Goal_Msg" xml:space="preserve"><value>Sasaran ini beserta semua langkahnya akan dihapus.</value></data>
+  <data name="Dialog_Delete_Milestone_Title" xml:space="preserve"><value>Hapus Langkah?</value></data>
+  <data name="Dialog_Delete_Milestone_Msg" xml:space="preserve"><value>Langkah ini akan dihapus dari sasaran Anda.</value></data>
+  <data name="Dialog_Delete_Journal_Title" xml:space="preserve"><value>Hapus Catatan Jurnal?</value></data>
+  <data name="Dialog_Delete_Journal_Msg" xml:space="preserve"><value>Catatan refleksi jurnal ini akan dihapus.</value></data>
+  <data name="Dialog_Delete_Tag_Title" xml:space="preserve"><value>Hapus Tag?</value></data>
+  <data name="Dialog_Delete_Tag_Msg" xml:space="preserve"><value>Tag ini akan dihapus dari semua tugas.</value></data>
+  <data name="Dialog_Delete_Note_Title" xml:space="preserve"><value>Hapus Catatan?</value></data>
+  <data name="Dialog_Delete_Note_Msg" xml:space="preserve"><value>Catatan untuk tanggal ini akan dihapus.</value></data>
 </root>

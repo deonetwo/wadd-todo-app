@@ -125,4 +125,10 @@ public partial class MainView : UserControl
         if (DataContext is MainViewModel vm)
             vm.CloseLanguagePickerCommand.Execute(null);
     }
+
+    private void OnDeleteConfirmationBackgroundPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.CancelDeleteCommand.Execute(null);
+    }
 }

@@ -322,4 +322,17 @@
   <data name="Goals_Category" xml:space="preserve"><value>Category</value></data>
   <data name="Goals_TargetDate" xml:space="preserve"><value>Target Completion Date</value></data>
   <data name="Goals_VisionDescription" xml:space="preserve"><value>Vision &amp; Description</value></data>
+  <data name="Dialog_Delete_WarningTitle" xml:space="preserve"><value>Delete Confirmation</value></data>
+  <data name="Dialog_Delete_Task_Title" xml:space="preserve"><value>Delete Task?</value></data>
+  <data name="Dialog_Delete_Task_Msg" xml:space="preserve"><value>This action cannot be undone.</value></data>
+  <data name="Dialog_Delete_Goal_Title" xml:space="preserve"><value>Delete Goal?</value></data>
+  <data name="Dialog_Delete_Goal_Msg" xml:space="preserve"><value>This will delete this goal and all its milestones.</value></data>
+  <data name="Dialog_Delete_Milestone_Title" xml:space="preserve"><value>Delete Step?</value></data>
+  <data name="Dialog_Delete_Milestone_Msg" xml:space="preserve"><value>This step will be removed from your goal.</value></data>
+  <data name="Dialog_Delete_Journal_Title" xml:space="preserve"><value>Delete Journal Entry?</value></data>
+  <data name="Dialog_Delete_Journal_Msg" xml:space="preserve"><value>This reflection entry will be deleted.</value></data>
+  <data name="Dialog_Delete_Tag_Title" xml:space="preserve"><value>Delete Tag?</value></data>
+  <data name="Dialog_Delete_Tag_Msg" xml:space="preserve"><value>This tag will be removed from all tasks.</value></data>
+  <data name="Dialog_Delete_Note_Title" xml:space="preserve"><value>Delete Note?</value></data>
+  <data name="Dialog_Delete_Note_Msg" xml:space="preserve"><value>The note for this date will be deleted.</value></data>
 </root>

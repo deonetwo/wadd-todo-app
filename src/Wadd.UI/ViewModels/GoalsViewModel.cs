@@ -66,9 +66,12 @@ public partial class GoalsViewModel : ViewModelBase
 
     partial void OnSelectedGoalChanged(LifeGoalItemViewModel? value)
     {
-        foreach (var g in Goals)
+        foreach (var g in Goals.ToList())
         {
-            g.IsSelected = (value != null && g.Id == value.Id);
+            if (g != null)
+            {
+                g.IsSelected = (value != null && g.Id == value.Id);
+            }
         }
         _ = LoadMilestonesAndJournalForSelectedGoalAsync();
         OnPropertyChanged(nameof(HasSelectedGoal));
@@ -157,6 +160,17 @@ public partial class GoalsViewModel : ViewModelBase
         _aiGoalService = aiGoalService ?? throw new ArgumentNullException(nameof(aiGoalService));
         _audioService = audioService;
         _ = InitializeAsync();
+    }
+
+    public Func<string, string, string, string, Task<bool>>? ConfirmDeleteRequested { get; set; }
+
+    private async Task<bool> PromptDeleteConfirmationAsync(string title, string message, string itemName, string itemDetails = "")
+    {
+        if (ConfirmDeleteRequested != null)
+        {
+            return await ConfirmDeleteRequested(title, message, itemName, itemDetails);
+        }
+        return true;
     }
 
     public async Task InitializeAsync()
@@ -523,6 +537,15 @@ public partial class GoalsViewModel : ViewModelBase
         var target = goalVm ?? SelectedGoal;
         if (target == null) return;
 
+        var lm = Wadd.UI.Localization.LocalizationManager.Instance;
+        var title = lm["Dialog_Delete_Goal_Title"];
+        var msg = lm["Dialog_Delete_Goal_Msg"];
+        var itemName = target.Title;
+        var itemDetails = !string.IsNullOrWhiteSpace(target.Category) ? $"Category: {target.Category}" : string.Empty;
+
+        var confirmed = await PromptDeleteConfirmationAsync(title, msg, itemName, itemDetails);
+        if (!confirmed) return;
+
         await _goalService.DeleteGoalAsync(target.Id);
         Goals.Remove(target);
         UpdateCategories();
@@ -719,6 +742,14 @@ public partial class GoalsViewModel : ViewModelBase
     private async Task DeleteMilestoneAsync(GoalMilestoneItemViewModel? milestoneVm)
     {
         if (milestoneVm == null || SelectedGoal == null) return;
+
+        var lm = Wadd.UI.Localization.LocalizationManager.Instance;
+        var title = lm["Dialog_Delete_Milestone_Title"];
+        var msg = lm["Dialog_Delete_Milestone_Msg"];
+        var itemName = milestoneVm.Title;
+
+        var confirmed = await PromptDeleteConfirmationAsync(title, msg, itemName);
+        if (!confirmed) return;
 
         await _goalService.DeleteMilestoneAsync(milestoneVm.Id);
         CurrentMilestones.Remove(milestoneVm);
@@ -1015,6 +1046,17 @@ public partial class GoalsViewModel : ViewModelBase
     private async Task DeleteJournalEntryAsync(JournalEntryItemViewModel? entryVm)
     {
         if (entryVm == null) return;
+
+        var lm = Wadd.UI.Localization.LocalizationManager.Instance;
+        var title = lm["Dialog_Delete_Journal_Title"];
+        var msg = lm["Dialog_Delete_Journal_Msg"];
+        var itemName = entryVm.EntryDate.ToString("D");
+        var itemDetails = !string.IsNullOrWhiteSpace(entryVm.Content)
+            ? (entryVm.Content.Length > 80 ? entryVm.Content.Substring(0, 80) + "..." : entryVm.Content)
+            : string.Empty;
+
+        var confirmed = await PromptDeleteConfirmationAsync(title, msg, itemName, itemDetails);
+        if (!confirmed) return;
 
         await _goalService.DeleteJournalEntryAsync(entryVm.Id);
         CurrentJournalEntries.Remove(entryVm);
