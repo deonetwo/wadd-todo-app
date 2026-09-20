@@ -436,7 +436,7 @@ public class GoogleDriveSyncService : ISyncService
                     returnedState = request.QueryString["state"] ?? string.Empty;
                     error = qError ?? string.Empty;
 
-                    SendHtmlResponse(response, "Sign-in Successful!", "<h2 style='color:#0d9488;'>Authentication Successful!</h2><p>Wadd ToDo has been successfully connected to your Google Drive.</p><p>You may now close this browser tab and return to Wadd.</p>");
+                    SendHtmlResponse(response, "Signed In", "<h2>Signed in</h2><p>You can close this tab and return to Wadd.</p>");
                     break;
                 }
                 else if (request.Url?.AbsolutePath == "/callback")
@@ -447,7 +447,7 @@ public class GoogleDriveSyncService : ISyncService
                     returnedState = request.QueryString["state"] ?? string.Empty;
                     error = request.QueryString["error"] ?? string.Empty;
 
-                    SendHtmlResponse(response, "Sign-in Successful!", "<h2 style='color:#0d9488;'>Authentication Successful!</h2><p>Wadd ToDo has been successfully connected to your Google Drive.</p><p>You may now close this browser tab and return to Wadd.</p>");
+                    SendHtmlResponse(response, "Signed In", "<h2>Signed in</h2><p>You can close this tab and return to Wadd.</p>");
                     break;
                 }
                 else
@@ -645,8 +645,23 @@ public class GoogleDriveSyncService : ISyncService
   <meta charset='utf-8'/>
   <title>{title}</title>
   <style>
-    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #f8f9fa; color: #1e293b; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }}
-    .card {{ background: white; padding: 2.5rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); text-align: center; max-width: 420px; }}
+    body {{
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #ffffff;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }}
+    @media (prefers-color-scheme: dark) {{
+      body {{ background: #0f172a; color: #f8fafc; }}
+      p {{ color: #94a3b8 !important; }}
+    }}
+    .card {{ text-align: center; padding: 24px; max-width: 320px; }}
+    h2 {{ font-size: 1.25rem; font-weight: 600; margin: 0 0 6px 0; }}
+    p {{ color: #64748b; font-size: 0.875rem; margin: 0; }}
   </style>
 </head>
 <body>
@@ -668,16 +683,31 @@ public class GoogleDriveSyncService : ISyncService
 <html>
 <head>
   <meta charset='utf-8'/>
-  <title>Authenticating Wadd...</title>
+  <title>Wadd</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8f9fa; color: #1e293b; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-    .card { background: white; padding: 2.5rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); text-align: center; max-width: 420px; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #ffffff;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    @media (prefers-color-scheme: dark) {
+      body { background: #0f172a; color: #f8fafc; }
+      p { color: #94a3b8 !important; }
+    }
+    .card { text-align: center; padding: 24px; max-width: 320px; }
+    h2 { font-size: 1.25rem; font-weight: 600; margin: 0 0 6px 0; }
+    p { color: #64748b; font-size: 0.875rem; margin: 0; }
   </style>
 </head>
 <body>
   <div class='card'>
-    <h2 style='color:#0d9488;'>Completing Authentication...</h2>
-    <p>Please wait while Wadd connects your account.</p>
+    <h2>Connecting...</h2>
+    <p>Please wait.</p>
   </div>
   <script>
     var params = new URLSearchParams(window.location.search);
@@ -691,7 +721,7 @@ public class GoogleDriveSyncService : ISyncService
 
     fetch('/callback?id_token=' + encodeURIComponent(idToken) + '&access_token=' + encodeURIComponent(accessToken) + '&code=' + encodeURIComponent(code) + '&state=' + encodeURIComponent(state) + '&expires_in=' + encodeURIComponent(expiresIn) + '&error=' + encodeURIComponent(error))
       .then(function() {
-        document.body.innerHTML = ""<div class='card'><h2 style='color:#0d9488;'>Authentication Successful!</h2><p>You can close this tab and return to Wadd.</p></div>"";
+        document.body.innerHTML = ""<div class='card'><h2>Signed in</h2><p>You can close this tab and return to Wadd.</p></div>"";
       });
   </script>
 </body>
