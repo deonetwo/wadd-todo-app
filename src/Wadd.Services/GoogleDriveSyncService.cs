@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Net;
 using System.Runtime.InteropServices;
@@ -184,6 +185,8 @@ public class GoogleDriveSyncService : ISyncService
 
     public string WebAppUrl { get; set; } = string.Empty;
 
+    public bool HasChangesApplied { get; private set; }
+
     public int UnresolvedConflictCount { get; private set; }
     public event EventHandler? ConflictCountChanged;
 
@@ -287,6 +290,10 @@ public class GoogleDriveSyncService : ISyncService
             {
                 var json = File.ReadAllText(_authFilePath);
                 _authRecord = JsonSerializer.Deserialize<UserAuthRecord>(json, JsonOptions);
+                if (_authRecord?.LastSyncTimestampUtc.HasValue == true)
+                {
+                    _lastSyncTimestampUtc = _authRecord.LastSyncTimestampUtc.Value;
+                }
             }
         }
         catch { }
@@ -1026,6 +1033,7 @@ public class GoogleDriveSyncService : ISyncService
     {
         await Task.Delay(50, cancellationToken);
         _authRecord = null;
+        _lastSyncTimestampUtc = DateTime.MinValue;
         if (File.Exists(_authFilePath))
         {
             try { File.Delete(_authFilePath); } catch { }
@@ -1037,7 +1045,10 @@ public class GoogleDriveSyncService : ISyncService
     //  OFFLINE-FIRST INCREMENTAL GOOGLE DRIVE SYNCHRONIZATION ENGINE
     // =========================================================================
 
+    private static DateTime EnsureUtc(DateTime dt) => ConflictResolutionEngine.EnsureUtc(dt);
+
     private readonly SemaphoreSlim _syncLock = new(1, 1);
+    private readonly SemaphoreSlim _dbWriteLock = new(1, 1);
     private Timer? _debounceTimer;
     private readonly HashSet<Guid> _pendingPushQueue = new();
     private DateTime _lastSyncTimestampUtc = DateTime.MinValue;
@@ -1090,18 +1101,80 @@ public class GoogleDriveSyncService : ISyncService
             var syncStartUtc = DateTime.UtcNow;
             var token = _authRecord.AccessToken;
 
-            // 1. Fetch full remote file metadata list from Google Drive appDataFolder (1 single HTTP GET request ~150ms)
+            // 1. Fetch full remote file metadata list from Google Drive appDataFolder (1 single HTTP GET request ~150-250ms)
             var remoteFiles = await ListAppDataFolderFilesAsync(token, cancellationToken);
             var remoteFileMap = remoteFiles.ToDictionary(f => f.Name, f => f, StringComparer.OrdinalIgnoreCase);
 
-            var rawSqliteSvc = _todoService as SQLiteTodoService;
-            List<TodoItem> localTasksList = rawSqliteSvc != null
-                ? (await rawSqliteSvc.GetAllRawAsync(cancellationToken)).ToList()
-                : (await _todoService.GetTodosAsync(cancellationToken)).ToList();
+            // 2. High-speed Early-Exit Short-Circuit (Op 2)
+            if (_lastSyncTimestampUtc > DateTime.MinValue)
+            {
+                bool hasRemoteChanges = remoteFiles.Any(f => f.ModifiedTime.HasValue && f.ModifiedTime.Value > _lastSyncTimestampUtc);
 
-            var localTasksMap = localTasksList.GroupBy(x => x.Id).ToDictionary(g => g.Key, g => g.First());
+                bool hasLocalPending = false;
+                lock (_pendingPushQueue)
+                {
+                    hasLocalPending = _pendingPushQueue.Count > 0;
+                }
 
-            // 2. Identify local tasks with pending un-synced edits
+                if (!hasLocalPending && _syncLogRepository != null)
+                {
+                    var pendingLogs = await _syncLogRepository.GetPendingLogsAsync(cancellationToken);
+                    hasLocalPending = pendingLogs.Any();
+                }
+
+                if (!hasRemoteChanges && !hasLocalPending)
+                {
+                    bool hasLocalEntityChanges = false;
+                    if (_goalService != null)
+                    {
+                        var localGoals = await _goalService.GetAllGoalsRawAsync(cancellationToken);
+                        if (localGoals.Any(g => EnsureUtc(g.UpdatedAt ?? g.CreatedAt) > _lastSyncTimestampUtc))
+                        {
+                            hasLocalEntityChanges = true;
+                        }
+                        else
+                        {
+                            var localMilestones = await _goalService.GetAllMilestonesRawAsync(cancellationToken);
+                            if (localMilestones.Any(m => EnsureUtc(m.UpdatedAt ?? DateTime.MinValue) > _lastSyncTimestampUtc))
+                            {
+                                hasLocalEntityChanges = true;
+                            }
+                            else
+                            {
+                                var localJournals = await _goalService.GetAllJournalEntriesRawAsync(cancellationToken);
+                                if (localJournals.Any(j => EnsureUtc(j.UpdatedAt ?? j.EntryDate) > _lastSyncTimestampUtc))
+                                {
+                                    hasLocalEntityChanges = true;
+                                }
+                            }
+                        }
+                    }
+
+                    if (!hasLocalEntityChanges)
+                    {
+                        var localNotes = await _todoService.GetAllDateNotesRawAsync(cancellationToken);
+                        if (localNotes.Any(n => EnsureUtc(n.UpdatedAt) > _lastSyncTimestampUtc))
+                        {
+                            hasLocalEntityChanges = true;
+                        }
+                    }
+
+                    if (!hasLocalEntityChanges)
+                    {
+                        // Zero changes detected on both Drive and local SQLite: early exit!
+                        HasChangesApplied = false;
+                        _lastSyncTimestampUtc = DateTime.UtcNow;
+                        if (_authRecord != null)
+                        {
+                            _authRecord.LastSyncTimestampUtc = _lastSyncTimestampUtc;
+                            SaveAuthRecord();
+                        }
+                        await RefreshConflictCountAsync(cancellationToken);
+                        return true;
+                    }
+                }
+            }
+
             var pendingLocalTaskIds = new HashSet<Guid>();
             lock (_pendingPushQueue)
             {
@@ -1109,7 +1182,8 @@ public class GoogleDriveSyncService : ISyncService
                 _pendingPushQueue.Clear();
             }
 
-            if (rawSqliteSvc != null)
+            var rawSqliteSvc = _todoService as SQLiteTodoService;
+            if (rawSqliteSvc != null && _syncLogRepository != null)
             {
                 var pendingLogs = await _syncLogRepository.GetPendingLogsAsync(cancellationToken);
                 foreach (var log in pendingLogs)
@@ -1118,74 +1192,125 @@ public class GoogleDriveSyncService : ISyncService
                 }
             }
 
-            // 3. Process remote updates in parallel (skip downloading tasks that have pending local edits)
-            var filesToDownload = remoteFiles
-                .Where(f => f.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
-                .Where(remoteFile =>
-                {
-                    string idStr = remoteFile.Name[..^5];
-                    if (!Guid.TryParse(idStr, out var taskId)) return false;
+            var fileIdMap = new ConcurrentDictionary<string, string>(
+                remoteFileMap.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Id, StringComparer.OrdinalIgnoreCase),
+                StringComparer.OrdinalIgnoreCase);
 
-                    // If user modified this task locally and hasn't pushed it, do NOT overwrite with old cloud file
-                    if (pendingLocalTaskIds.Contains(taskId)) return false;
-
-                    if (!localTasksMap.TryGetValue(taskId, out var localTask))
-                    {
-                        return true; // New task on cloud -> must download
-                    }
-
-                    if (!remoteFile.ModifiedTime.HasValue) return true;
-
-                    DateTime localUpdated = (localTask.UpdatedAt ?? localTask.CreatedAt).ToUniversalTime();
-                    DateTime remoteUpdated = remoteFile.ModifiedTime.Value.ToUniversalTime();
-
-                    return remoteUpdated > localUpdated.AddSeconds(1);
-                })
-                .ToList();
-
-            if (filesToDownload.Count > 0)
+            // 3. Process all 5 entity sync modules in parallel (Op 1)
+            var syncTasks = new[]
             {
-                var downloadSemaphore = new SemaphoreSlim(16);
-                var remoteDownloadTasks = filesToDownload
-                    .Select(async remoteFile =>
-                    {
-                        string idStr = remoteFile.Name[..^5];
-                        if (!Guid.TryParse(idStr, out var taskId)) return null;
+                SyncTasksAsync(token, remoteFiles, remoteFileMap, fileIdMap, pendingLocalTaskIds, cancellationToken),
+                SyncGoalsAsync(token, remoteFiles, remoteFileMap, fileIdMap, cancellationToken),
+                SyncMilestonesAsync(token, remoteFiles, remoteFileMap, fileIdMap, cancellationToken),
+                SyncJournalEntriesAsync(token, remoteFiles, remoteFileMap, fileIdMap, cancellationToken),
+                SyncDateNotesAsync(token, remoteFiles, remoteFileMap, fileIdMap, cancellationToken)
+            };
 
-                        await downloadSemaphore.WaitAsync(cancellationToken);
-                        try
-                        {
-                            var remoteContent = await DownloadAppDataFileAsync(token, remoteFile.Id, cancellationToken);
-                            if (string.IsNullOrWhiteSpace(remoteContent)) return null;
+            var results = await Task.WhenAll(syncTasks);
+            HasChangesApplied = results.Any(r => r);
 
-                            var remoteTask = JsonSerializer.Deserialize<TodoItem>(remoteContent, JsonOptions);
-                            return remoteTask != null ? (taskId, remoteTask) : ((Guid taskId, TodoItem remoteTask)?)null;
-                        }
-                        catch
-                        {
-                            return null;
-                        }
-                        finally
-                        {
-                            downloadSemaphore.Release();
-                        }
-                    });
+            var maxRemoteMod = remoteFiles.Where(f => f.ModifiedTime.HasValue).Select(f => f.ModifiedTime!.Value).DefaultIfEmpty(DateTime.MinValue).Max();
+            _lastSyncTimestampUtc = DateTime.UtcNow > maxRemoteMod ? DateTime.UtcNow : maxRemoteMod;
+            if (_authRecord != null)
+            {
+                _authRecord.LastSyncTimestampUtc = _lastSyncTimestampUtc;
+                SaveAuthRecord();
+            }
+            await RefreshConflictCountAsync(cancellationToken);
+            return true;
+        }
+        finally
+        {
+            _syncLock.Release();
+        }
+    }
 
-                var remoteResults = await Task.WhenAll(remoteDownloadTasks);
-                var mergedTasksToUpsert = new List<TodoItem>();
+    private async Task<bool> SyncTasksAsync(
+        string token,
+        List<DriveFileItem> remoteFiles,
+        Dictionary<string, DriveFileItem> remoteFileMap,
+        IDictionary<string, string> fileIdMap,
+        HashSet<Guid> pendingLocalTaskIds,
+        CancellationToken cancellationToken)
+    {
+        bool hasChanges = false;
+        var rawSqliteSvc = _todoService as SQLiteTodoService;
+        List<TodoItem> localTasksList = rawSqliteSvc != null
+            ? (await rawSqliteSvc.GetAllRawAsync(cancellationToken)).ToList()
+            : (await _todoService.GetTodosAsync(cancellationToken)).ToList();
 
-                foreach (var result in remoteResults)
+        var localTasksMap = localTasksList.GroupBy(x => x.Id).ToDictionary(g => g.Key, g => g.First());
+
+        var filesToDownload = remoteFiles
+            .Where(f => f.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            .Where(remoteFile =>
+            {
+                string idStr = remoteFile.Name[..^5];
+                if (!Guid.TryParse(idStr, out var taskId)) return false;
+
+                if (pendingLocalTaskIds.Contains(taskId)) return false;
+
+                if (!localTasksMap.TryGetValue(taskId, out var localTask))
                 {
-                    if (!result.HasValue) continue;
-                    var (taskId, remoteTask) = result.Value;
-
-                    localTasksMap.TryGetValue(taskId, out var localTask);
-                    var mergedTask = ConflictResolutionEngine.MergeTask(localTask, remoteTask);
-                    mergedTasksToUpsert.Add(mergedTask);
-                    localTasksMap[taskId] = mergedTask;
+                    return true;
                 }
 
-                if (mergedTasksToUpsert.Count > 0)
+                if (!remoteFile.ModifiedTime.HasValue) return true;
+
+                DateTime localUpdated = EnsureUtc(localTask.UpdatedAt ?? localTask.CreatedAt);
+                DateTime remoteUpdated = remoteFile.ModifiedTime.Value;
+
+                return remoteUpdated > localUpdated.AddSeconds(1);
+            })
+            .ToList();
+
+        if (filesToDownload.Count > 0)
+        {
+            var downloadSemaphore = new SemaphoreSlim(16);
+            var remoteDownloadTasks = filesToDownload
+                .Select(async remoteFile =>
+                {
+                    string idStr = remoteFile.Name[..^5];
+                    if (!Guid.TryParse(idStr, out var taskId)) return null;
+
+                    await downloadSemaphore.WaitAsync(cancellationToken);
+                    try
+                    {
+                        var remoteContent = await DownloadAppDataFileAsync(token, remoteFile.Id, cancellationToken);
+                        if (string.IsNullOrWhiteSpace(remoteContent)) return null;
+
+                        var remoteTask = JsonSerializer.Deserialize<TodoItem>(remoteContent, JsonOptions);
+                        return remoteTask != null ? (taskId, remoteTask) : ((Guid taskId, TodoItem remoteTask)?)null;
+                    }
+                    catch
+                    {
+                        return null;
+                    }
+                    finally
+                    {
+                        downloadSemaphore.Release();
+                    }
+                });
+
+            var remoteResults = await Task.WhenAll(remoteDownloadTasks);
+            var mergedTasksToUpsert = new List<TodoItem>();
+
+            foreach (var result in remoteResults)
+            {
+                if (!result.HasValue) continue;
+                var (taskId, remoteTask) = result.Value;
+
+                localTasksMap.TryGetValue(taskId, out var localTask);
+                var mergedTask = ConflictResolutionEngine.MergeTask(localTask, remoteTask);
+                mergedTasksToUpsert.Add(mergedTask);
+                localTasksMap[taskId] = mergedTask;
+            }
+
+            if (mergedTasksToUpsert.Count > 0)
+            {
+                hasChanges = true;
+                await _dbWriteLock.WaitAsync(cancellationToken);
+                try
                 {
                     if (rawSqliteSvc != null)
                     {
@@ -1202,55 +1327,60 @@ public class GoogleDriveSyncService : ISyncService
                         }
                     }
                 }
-            }
-
-            // 4. Determine tasks to push (Smart Filter)
-            var tasksToPush = new HashSet<Guid>(pendingLocalTaskIds);
-
-            // Add tasks missing from cloud or modified locally after cloud file modification time
-            foreach (var (taskId, localTask) in localTasksMap)
-            {
-                string fileName = $"{taskId}.json";
-                if (!remoteFileMap.TryGetValue(fileName, out var remoteFile))
+                finally
                 {
-                    tasksToPush.Add(taskId); // Missing on cloud -> push
+                    _dbWriteLock.Release();
                 }
-                else if (remoteFile.ModifiedTime.HasValue)
-                {
-                    DateTime localUpdated = (localTask.UpdatedAt ?? localTask.CreatedAt).ToUniversalTime();
-                    DateTime remoteUpdated = remoteFile.ModifiedTime.Value.ToUniversalTime();
+            }
+        }
 
-                    if (localUpdated > remoteUpdated.AddSeconds(1))
+        var tasksToPush = new HashSet<Guid>(pendingLocalTaskIds);
+
+        foreach (var (taskId, localTask) in localTasksMap)
+        {
+            string fileName = $"{taskId}.json";
+            if (!remoteFileMap.TryGetValue(fileName, out var remoteFile))
+            {
+                tasksToPush.Add(taskId);
+            }
+            else if (remoteFile.ModifiedTime.HasValue)
+            {
+                DateTime localUpdated = EnsureUtc(localTask.UpdatedAt ?? localTask.CreatedAt);
+                DateTime remoteUpdated = remoteFile.ModifiedTime.Value;
+
+                if (localUpdated > remoteUpdated.AddSeconds(1))
+                {
+                    tasksToPush.Add(taskId);
+                }
+            }
+        }
+
+        if (tasksToPush.Count > 0)
+        {
+            hasChanges = true;
+            var uploadSemaphore = new SemaphoreSlim(16);
+            var uploadTasks = tasksToPush
+                .Where(taskId => localTasksMap.ContainsKey(taskId))
+                .Select(async taskId =>
+                {
+                    var taskToUpload = localTasksMap[taskId];
+                    await uploadSemaphore.WaitAsync(cancellationToken);
+                    try
                     {
-                        tasksToPush.Add(taskId); // Local task is newer -> push
+                        await UploadTaskToAppDataFolderAsync(token, taskToUpload, fileIdMap, cancellationToken);
                     }
-                }
-            }
-
-            var fileIdMap = remoteFileMap.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Id, StringComparer.OrdinalIgnoreCase);
-
-            if (tasksToPush.Count > 0)
-            {
-                var uploadSemaphore = new SemaphoreSlim(16);
-                var uploadTasks = tasksToPush
-                    .Where(taskId => localTasksMap.ContainsKey(taskId))
-                    .Select(async taskId =>
+                    finally
                     {
-                        var taskToUpload = localTasksMap[taskId];
-                        await uploadSemaphore.WaitAsync(cancellationToken);
-                        try
-                        {
-                            await UploadTaskToAppDataFolderAsync(token, taskToUpload, fileIdMap, cancellationToken);
-                        }
-                        finally
-                        {
-                            uploadSemaphore.Release();
-                        }
-                    });
+                        uploadSemaphore.Release();
+                    }
+                });
 
-                await Task.WhenAll(uploadTasks);
+            await Task.WhenAll(uploadTasks);
 
-                if (_syncLogRepository != null)
+            if (_syncLogRepository != null)
+            {
+                await _dbWriteLock.WaitAsync(cancellationToken);
+                try
                 {
                     var pendingLogs = await _syncLogRepository.GetPendingLogsAsync(cancellationToken);
                     var syncedLogIds = pendingLogs.Where(l => tasksToPush.Contains(l.RecordId)).Select(l => l.Id).ToList();
@@ -1259,22 +1389,14 @@ public class GoogleDriveSyncService : ISyncService
                         await _syncLogRepository.MarkLogsAsSyncedAsync(syncedLogIds, cancellationToken);
                     }
                 }
+                finally
+                {
+                    _dbWriteLock.Release();
+                }
             }
-
-            // 5. Synchronize Goals, Milestones, Journal Entries, and Calendar Date Notes
-            await SyncGoalsAsync(token, remoteFiles, remoteFileMap, fileIdMap, cancellationToken);
-            await SyncMilestonesAsync(token, remoteFiles, remoteFileMap, fileIdMap, cancellationToken);
-            await SyncJournalEntriesAsync(token, remoteFiles, remoteFileMap, fileIdMap, cancellationToken);
-            await SyncDateNotesAsync(token, remoteFiles, remoteFileMap, fileIdMap, cancellationToken);
-
-            _lastSyncTimestampUtc = syncStartUtc;
-            await RefreshConflictCountAsync(cancellationToken);
-            return true;
         }
-        finally
-        {
-            _syncLock.Release();
-        }
+
+        return hasChanges;
     }
 
     private record DriveFileItem(string Id, string Name, DateTime? ModifiedTime);
@@ -1300,7 +1422,7 @@ public class GoogleDriveSyncService : ISyncService
                     DateTime? mod = null;
                     if (file.TryGetProperty("modifiedTime", out var mp) && DateTime.TryParse(mp.GetString(), out var dt))
                     {
-                        mod = dt.ToUniversalTime();
+                        mod = EnsureUtc(dt);
                     }
                     if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(name))
                     {
@@ -1324,7 +1446,7 @@ public class GoogleDriveSyncService : ISyncService
         return string.Empty;
     }
 
-    private async Task UploadJsonFileToAppDataFolderAsync(string token, string fileName, string payloadJson, Dictionary<string, string>? remoteFileMap, string itemDescription, CancellationToken cancellationToken)
+    private async Task UploadJsonFileToAppDataFolderAsync(string token, string fileName, string payloadJson, IDictionary<string, string>? remoteFileMap, string itemDescription, CancellationToken cancellationToken)
     {
         string? existingFileId = null;
         if (remoteFileMap != null)
@@ -1363,16 +1485,35 @@ public class GoogleDriveSyncService : ISyncService
                 return new HttpRequestMessage(HttpMethod.Post, uploadUrl) { Content = multipartContent };
             }, cancellationToken);
             await EnsureDriveSuccessAsync(response, $"Upload {itemDescription} to AppData");
+
+            if (response.IsSuccessStatusCode && remoteFileMap != null)
+            {
+                try
+                {
+                    var respJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    using var doc = JsonDocument.Parse(respJson);
+                    if (doc.RootElement.TryGetProperty("id", out var idProp))
+                    {
+                        var newId = idProp.GetString();
+                        if (!string.IsNullOrWhiteSpace(newId))
+                        {
+                            remoteFileMap[fileName] = newId;
+                        }
+                    }
+                }
+                catch { }
+            }
         }
     }
 
-    private Task UploadTaskToAppDataFolderAsync(string token, TodoItem task, Dictionary<string, string>? remoteFileMap, CancellationToken cancellationToken)
+    private Task UploadTaskToAppDataFolderAsync(string token, TodoItem task, IDictionary<string, string>? remoteFileMap, CancellationToken cancellationToken)
     {
         return UploadJsonFileToAppDataFolderAsync(token, $"{task.Id}.json", JsonSerializer.Serialize(task, JsonOptions), remoteFileMap, $"Task {task.Id}", cancellationToken);
     }
 
-    private async Task SyncGoalsAsync(string token, List<DriveFileItem> remoteFiles, Dictionary<string, DriveFileItem> remoteFileMap, Dictionary<string, string> fileIdMap, CancellationToken cancellationToken)
+    private async Task<bool> SyncGoalsAsync(string token, List<DriveFileItem> remoteFiles, Dictionary<string, DriveFileItem> remoteFileMap, IDictionary<string, string> fileIdMap, CancellationToken cancellationToken)
     {
+        bool hasChanges = false;
         var goalRemoteFiles = remoteFiles
             .Where(f => f.Name.StartsWith("goal_", StringComparison.OrdinalIgnoreCase) && f.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
             .ToList();
@@ -1385,8 +1526,8 @@ public class GoogleDriveSyncService : ISyncService
             string id = rf.Name[5..^5];
             if (!localGoalsMap.TryGetValue(id, out var localGoal)) return true;
             if (!rf.ModifiedTime.HasValue) return true;
-            DateTime localUpdated = (localGoal.UpdatedAt ?? localGoal.CreatedAt).ToUniversalTime();
-            return rf.ModifiedTime.Value.ToUniversalTime() > localUpdated.AddSeconds(1);
+            DateTime localUpdated = EnsureUtc(localGoal.UpdatedAt ?? localGoal.CreatedAt);
+            return rf.ModifiedTime.Value > localUpdated.AddSeconds(1);
         }).ToList();
 
         if (filesToDownload.Count > 0)
@@ -1421,7 +1562,16 @@ public class GoogleDriveSyncService : ISyncService
 
             if (mergedToUpsert.Count > 0)
             {
-                await _goalService.BatchDirectUpsertGoalsAsync(mergedToUpsert, cancellationToken);
+                hasChanges = true;
+                await _dbWriteLock.WaitAsync(cancellationToken);
+                try
+                {
+                    await _goalService.BatchDirectUpsertGoalsAsync(mergedToUpsert, cancellationToken);
+                }
+                finally
+                {
+                    _dbWriteLock.Release();
+                }
             }
         }
 
@@ -1435,8 +1585,8 @@ public class GoogleDriveSyncService : ISyncService
             }
             else if (rf.ModifiedTime.HasValue)
             {
-                DateTime localUpdated = (localGoal.UpdatedAt ?? localGoal.CreatedAt).ToUniversalTime();
-                if (localUpdated > rf.ModifiedTime.Value.ToUniversalTime().AddSeconds(1))
+                DateTime localUpdated = EnsureUtc(localGoal.UpdatedAt ?? localGoal.CreatedAt);
+                if (localUpdated > rf.ModifiedTime.Value.AddSeconds(1))
                 {
                     goalsToPush.Add(localGoal);
                 }
@@ -1445,6 +1595,7 @@ public class GoogleDriveSyncService : ISyncService
 
         if (goalsToPush.Count > 0)
         {
+            hasChanges = true;
             var uploadSemaphore = new SemaphoreSlim(16);
             var uploadTasks = goalsToPush.Select(async goal =>
             {
@@ -1457,10 +1608,13 @@ public class GoogleDriveSyncService : ISyncService
             });
             await Task.WhenAll(uploadTasks);
         }
+
+        return hasChanges;
     }
 
-    private async Task SyncMilestonesAsync(string token, List<DriveFileItem> remoteFiles, Dictionary<string, DriveFileItem> remoteFileMap, Dictionary<string, string> fileIdMap, CancellationToken cancellationToken)
+    private async Task<bool> SyncMilestonesAsync(string token, List<DriveFileItem> remoteFiles, Dictionary<string, DriveFileItem> remoteFileMap, IDictionary<string, string> fileIdMap, CancellationToken cancellationToken)
     {
+        bool hasChanges = false;
         var milestoneRemoteFiles = remoteFiles
             .Where(f => f.Name.StartsWith("milestone_", StringComparison.OrdinalIgnoreCase) && f.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
             .ToList();
@@ -1473,8 +1627,8 @@ public class GoogleDriveSyncService : ISyncService
             string id = rf.Name[10..^5];
             if (!localMilestonesMap.TryGetValue(id, out var localM)) return true;
             if (!rf.ModifiedTime.HasValue) return true;
-            DateTime localUpdated = (localM.UpdatedAt ?? DateTime.MinValue).ToUniversalTime();
-            return rf.ModifiedTime.Value.ToUniversalTime() > localUpdated.AddSeconds(1);
+            DateTime localUpdated = EnsureUtc(localM.UpdatedAt ?? DateTime.MinValue);
+            return rf.ModifiedTime.Value > localUpdated.AddSeconds(1);
         }).ToList();
 
         if (filesToDownload.Count > 0)
@@ -1509,7 +1663,16 @@ public class GoogleDriveSyncService : ISyncService
 
             if (mergedToUpsert.Count > 0)
             {
-                await _goalService.BatchDirectUpsertMilestonesAsync(mergedToUpsert, cancellationToken);
+                hasChanges = true;
+                await _dbWriteLock.WaitAsync(cancellationToken);
+                try
+                {
+                    await _goalService.BatchDirectUpsertMilestonesAsync(mergedToUpsert, cancellationToken);
+                }
+                finally
+                {
+                    _dbWriteLock.Release();
+                }
             }
         }
 
@@ -1523,8 +1686,8 @@ public class GoogleDriveSyncService : ISyncService
             }
             else if (rf.ModifiedTime.HasValue)
             {
-                DateTime localUpdated = (localM.UpdatedAt ?? DateTime.MinValue).ToUniversalTime();
-                if (localUpdated > rf.ModifiedTime.Value.ToUniversalTime().AddSeconds(1))
+                DateTime localUpdated = EnsureUtc(localM.UpdatedAt ?? DateTime.MinValue);
+                if (localUpdated > rf.ModifiedTime.Value.AddSeconds(1))
                 {
                     milestonesToPush.Add(localM);
                 }
@@ -1533,6 +1696,7 @@ public class GoogleDriveSyncService : ISyncService
 
         if (milestonesToPush.Count > 0)
         {
+            hasChanges = true;
             var uploadSemaphore = new SemaphoreSlim(16);
             var uploadTasks = milestonesToPush.Select(async m =>
             {
@@ -1545,10 +1709,13 @@ public class GoogleDriveSyncService : ISyncService
             });
             await Task.WhenAll(uploadTasks);
         }
+
+        return hasChanges;
     }
 
-    private async Task SyncJournalEntriesAsync(string token, List<DriveFileItem> remoteFiles, Dictionary<string, DriveFileItem> remoteFileMap, Dictionary<string, string> fileIdMap, CancellationToken cancellationToken)
+    private async Task<bool> SyncJournalEntriesAsync(string token, List<DriveFileItem> remoteFiles, Dictionary<string, DriveFileItem> remoteFileMap, IDictionary<string, string> fileIdMap, CancellationToken cancellationToken)
     {
+        bool hasChanges = false;
         var journalRemoteFiles = remoteFiles
             .Where(f => f.Name.StartsWith("journal_", StringComparison.OrdinalIgnoreCase) && f.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
             .ToList();
@@ -1561,8 +1728,8 @@ public class GoogleDriveSyncService : ISyncService
             string id = rf.Name[8..^5];
             if (!localEntriesMap.TryGetValue(id, out var localEntry)) return true;
             if (!rf.ModifiedTime.HasValue) return true;
-            DateTime localUpdated = (localEntry.UpdatedAt ?? localEntry.EntryDate).ToUniversalTime();
-            return rf.ModifiedTime.Value.ToUniversalTime() > localUpdated.AddSeconds(1);
+            DateTime localUpdated = EnsureUtc(localEntry.UpdatedAt ?? localEntry.EntryDate);
+            return rf.ModifiedTime.Value > localUpdated.AddSeconds(1);
         }).ToList();
 
         if (filesToDownload.Count > 0)
@@ -1597,7 +1764,16 @@ public class GoogleDriveSyncService : ISyncService
 
             if (mergedToUpsert.Count > 0)
             {
-                await _goalService.BatchDirectUpsertJournalEntriesAsync(mergedToUpsert, cancellationToken);
+                hasChanges = true;
+                await _dbWriteLock.WaitAsync(cancellationToken);
+                try
+                {
+                    await _goalService.BatchDirectUpsertJournalEntriesAsync(mergedToUpsert, cancellationToken);
+                }
+                finally
+                {
+                    _dbWriteLock.Release();
+                }
             }
         }
 
@@ -1611,8 +1787,8 @@ public class GoogleDriveSyncService : ISyncService
             }
             else if (rf.ModifiedTime.HasValue)
             {
-                DateTime localUpdated = (localEntry.UpdatedAt ?? localEntry.EntryDate).ToUniversalTime();
-                if (localUpdated > rf.ModifiedTime.Value.ToUniversalTime().AddSeconds(1))
+                DateTime localUpdated = EnsureUtc(localEntry.UpdatedAt ?? localEntry.EntryDate);
+                if (localUpdated > rf.ModifiedTime.Value.AddSeconds(1))
                 {
                     entriesToPush.Add(localEntry);
                 }
@@ -1621,6 +1797,7 @@ public class GoogleDriveSyncService : ISyncService
 
         if (entriesToPush.Count > 0)
         {
+            hasChanges = true;
             var uploadSemaphore = new SemaphoreSlim(16);
             var uploadTasks = entriesToPush.Select(async entry =>
             {
@@ -1633,10 +1810,13 @@ public class GoogleDriveSyncService : ISyncService
             });
             await Task.WhenAll(uploadTasks);
         }
+
+        return hasChanges;
     }
 
-    private async Task SyncDateNotesAsync(string token, List<DriveFileItem> remoteFiles, Dictionary<string, DriveFileItem> remoteFileMap, Dictionary<string, string> fileIdMap, CancellationToken cancellationToken)
+    private async Task<bool> SyncDateNotesAsync(string token, List<DriveFileItem> remoteFiles, Dictionary<string, DriveFileItem> remoteFileMap, IDictionary<string, string> fileIdMap, CancellationToken cancellationToken)
     {
+        bool hasChanges = false;
         var dateNoteRemoteFiles = remoteFiles
             .Where(f => f.Name.StartsWith("datenote_", StringComparison.OrdinalIgnoreCase) && f.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
             .ToList();
@@ -1649,8 +1829,8 @@ public class GoogleDriveSyncService : ISyncService
             string key = rf.Name[9..^5];
             if (!localNotesMap.TryGetValue(key, out var localNote)) return true;
             if (!rf.ModifiedTime.HasValue) return true;
-            DateTime localUpdated = localNote.UpdatedAt.ToUniversalTime();
-            return rf.ModifiedTime.Value.ToUniversalTime() > localUpdated.AddSeconds(1);
+            DateTime localUpdated = EnsureUtc(localNote.UpdatedAt);
+            return rf.ModifiedTime.Value > localUpdated.AddSeconds(1);
         }).ToList();
 
         if (filesToDownload.Count > 0)
@@ -1685,7 +1865,16 @@ public class GoogleDriveSyncService : ISyncService
 
             if (mergedToUpsert.Count > 0)
             {
-                await _todoService.BatchDirectUpsertDateNotesAsync(mergedToUpsert, cancellationToken);
+                hasChanges = true;
+                await _dbWriteLock.WaitAsync(cancellationToken);
+                try
+                {
+                    await _todoService.BatchDirectUpsertDateNotesAsync(mergedToUpsert, cancellationToken);
+                }
+                finally
+                {
+                    _dbWriteLock.Release();
+                }
             }
         }
 
@@ -1699,8 +1888,8 @@ public class GoogleDriveSyncService : ISyncService
             }
             else if (rf.ModifiedTime.HasValue)
             {
-                DateTime localUpdated = localNote.UpdatedAt.ToUniversalTime();
-                if (localUpdated > rf.ModifiedTime.Value.ToUniversalTime().AddSeconds(1))
+                DateTime localUpdated = EnsureUtc(localNote.UpdatedAt);
+                if (localUpdated > rf.ModifiedTime.Value.AddSeconds(1))
                 {
                     notesToPush.Add(localNote);
                 }
@@ -1709,6 +1898,7 @@ public class GoogleDriveSyncService : ISyncService
 
         if (notesToPush.Count > 0)
         {
+            hasChanges = true;
             var uploadSemaphore = new SemaphoreSlim(16);
             var uploadTasks = notesToPush.Select(async note =>
             {
@@ -1721,6 +1911,8 @@ public class GoogleDriveSyncService : ISyncService
             });
             await Task.WhenAll(uploadTasks);
         }
+
+        return hasChanges;
     }
 
     private async Task<string> FindAppDataFileIdByNameAsync(string token, string fileName, CancellationToken cancellationToken)
@@ -1851,4 +2043,5 @@ public class UserAuthRecord
     public string FirebaseLocalId { get; set; } = string.Empty;
     public DateTime AuthenticatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? TokenExpiresAtUtc { get; set; }
+    public DateTime? LastSyncTimestampUtc { get; set; }
 }

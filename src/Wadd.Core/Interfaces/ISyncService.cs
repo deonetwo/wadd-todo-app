@@ -13,6 +13,8 @@ public interface ISyncService
     string FirebaseApiKey { get; set; }
     string FirebaseProjectId { get; set; }
 
+    bool HasChangesApplied { get; }
+
     int UnresolvedConflictCount { get; }
     event EventHandler? ConflictCountChanged;
     event EventHandler? AuthStateChanged;

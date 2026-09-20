@@ -18,6 +18,16 @@ public class ConflictResolutionEngine
         WriteIndented = false
     };
 
+    public static DateTime EnsureUtc(DateTime dt)
+    {
+        return dt.Kind switch
+        {
+            DateTimeKind.Utc => dt,
+            DateTimeKind.Local => dt.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(dt, DateTimeKind.Utc)
+        };
+    }
+
     /// <summary>
     /// Pure deterministic Last-Write-Wins (LWW) merge with Tombstone resolution.
     /// </summary>
@@ -31,8 +41,8 @@ public class ConflictResolutionEngine
         DateTime localUpdated = local.UpdatedAt ?? local.CreatedAt;
         DateTime remoteUpdated = remote.UpdatedAt ?? remote.CreatedAt;
 
-        long localTicks = localUpdated.ToUniversalTime().Ticks;
-        long remoteTicks = remoteUpdated.ToUniversalTime().Ticks;
+        long localTicks = EnsureUtc(localUpdated).Ticks;
+        long remoteTicks = EnsureUtc(remoteUpdated).Ticks;
 
         TodoItem result;
         if (remoteTicks > localTicks)
@@ -190,8 +200,8 @@ public class ConflictResolutionEngine
         DateTime localUpdated = local.UpdatedAt ?? local.CreatedAt;
         DateTime remoteUpdated = remote.UpdatedAt ?? remote.CreatedAt;
 
-        long localTicks = localUpdated.ToUniversalTime().Ticks;
-        long remoteTicks = remoteUpdated.ToUniversalTime().Ticks;
+        long localTicks = EnsureUtc(localUpdated).Ticks;
+        long remoteTicks = EnsureUtc(remoteUpdated).Ticks;
 
         // Tombstone wins to prevent resurrection
         if (local.IsDeleted || remote.IsDeleted)
@@ -249,8 +259,8 @@ public class ConflictResolutionEngine
         DateTime localUpdated = local.UpdatedAt ?? DateTime.MinValue;
         DateTime remoteUpdated = remote.UpdatedAt ?? DateTime.MinValue;
 
-        long localTicks = localUpdated.ToUniversalTime().Ticks;
-        long remoteTicks = remoteUpdated.ToUniversalTime().Ticks;
+        long localTicks = EnsureUtc(localUpdated).Ticks;
+        long remoteTicks = EnsureUtc(remoteUpdated).Ticks;
 
         // Tombstone wins to prevent resurrection
         if (local.IsDeleted || remote.IsDeleted)
@@ -304,8 +314,8 @@ public class ConflictResolutionEngine
         DateTime localUpdated = local.UpdatedAt ?? local.EntryDate;
         DateTime remoteUpdated = remote.UpdatedAt ?? remote.EntryDate;
 
-        long localTicks = localUpdated.ToUniversalTime().Ticks;
-        long remoteTicks = remoteUpdated.ToUniversalTime().Ticks;
+        long localTicks = EnsureUtc(localUpdated).Ticks;
+        long remoteTicks = EnsureUtc(remoteUpdated).Ticks;
 
         // Tombstone wins to prevent resurrection
         if (local.IsDeleted || remote.IsDeleted)
@@ -361,8 +371,8 @@ public class ConflictResolutionEngine
         DateTime localUpdated = local.UpdatedAt;
         DateTime remoteUpdated = remote.UpdatedAt;
 
-        long localTicks = localUpdated.ToUniversalTime().Ticks;
-        long remoteTicks = remoteUpdated.ToUniversalTime().Ticks;
+        long localTicks = EnsureUtc(localUpdated).Ticks;
+        long remoteTicks = EnsureUtc(remoteUpdated).Ticks;
 
         // Tombstone wins to prevent resurrection
         if (local.IsDeleted || remote.IsDeleted)

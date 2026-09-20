@@ -378,5 +378,37 @@ public class MultiEntitySyncTests : IDisposable
         Assert.Equal("Synchronized from Google Drive", activeNotes["2026-09-21"]);
     }
 
+    [Fact]
+    public void GoogleDriveSyncService_HasChangesApplied_DefaultIsFalse()
+    {
+        var syncService = new GoogleDriveSyncService(_todoService);
+        Assert.False(syncService.HasChangesApplied);
+    }
+
+    [Fact]
+    public void ConflictResolutionEngine_EnsureUtc_PreservesUnspecifiedTimestampWithoutLocalSkew()
+    {
+        var rawTime = new DateTime(2026, 9, 20, 14, 0, 0, DateTimeKind.Unspecified);
+        var ensured = ConflictResolutionEngine.EnsureUtc(rawTime);
+
+        Assert.Equal(DateTimeKind.Utc, ensured.Kind);
+        Assert.Equal(14, ensured.Hour);
+        Assert.Equal(0, ensured.Minute);
+    }
+
+    [Fact]
+    public void ConflictResolutionEngine_MergeTask_WithUnspecifiedLocalTime_DoesNotSkewToCloud()
+    {
+        var localTime = new DateTime(2026, 9, 20, 14, 30, 0, DateTimeKind.Unspecified);
+        var cloudTime = new DateTime(2026, 9, 20, 14, 0, 0, DateTimeKind.Utc);
+
+        var local = new TodoItem { Id = Guid.NewGuid(), Title = "Local Newer", UpdatedAt = localTime };
+        var cloud = new TodoItem { Id = local.Id, Title = "Cloud Older", UpdatedAt = cloudTime };
+
+        var merged = ConflictResolutionEngine.MergeTask(local, cloud);
+
+        Assert.Equal("Local Newer", merged.Title);
+    }
+
     #endregion
 }

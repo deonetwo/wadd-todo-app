@@ -3768,8 +3768,11 @@ public partial class MainViewModel : ViewModelBase
             if (success)
             {
                 LastUpdatedAt = DateTime.Now;
-                await LoadTodoItemsAsync();
-                await GoalsVM.LoadAllGoalsAsync();
+                if (_syncService.HasChangesApplied)
+                {
+                    await LoadTodoItemsAsync();
+                    await GoalsVM.LoadAllGoalsAsync();
+                }
 
                 if (HasUnresolvedConflicts)
                 {
@@ -3778,7 +3781,9 @@ public partial class MainViewModel : ViewModelBase
                 }
                 else
                 {
-                    StatusMessage = "Sync completed successfully.";
+                    StatusMessage = _syncService.HasChangesApplied
+                        ? "Sync completed successfully."
+                        : "Everything is up to date.";
                 }
             }
             else
@@ -3836,8 +3841,11 @@ public partial class MainViewModel : ViewModelBase
             if (success)
             {
                 LastUpdatedAt = DateTime.Now;
-                await LoadTodoItemsAsync();
-                await GoalsVM.LoadAllGoalsAsync();
+                if (_syncService.HasChangesApplied)
+                {
+                    await LoadTodoItemsAsync();
+                    await GoalsVM.LoadAllGoalsAsync();
+                }
 
                 if (HasUnresolvedConflicts)
                 {
