@@ -741,6 +741,52 @@ public class MultiEntitySyncTests : IDisposable
         Assert.False(fakeHandler.UploadedManifests.ContainsKey("goals.json"));
     }
 
+    [Fact]
+    public async Task DeduplicateRemoteFilesAsync_WithDuplicateTasksJson_KeepsNewest_MergesContent_DeletesDuplicate()
+    {
+        var fakeHandler = new FakeDriveHttpMessageHandler();
+        var olderTasks = new List<TodoItem>
+        {
+            new() { Id = Guid.NewGuid(), Title = "Task from older duplicate", CreatedAt = DateTime.UtcNow.AddHours(-3) }
+        };
+        var newerTasks = new List<TodoItem>
+        {
+            new() { Id = Guid.NewGuid(), Title = "Task from newer canonical", CreatedAt = DateTime.UtcNow.AddHours(-1) }
+        };
+
+        var olderId = "tasks-old";
+        var newerId = "tasks-new";
+
+        fakeHandler.DriveFiles[olderId] = ("tasks.json", JsonSerializer.Serialize(olderTasks), DateTime.UtcNow.AddHours(-2));
+        fakeHandler.DriveFiles[newerId] = ("tasks.json", JsonSerializer.Serialize(newerTasks), DateTime.UtcNow.AddHours(-1));
+
+        var remoteFiles = new List<GoogleDriveSyncService.DriveFileItem>
+        {
+            new(olderId, "tasks.json", DateTime.UtcNow.AddHours(-2)),
+            new(newerId, "tasks.json", DateTime.UtcNow.AddHours(-1)),
+            new("goals-1", "goals.json", DateTime.UtcNow)
+        };
+
+        using var httpClient = new HttpClient(fakeHandler);
+        var syncService = new GoogleDriveSyncService(_todoService, httpClient: httpClient, goalService: _goalService);
+
+        // Act
+        var deduplicated = await syncService.DeduplicateRemoteFilesAsync("test-token", remoteFiles, CancellationToken.None);
+
+        // Assert
+        Assert.Equal(2, deduplicated.Count);
+        var tasksItem = deduplicated.FirstOrDefault(f => f.Name == "tasks.json");
+        Assert.NotNull(tasksItem);
+        Assert.Equal(newerId, tasksItem.Id);
+
+        // Older duplicate was deleted from Drive
+        Assert.Contains(olderId, fakeHandler.DeletedFileIds);
+
+        // Content from older duplicate was merged into local database
+        var localTasks = await _todoService.GetTodosAsync();
+        Assert.Contains(localTasks, t => t.Title == "Task from older duplicate");
+    }
+
     #endregion
 }
 

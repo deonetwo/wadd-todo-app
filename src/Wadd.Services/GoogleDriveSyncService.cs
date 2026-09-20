@@ -1117,6 +1117,7 @@ public class GoogleDriveSyncService : ISyncService
 
             // 1. Fetch full remote file metadata list from Google Drive appDataFolder (1 single HTTP GET request ~150-250ms)
             var remoteFiles = await ListAppDataFolderFilesAsync(token, cancellationToken);
+            remoteFiles = await DeduplicateRemoteFilesAsync(token, remoteFiles, cancellationToken);
             var remoteFileMap = remoteFiles.ToDictionary(f => f.Name, f => f, StringComparer.OrdinalIgnoreCase);
 
             // 2. High-speed Early-Exit Short-Circuit (Op 2)
@@ -1743,6 +1744,145 @@ public class GoogleDriveSyncService : ISyncService
         }
         await EnsureDriveSuccessAsync(response, $"Delete {itemDescription} from AppData");
         return false;
+    }
+
+    internal async Task<List<DriveFileItem>> DeduplicateRemoteFilesAsync(
+        string token,
+        List<DriveFileItem> remoteFiles,
+        CancellationToken cancellationToken)
+    {
+        var duplicateGroups = remoteFiles
+            .GroupBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
+            .Where(g => g.Count() > 1)
+            .ToList();
+
+        if (duplicateGroups.Count == 0)
+        {
+            return remoteFiles;
+        }
+
+        Wadd.Core.Logging.AppLogger.LogWarning("GoogleDriveSyncService", $"Detected {duplicateGroups.Count} duplicate filename group(s) in Google Drive AppData folder. Resolving duplicates...");
+
+        var canonicalFiles = new List<DriveFileItem>();
+        var manifestNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            TasksManifestFilename,
+            GoalsManifestFilename,
+            MilestonesManifestFilename,
+            JournalsManifestFilename,
+            DateNotesManifestFilename
+        };
+
+        var rawSqliteSvc = _todoService as SQLiteTodoService;
+
+        foreach (var group in remoteFiles.GroupBy(f => f.Name, StringComparer.OrdinalIgnoreCase))
+        {
+            if (group.Count() == 1)
+            {
+                canonicalFiles.Add(group.First());
+                continue;
+            }
+
+            // Order by ModifiedTime descending, keeping newest file as canonical
+            var sorted = group.OrderByDescending(f => f.ModifiedTime ?? DateTime.MinValue).ToList();
+            var canonical = sorted.First();
+            var duplicates = sorted.Skip(1).ToList();
+            canonicalFiles.Add(canonical);
+
+            bool isManifest = manifestNames.Contains(group.Key);
+
+            foreach (var dup in duplicates)
+            {
+                try
+                {
+                    // If it's a manifest file, download and merge its contents locally so no data is lost
+                    if (isManifest)
+                    {
+                        var content = await DownloadAppDataFileAsync(token, dup.Id, cancellationToken);
+                        if (!string.IsNullOrWhiteSpace(content))
+                        {
+                            await MergeManifestContentIntoLocalAsync(group.Key, content, rawSqliteSvc, cancellationToken);
+                        }
+                    }
+
+                    // Delete the older duplicate from Google Drive
+                    await DeleteAppDataFileAsync(token, dup.Id, $"{dup.Name} (duplicate)", cancellationToken);
+                    Wadd.Core.Logging.AppLogger.LogInfo("GoogleDriveSyncService", $"Resolved and cleaned up duplicate '{dup.Name}' (ID: {dup.Id}) from Google Drive.");
+                }
+                catch (Exception ex)
+                {
+                    Wadd.Core.Logging.AppLogger.LogWarning("GoogleDriveSyncService", $"Failed to clean up duplicate '{dup.Name}' (ID: {dup.Id}): {ex.Message}");
+                }
+            }
+        }
+
+        return canonicalFiles;
+    }
+
+    private async Task MergeManifestContentIntoLocalAsync(string manifestName, string content, SQLiteTodoService? rawSqliteSvc, CancellationToken cancellationToken)
+    {
+        await _dbWriteLock.WaitAsync(cancellationToken);
+        try
+        {
+            if (string.Equals(manifestName, TasksManifestFilename, StringComparison.OrdinalIgnoreCase))
+            {
+                var tasks = JsonSerializer.Deserialize<List<TodoItem>>(content, JsonOptions);
+                if (tasks != null && tasks.Count > 0)
+                {
+                    if (rawSqliteSvc != null)
+                    {
+                        await rawSqliteSvc.BatchDirectUpsertFromSyncAsync(tasks, cancellationToken);
+                    }
+                    else
+                    {
+                        foreach (var t in tasks) await _todoService.UpdateTodoAsync(t, cancellationToken);
+                    }
+                }
+            }
+            else if (_goalService != null)
+            {
+                if (string.Equals(manifestName, GoalsManifestFilename, StringComparison.OrdinalIgnoreCase))
+                {
+                    var goals = JsonSerializer.Deserialize<List<LifeGoal>>(content, JsonOptions);
+                    if (goals != null && goals.Count > 0)
+                    {
+                        await _goalService.BatchDirectUpsertGoalsAsync(goals, cancellationToken);
+                    }
+                }
+                else if (string.Equals(manifestName, MilestonesManifestFilename, StringComparison.OrdinalIgnoreCase))
+                {
+                    var milestones = JsonSerializer.Deserialize<List<GoalMilestone>>(content, JsonOptions);
+                    if (milestones != null && milestones.Count > 0)
+                    {
+                        await _goalService.BatchDirectUpsertMilestonesAsync(milestones, cancellationToken);
+                    }
+                }
+                else if (string.Equals(manifestName, JournalsManifestFilename, StringComparison.OrdinalIgnoreCase))
+                {
+                    var journals = JsonSerializer.Deserialize<List<JournalEntry>>(content, JsonOptions);
+                    if (journals != null && journals.Count > 0)
+                    {
+                        await _goalService.BatchDirectUpsertJournalEntriesAsync(journals, cancellationToken);
+                    }
+                }
+            }
+            else if (string.Equals(manifestName, DateNotesManifestFilename, StringComparison.OrdinalIgnoreCase))
+            {
+                var notes = JsonSerializer.Deserialize<List<CalendarDateNote>>(content, JsonOptions);
+                if (notes != null && notes.Count > 0)
+                {
+                    await _todoService.BatchDirectUpsertDateNotesAsync(notes, cancellationToken);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Wadd.Core.Logging.AppLogger.LogWarning("GoogleDriveSyncService", $"Error merging duplicate manifest {manifestName}: {ex.Message}");
+        }
+        finally
+        {
+            _dbWriteLock.Release();
+        }
     }
 
     internal async Task PruneExpiredCloudTombstonesAsync(
