@@ -71,6 +71,7 @@ public partial class App : Application
         collection.AddTransient<MainViewModel>();
 
         Services = collection.BuildServiceProvider();
+        ServiceCollectionExtensions.SetSharedServiceProvider(Services);
 
         var mainViewModel = Services.GetRequiredService<MainViewModel>();
 

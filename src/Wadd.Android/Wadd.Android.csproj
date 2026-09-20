@@ -30,6 +30,7 @@
     <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.11" />
     <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3.android" Version="2.1.12" />
     <PackageReference Include="Xamarin.GooglePlayServices.Auth" Version="120.7.0.1" />
+    <PackageReference Include="Xamarin.AndroidX.Work.Runtime" Version="2.9.1.1" />
   </ItemGroup>
 
   <ItemGroup>

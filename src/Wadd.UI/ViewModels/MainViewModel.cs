@@ -895,7 +895,6 @@ public partial class MainViewModel : ViewModelBase
     private readonly HashSet<Guid> _togglingTaskIds = new();
 
     private int _periodicSyncTicks;
-    private bool _initialSyncCompleted;
     private DispatcherTimer? _autoSyncDebounceTimer;
 
     [ObservableProperty]
@@ -3277,6 +3276,28 @@ public partial class MainViewModel : ViewModelBase
             }
         };
         timer.Start();
+
+        if (IsGoogleSignedIn)
+        {
+            ScheduleStartupAutoSync();
+        }
+    }
+
+    public void ScheduleStartupAutoSync(int delayMs = 1800)
+    {
+        if (!IsGoogleSignedIn) return;
+        _ = Task.Run(async () =>
+        {
+            if (delayMs > 0)
+            {
+                await Task.Delay(delayMs);
+            }
+            if (IsGoogleSignedIn && !IsSyncing)
+            {
+                AppLogger.LogInfo("Sync", "Startup auto-sync triggered on app launch.");
+                await TriggerAutoSyncAsync();
+            }
+        });
     }
 
     private DateTime _lastRecordedDate = DateTime.Today;
@@ -3457,12 +3478,6 @@ public partial class MainViewModel : ViewModelBase
                 {
                     _isInitialNotificationSeeded = true;
                     SeedInitialNotificationState();
-                }
-
-                if (!_initialSyncCompleted && IsGoogleSignedIn)
-                {
-                    _initialSyncCompleted = true;
-                    _ = TriggerAutoSyncAsync();
                 }
             });
         }
@@ -3726,6 +3741,8 @@ public partial class MainViewModel : ViewModelBase
             if (success)
             {
                 StatusMessage = $"Signed in as {GoogleUserEmail}. Connected to Google Drive.";
+                AppLogger.LogInfo("GoogleAuth", "Triggering post-sign-in auto-sync.");
+                _ = TriggerAutoSyncAsync();
             }
         }
         catch (Exception ex)
@@ -3826,9 +3843,10 @@ public partial class MainViewModel : ViewModelBase
         _autoSyncDebounceTimer.Start();
     }
 
-    private async Task TriggerAutoSyncAsync()
+    internal async Task TriggerAutoSyncAsync()
     {
         if (IsSyncing || !IsGoogleSignedIn) return;
+        AppLogger.LogInfo("Sync", "Triggering auto-sync (Foreground)...");
         try
         {
             if (SelectedDetailTask != null)

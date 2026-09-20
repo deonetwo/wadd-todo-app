@@ -61,6 +61,84 @@ public class MainActivity : AvaloniaMainActivity
         RequestNotificationPermissionIfRequired();
         Wadd.Core.Helpers.WaddDatabaseNotifier.DataChanged += OnDatabaseChanged;
         TaskAlarmScheduler.RescheduleAll(this);
+
+        try
+        {
+            var services = Wadd.Services.ServiceCollectionExtensions.GetOrCreateServiceProvider();
+            var syncService = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetService<Wadd.Core.Interfaces.ISyncService>(services);
+            if (syncService != null)
+            {
+                syncService.AuthStateChanged += (s, e) =>
+                {
+                    if (syncService.IsSignedIn)
+                    {
+                        SchedulePeriodicSync(this);
+                    }
+                    else
+                    {
+                        CancelPeriodicSync(this);
+                    }
+                };
+
+                if (syncService.IsSignedIn)
+                {
+                    SchedulePeriodicSync(this);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Wadd.Core.Logging.AppLogger.LogError("MainActivity", "Error configuring sync service hooks in OnCreate", ex);
+        }
+    }
+
+    public static void SchedulePeriodicSync(global::Android.Content.Context context)
+    {
+        try
+        {
+            var services = Wadd.Services.ServiceCollectionExtensions.GetOrCreateServiceProvider();
+            var syncService = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetService<Wadd.Core.Interfaces.ISyncService>(services);
+            if (syncService == null || !syncService.IsSignedIn)
+            {
+                CancelPeriodicSync(context);
+                return;
+            }
+
+            var constraints = new AndroidX.Work.Constraints.Builder()
+                .SetRequiredNetworkType(AndroidX.Work.NetworkType.Connected!)
+                .Build();
+
+            var syncWorkRequest = new AndroidX.Work.PeriodicWorkRequest.Builder(
+                typeof(SyncWorker),
+                15,
+                Java.Util.Concurrent.TimeUnit.Minutes!)
+                .SetConstraints(constraints)
+                .Build();
+
+            AndroidX.Work.WorkManager.GetInstance(context).EnqueueUniquePeriodicWork(
+                SyncWorker.WorkName,
+                AndroidX.Work.ExistingPeriodicWorkPolicy.Keep!,
+                (AndroidX.Work.PeriodicWorkRequest)syncWorkRequest);
+
+            Wadd.Core.Logging.AppLogger.LogInfo("MainActivity", "Scheduled unique periodic background sync via WorkManager (15 min interval).");
+        }
+        catch (Exception ex)
+        {
+            Wadd.Core.Logging.AppLogger.LogError("MainActivity", "Failed to schedule background sync via WorkManager", ex);
+        }
+    }
+
+    public static void CancelPeriodicSync(global::Android.Content.Context context)
+    {
+        try
+        {
+            AndroidX.Work.WorkManager.GetInstance(context).CancelUniqueWork(SyncWorker.WorkName);
+            Wadd.Core.Logging.AppLogger.LogInfo("MainActivity", "Cancelled unique periodic background sync.");
+        }
+        catch (Exception ex)
+        {
+            Wadd.Core.Logging.AppLogger.LogError("MainActivity", "Failed to cancel background sync via WorkManager", ex);
+        }
     }
 
     private void OnDatabaseChanged(object? sender, EventArgs e)
