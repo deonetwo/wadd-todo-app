@@ -449,14 +449,14 @@ public class SQLiteTodoService : ITodoService
     {
         await EnsureInitializedAsync();
         var key = date.ToString("yyyy-MM-dd");
-        var entity = await _database.Table<DateNoteEntity>().FirstOrDefaultAsync(x => x.DateKey == key);
+        var entity = await _database.Table<DateNoteEntity>().FirstOrDefaultAsync(x => x.DateKey == key && !x.IsDeleted);
         return entity?.NoteText;
     }
 
     public async Task<Dictionary<string, string>> GetAllDateNotesAsync(CancellationToken cancellationToken = default)
     {
         await EnsureInitializedAsync();
-        var entities = await _database.Table<DateNoteEntity>().ToListAsync();
+        var entities = await _database.Table<DateNoteEntity>().Where(x => !x.IsDeleted).ToListAsync();
         return entities.Where(x => !string.IsNullOrWhiteSpace(x.NoteText))
                        .ToDictionary(x => x.DateKey, x => x.NoteText);
     }
@@ -471,7 +471,11 @@ public class SQLiteTodoService : ITodoService
         {
             if (existing != null)
             {
-                await _database.DeleteAsync(existing);
+                existing.IsDeleted = true;
+                existing.DeletedAt = DateTime.UtcNow;
+                existing.UpdatedAt = DateTime.UtcNow;
+                existing.NoteText = string.Empty;
+                await _database.UpdateAsync(existing);
             }
             return;
         }
@@ -483,13 +487,17 @@ public class SQLiteTodoService : ITodoService
                 DateKey = key,
                 NoteText = noteText,
                 CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                UpdatedAt = DateTime.UtcNow,
+                IsDeleted = false,
+                DeletedAt = null
             });
         }
         else
         {
             existing.NoteText = noteText;
             existing.UpdatedAt = DateTime.UtcNow;
+            existing.IsDeleted = false;
+            existing.DeletedAt = null;
             await _database.UpdateAsync(existing);
         }
     }
@@ -501,8 +509,36 @@ public class SQLiteTodoService : ITodoService
         var existing = await _database.Table<DateNoteEntity>().FirstOrDefaultAsync(x => x.DateKey == key);
         if (existing != null)
         {
-            await _database.DeleteAsync(existing);
+            existing.IsDeleted = true;
+            existing.DeletedAt = DateTime.UtcNow;
+            existing.UpdatedAt = DateTime.UtcNow;
+            existing.NoteText = string.Empty;
+            await _database.UpdateAsync(existing);
         }
+    }
+
+    public async Task<IEnumerable<CalendarDateNote>> GetAllDateNotesRawAsync(CancellationToken cancellationToken = default)
+    {
+        await EnsureInitializedAsync();
+        var entities = await _database.Table<DateNoteEntity>().ToListAsync();
+        return entities.Select(e => e.ToDomain());
+    }
+
+    public async Task BatchDirectUpsertDateNotesAsync(IEnumerable<CalendarDateNote> notes, CancellationToken cancellationToken = default)
+    {
+        if (notes == null) return;
+        await EnsureInitializedAsync();
+
+        var entities = notes.Select(DateNoteEntity.FromDomain).ToList();
+        if (entities.Count == 0) return;
+
+        await _database.RunInTransactionAsync(conn =>
+        {
+            foreach (var entity in entities)
+            {
+                conn.InsertOrReplace(entity);
+            }
+        });
     }
 
     public async Task<bool> RenameCategoryAsync(string oldCategory, string newCategory, CancellationToken cancellationToken = default)

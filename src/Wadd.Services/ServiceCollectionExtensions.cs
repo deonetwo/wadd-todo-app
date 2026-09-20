@@ -15,10 +15,10 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IConflictRepository>(sp => new SQLiteConflictRepository(((SQLiteTodoService)sp.GetRequiredService<ITodoService>()).DatabaseConnection));
         services.AddSingleton<IThemeService, ThemeService>();
         services.AddSingleton<INativeGoogleAuthService, DesktopNativeGoogleAuthService>();
-        services.AddSingleton<ISyncService, GoogleDriveSyncService>();
-        services.AddSingleton<IExportService, ExcelExportService>();
         services.AddSingleton<ITracingService, TracingService>();
         services.AddSingleton<IGoalService>(sp => new SQLiteGoalService(((SQLiteTodoService)sp.GetRequiredService<ITodoService>()).DatabaseConnection));
+        services.AddSingleton<ISyncService, GoogleDriveSyncService>();
+        services.AddSingleton<IExportService, ExcelExportService>();
         services.AddSingleton<IStartupService, WindowsStartupService>();
         services.AddSingleton<IAiGoalService, AiGoalService>();
         services.AddSingleton<IAudioService, AudioService>();

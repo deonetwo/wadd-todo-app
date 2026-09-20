@@ -258,4 +258,80 @@ public class SQLiteGoalService : IGoalService
     }
 
     #endregion
+
+    #region Sync Support (Raw Queries & Direct Batch Upserts)
+
+    public async Task<IEnumerable<LifeGoal>> GetAllGoalsRawAsync(CancellationToken cancellationToken = default)
+    {
+        await EnsureInitializedAsync();
+        var entities = await _database.Table<LifeGoalEntity>().ToListAsync();
+        return entities.Select(e => e.ToDomain());
+    }
+
+    public async Task<IEnumerable<GoalMilestone>> GetAllMilestonesRawAsync(CancellationToken cancellationToken = default)
+    {
+        await EnsureInitializedAsync();
+        var entities = await _database.Table<GoalMilestoneEntity>().ToListAsync();
+        return entities.Select(e => e.ToDomain());
+    }
+
+    public async Task<IEnumerable<JournalEntry>> GetAllJournalEntriesRawAsync(CancellationToken cancellationToken = default)
+    {
+        await EnsureInitializedAsync();
+        var entities = await _database.Table<JournalEntryEntity>().ToListAsync();
+        return entities.Select(e => e.ToDomain());
+    }
+
+    public async Task BatchDirectUpsertGoalsAsync(IEnumerable<LifeGoal> goals, CancellationToken cancellationToken = default)
+    {
+        if (goals == null) return;
+        await EnsureInitializedAsync();
+
+        var entities = goals.Select(LifeGoalEntity.FromDomain).ToList();
+        if (entities.Count == 0) return;
+
+        await _database.RunInTransactionAsync(conn =>
+        {
+            foreach (var entity in entities)
+            {
+                conn.InsertOrReplace(entity);
+            }
+        });
+    }
+
+    public async Task BatchDirectUpsertMilestonesAsync(IEnumerable<GoalMilestone> milestones, CancellationToken cancellationToken = default)
+    {
+        if (milestones == null) return;
+        await EnsureInitializedAsync();
+
+        var entities = milestones.Select(GoalMilestoneEntity.FromDomain).ToList();
+        if (entities.Count == 0) return;
+
+        await _database.RunInTransactionAsync(conn =>
+        {
+            foreach (var entity in entities)
+            {
+                conn.InsertOrReplace(entity);
+            }
+        });
+    }
+
+    public async Task BatchDirectUpsertJournalEntriesAsync(IEnumerable<JournalEntry> entries, CancellationToken cancellationToken = default)
+    {
+        if (entries == null) return;
+        await EnsureInitializedAsync();
+
+        var entities = entries.Select(JournalEntryEntity.FromDomain).ToList();
+        if (entities.Count == 0) return;
+
+        await _database.RunInTransactionAsync(conn =>
+        {
+            foreach (var entity in entities)
+            {
+                conn.InsertOrReplace(entity);
+            }
+        });
+    }
+
+    #endregion
 }

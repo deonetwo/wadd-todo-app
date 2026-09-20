@@ -27,4 +27,12 @@ public interface IGoalService
 
     // Dynamic Calculation Logic
     double CalculateGoalProgress(IEnumerable<GoalMilestone> milestones);
+
+    // Sync Support (Raw Queries & Direct Batch Upserts)
+    Task<IEnumerable<LifeGoal>> GetAllGoalsRawAsync(CancellationToken cancellationToken = default);
+    Task<IEnumerable<GoalMilestone>> GetAllMilestonesRawAsync(CancellationToken cancellationToken = default);
+    Task<IEnumerable<JournalEntry>> GetAllJournalEntriesRawAsync(CancellationToken cancellationToken = default);
+    Task BatchDirectUpsertGoalsAsync(IEnumerable<LifeGoal> goals, CancellationToken cancellationToken = default);
+    Task BatchDirectUpsertMilestonesAsync(IEnumerable<GoalMilestone> milestones, CancellationToken cancellationToken = default);
+    Task BatchDirectUpsertJournalEntriesAsync(IEnumerable<JournalEntry> entries, CancellationToken cancellationToken = default);
 }

@@ -18,6 +18,7 @@ public class GoogleDriveSyncService : ISyncService
     private readonly ConflictResolutionEngine _conflictEngine;
     private readonly HttpClient _httpClient;
     private readonly INativeGoogleAuthService? _nativeAuthService;
+    private readonly IGoalService _goalService;
     private UserAuthRecord? _authRecord;
     private readonly string _authFilePath;
 
@@ -194,7 +195,8 @@ public class GoogleDriveSyncService : ISyncService
         IConflictRepository? conflictRepository = null,
         IDeviceService? deviceService = null,
         ConflictResolutionEngine? conflictEngine = null,
-        INativeGoogleAuthService? nativeAuthService = null)
+        INativeGoogleAuthService? nativeAuthService = null,
+        IGoalService? goalService = null)
     {
         _todoService = todoService ?? throw new ArgumentNullException(nameof(todoService));
         _httpClient = httpClient ?? CreateOptimizedHttpClient();
@@ -205,12 +207,14 @@ public class GoogleDriveSyncService : ISyncService
             _syncLogRepository = syncLogRepository ?? sqliteService.SyncLogRepository;
             _deviceService = deviceService ?? sqliteService.DeviceService;
             _conflictRepository = conflictRepository ?? new SQLiteConflictRepository(sqliteService.DatabaseConnection);
+            _goalService = goalService ?? new SQLiteGoalService(sqliteService.DatabaseConnection);
         }
         else
         {
             _deviceService = deviceService ?? new DeviceService();
             _syncLogRepository = syncLogRepository ?? new SQLiteSyncLogRepository(Wadd.Core.Helpers.AppDataHelper.GetWaddFilePath("wadd.db"));
             _conflictRepository = conflictRepository ?? new SQLiteConflictRepository(Wadd.Core.Helpers.AppDataHelper.GetWaddFilePath("wadd.db"));
+            _goalService = goalService ?? new SQLiteGoalService(Wadd.Core.Helpers.AppDataHelper.GetWaddFilePath("wadd.db"));
         }
 
         _conflictEngine = conflictEngine ?? new ConflictResolutionEngine();
@@ -1223,9 +1227,10 @@ public class GoogleDriveSyncService : ISyncService
                 }
             }
 
+            var fileIdMap = remoteFileMap.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Id, StringComparer.OrdinalIgnoreCase);
+
             if (tasksToPush.Count > 0)
             {
-                var fileIdMap = remoteFileMap.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Id, StringComparer.OrdinalIgnoreCase);
                 var uploadSemaphore = new SemaphoreSlim(16);
                 var uploadTasks = tasksToPush
                     .Where(taskId => localTasksMap.ContainsKey(taskId))
@@ -1255,6 +1260,12 @@ public class GoogleDriveSyncService : ISyncService
                     }
                 }
             }
+
+            // 5. Synchronize Goals, Milestones, Journal Entries, and Calendar Date Notes
+            await SyncGoalsAsync(token, remoteFiles, remoteFileMap, fileIdMap, cancellationToken);
+            await SyncMilestonesAsync(token, remoteFiles, remoteFileMap, fileIdMap, cancellationToken);
+            await SyncJournalEntriesAsync(token, remoteFiles, remoteFileMap, fileIdMap, cancellationToken);
+            await SyncDateNotesAsync(token, remoteFiles, remoteFileMap, fileIdMap, cancellationToken);
 
             _lastSyncTimestampUtc = syncStartUtc;
             await RefreshConflictCountAsync(cancellationToken);
@@ -1313,9 +1324,8 @@ public class GoogleDriveSyncService : ISyncService
         return string.Empty;
     }
 
-    private async Task UploadTaskToAppDataFolderAsync(string token, TodoItem task, Dictionary<string, string>? remoteFileMap, CancellationToken cancellationToken)
+    private async Task UploadJsonFileToAppDataFolderAsync(string token, string fileName, string payloadJson, Dictionary<string, string>? remoteFileMap, string itemDescription, CancellationToken cancellationToken)
     {
-        string fileName = $"{task.Id}.json";
         string? existingFileId = null;
         if (remoteFileMap != null)
         {
@@ -1326,8 +1336,6 @@ public class GoogleDriveSyncService : ISyncService
             existingFileId = await FindAppDataFileIdByNameAsync(token, fileName, cancellationToken);
         }
 
-        string payloadJson = JsonSerializer.Serialize(task, JsonOptions);
-
         if (!string.IsNullOrWhiteSpace(existingFileId))
         {
             string uploadUrl = $"https://www.googleapis.com/upload/drive/v3/files/{existingFileId}?uploadType=media";
@@ -1335,12 +1343,12 @@ public class GoogleDriveSyncService : ISyncService
             {
                 Content = new StringContent(payloadJson, Encoding.UTF8, "application/json")
             }, cancellationToken);
-            await EnsureDriveSuccessAsync(response, $"Update Task {task.Id} in AppData");
+            await EnsureDriveSuccessAsync(response, $"Update {itemDescription} in AppData");
         }
         else
         {
             string uploadUrl = "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart";
-            var boundary = "---WaddTaskBoundary" + Guid.NewGuid().ToString("N");
+            var boundary = "---WaddBoundary" + Guid.NewGuid().ToString("N");
             var metadataJson = JsonSerializer.Serialize(new
             {
                 name = fileName,
@@ -1354,7 +1362,364 @@ public class GoogleDriveSyncService : ISyncService
                 multipartContent.Add(new StringContent(payloadJson, Encoding.UTF8, "application/json"));
                 return new HttpRequestMessage(HttpMethod.Post, uploadUrl) { Content = multipartContent };
             }, cancellationToken);
-            await EnsureDriveSuccessAsync(response, $"Upload Task {task.Id} to AppData");
+            await EnsureDriveSuccessAsync(response, $"Upload {itemDescription} to AppData");
+        }
+    }
+
+    private Task UploadTaskToAppDataFolderAsync(string token, TodoItem task, Dictionary<string, string>? remoteFileMap, CancellationToken cancellationToken)
+    {
+        return UploadJsonFileToAppDataFolderAsync(token, $"{task.Id}.json", JsonSerializer.Serialize(task, JsonOptions), remoteFileMap, $"Task {task.Id}", cancellationToken);
+    }
+
+    private async Task SyncGoalsAsync(string token, List<DriveFileItem> remoteFiles, Dictionary<string, DriveFileItem> remoteFileMap, Dictionary<string, string> fileIdMap, CancellationToken cancellationToken)
+    {
+        var goalRemoteFiles = remoteFiles
+            .Where(f => f.Name.StartsWith("goal_", StringComparison.OrdinalIgnoreCase) && f.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var localGoalsList = (await _goalService.GetAllGoalsRawAsync(cancellationToken)).ToList();
+        var localGoalsMap = localGoalsList.GroupBy(x => x.Id).ToDictionary(g => g.Key, g => g.First());
+
+        var filesToDownload = goalRemoteFiles.Where(rf =>
+        {
+            string id = rf.Name[5..^5];
+            if (!localGoalsMap.TryGetValue(id, out var localGoal)) return true;
+            if (!rf.ModifiedTime.HasValue) return true;
+            DateTime localUpdated = (localGoal.UpdatedAt ?? localGoal.CreatedAt).ToUniversalTime();
+            return rf.ModifiedTime.Value.ToUniversalTime() > localUpdated.AddSeconds(1);
+        }).ToList();
+
+        if (filesToDownload.Count > 0)
+        {
+            var downloadSemaphore = new SemaphoreSlim(16);
+            var downloadTasks = filesToDownload.Select(async rf =>
+            {
+                string id = rf.Name[5..^5];
+                await downloadSemaphore.WaitAsync(cancellationToken);
+                try
+                {
+                    var content = await DownloadAppDataFileAsync(token, rf.Id, cancellationToken);
+                    if (string.IsNullOrWhiteSpace(content)) return null;
+                    var remoteGoal = JsonSerializer.Deserialize<LifeGoal>(content, JsonOptions);
+                    return remoteGoal != null ? (id, remoteGoal) : ((string id, LifeGoal remoteGoal)?)null;
+                }
+                catch { return null; }
+                finally { downloadSemaphore.Release(); }
+            });
+
+            var results = await Task.WhenAll(downloadTasks);
+            var mergedToUpsert = new List<LifeGoal>();
+            foreach (var res in results)
+            {
+                if (!res.HasValue) continue;
+                var (id, remoteGoal) = res.Value;
+                localGoalsMap.TryGetValue(id, out var localGoal);
+                var merged = ConflictResolutionEngine.MergeGoal(localGoal, remoteGoal);
+                mergedToUpsert.Add(merged);
+                localGoalsMap[id] = merged;
+            }
+
+            if (mergedToUpsert.Count > 0)
+            {
+                await _goalService.BatchDirectUpsertGoalsAsync(mergedToUpsert, cancellationToken);
+            }
+        }
+
+        var goalsToPush = new List<LifeGoal>();
+        foreach (var (id, localGoal) in localGoalsMap)
+        {
+            string fileName = $"goal_{id}.json";
+            if (!remoteFileMap.TryGetValue(fileName, out var rf))
+            {
+                goalsToPush.Add(localGoal);
+            }
+            else if (rf.ModifiedTime.HasValue)
+            {
+                DateTime localUpdated = (localGoal.UpdatedAt ?? localGoal.CreatedAt).ToUniversalTime();
+                if (localUpdated > rf.ModifiedTime.Value.ToUniversalTime().AddSeconds(1))
+                {
+                    goalsToPush.Add(localGoal);
+                }
+            }
+        }
+
+        if (goalsToPush.Count > 0)
+        {
+            var uploadSemaphore = new SemaphoreSlim(16);
+            var uploadTasks = goalsToPush.Select(async goal =>
+            {
+                await uploadSemaphore.WaitAsync(cancellationToken);
+                try
+                {
+                    await UploadJsonFileToAppDataFolderAsync(token, $"goal_{goal.Id}.json", JsonSerializer.Serialize(goal, JsonOptions), fileIdMap, $"Goal {goal.Id}", cancellationToken);
+                }
+                finally { uploadSemaphore.Release(); }
+            });
+            await Task.WhenAll(uploadTasks);
+        }
+    }
+
+    private async Task SyncMilestonesAsync(string token, List<DriveFileItem> remoteFiles, Dictionary<string, DriveFileItem> remoteFileMap, Dictionary<string, string> fileIdMap, CancellationToken cancellationToken)
+    {
+        var milestoneRemoteFiles = remoteFiles
+            .Where(f => f.Name.StartsWith("milestone_", StringComparison.OrdinalIgnoreCase) && f.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var localMilestonesList = (await _goalService.GetAllMilestonesRawAsync(cancellationToken)).ToList();
+        var localMilestonesMap = localMilestonesList.GroupBy(x => x.Id).ToDictionary(g => g.Key, g => g.First());
+
+        var filesToDownload = milestoneRemoteFiles.Where(rf =>
+        {
+            string id = rf.Name[10..^5];
+            if (!localMilestonesMap.TryGetValue(id, out var localM)) return true;
+            if (!rf.ModifiedTime.HasValue) return true;
+            DateTime localUpdated = (localM.UpdatedAt ?? DateTime.MinValue).ToUniversalTime();
+            return rf.ModifiedTime.Value.ToUniversalTime() > localUpdated.AddSeconds(1);
+        }).ToList();
+
+        if (filesToDownload.Count > 0)
+        {
+            var downloadSemaphore = new SemaphoreSlim(16);
+            var downloadTasks = filesToDownload.Select(async rf =>
+            {
+                string id = rf.Name[10..^5];
+                await downloadSemaphore.WaitAsync(cancellationToken);
+                try
+                {
+                    var content = await DownloadAppDataFileAsync(token, rf.Id, cancellationToken);
+                    if (string.IsNullOrWhiteSpace(content)) return null;
+                    var remoteM = JsonSerializer.Deserialize<GoalMilestone>(content, JsonOptions);
+                    return remoteM != null ? (id, remoteM) : ((string id, GoalMilestone remoteM)?)null;
+                }
+                catch { return null; }
+                finally { downloadSemaphore.Release(); }
+            });
+
+            var results = await Task.WhenAll(downloadTasks);
+            var mergedToUpsert = new List<GoalMilestone>();
+            foreach (var res in results)
+            {
+                if (!res.HasValue) continue;
+                var (id, remoteM) = res.Value;
+                localMilestonesMap.TryGetValue(id, out var localM);
+                var merged = ConflictResolutionEngine.MergeMilestone(localM, remoteM);
+                mergedToUpsert.Add(merged);
+                localMilestonesMap[id] = merged;
+            }
+
+            if (mergedToUpsert.Count > 0)
+            {
+                await _goalService.BatchDirectUpsertMilestonesAsync(mergedToUpsert, cancellationToken);
+            }
+        }
+
+        var milestonesToPush = new List<GoalMilestone>();
+        foreach (var (id, localM) in localMilestonesMap)
+        {
+            string fileName = $"milestone_{id}.json";
+            if (!remoteFileMap.TryGetValue(fileName, out var rf))
+            {
+                milestonesToPush.Add(localM);
+            }
+            else if (rf.ModifiedTime.HasValue)
+            {
+                DateTime localUpdated = (localM.UpdatedAt ?? DateTime.MinValue).ToUniversalTime();
+                if (localUpdated > rf.ModifiedTime.Value.ToUniversalTime().AddSeconds(1))
+                {
+                    milestonesToPush.Add(localM);
+                }
+            }
+        }
+
+        if (milestonesToPush.Count > 0)
+        {
+            var uploadSemaphore = new SemaphoreSlim(16);
+            var uploadTasks = milestonesToPush.Select(async m =>
+            {
+                await uploadSemaphore.WaitAsync(cancellationToken);
+                try
+                {
+                    await UploadJsonFileToAppDataFolderAsync(token, $"milestone_{m.Id}.json", JsonSerializer.Serialize(m, JsonOptions), fileIdMap, $"Milestone {m.Id}", cancellationToken);
+                }
+                finally { uploadSemaphore.Release(); }
+            });
+            await Task.WhenAll(uploadTasks);
+        }
+    }
+
+    private async Task SyncJournalEntriesAsync(string token, List<DriveFileItem> remoteFiles, Dictionary<string, DriveFileItem> remoteFileMap, Dictionary<string, string> fileIdMap, CancellationToken cancellationToken)
+    {
+        var journalRemoteFiles = remoteFiles
+            .Where(f => f.Name.StartsWith("journal_", StringComparison.OrdinalIgnoreCase) && f.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var localEntriesList = (await _goalService.GetAllJournalEntriesRawAsync(cancellationToken)).ToList();
+        var localEntriesMap = localEntriesList.GroupBy(x => x.Id).ToDictionary(g => g.Key, g => g.First());
+
+        var filesToDownload = journalRemoteFiles.Where(rf =>
+        {
+            string id = rf.Name[8..^5];
+            if (!localEntriesMap.TryGetValue(id, out var localEntry)) return true;
+            if (!rf.ModifiedTime.HasValue) return true;
+            DateTime localUpdated = (localEntry.UpdatedAt ?? localEntry.EntryDate).ToUniversalTime();
+            return rf.ModifiedTime.Value.ToUniversalTime() > localUpdated.AddSeconds(1);
+        }).ToList();
+
+        if (filesToDownload.Count > 0)
+        {
+            var downloadSemaphore = new SemaphoreSlim(16);
+            var downloadTasks = filesToDownload.Select(async rf =>
+            {
+                string id = rf.Name[8..^5];
+                await downloadSemaphore.WaitAsync(cancellationToken);
+                try
+                {
+                    var content = await DownloadAppDataFileAsync(token, rf.Id, cancellationToken);
+                    if (string.IsNullOrWhiteSpace(content)) return null;
+                    var remoteEntry = JsonSerializer.Deserialize<JournalEntry>(content, JsonOptions);
+                    return remoteEntry != null ? (id, remoteEntry) : ((string id, JournalEntry remoteEntry)?)null;
+                }
+                catch { return null; }
+                finally { downloadSemaphore.Release(); }
+            });
+
+            var results = await Task.WhenAll(downloadTasks);
+            var mergedToUpsert = new List<JournalEntry>();
+            foreach (var res in results)
+            {
+                if (!res.HasValue) continue;
+                var (id, remoteEntry) = res.Value;
+                localEntriesMap.TryGetValue(id, out var localEntry);
+                var merged = ConflictResolutionEngine.MergeJournalEntry(localEntry, remoteEntry);
+                mergedToUpsert.Add(merged);
+                localEntriesMap[id] = merged;
+            }
+
+            if (mergedToUpsert.Count > 0)
+            {
+                await _goalService.BatchDirectUpsertJournalEntriesAsync(mergedToUpsert, cancellationToken);
+            }
+        }
+
+        var entriesToPush = new List<JournalEntry>();
+        foreach (var (id, localEntry) in localEntriesMap)
+        {
+            string fileName = $"journal_{id}.json";
+            if (!remoteFileMap.TryGetValue(fileName, out var rf))
+            {
+                entriesToPush.Add(localEntry);
+            }
+            else if (rf.ModifiedTime.HasValue)
+            {
+                DateTime localUpdated = (localEntry.UpdatedAt ?? localEntry.EntryDate).ToUniversalTime();
+                if (localUpdated > rf.ModifiedTime.Value.ToUniversalTime().AddSeconds(1))
+                {
+                    entriesToPush.Add(localEntry);
+                }
+            }
+        }
+
+        if (entriesToPush.Count > 0)
+        {
+            var uploadSemaphore = new SemaphoreSlim(16);
+            var uploadTasks = entriesToPush.Select(async entry =>
+            {
+                await uploadSemaphore.WaitAsync(cancellationToken);
+                try
+                {
+                    await UploadJsonFileToAppDataFolderAsync(token, $"journal_{entry.Id}.json", JsonSerializer.Serialize(entry, JsonOptions), fileIdMap, $"Journal {entry.Id}", cancellationToken);
+                }
+                finally { uploadSemaphore.Release(); }
+            });
+            await Task.WhenAll(uploadTasks);
+        }
+    }
+
+    private async Task SyncDateNotesAsync(string token, List<DriveFileItem> remoteFiles, Dictionary<string, DriveFileItem> remoteFileMap, Dictionary<string, string> fileIdMap, CancellationToken cancellationToken)
+    {
+        var dateNoteRemoteFiles = remoteFiles
+            .Where(f => f.Name.StartsWith("datenote_", StringComparison.OrdinalIgnoreCase) && f.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var localNotesList = (await _todoService.GetAllDateNotesRawAsync(cancellationToken)).ToList();
+        var localNotesMap = localNotesList.GroupBy(x => x.DateKey).ToDictionary(g => g.Key, g => g.First());
+
+        var filesToDownload = dateNoteRemoteFiles.Where(rf =>
+        {
+            string key = rf.Name[9..^5];
+            if (!localNotesMap.TryGetValue(key, out var localNote)) return true;
+            if (!rf.ModifiedTime.HasValue) return true;
+            DateTime localUpdated = localNote.UpdatedAt.ToUniversalTime();
+            return rf.ModifiedTime.Value.ToUniversalTime() > localUpdated.AddSeconds(1);
+        }).ToList();
+
+        if (filesToDownload.Count > 0)
+        {
+            var downloadSemaphore = new SemaphoreSlim(16);
+            var downloadTasks = filesToDownload.Select(async rf =>
+            {
+                string key = rf.Name[9..^5];
+                await downloadSemaphore.WaitAsync(cancellationToken);
+                try
+                {
+                    var content = await DownloadAppDataFileAsync(token, rf.Id, cancellationToken);
+                    if (string.IsNullOrWhiteSpace(content)) return null;
+                    var remoteNote = JsonSerializer.Deserialize<CalendarDateNote>(content, JsonOptions);
+                    return remoteNote != null ? (key, remoteNote) : ((string key, CalendarDateNote remoteNote)?)null;
+                }
+                catch { return null; }
+                finally { downloadSemaphore.Release(); }
+            });
+
+            var results = await Task.WhenAll(downloadTasks);
+            var mergedToUpsert = new List<CalendarDateNote>();
+            foreach (var res in results)
+            {
+                if (!res.HasValue) continue;
+                var (key, remoteNote) = res.Value;
+                localNotesMap.TryGetValue(key, out var localNote);
+                var merged = ConflictResolutionEngine.MergeDateNote(localNote, remoteNote);
+                mergedToUpsert.Add(merged);
+                localNotesMap[key] = merged;
+            }
+
+            if (mergedToUpsert.Count > 0)
+            {
+                await _todoService.BatchDirectUpsertDateNotesAsync(mergedToUpsert, cancellationToken);
+            }
+        }
+
+        var notesToPush = new List<CalendarDateNote>();
+        foreach (var (key, localNote) in localNotesMap)
+        {
+            string fileName = $"datenote_{key}.json";
+            if (!remoteFileMap.TryGetValue(fileName, out var rf))
+            {
+                notesToPush.Add(localNote);
+            }
+            else if (rf.ModifiedTime.HasValue)
+            {
+                DateTime localUpdated = localNote.UpdatedAt.ToUniversalTime();
+                if (localUpdated > rf.ModifiedTime.Value.ToUniversalTime().AddSeconds(1))
+                {
+                    notesToPush.Add(localNote);
+                }
+            }
+        }
+
+        if (notesToPush.Count > 0)
+        {
+            var uploadSemaphore = new SemaphoreSlim(16);
+            var uploadTasks = notesToPush.Select(async note =>
+            {
+                await uploadSemaphore.WaitAsync(cancellationToken);
+                try
+                {
+                    await UploadJsonFileToAppDataFolderAsync(token, $"datenote_{note.DateKey}.json", JsonSerializer.Serialize(note, JsonOptions), fileIdMap, $"DateNote {note.DateKey}", cancellationToken);
+                }
+                finally { uploadSemaphore.Release(); }
+            });
+            await Task.WhenAll(uploadTasks);
         }
     }
 

@@ -30,6 +30,13 @@ public partial class GoalsViewModel : ViewModelBase
     private readonly IAiGoalService _aiGoalService;
     private readonly IAudioService? _audioService;
 
+    public event Action? DataMutated;
+
+    private void NotifyDataMutated()
+    {
+        DataMutated?.Invoke();
+    }
+
     public ObservableCollection<LifeGoalItemViewModel> Goals { get; } = new();
     public ObservableCollection<LifeGoalItemViewModel> FilteredGoals { get; } = new();
     public ObservableCollection<GoalMilestoneItemViewModel> CurrentMilestones { get; } = new();
@@ -502,6 +509,7 @@ public partial class GoalsViewModel : ViewModelBase
             SelectedGoal = vm;
             IsCreatingGoal = false;
             IsMobileDetailViewOpen = true;
+            NotifyDataMutated();
         }
         catch (Exception ex)
         {
@@ -529,6 +537,7 @@ public partial class GoalsViewModel : ViewModelBase
         {
             IsMobileDetailViewOpen = false;
         }
+        NotifyDataMutated();
     }
 
     [RelayCommand]
@@ -584,6 +593,7 @@ public partial class GoalsViewModel : ViewModelBase
         {
             _audioService?.PlayCompletedSound();
         }
+        NotifyDataMutated();
     }
 
     #region Milestone Commands
@@ -652,6 +662,7 @@ public partial class GoalsViewModel : ViewModelBase
         NewMilestoneTitle = string.Empty;
 
         UpdateSelectedGoalProgress();
+        NotifyDataMutated();
     }
 
     [RelayCommand]
@@ -667,6 +678,7 @@ public partial class GoalsViewModel : ViewModelBase
 
         await _goalService.SaveMilestoneAsync(milestoneVm.Model);
         UpdateSelectedGoalProgress();
+        NotifyDataMutated();
     }
 
     [RelayCommand]
@@ -682,6 +694,7 @@ public partial class GoalsViewModel : ViewModelBase
                 CurrentMilestones[i].Model.OrderIndex = i;
                 await _goalService.SaveMilestoneAsync(CurrentMilestones[i].Model);
             }
+            NotifyDataMutated();
         }
     }
 
@@ -698,6 +711,7 @@ public partial class GoalsViewModel : ViewModelBase
                 CurrentMilestones[i].Model.OrderIndex = i;
                 await _goalService.SaveMilestoneAsync(CurrentMilestones[i].Model);
             }
+            NotifyDataMutated();
         }
     }
 
@@ -710,6 +724,7 @@ public partial class GoalsViewModel : ViewModelBase
         CurrentMilestones.Remove(milestoneVm);
 
         UpdateSelectedGoalProgress();
+        NotifyDataMutated();
     }
 
     private void UpdateSelectedGoalProgress()
@@ -791,6 +806,7 @@ public partial class GoalsViewModel : ViewModelBase
                     }
                 }
                 UpdateSelectedGoalProgress();
+                NotifyDataMutated();
             }
         }
         catch (Exception ex)
@@ -851,6 +867,7 @@ public partial class GoalsViewModel : ViewModelBase
                     }
                 }
                 UpdateSelectedGoalProgress();
+                NotifyDataMutated();
             }
         }
         catch (Exception ex)
@@ -991,6 +1008,7 @@ public partial class GoalsViewModel : ViewModelBase
 
         IsCreatingJournal = false;
         IsJournalBottomSheetOpen = false;
+        NotifyDataMutated();
     }
 
     [RelayCommand]
@@ -1001,6 +1019,7 @@ public partial class GoalsViewModel : ViewModelBase
         await _goalService.DeleteJournalEntryAsync(entryVm.Id);
         CurrentJournalEntries.Remove(entryVm);
         AllJournalEntries.Remove(entryVm);
+        NotifyDataMutated();
     }
 
     #endregion

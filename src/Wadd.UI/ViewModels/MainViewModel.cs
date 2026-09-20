@@ -888,6 +888,7 @@ public partial class MainViewModel : ViewModelBase
         if (value != null)
         {
             value.StatusNotificationRequested = (msg, type) => ShowStatusBubble(msg, type);
+            value.DataMutated += () => RequestDebouncedAutoSync();
         }
     }
 
@@ -2867,6 +2868,7 @@ public partial class MainViewModel : ViewModelBase
                 {
                     var noteToSave = SelectedDayNoteText?.Trim() ?? string.Empty;
                     await _todoService.SaveDateNoteAsync(_selectedDay.Date, noteToSave);
+                    RequestDebouncedAutoSync();
                 }
             };
         }
@@ -2969,6 +2971,7 @@ public partial class MainViewModel : ViewModelBase
         SelectedDay.RefreshComputedProperties();
         GenerateCalendarGrid();
         StatusMessage = $"Note saved for {SelectedDay.Date:MMM d}";
+        RequestDebouncedAutoSync();
     }
 
     [RelayCommand]
@@ -2985,6 +2988,7 @@ public partial class MainViewModel : ViewModelBase
         SelectedDay.RefreshComputedProperties();
         GenerateCalendarGrid();
         StatusMessage = $"Note deleted for {SelectedDay.Date:MMM d}";
+        RequestDebouncedAutoSync();
     }
 
     [RelayCommand]
@@ -3181,6 +3185,7 @@ public partial class MainViewModel : ViewModelBase
         _audioService = audioService ?? App.Services?.GetService<IAudioService>() ?? new Wadd.Services.AudioService();
         _goalsVM = new GoalsViewModel(_goalService, _aiGoalService, _audioService);
         _goalsVM.StatusNotificationRequested = (msg, type) => ShowStatusBubble(msg, type);
+        _goalsVM.DataMutated += () => RequestDebouncedAutoSync();
         WindowsNotificationService.NotificationTriggered += (title, message) =>
         {
             Dispatcher.UIThread.InvokeAsync(() =>
@@ -3764,6 +3769,7 @@ public partial class MainViewModel : ViewModelBase
             {
                 LastUpdatedAt = DateTime.Now;
                 await LoadTodoItemsAsync();
+                await GoalsVM.LoadAllGoalsAsync();
 
                 if (HasUnresolvedConflicts)
                 {
@@ -3831,6 +3837,7 @@ public partial class MainViewModel : ViewModelBase
             {
                 LastUpdatedAt = DateTime.Now;
                 await LoadTodoItemsAsync();
+                await GoalsVM.LoadAllGoalsAsync();
 
                 if (HasUnresolvedConflicts)
                 {

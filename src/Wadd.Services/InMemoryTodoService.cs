@@ -215,17 +215,24 @@ public class InMemoryTodoService : ITodoService
         return Task.FromResult(true);
     }
 
-    private readonly ConcurrentDictionary<string, string> _dateNotes = new();
+    private readonly ConcurrentDictionary<string, CalendarDateNote> _dateNotes = new();
 
     public Task<string?> GetDateNoteAsync(DateTime date, CancellationToken cancellationToken = default)
     {
-        _dateNotes.TryGetValue(date.ToString("yyyy-MM-dd"), out var note);
-        return Task.FromResult(note);
+        var key = date.ToString("yyyy-MM-dd");
+        if (_dateNotes.TryGetValue(key, out var note) && !note.IsDeleted)
+        {
+            return Task.FromResult<string?>(note.NoteText);
+        }
+        return Task.FromResult<string?>(null);
     }
 
     public Task<Dictionary<string, string>> GetAllDateNotesAsync(CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(new Dictionary<string, string>(_dateNotes));
+        var active = _dateNotes.Values
+            .Where(x => !x.IsDeleted && !string.IsNullOrWhiteSpace(x.NoteText))
+            .ToDictionary(x => x.DateKey, x => x.NoteText);
+        return Task.FromResult(active);
     }
 
     public Task SaveDateNoteAsync(DateTime date, string noteText, CancellationToken cancellationToken = default)
@@ -233,18 +240,64 @@ public class InMemoryTodoService : ITodoService
         var key = date.ToString("yyyy-MM-dd");
         if (string.IsNullOrWhiteSpace(noteText))
         {
-            _dateNotes.TryRemove(key, out _);
+            if (_dateNotes.TryGetValue(key, out var existing))
+            {
+                existing.IsDeleted = true;
+                existing.DeletedAt = DateTime.UtcNow;
+                existing.UpdatedAt = DateTime.UtcNow;
+                existing.NoteText = string.Empty;
+            }
         }
         else
         {
-            _dateNotes[key] = noteText;
+            _dateNotes.AddOrUpdate(key,
+                k => new CalendarDateNote
+                {
+                    DateKey = k,
+                    NoteText = noteText,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    IsDeleted = false
+                },
+                (k, existing) =>
+                {
+                    existing.NoteText = noteText;
+                    existing.UpdatedAt = DateTime.UtcNow;
+                    existing.IsDeleted = false;
+                    existing.DeletedAt = null;
+                    return existing;
+                });
         }
         return Task.CompletedTask;
     }
 
     public Task DeleteDateNoteAsync(DateTime date, CancellationToken cancellationToken = default)
     {
-        _dateNotes.TryRemove(date.ToString("yyyy-MM-dd"), out _);
+        var key = date.ToString("yyyy-MM-dd");
+        if (_dateNotes.TryGetValue(key, out var existing))
+        {
+            existing.IsDeleted = true;
+            existing.DeletedAt = DateTime.UtcNow;
+            existing.UpdatedAt = DateTime.UtcNow;
+            existing.NoteText = string.Empty;
+        }
+        return Task.CompletedTask;
+    }
+
+    public Task<IEnumerable<CalendarDateNote>> GetAllDateNotesRawAsync(CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<IEnumerable<CalendarDateNote>>(_dateNotes.Values.ToList());
+    }
+
+    public Task BatchDirectUpsertDateNotesAsync(IEnumerable<CalendarDateNote> notes, CancellationToken cancellationToken = default)
+    {
+        if (notes != null)
+        {
+            foreach (var note in notes)
+            {
+                _dateNotes[note.DateKey] = note;
+            }
+        }
         return Task.CompletedTask;
     }
 
