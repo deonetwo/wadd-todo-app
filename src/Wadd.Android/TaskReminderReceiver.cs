@@ -77,6 +77,16 @@ public class TaskReminderReceiver : BroadcastReceiver
         var pendingAlerts = new List<(TodoItem Item, string Title, string Body)>();
         bool hasActiveUncompletedTasks = false;
 
+        // Note: Android-native strings intentionally resolve through Android's native resources (values/strings.xml and values-<locale>/strings.xml)
+        // via context.GetString(...) rather than Avalonia's LocalizationManager. Notification channels and background broadcast receivers
+        // run outside the Avalonia view tree where Avalonia/C# runtime state may not be initialized. Android automatically resolves
+        // the correct values-<locale> based on the device locale independently from the app-level C# language picker.
+        string reminderFormat = context.GetString(Resource.String.reminder_title_format) ?? "Reminder: %1$s";
+        string overdueFormat = context.GetString(Resource.String.reminder_overdue_format) ?? "Overdue: %1$s";
+        string dueTodayFormat = context.GetString(Resource.String.reminder_due_today_format) ?? "Due Today: %1$s";
+        string summaryTitleFormat = context.GetString(Resource.String.reminder_summary_title) ?? "%1$d Task Reminders";
+        string summaryMoreFormat = context.GetString(Resource.String.reminder_summary_more) ?? "+ %1$d more tasks";
+
         foreach (var task in allTasks)
         {
             if (task.IsCompleted)
@@ -106,7 +116,8 @@ public class TaskReminderReceiver : BroadcastReceiver
                         var body = !string.IsNullOrWhiteSpace(task.Description)
                             ? $"{task.Title} - {task.Description}"
                             : task.Title;
-                        pendingAlerts.Add((task, $"Reminder: {task.Title}", body));
+                        var title = string.Format(reminderFormat.Replace("%1$s", "{0}"), task.Title);
+                        pendingAlerts.Add((task, title, body));
                         continue;
                     }
                 }
@@ -126,7 +137,8 @@ public class TaskReminderReceiver : BroadcastReceiver
                         var body = !string.IsNullOrWhiteSpace(task.Description)
                             ? $"{task.Title} - {task.Description}"
                             : task.Title;
-                        pendingAlerts.Add((task, $"Overdue: {task.Title}", body));
+                        var title = string.Format(overdueFormat.Replace("%1$s", "{0}"), task.Title);
+                        pendingAlerts.Add((task, title, body));
                         continue;
                     }
                 }
@@ -142,7 +154,8 @@ public class TaskReminderReceiver : BroadcastReceiver
                     var body = !string.IsNullOrWhiteSpace(task.Description)
                         ? $"{task.Title} - {task.Description}"
                         : task.Title;
-                    pendingAlerts.Add((task, $"Due Today: {task.Title}", body));
+                    var title = string.Format(dueTodayFormat.Replace("%1$s", "{0}"), task.Title);
+                    pendingAlerts.Add((task, title, body));
                     continue;
                 }
             }
@@ -156,12 +169,13 @@ public class TaskReminderReceiver : BroadcastReceiver
         else if (pendingAlerts.Count > 1)
         {
             var totalCount = pendingAlerts.Count;
-            var bundleTitle = $"{totalCount} Task Reminders";
+            var bundleTitle = string.Format(summaryTitleFormat.Replace("%1$d", "{0}"), totalCount);
             const int maxDisplayItems = 3;
             var displayLines = pendingAlerts.Take(maxDisplayItems).Select(p => $"• {p.Item.Title}");
+            var moreText = string.Format(summaryMoreFormat.Replace("%1$d", "{0}"), totalCount - maxDisplayItems);
             var bundleBody = totalCount <= maxDisplayItems
                 ? string.Join("\n", displayLines)
-                : string.Join("\n", displayLines) + $"\n+ {totalCount - maxDisplayItems} more tasks";
+                : string.Join("\n", displayLines) + $"\n{moreText}";
 
             AndroidNotificationService.PostNativeNotification(context, bundleTitle, bundleBody, "tasks-summary", settings);
         }

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<resources>
+  <string name="app_name">Wadd</string>
+  <string name="notification_channel_name">Pengingat Tugas Wadd</string>
+  <string name="notification_channel_desc">Tenggat waktu tugas dan peringatan pengingat</string>
+  <string name="reminder_title_format">Pengingat: %1$s</string>
+  <string name="reminder_overdue_format">Terlewat: %1$s</string>
+  <string name="reminder_due_today_format">Jatuh Tempo Hari Ini: %1$s</string>
+  <string name="reminder_summary_title">%1$d Pengingat Tugas</string>
+  <string name="reminder_summary_more">+ %1$d tugas lainnya</string>
+</resources>

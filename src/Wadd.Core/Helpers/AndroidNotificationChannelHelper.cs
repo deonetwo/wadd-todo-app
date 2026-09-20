@@ -37,7 +37,7 @@ public static class AndroidNotificationChannelHelper
     /// 2. Deletes stale v3 channel IDs that do not match the currently active target channel ID.
     /// 3. Ensures the target channel ID is created with current settings.
     /// </summary>
-    public static void SyncChannels(IAndroidNotificationChannelManager manager, AppSettingsData settings)
+    public static void SyncChannels(IAndroidNotificationChannelManager manager, AppSettingsData settings, string? channelName = null, string? channelDesc = null)
     {
         var targetChannelId = BuildChannelId(settings);
 
@@ -80,8 +80,8 @@ public static class AndroidNotificationChannelHelper
         {
             manager.CreateNotificationChannel(
                 targetChannelId,
-                ChannelName,
-                ChannelDesc,
+                channelName ?? ChannelName,
+                channelDesc ?? ChannelDesc,
                 settings.AndroidHighPriorityChannel,
                 settings.AndroidVibration);
         }

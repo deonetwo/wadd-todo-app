@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
@@ -21,12 +20,6 @@ internal static class Program
     [STAThread]
     public static void Main(string[] args)
     {
-        var enUSInfo = new System.Globalization.CultureInfo("en-US");
-        System.Globalization.CultureInfo.DefaultThreadCurrentCulture = enUSInfo;
-        System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = enUSInfo;
-        System.Threading.Thread.CurrentThread.CurrentCulture = enUSInfo;
-        System.Threading.Thread.CurrentThread.CurrentUICulture = enUSInfo;
-
         AppDomain.CurrentDomain.UnhandledException += (s, e) =>
         {
             var ex = e.ExceptionObject as Exception;

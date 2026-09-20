@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Wadd.UI.ViewModels;assembly=Wadd.UI"
              xmlns:controls="clr-namespace:Wadd.UI.Controls;assembly=Wadd.UI"
+             xmlns:loc="clr-namespace:Wadd.UI.Localization;assembly=Wadd.UI"
              mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="700"
              x:Class="Wadd.UI.Views.TasksView"
              x:DataType="vm:MainViewModel">
@@ -53,7 +54,7 @@
                      Classes="micro"
                      Foreground="{DynamicResource AppPrimaryBrush}"
                      Margin="0,0,0,2"/>
-          <TextBlock Text="My Tasks" Classes="display-xl"/>
+          <TextBlock Text="{loc:Localize Tasks_MyTasks}" Classes="display-xl"/>
           <StackPanel Orientation="Horizontal" Spacing="10">
             <TextBlock Text="{Binding TodoItems.Count, StringFormat='{}{0} items'}"
                        Classes="small"/>
@@ -86,7 +87,7 @@
                   CornerRadius="8"
                   Background="{DynamicResource AppSurfaceBrush}"
                   BorderBrush="{DynamicResource AppBorderBrush}"
-                  ToolTip.Tip="Filter tasks by Tag">
+                  ToolTip.Tip="{loc:Localize Tasks_FilterByTag}">
             <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
               <PathIcon Data="{StaticResource TagIconData}" Width="13" Height="13" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
               <TextBlock Text="{Binding CategoryFilterButtonText}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
@@ -95,7 +96,7 @@
             <Button.Flyout>
               <Flyout Placement="BottomEdgeAlignedLeft">
                 <StackPanel Spacing="6" Width="200">
-                  <TextBlock Text="FILTER BY TAG" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="4,2,0,4"/>
+                  <TextBlock Text="{loc:Localize Tasks_FilterByTag}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="4,2,0,4"/>
                   <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto">
                     <ItemsControl ItemsSource="{Binding CategoryFilterOptions}">
                       <ItemsControl.ItemTemplate>
@@ -120,7 +121,7 @@
                           CornerRadius="6">
                     <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                       <PathIcon Data="{StaticResource SettingsIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                      <TextBlock Text="Manage Tags..." Foreground="{DynamicResource AppPrimaryBrush}" FontSize="13" FontWeight="SemiBold"/>
+                      <TextBlock Text="{loc:Localize Tasks_ManageTags}" Foreground="{DynamicResource AppPrimaryBrush}" FontSize="13" FontWeight="SemiBold"/>
                     </StackPanel>
                   </Button>
                 </StackPanel>
@@ -130,10 +131,10 @@
 
           <Button Classes="outline"
                   Command="{Binding ExportToExcelCommand}"
-                  ToolTip.Tip="Export tasks to Excel">
+                  ToolTip.Tip="{loc:Localize Tasks_ExportToExcel}">
             <StackPanel Orientation="Horizontal" Spacing="6">
               <PathIcon Data="{StaticResource ExportIconData}" Width="12" Height="12"/>
-              <TextBlock Text="Export" FontSize="12"/>
+              <TextBlock Text="{loc:Localize Tasks_Export}" FontSize="12"/>
             </StackPanel>
           </Button>
         </StackPanel>
@@ -171,7 +172,7 @@
         <Grid ColumnDefinitions="*,Auto">
           <TextBox Grid.Column="0"
                    Classes="composer"
-                   PlaceholderText="What do you need to do?"
+                   PlaceholderText="{loc:Localize Tasks_ComposerPlaceholder}"
                    Text="{Binding NewTaskTitle, Mode=TwoWay}"
                    KeyDown="OnTitleInputKeyDown"
                    FontSize="20"
@@ -685,7 +686,7 @@
                 Cursor="Hand">
           <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
             <PathIcon Data="{StaticResource SunIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}"/>
-            <TextBlock Text="TODAY TASKS"
+            <TextBlock Text="{loc:Localize Tasks_TodayTasks}"
                        Classes="micro"
                        Foreground="{DynamicResource AppPrimaryBrush}"
                        VerticalAlignment="Center"/>
@@ -857,7 +858,7 @@
                 Cursor="Hand">
           <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
             <PathIcon Data="{StaticResource CheckIconData}" Width="11" Height="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-            <TextBlock Text="COMPLETED TODAY"
+            <TextBlock Text="{loc:Localize Tasks_CompletedToday}"
                        Classes="micro"
                        Foreground="{DynamicResource AppTextSecondaryBrush}"
                        VerticalAlignment="Center"/>
@@ -995,7 +996,7 @@
                     Cursor="Hand">
               <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                 <PathIcon Data="{StaticResource CalendarIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                <TextBlock Text="UPCOMING TASKS"
+                <TextBlock Text="{loc:Localize Tasks_UpcomingTasks}"
                            Classes="micro"
                            Foreground="{DynamicResource AppPrimaryBrush}"
                            VerticalAlignment="Center"/>
@@ -1084,7 +1085,7 @@
                   Margin="0,0,0,8">
             <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
               <PathIcon Data="{StaticResource CalendarIconData}" Width="12" Height="12" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center"/>
-              <TextBlock Text="No upcoming tasks scheduled for this period."
+              <TextBlock Text="{loc:Localize Tasks_NoUpcomingTasks}"
                          FontSize="12"
                          Foreground="{DynamicResource AppTextSecondaryBrush}"
                          VerticalAlignment="Center"/>
@@ -1247,11 +1248,11 @@
                           VerticalAlignment="Center"/>
 
                 <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
-                  <TextBlock Text="View Full Calendar &amp; Timeline"
+                  <TextBlock Text="{loc:Localize Tasks_ViewFullCalendar}"
                              FontSize="13"
                              FontWeight="SemiBold"
                              Foreground="{DynamicResource AppPrimaryBrush}"/>
-                  <TextBlock Text="Explore all upcoming deadlines and recurring habits on the calendar grid"
+                  <TextBlock Text="{loc:Localize Tasks_ViewFullCalendar_Desc}"
                              FontSize="11"
                              Foreground="{DynamicResource AppTextSecondaryBrush}"/>
                 </StackPanel>
@@ -1278,11 +1279,11 @@
                           VerticalAlignment="Center"/>
 
                 <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
-                  <TextBlock Text="View All Recurring Tasks"
+                  <TextBlock Text="{loc:Localize Tasks_ViewAllRecurring}"
                              FontSize="13"
                              FontWeight="SemiBold"
                              Foreground="{DynamicResource AppPrimaryBrush}"/>
-                  <TextBlock Text="Manage all repeating task patterns and habits"
+                  <TextBlock Text="{loc:Localize Tasks_ViewAllRecurring_Desc}"
                              FontSize="11"
                              Foreground="{DynamicResource AppTextSecondaryBrush}"/>
                 </StackPanel>
@@ -1309,11 +1310,11 @@
                   Width="40" Height="40"
                   Foreground="{DynamicResource AppBorderBrush}"
                   HorizontalAlignment="Center"/>
-        <TextBlock Text="No tasks yet"
+        <TextBlock Text="{loc:Localize Tasks_NoTasksYet}"
                    Classes="heading"
                    HorizontalAlignment="Center"
                    Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-        <TextBlock Text="Type something above and press Add task."
+        <TextBlock Text="{loc:Localize Tasks_NoTasksPrompt}"
                    Classes="small"
                    HorizontalAlignment="Center"/>
       </StackPanel>
@@ -1337,7 +1338,7 @@
             Background="{DynamicResource AppPrimaryBrush}"
             HorizontalContentAlignment="Center"
             VerticalContentAlignment="Center"
-            ToolTip.Tip="Add task">
+            ToolTip.Tip="{loc:Localize Tasks_AddTask}">
       <PathIcon Data="{StaticResource PlusIconData}" Width="20" Height="20" Foreground="#F0FDFA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
     </Button>
   </Border>

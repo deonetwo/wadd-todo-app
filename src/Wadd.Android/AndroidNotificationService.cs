@@ -108,7 +108,15 @@ public class AndroidNotificationService : INotificationService
             if (Build.VERSION.SdkInt >= BuildVersionCodes.O || ChannelManagerOverride != null)
             {
                 var channelManager = ChannelManagerOverride ?? new AndroidNotificationChannelManagerAdapter(notificationManager, context);
-                AndroidNotificationChannelHelper.SyncChannels(channelManager, settings);
+
+                // Note: Android-native strings intentionally resolve through Android's native resources (values/strings.xml and values-<locale>/strings.xml)
+                // via context.GetString(...) rather than Avalonia's LocalizationManager. Notification channels and background broadcast receivers
+                // run outside the Avalonia view tree where Avalonia/C# runtime state may not be initialized. Android automatically resolves
+                // the correct values-<locale> based on the device locale independently from the app-level C# language picker.
+                string channelName = context.GetString(Resource.String.notification_channel_name) ?? AndroidNotificationChannelHelper.ChannelName;
+                string channelDesc = context.GetString(Resource.String.notification_channel_desc) ?? AndroidNotificationChannelHelper.ChannelDesc;
+
+                AndroidNotificationChannelHelper.SyncChannels(channelManager, settings, channelName, channelDesc);
             }
 
             // Create intent to bring MainActivity to foreground on tap

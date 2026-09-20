@@ -22,7 +22,7 @@ public class LogEntry
             _ => "INFO "
         };
 
-        var baseMsg = $"[{Timestamp:yyyy-MM-dd HH:mm:ss.fff}] [{levelStr}] [{Source}] {Message}";
+        var baseMsg = $"[{Timestamp.ToString("yyyy-MM-dd HH:mm:ss.fff", System.Globalization.CultureInfo.InvariantCulture)}] [{levelStr}] [{Source}] {Message}";
         if (!string.IsNullOrWhiteSpace(ExceptionDetails))
         {
             baseMsg += $"{Environment.NewLine}  Exception: {ExceptionDetails}";

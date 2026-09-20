@@ -8,6 +8,7 @@ public class AppSettingsData
     public string UpcomingTasksRange { get; set; } = "All";
     public bool ShowNotePreviewsInList { get; set; } = true;
     public ThemeMode ThemeMode { get; set; } = ThemeMode.System;
+    public string Language { get; set; } = "system";
 
     // Desktop System Tray & Auto-Startup Settings
     public bool AutoStartOnBoot { get; set; } = false;

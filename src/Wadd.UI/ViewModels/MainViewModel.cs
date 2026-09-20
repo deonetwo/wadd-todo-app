@@ -14,6 +14,7 @@ using Wadd.Core.Interfaces;
 using Wadd.Core.Logging;
 using Wadd.Core.Models;
 using Wadd.Services;
+using Wadd.UI.Localization;
 using Wadd.UI.Views;
 
 namespace Wadd.UI.ViewModels;
@@ -1079,6 +1080,54 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
+    public List<LanguageOption> LanguageOptions { get; } = new()
+    {
+        new LanguageOption { Id = "system", Name = "System Default / Default Sistem", Description = "Follow device system language" },
+        new LanguageOption { Id = "en", Name = "English", Description = "English (United States)" },
+        new LanguageOption { Id = "id", Name = "Bahasa Indonesia", Description = "Indonesian" }
+    };
+
+    [ObservableProperty]
+    private LanguageOption? _selectedLanguageOption;
+
+    [ObservableProperty]
+    private string _language = "system";
+
+    [ObservableProperty]
+    private bool _isLanguagePickerSheetOpen;
+
+    [RelayCommand]
+    private void OpenLanguagePicker()
+    {
+        IsLanguagePickerSheetOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseLanguagePicker()
+    {
+        IsLanguagePickerSheetOpen = false;
+    }
+
+    [RelayCommand]
+    private void SelectLanguageOption(LanguageOption? option)
+    {
+        if (option != null)
+        {
+            SelectedLanguageOption = option;
+            IsLanguagePickerSheetOpen = false;
+        }
+    }
+
+    partial void OnSelectedLanguageOptionChanged(LanguageOption? value)
+    {
+        if (value != null && !string.IsNullOrWhiteSpace(value.Id))
+        {
+            Language = value.Id;
+            LocalizationManager.Instance.SetLanguage(value.Id);
+            SaveUserSettings();
+        }
+    }
+
     partial void OnSelectedTasksLayoutOptionChanged(TasksLayoutOption? value)
     {
         if (value != null && !string.IsNullOrWhiteSpace(value.Id))
@@ -1166,13 +1215,13 @@ public partial class MainViewModel : ViewModelBase
 
     public string UpcomingTasksRangeLabel => UpcomingTasksRange switch
     {
-        "Tomorrow" => "Tomorrow",
-        "Next3Days" => "Next 3 Days",
-        "ThisWeek" => "This Week",
-        "Next7Days" => "Next 7 Days",
-        "ThisMonth" => "This Month",
-        "Next30Days" => "Next 30 Days",
-        _ => "All Upcoming"
+        "Tomorrow" => LocalizationManager.Instance["Tasks_Upcoming_Tomorrow"],
+        "Next3Days" => LocalizationManager.Instance["Tasks_Upcoming_3Days"],
+        "ThisWeek" => LocalizationManager.Instance["Tasks_Upcoming_7Days"],
+        "Next7Days" => LocalizationManager.Instance["Tasks_Upcoming_7Days"],
+        "ThisMonth" => LocalizationManager.Instance["Tasks_Upcoming_Month"],
+        "Next30Days" => LocalizationManager.Instance["Tasks_Upcoming_14Days"],
+        _ => LocalizationManager.Instance["Tasks_Upcoming_All"]
     };
 
     public bool IsUpcomingRangeFilterActive => UpcomingTasksRange != "All";
@@ -3185,7 +3234,19 @@ public partial class MainViewModel : ViewModelBase
             });
         };
         _selectedTasksLayoutOption = TasksLayoutOptions[0];
+        _selectedLanguageOption = LanguageOptions[0];
+        LocalizationManager.Instance.CultureChanged += () =>
+        {
+            Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                UpdateThemeLabel();
+                CheckAndUpdateCurrentDate();
+                RefreshLocalizedOptionLists();
+            });
+        };
         LoadUserSettings();
+        RefreshLocalizedOptionLists();
+        UpdateThemeLabel();
         StartReminderChecker();
         ApplyCompletedDatePreset("Today");
 
@@ -3297,8 +3358,9 @@ public partial class MainViewModel : ViewModelBase
     public void CheckAndUpdateCurrentDate()
     {
         var today = DateTime.Today;
-        CurrentDateFormatted = DateTime.Now.ToString("dddd, MMMM d").ToUpperInvariant();
-        CurrentDateFull = DateTime.Now.ToString("dddd, MMMM d, yyyy");
+        var culture = LocalizationManager.Instance.CurrentCulture;
+        CurrentDateFormatted = DateTime.Now.ToString("dddd, MMMM d", culture).ToUpper(culture);
+        CurrentDateFull = DateTime.Now.ToString("dddd, MMMM d, yyyy", culture);
         OnPropertyChanged(nameof(MinDueDate));
         OnPropertyChanged(nameof(DueDateHeaderYear));
         OnPropertyChanged(nameof(DueDateHeaderMainText));
@@ -4089,12 +4151,16 @@ public partial class MainViewModel : ViewModelBase
 
     private void UpdateThemeLabel()
     {
-        var resolved = IsDarkMode ? "Dark" : "Light";
+        var lm = LocalizationManager.Instance;
+        var lightText = lm["Settings_Theme_Light"];
+        var darkText = lm["Settings_Theme_Dark"];
+        var systemText = lm["Settings_Theme_System"];
+        var resolved = IsDarkMode ? darkText : lightText;
         CurrentThemeLabel = CurrentThemeMode switch
         {
-            ThemeMode.Light => "Light",
-            ThemeMode.Dark => "Dark",
-            _ => $"System — {resolved}"
+            ThemeMode.Light => lightText,
+            ThemeMode.Dark => darkText,
+            _ => $"{systemText} — {resolved}"
         };
         OnPropertyChanged(nameof(IsDarkMode));
     }
@@ -4172,6 +4238,9 @@ public partial class MainViewModel
         }
         ShowNotePreviewsInList = settings.ShowNotePreviewsInList;
         _themeService.SetTheme(settings.ThemeMode);
+        Language = string.IsNullOrWhiteSpace(settings.Language) ? "system" : settings.Language;
+        SelectedLanguageOption = LanguageOptions.FirstOrDefault(x => x.Id.Equals(Language, StringComparison.OrdinalIgnoreCase)) ?? LanguageOptions[0];
+        LocalizationManager.Instance.SetLanguage(Language);
 
         AutoStartOnBoot = _startupService.IsSupported ? _startupService.IsAutoStartEnabled() : settings.AutoStartOnBoot;
         StartMinimized = settings.StartMinimized;
@@ -4214,6 +4283,7 @@ public partial class MainViewModel
         settings.UpcomingTasksRange = UpcomingTasksRange;
         settings.ShowNotePreviewsInList = ShowNotePreviewsInList;
         settings.ThemeMode = _themeService.CurrentTheme;
+        settings.Language = Language;
         settings.AutoStartOnBoot = AutoStartOnBoot;
         settings.StartMinimized = StartMinimized;
         settings.MinimizeToTray = MinimizeToTray;
@@ -4346,20 +4416,111 @@ public partial class MainViewModel
             AppLogger.LogError("MainViewModel", "Failed to clear recent logs", ex);
         }
     }
+
+    public void RefreshLocalizedOptionLists()
+    {
+        var lm = LocalizationManager.Instance;
+
+        var optStandard = TasksLayoutOptions.FirstOrDefault(x => x.Id == "Standard");
+        if (optStandard != null)
+        {
+            optStandard.Name = lm["Tasks_Layout_StandardMode"];
+            optStandard.Description = lm["Tasks_Layout_Standard_Desc"];
+        }
+        var optFocus = TasksLayoutOptions.FirstOrDefault(x => x.Id == "Focus");
+        if (optFocus != null)
+        {
+            optFocus.Name = lm["Tasks_Layout_Focus"];
+            optFocus.Description = lm["Tasks_Layout_Focus_Desc"];
+        }
+        var optCompletedFirst = TasksLayoutOptions.FirstOrDefault(x => x.Id == "CompletedFirst");
+        if (optCompletedFirst != null)
+        {
+            optCompletedFirst.Name = lm["Tasks_Layout_CompletedFirst"];
+            optCompletedFirst.Description = lm["Tasks_Layout_CompletedFirst_Desc"];
+        }
+        var optTodayCompleted = TasksLayoutOptions.FirstOrDefault(x => x.Id == "TodayCompletedOnly");
+        if (optTodayCompleted != null)
+        {
+            optTodayCompleted.Name = lm["Tasks_Layout_TodayCompletedOnly"];
+            optTodayCompleted.Description = lm["Tasks_Layout_TodayCompletedOnly_Desc"];
+        }
+        var optTodayUpcoming = TasksLayoutOptions.FirstOrDefault(x => x.Id == "TodayUpcomingOnly");
+        if (optTodayUpcoming != null)
+        {
+            optTodayUpcoming.Name = lm["Tasks_Layout_TodayUpcomingOnly"];
+            optTodayUpcoming.Description = lm["Tasks_Layout_TodayUpcomingOnly_Desc"];
+        }
+
+        var optTomorrow = UpcomingTasksRangeOptions.FirstOrDefault(x => x.Id == "Tomorrow");
+        if (optTomorrow != null)
+        {
+            optTomorrow.Name = lm["Tasks_Upcoming_Tomorrow"];
+            optTomorrow.Description = lm["Tasks_Upcoming_Tomorrow_Desc"];
+        }
+        var optNext3Days = UpcomingTasksRangeOptions.FirstOrDefault(x => x.Id == "Next3Days");
+        if (optNext3Days != null)
+        {
+            optNext3Days.Name = lm["Tasks_Upcoming_3Days"];
+            optNext3Days.Description = lm["Tasks_Upcoming_3Days_Desc"];
+        }
+        var optThisWeek = UpcomingTasksRangeOptions.FirstOrDefault(x => x.Id == "ThisWeek");
+        if (optThisWeek != null)
+        {
+            optThisWeek.Name = lm["Tasks_Upcoming_7Days"];
+            optThisWeek.Description = lm["Tasks_Upcoming_7Days_Desc"];
+        }
+        var optNext7Days = UpcomingTasksRangeOptions.FirstOrDefault(x => x.Id == "Next7Days");
+        if (optNext7Days != null)
+        {
+            optNext7Days.Name = lm["Tasks_Upcoming_7Days"];
+            optNext7Days.Description = lm["Tasks_Upcoming_7Days_Desc"];
+        }
+        var optThisMonth = UpcomingTasksRangeOptions.FirstOrDefault(x => x.Id == "ThisMonth");
+        if (optThisMonth != null)
+        {
+            optThisMonth.Name = lm["Tasks_Upcoming_Month"];
+            optThisMonth.Description = lm["Tasks_Upcoming_Month_Desc"];
+        }
+        var optNext30Days = UpcomingTasksRangeOptions.FirstOrDefault(x => x.Id == "Next30Days");
+        if (optNext30Days != null)
+        {
+            optNext30Days.Name = lm["Tasks_Upcoming_14Days"];
+            optNext30Days.Description = lm["Tasks_Upcoming_14Days_Desc"];
+        }
+        var optAll = UpcomingTasksRangeOptions.FirstOrDefault(x => x.Id == "All");
+        if (optAll != null)
+        {
+            optAll.Name = lm["Tasks_Upcoming_All"];
+            optAll.Description = lm["Tasks_Upcoming_All_Desc"];
+        }
+
+        var optSystemLang = LanguageOptions.FirstOrDefault(x => x.Id == "system");
+        if (optSystemLang != null)
+        {
+            optSystemLang.Name = $"{lm["Settings_Language_System"]} / Default Sistem";
+            optSystemLang.Description = lm["Settings_Language_Desc"];
+        }
+
+        OnPropertyChanged(nameof(UpcomingTasksRangeLabel));
+        OnPropertyChanged(nameof(SelectedLanguageOption));
+        OnPropertyChanged(nameof(SelectedTasksLayoutOption));
+        OnPropertyChanged(nameof(SelectedUpcomingTasksRangeOption));
+    }
 }
 
-public class TasksLayoutOption
+public partial class TasksLayoutOption : ObservableObject
 {
     public string Id { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
+    [ObservableProperty] private string _name = string.Empty;
+    [ObservableProperty] private string _description = string.Empty;
 }
 
-public class UpcomingTasksRangeOption
+public partial class UpcomingTasksRangeOption : ObservableObject
 {
     public string Id { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
+    [ObservableProperty] private string _name = string.Empty;
+    [ObservableProperty] private string _description = string.Empty;
 }
 
 public class AiProviderOption
@@ -4385,4 +4546,12 @@ public class NotificationRepeatIntervalOption
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
 }
+
+public partial class LanguageOption : ObservableObject
+{
+    public string Id { get; set; } = string.Empty;
+    [ObservableProperty] private string _name = string.Empty;
+    [ObservableProperty] private string _description = string.Empty;
+}
+
 

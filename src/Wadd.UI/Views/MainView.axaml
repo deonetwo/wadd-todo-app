@@ -6,6 +6,7 @@
              xmlns:models="clr-namespace:Wadd.Core.Models;assembly=Wadd.Core"
              xmlns:views="clr-namespace:Wadd.UI.Views;assembly=Wadd.UI"
              xmlns:controls="clr-namespace:Wadd.UI.Controls;assembly=Wadd.UI"
+             xmlns:loc="clr-namespace:Wadd.UI.Localization;assembly=Wadd.UI"
              mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="760"
              x:Class="Wadd.UI.Views.MainView"
              x:DataType="vm:MainViewModel"
@@ -90,10 +91,10 @@
                    Padding="4,4">
 
             <!-- Index 0: Tasks -->
-            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Tasks">
+            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="{loc:Localize Nav_Tasks}">
               <Grid ColumnDefinitions="56,*,Auto" Height="44">
                 <PathIcon Grid.Column="0" Data="{StaticResource CheckListIconData}" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="1" Text="Tasks" FontSize="14" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="{loc:Localize Nav_Tasks}" FontSize="14" VerticalAlignment="Center"/>
                 <Border Grid.Column="2"
                         Background="{DynamicResource AppSurfaceElevatedBrush}"
                         CornerRadius="10"
@@ -106,10 +107,10 @@
             </ListBoxItem>
 
             <!-- Index 1: Completed Tasks -->
-            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Completed Tasks">
+            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="{loc:Localize Nav_CompletedTasks}">
               <Grid ColumnDefinitions="56,*,Auto" Height="44">
                 <PathIcon Grid.Column="0" Data="{StaticResource CheckIconData}" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="1" Text="Completed" FontSize="14" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="{loc:Localize Common_Done}" FontSize="14" VerticalAlignment="Center"/>
                 <Border Grid.Column="2"
                         Background="{DynamicResource AppSurfaceElevatedBrush}"
                         CornerRadius="10"
@@ -122,10 +123,10 @@
             </ListBoxItem>
 
             <!-- Index 2: Repeating Tasks -->
-            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Repeating Tasks">
+            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="{loc:Localize Nav_RecurringTasks}">
               <Grid ColumnDefinitions="56,*,Auto" Height="44">
                 <PathIcon Grid.Column="0" Data="{StaticResource RepeatIconData}" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="1" Text="Repeating" FontSize="14" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="{loc:Localize Nav_RecurringTasks}" FontSize="14" VerticalAlignment="Center"/>
                 <Border Grid.Column="2"
                         Background="{DynamicResource AppSurfaceElevatedBrush}"
                         CornerRadius="10"
@@ -138,42 +139,42 @@
             </ListBoxItem>
 
             <!-- Index 3: Calendar -->
-            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Calendar">
+            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="{loc:Localize Nav_Calendar}">
               <Grid ColumnDefinitions="56,*" Height="44">
                 <PathIcon Grid.Column="0" Data="{StaticResource CalendarIconData}" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="1" Text="Calendar" FontSize="14" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="{loc:Localize Nav_Calendar}" FontSize="14" VerticalAlignment="Center"/>
               </Grid>
             </ListBoxItem>
 
             <!-- Index 4: Search -->
-            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Search">
+            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="{loc:Localize Nav_Search}">
               <Grid ColumnDefinitions="56,*" Height="44">
                 <PathIcon Grid.Column="0" Data="{StaticResource SearchIconData}" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="1" Text="Search" FontSize="14" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="{loc:Localize Nav_Search}" FontSize="14" VerticalAlignment="Center"/>
               </Grid>
             </ListBoxItem>
 
             <!-- Index 5: Tags Management -->
-            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Tags Management">
+            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="{loc:Localize Nav_TagsManagement}">
               <Grid ColumnDefinitions="56,*" Height="44">
                 <PathIcon Grid.Column="0" Data="{StaticResource TagIconData}" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="1" Text="Tags" FontSize="14" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="{loc:Localize Nav_TagsManagement}" FontSize="14" VerticalAlignment="Center"/>
               </Grid>
             </ListBoxItem>
 
             <!-- Index 6: Life Goals & Journal -->
-            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Life Goals &amp; Journal">
+            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="{loc:Localize Nav_Goals}">
               <Grid ColumnDefinitions="56,*" Height="44">
                 <PathIcon Grid.Column="0" Data="{StaticResource TargetIconData}" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="1" Text="Goals &amp; Journal" FontSize="14" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="{loc:Localize Nav_Goals}" FontSize="14" VerticalAlignment="Center"/>
               </Grid>
             </ListBoxItem>
 
             <!-- Index 7: Settings -->
-            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="Settings">
+            <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="{loc:Localize Nav_Settings}">
               <Grid ColumnDefinitions="56,*" Height="44">
                 <PathIcon Grid.Column="0" Data="{StaticResource SettingsIconData}" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="1" Text="Settings" FontSize="14" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="{loc:Localize Nav_Settings}" FontSize="14" VerticalAlignment="Center"/>
               </Grid>
             </ListBoxItem>
           </ListBox>
@@ -224,8 +225,8 @@
             <StackPanel Spacing="10">
               <Grid ColumnDefinitions="*,Auto">
                 <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
-                  <TextBlock Text="STORAGE &amp; SYNC" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                  <TextBlock Text="Saved on Device" IsVisible="{Binding !IsGoogleSignedIn}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                  <TextBlock Text="{loc:Localize Main_StorageAndSync}" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                  <TextBlock Text="{loc:Localize Main_SavedOnDevice}" IsVisible="{Binding !IsGoogleSignedIn}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
                   <TextBlock Text="{Binding GoogleUserEmail}" IsVisible="{Binding IsGoogleSignedIn}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppTextPrimaryBrush}" TextTrimming="CharacterEllipsis"/>
                   <TextBlock Text="{Binding LastUpdatedFormatted}" FontSize="10" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
                 </StackPanel>
@@ -234,8 +235,8 @@
                         Command="{Binding ToggleThemeCommand}"
                         VerticalAlignment="Center">
                   <Panel>
-                    <PathIcon Data="{StaticResource MoonIconData}" Width="14" Height="14" IsVisible="{Binding !IsDarkMode}" ToolTip.Tip="Switch to Dark Mode"/>
-                    <PathIcon Data="{StaticResource SunIconData}" Width="14" Height="14" IsVisible="{Binding IsDarkMode}" ToolTip.Tip="Switch to Light Mode"/>
+                    <PathIcon Data="{StaticResource MoonIconData}" Width="14" Height="14" IsVisible="{Binding !IsDarkMode}" ToolTip.Tip="{loc:Localize Main_SwitchDarkMode}"/>
+                    <PathIcon Data="{StaticResource SunIconData}" Width="14" Height="14" IsVisible="{Binding IsDarkMode}" ToolTip.Tip="{loc:Localize Main_SwitchLightMode}"/>
                   </Panel>
                 </Button>
               </Grid>
@@ -245,8 +246,8 @@
                       HorizontalAlignment="Stretch">
                 <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
                   <PathIcon Data="{StaticResource SyncIconData}" Width="13" Height="13"/>
-                  <TextBlock Text="Sync Cloud" IsVisible="{Binding !IsSyncing}" FontSize="12" FontWeight="SemiBold"/>
-                  <TextBlock Text="Syncing..." IsVisible="{Binding IsSyncing}" FontSize="12" FontWeight="SemiBold"/>
+                  <TextBlock Text="{loc:Localize Main_SyncCloud}" IsVisible="{Binding !IsSyncing}" FontSize="12" FontWeight="SemiBold"/>
+                  <TextBlock Text="{loc:Localize Main_Syncing}" IsVisible="{Binding IsSyncing}" FontSize="12" FontWeight="SemiBold"/>
                 </StackPanel>
               </Button>
             </StackPanel>
@@ -578,49 +579,49 @@
                 <ListBoxItem Classes="side-menu-item">
                   <StackPanel Orientation="Horizontal" Spacing="12">
                     <PathIcon Data="{StaticResource CheckListIconData}" Width="17" Height="17"/>
-                    <TextBlock Text="Tasks" VerticalAlignment="Center"/>
+                    <TextBlock Text="{loc:Localize Nav_Tasks}" VerticalAlignment="Center"/>
                   </StackPanel>
                 </ListBoxItem>
                 <ListBoxItem Classes="side-menu-item">
                   <StackPanel Orientation="Horizontal" Spacing="12">
                     <PathIcon Data="{StaticResource CheckIconData}" Width="15" Height="15"/>
-                    <TextBlock Text="Completed" VerticalAlignment="Center"/>
+                    <TextBlock Text="{loc:Localize Common_Done}" VerticalAlignment="Center"/>
                   </StackPanel>
                 </ListBoxItem>
                 <ListBoxItem Classes="side-menu-item">
                   <StackPanel Orientation="Horizontal" Spacing="12">
                     <PathIcon Data="{StaticResource RepeatIconData}" Width="15" Height="15"/>
-                    <TextBlock Text="Recurring" VerticalAlignment="Center"/>
+                    <TextBlock Text="{loc:Localize Nav_RecurringTasks}" VerticalAlignment="Center"/>
                   </StackPanel>
                 </ListBoxItem>
                 <ListBoxItem Classes="side-menu-item">
                   <StackPanel Orientation="Horizontal" Spacing="12">
                     <PathIcon Data="{StaticResource CalendarIconData}" Width="17" Height="17"/>
-                    <TextBlock Text="Calendar" VerticalAlignment="Center"/>
+                    <TextBlock Text="{loc:Localize Nav_Calendar}" VerticalAlignment="Center"/>
                   </StackPanel>
                 </ListBoxItem>
                 <ListBoxItem Classes="side-menu-item">
                   <StackPanel Orientation="Horizontal" Spacing="12">
                     <PathIcon Data="{StaticResource SearchIconData}" Width="17" Height="17"/>
-                    <TextBlock Text="Search" VerticalAlignment="Center"/>
+                    <TextBlock Text="{loc:Localize Nav_Search}" VerticalAlignment="Center"/>
                   </StackPanel>
                 </ListBoxItem>
                 <ListBoxItem Classes="side-menu-item">
                   <StackPanel Orientation="Horizontal" Spacing="12">
                     <PathIcon Data="{StaticResource TagIconData}" Width="17" Height="17"/>
-                    <TextBlock Text="Tags" VerticalAlignment="Center"/>
+                    <TextBlock Text="{loc:Localize Nav_TagsManagement}" VerticalAlignment="Center"/>
                   </StackPanel>
                 </ListBoxItem>
                 <ListBoxItem Classes="side-menu-item">
                   <StackPanel Orientation="Horizontal" Spacing="12">
                     <PathIcon Data="{StaticResource TargetIconData}" Width="17" Height="17"/>
-                    <TextBlock Text="Goals &amp; Journal" VerticalAlignment="Center"/>
+                    <TextBlock Text="{loc:Localize Nav_Goals}" VerticalAlignment="Center"/>
                   </StackPanel>
                 </ListBoxItem>
                 <ListBoxItem Classes="side-menu-item">
                   <StackPanel Orientation="Horizontal" Spacing="12">
                     <PathIcon Data="{StaticResource SettingsIconData}" Width="17" Height="17"/>
-                    <TextBlock Text="Settings" VerticalAlignment="Center"/>
+                    <TextBlock Text="{loc:Localize Nav_Settings}" VerticalAlignment="Center"/>
                   </StackPanel>
                 </ListBoxItem>
               </ListBox>
@@ -640,28 +641,28 @@
           <Button Classes="tab-btn" Command="{Binding OpenTasksViewCommand}" Classes.active="{Binding IsTasksView}">
             <StackPanel Spacing="4" HorizontalAlignment="Center">
               <PathIcon Data="{StaticResource CheckListIconData}" Width="18" Height="18" HorizontalAlignment="Center"/>
-              <TextBlock Text="Tasks" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
+              <TextBlock Text="{loc:Localize Nav_Tasks}" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
             </StackPanel>
           </Button>
 
           <Button Classes="tab-btn" Command="{Binding OpenCompletedViewCommand}" Classes.active="{Binding IsCompletedView}">
             <StackPanel Spacing="4" HorizontalAlignment="Center">
               <PathIcon Data="{StaticResource CheckIconData}" Width="16" Height="16" HorizontalAlignment="Center"/>
-              <TextBlock Text="Done" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
+              <TextBlock Text="{loc:Localize Common_Done}" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
             </StackPanel>
           </Button>
 
           <Button Classes="tab-btn" Command="{Binding OpenRecurringViewCommand}" Classes.active="{Binding IsRecurringView}">
             <StackPanel Spacing="4" HorizontalAlignment="Center">
               <PathIcon Data="{StaticResource RepeatIconData}" Width="18" Height="18" HorizontalAlignment="Center"/>
-              <TextBlock Text="Repeating" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
+              <TextBlock Text="{loc:Localize Nav_RecurringTasks}" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
             </StackPanel>
           </Button>
 
           <Button Classes="tab-btn" Command="{Binding OpenCalendarViewCommand}" Classes.active="{Binding IsCalendarView}">
             <StackPanel Spacing="4" HorizontalAlignment="Center">
               <PathIcon Data="{StaticResource CalendarIconData}" Width="18" Height="18" HorizontalAlignment="Center"/>
-              <TextBlock Text="Calendar" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
+              <TextBlock Text="{loc:Localize Nav_Calendar}" FontSize="10" FontWeight="Medium" HorizontalAlignment="Center"/>
             </StackPanel>
           </Button>
 
@@ -2010,6 +2011,83 @@
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
             </ScrollViewer>
+          </StackPanel>
+        </Border>
+      </Grid>
+    </Border>
+
+    <!-- Language Picker Bottom Sheet Modal (Mobile/Portrait UX Best Practice) -->
+    <Border x:Name="LanguagePickerSheetPanel"
+            IsVisible="{Binding IsLanguagePickerSheetOpen}"
+            ZIndex="1100"
+            Background="#A0000000">
+      <Grid RowDefinitions="*,Auto">
+        <!-- Dismiss Backdrop Overlay -->
+        <Border Grid.Row="0" Background="Transparent" PointerPressed="OnLanguagePickerBackgroundPressed"/>
+
+        <!-- Bottom Sheet Card Container -->
+        <Border Grid.Row="1"
+                Background="{DynamicResource AppSurfaceElevatedBrush}"
+                BorderBrush="{DynamicResource AppBorderBrush}"
+                BorderThickness="0,1,0,0"
+                CornerRadius="20,20,0,0"
+                Padding="20,16,20,24"
+                MaxWidth="560"
+                HorizontalAlignment="Stretch">
+          <StackPanel Spacing="16">
+            <!-- Sheet Drag Pill -->
+            <Border Width="36" Height="4" CornerRadius="2" Background="{DynamicResource AppBorderBrush}" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+
+            <!-- Sheet Header -->
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Grid.Column="0" Spacing="2">
+                <TextBlock Text="{loc:Localize Settings_Language}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                <TextBlock Text="{loc:Localize Settings_Language_Desc}" FontSize="12" Foreground="{DynamicResource AppTextSecondaryBrush}" TextWrapping="Wrap"/>
+              </StackPanel>
+              <Button Grid.Column="1"
+                      Classes="ghost"
+                      Command="{Binding CloseLanguagePickerCommand}"
+                      Padding="6"
+                      VerticalAlignment="Top">
+                <PathIcon Data="{StaticResource CloseIconData}" Width="14" Height="14" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </Button>
+            </Grid>
+
+            <Separator Classes="divider" Margin="0,2"/>
+
+            <!-- Language Option Cards List -->
+            <ItemsControl ItemsSource="{Binding LanguageOptions}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:LanguageOption">
+                  <Button Classes="ghost"
+                          Command="{Binding $parent[ItemsControl].((vm:MainViewModel)DataContext).SelectLanguageOptionCommand}"
+                          CommandParameter="{Binding}"
+                          HorizontalAlignment="Stretch"
+                          HorizontalContentAlignment="Stretch"
+                          Padding="14,12"
+                          Margin="0,0,0,8"
+                          CornerRadius="10"
+                          Background="{DynamicResource AppSurfaceSubtleBrush}"
+                          BorderBrush="{DynamicResource AppBorderBrush}"
+                          BorderThickness="1">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                      <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                        <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" TextWrapping="Wrap"/>
+                      </StackPanel>
+
+                      <!-- Checkmark for selected language -->
+                      <PathIcon Grid.Column="1"
+                                Data="{StaticResource CheckIconData}"
+                                Width="16" Height="16"
+                                Foreground="{DynamicResource AppPrimaryBrush}"
+                                VerticalAlignment="Center"
+                                IsVisible="{Binding $parent[ItemsControl].((vm:MainViewModel)DataContext).Language, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={Binding Id}}"/>
+                    </Grid>
+                  </Button>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
           </StackPanel>
         </Border>
       </Grid>

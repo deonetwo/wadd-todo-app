@@ -19,11 +19,15 @@ public partial class App : Application
 
     public override void Initialize()
     {
-        var enUSInfo = new System.Globalization.CultureInfo("en-US");
-        System.Globalization.CultureInfo.DefaultThreadCurrentCulture = enUSInfo;
-        System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = enUSInfo;
-        System.Threading.Thread.CurrentThread.CurrentCulture = enUSInfo;
-        System.Threading.Thread.CurrentThread.CurrentUICulture = enUSInfo;
+        try
+        {
+            var savedSettings = Wadd.Core.Helpers.AppSettingsHelper.LoadSettings();
+            Wadd.UI.Localization.LocalizationManager.Instance.SetLanguage(savedSettings.Language);
+        }
+        catch
+        {
+            Wadd.UI.Localization.LocalizationManager.Instance.SetLanguage("en");
+        }
 
         AppDomain.CurrentDomain.UnhandledException += (s, e) =>
         {

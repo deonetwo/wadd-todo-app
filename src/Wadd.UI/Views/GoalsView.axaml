@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Wadd.UI.ViewModels;assembly=Wadd.UI"
+             xmlns:loc="clr-namespace:Wadd.UI.Localization;assembly=Wadd.UI"
              mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="760"
              x:Class="Wadd.UI.Views.GoalsView"
              x:DataType="vm:GoalsViewModel"
@@ -135,9 +136,9 @@
         <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0" VerticalAlignment="Center">
           <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
             <PathIcon Data="{StaticResource TargetIconData}" Width="22" Height="22" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
-            <TextBlock Text="Life Goals &amp; Reflection Journal" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+            <TextBlock Text="{loc:Localize Goals_Title}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}" TextWrapping="Wrap" VerticalAlignment="Center"/>
           </StackPanel>
-          <TextBlock Text="Organize long-term vision targets, milestone checklists, and daily reflective journal entries."
+          <TextBlock Text="{loc:Localize Goals_Description}"
                      FontSize="13"
                      TextWrapping="Wrap"
                      Foreground="{DynamicResource AppTextSecondaryBrush}"/>
@@ -152,7 +153,7 @@
                 VerticalAlignment="Center">
           <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
             <PathIcon Data="{StaticResource PlusIconData}" Width="12" Height="12" Foreground="White" VerticalAlignment="Center"/>
-            <TextBlock Text="New Life Goal" FontSize="13" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+            <TextBlock Text="{loc:Localize Goals_NewGoal}" FontSize="13" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
           </StackPanel>
         </Button>
       </Grid>
@@ -164,7 +165,7 @@
               Padding="16"
               MinWidth="300">
         <Grid RowDefinitions="Auto,Auto,*">
-          <TextBlock Grid.Row="0" Text="CATEGORIES" Classes="micro" IsVisible="{Binding HasCategories}" Margin="4,2,4,8"/>
+          <TextBlock Grid.Row="0" Text="{loc:Localize Goals_Categories}" Classes="micro" IsVisible="{Binding HasCategories}" Margin="4,2,4,8"/>
 
           <!-- Category Filter Pills with Active Highlight Binding (Scrollable horizontal row with proper scrollbar spacing) -->
           <ScrollViewer x:Name="DesktopCategoriesScrollViewer"
@@ -268,7 +269,7 @@
                                 <Run Text="{Binding CompletedMilestonesCount}"/><Run Text="/"/><Run Text="{Binding TotalMilestonesCount}"/><Run Text=" steps"/><Run Text=" • "/><Run Text="{Binding ProgressPercentage, StringFormat={}{0:0}%}"/>
                               </TextBlock>
                             </StackPanel>
-                            <TextBlock Grid.Column="0" Text="No steps" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center" IsVisible="{Binding !HasMilestones}"/>
+                            <TextBlock Grid.Column="0" Text="{loc:Localize Goals_NoSteps}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center" IsVisible="{Binding !HasMilestones}"/>
 
                             <!-- Right: Target Date -->
                             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
@@ -343,8 +344,8 @@
                     <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                       <PathIcon Data="{StaticResource UndoIconData}" Width="11" Height="11" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center" IsVisible="{Binding SelectedGoal.IsAchieved}"/>
                       <PathIcon Data="{StaticResource SparkleIconData}" Width="11" Height="11" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center" IsVisible="{Binding !SelectedGoal.IsAchieved}"/>
-                      <TextBlock Text="Reopen Goal" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center" IsVisible="{Binding SelectedGoal.IsAchieved}"/>
-                      <TextBlock Text="Mark Achieved" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center" IsVisible="{Binding !SelectedGoal.IsAchieved}"/>
+                      <TextBlock Text="{loc:Localize Goals_ReopenGoal}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center" IsVisible="{Binding SelectedGoal.IsAchieved}"/>
+                      <TextBlock Text="{loc:Localize Goals_MarkAchieved}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center" IsVisible="{Binding !SelectedGoal.IsAchieved}"/>
                     </StackPanel>
                   </Button>
 
@@ -367,7 +368,7 @@
               <!-- High Contrast Goal Progress Bar -->
               <StackPanel Spacing="6" Margin="0,4,0,0">
                 <Grid ColumnDefinitions="*,Auto">
-                  <TextBlock Grid.Column="0" Text="Overall Goal Progress" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center"/>
+                  <TextBlock Grid.Column="0" Text="{loc:Localize Goals_OverallProgress}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center"/>
                   <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
                     <PathIcon Data="{StaticResource CheckCircleIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}" IsVisible="{Binding SelectedGoal.IsAchieved}" VerticalAlignment="Center"/>
                     <TextBlock Text="{Binding SelectedGoal.StatusText}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
@@ -383,7 +384,7 @@
               <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                 <Grid Grid.Column="0" ColumnDefinitions="Auto,*" ColumnSpacing="8" VerticalAlignment="Center">
                   <PathIcon Grid.Column="0" Data="{StaticResource CheckListIconData}" Width="16" Height="16" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
-                  <TextBlock Grid.Column="1" Text="Milestones" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                  <TextBlock Grid.Column="1" Text="{loc:Localize Goals_Milestones}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                 </Grid>
 
                 <!-- Secondary Tier Action: ✨ AI Suggest Steps -->
@@ -396,7 +397,7 @@
                         ToolTip.Tip="Automatically decompose this goal into sequential milestone steps">
                   <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
                     <PathIcon Data="{StaticResource SparkleIconData}" Width="11" Height="11" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                    <TextBlock Text="AI Suggest" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                    <TextBlock Text="{loc:Localize Goals_AiSuggest}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}"/>
                   </StackPanel>
                 </Button>
               </Grid>
@@ -410,7 +411,7 @@
                 <TextBox Grid.Column="0"
                          Text="{Binding NewMilestoneTitle}"
                          Classes="styled"
-                         PlaceholderText="Add next step or milestone..."
+                         PlaceholderText="{loc:Localize Goals_AddMilestonePlaceholder}"
                          Padding="12,8"
                          MinHeight="36"
                          MaxLength="100"
@@ -429,7 +430,7 @@
                         Height="36"
                         Padding="14,0"
                         VerticalAlignment="Center">
-                  <TextBlock Text="Add Step" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                  <TextBlock Text="{loc:Localize Goals_AddStep}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                 </Button>
               </Grid>
 
@@ -619,8 +620,8 @@
               IsVisible="{Binding !HasSelectedGoal}">
         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8" Margin="24">
           <PathIcon Data="{StaticResource TargetIconData}" Width="44" Height="44" Foreground="{DynamicResource AppPrimaryBrush}" Opacity="0.85" HorizontalAlignment="Center" Margin="0,0,0,4"/>
-          <TextBlock Text="Select a Life Goal" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}" TextAlignment="Center" HorizontalAlignment="Center"/>
-          <TextBlock Text="Choose a goal from the left to view milestones and journal timeline."
+          <TextBlock Text="{loc:Localize Goals_SelectGoal}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}" TextAlignment="Center" HorizontalAlignment="Center"/>
+          <TextBlock Text="{loc:Localize Goals_SelectGoal_Desc}"
                      FontSize="12"
                      TextWrapping="Wrap"
                      TextAlignment="Center"
@@ -1257,8 +1258,8 @@
                   Background="{DynamicResource AppSurfaceSubtleBrush}"
                   CornerRadius="0,0,16,16">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
-              <Button Command="{Binding CancelCreateGoalCommand}" Classes="btn-text" Content="Cancel" MinHeight="38" Padding="16,0"/>
-              <Button Command="{Binding SaveNewGoalCommand}" Classes="btn-primary" Content="Create Goal" Height="38" Padding="20,0"/>
+              <Button Command="{Binding CancelCreateGoalCommand}" Classes="btn-text" Content="{loc:Localize Common_Cancel}" MinHeight="38" Padding="16,0"/>
+              <Button Command="{Binding SaveNewGoalCommand}" Classes="btn-primary" Content="{loc:Localize Goals_CreateGoal}" Height="38" Padding="20,0"/>
             </StackPanel>
           </Border>
         </Grid>

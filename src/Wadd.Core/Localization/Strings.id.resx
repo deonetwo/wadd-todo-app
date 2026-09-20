@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- App & Navigation -->
+  <data name="App_Title" xml:space="preserve"><value>Wadd</value></data>
+  <data name="Nav_Tasks" xml:space="preserve"><value>Tugas</value></data>
+  <data name="Nav_Calendar" xml:space="preserve"><value>Kalender</value></data>
+  <data name="Nav_Goals" xml:space="preserve"><value>Target</value></data>
+  <data name="Nav_Search" xml:space="preserve"><value>Cari</value></data>
+  <data name="Nav_Settings" xml:space="preserve"><value>Pengaturan</value></data>
+  <data name="Nav_CompletedTasks" xml:space="preserve"><value>Tugas Selesai</value></data>
+  <data name="Nav_RecurringTasks" xml:space="preserve"><value>Tugas Berulang</value></data>
+  <data name="Nav_TagsManagement" xml:space="preserve"><value>Kelola Tag</value></data>
+  <data name="Nav_ConflictCenter" xml:space="preserve"><value>Pusat Konflik</value></data>
+
+  <!-- Common Actions -->
+  <data name="Common_Add" xml:space="preserve"><value>Tambah</value></data>
+  <data name="Common_Save" xml:space="preserve"><value>Simpan</value></data>
+  <data name="Common_Cancel" xml:space="preserve"><value>Batal</value></data>
+  <data name="Common_Delete" xml:space="preserve"><value>Hapus</value></data>
+  <data name="Common_Edit" xml:space="preserve"><value>Ubah</value></data>
+  <data name="Common_Done" xml:space="preserve"><value>Selesai</value></data>
+  <data name="Common_Close" xml:space="preserve"><value>Tutup</value></data>
+  <data name="Common_Search" xml:space="preserve"><value>Cari...</value></data>
+  <data name="Common_Filter" xml:space="preserve"><value>Filter</value></data>
+  <data name="Common_All" xml:space="preserve"><value>Semua</value></data>
+  <data name="Common_Today" xml:space="preserve"><value>Hari Ini</value></data>
+  <data name="Common_Tomorrow" xml:space="preserve"><value>Besok</value></data>
+  <data name="Common_Upcoming" xml:space="preserve"><value>Mendatang</value></data>
+  <data name="Common_Overdue" xml:space="preserve"><value>Terlambat</value></data>
+  <data name="Common_NoDueDate" xml:space="preserve"><value>Tanpa Tenggat</value></data>
+  <data name="Common_Loading" xml:space="preserve"><value>Memuat...</value></data>
+  <data name="Common_Retry" xml:space="preserve"><value>Coba Lagi</value></data>
+  <data name="Common_Confirm" xml:space="preserve"><value>Konfirmasi</value></data>
+  <data name="Common_Back" xml:space="preserve"><value>Kembali</value></data>
+
+  <!-- Tasks View & Details -->
+  <data name="Tasks_QuickAddPlaceholder" xml:space="preserve"><value>Tambah tugas... (contoh: Rapat besok jam 2 siang)</value></data>
+  <data name="Tasks_EmptyTitle" xml:space="preserve"><value>Tidak ada tugas</value></data>
+  <data name="Tasks_EmptySubtitle" xml:space="preserve"><value>Semua tugas selesai! Selamat beristirahat.</value></data>
+  <data name="Tasks_Title" xml:space="preserve"><value>Judul</value></data>
+  <data name="Tasks_Description" xml:space="preserve"><value>Deskripsi</value></data>
+  <data name="Tasks_DueDate" xml:space="preserve"><value>Tenggat Waktu</value></data>
+  <data name="Tasks_Reminder" xml:space="preserve"><value>Pengingat</value></data>
+  <data name="Tasks_Priority" xml:space="preserve"><value>Prioritas</value></data>
+  <data name="Tasks_Priority_Low" xml:space="preserve"><value>Rendah</value></data>
+  <data name="Tasks_Priority_Normal" xml:space="preserve"><value>Normal</value></data>
+  <data name="Tasks_Priority_High" xml:space="preserve"><value>Tinggi</value></data>
+  <data name="Tasks_Priority_Urgent" xml:space="preserve"><value>Mendesak</value></data>
+  <data name="Tasks_Layout_Standard" xml:space="preserve"><value>Daftar Standar</value></data>
+  <data name="Tasks_Layout_Compact" xml:space="preserve"><value>Daftar Ringkas</value></data>
+  <data name="Tasks_Layout_Cards" xml:space="preserve"><value>Tampilan Kartu</value></data>
+
+  <!-- Settings View Headers & Categories -->
+  <data name="Settings_Title" xml:space="preserve"><value>Pengaturan</value></data>
+  <data name="Settings_General" xml:space="preserve"><value>UMUM &amp; TAMPILAN</value></data>
+  <data name="Settings_TasksLayout" xml:space="preserve"><value>Tata Letak Daftar Tugas</value></data>
+  <data name="Settings_TasksLayout_Desc" xml:space="preserve"><value>Pilih bagaimana tugas Anda ditampilkan pada daftar utama.</value></data>
+  <data name="Settings_UpcomingRange" xml:space="preserve"><value>Rentang Tugas Mendatang</value></data>
+  <data name="Settings_UpcomingRange_Desc" xml:space="preserve"><value>Berapa hari ke depan yang disertakan dalam tampilan mendatang.</value></data>
+  <data name="Settings_ShowNotePreviews" xml:space="preserve"><value>Tampilkan Pratinjau Catatan</value></data>
+  <data name="Settings_ShowNotePreviews_Desc" xml:space="preserve"><value>Tampilkan beberapa baris pertama catatan di bawah setiap tugas.</value></data>
+
+  <!-- Settings Notifications -->
+  <data name="Settings_Notifications" xml:space="preserve"><value>NOTIFIKASI &amp; PENGINGAT</value></data>
+  <data name="Settings_EnableNotifications" xml:space="preserve"><value>Aktifkan Notifikasi</value></data>
+  <data name="Settings_EnableNotifications_Desc" xml:space="preserve"><value>Izinkan Wadd mengirim pemberitahuan untuk pengingat, tenggat waktu, dan tugas terlambat.</value></data>
+  <data name="Settings_TaskReminders" xml:space="preserve"><value>Pengingat Tugas</value></data>
+  <data name="Settings_TaskReminders_Desc" xml:space="preserve"><value>Kirim pemberitahuan saat waktu pengingat tugas terjadwal tiba.</value></data>
+  <data name="Settings_DueDates" xml:space="preserve"><value>Peringatan Tenggat Waktu</value></data>
+  <data name="Settings_DueDates_Desc" xml:space="preserve"><value>Kirim pemberitahuan pada hari tugas jatuh tempo.</value></data>
+  <data name="Settings_Overdue" xml:space="preserve"><value>Peringatan Tugas Terlambat</value></data>
+  <data name="Settings_Overdue_Desc" xml:space="preserve"><value>Peringatkan tentang tugas yang belum selesai melewati tenggat waktu.</value></data>
+  <data name="Settings_LeadTime" xml:space="preserve"><value>Pemberitahuan Lebih Awal</value></data>
+  <data name="Settings_LeadTime_Desc" xml:space="preserve"><value>Berapa lama sebelum pengingat atau tenggat waktu untuk mengirim peringatan.</value></data>
+  <data name="Settings_RepeatInterval" xml:space="preserve"><value>Interval Pengulangan Notifikasi</value></data>
+  <data name="Settings_RepeatInterval_Desc" xml:space="preserve"><value>Ulangi notifikasi hingga tugas diselesaikan atau ditutup.</value></data>
+  <data name="Settings_NotificationSound" xml:space="preserve"><value>Suara Notifikasi</value></data>
+  <data name="Settings_NotificationSound_Desc" xml:space="preserve"><value>Putar nada dering saat pemberitahuan atau pengingat tiba.</value></data>
+  <data name="Settings_TaskCompletionSound" xml:space="preserve"><value>Suara Penyelesaian Tugas</value></data>
+  <data name="Settings_TaskCompletionSound_Desc" xml:space="preserve"><value>Putar suara saat tugas, tahapan, atau target diselesaikan.</value></data>
+  <data name="Settings_AndroidVibration" xml:space="preserve"><value>Getar Saat Pemberitahuan</value></data>
+  <data name="Settings_AndroidVibration_Desc" xml:space="preserve"><value>Getarkan perangkat saat notifikasi tiba.</value></data>
+  <data name="Settings_AndroidBanners" xml:space="preserve"><value>Spanduk Notifikasi (Pop-up)</value></data>
+  <data name="Settings_AndroidBanners_Desc" xml:space="preserve"><value>Tampilkan spanduk notifikasi di atas aplikasi lain.</value></data>
+  <data name="Settings_AndroidSticky" xml:space="preserve"><value>Sematkan di Bilah Notifikasi</value></data>
+  <data name="Settings_AndroidSticky_Desc" xml:space="preserve"><value>Tetap sematkan pengingat di bilah notifikasi sampai dihapus.</value></data>
+  <data name="Settings_SendTestNotification" xml:space="preserve"><value>Kirim Notifikasi Uji Coba</value></data>
+
+  <!-- Settings Appearance & Language -->
+  <data name="Settings_Appearance" xml:space="preserve"><value>TAMPILAN &amp; TEMA</value></data>
+  <data name="Settings_Theme" xml:space="preserve"><value>Tema Warna</value></data>
+  <data name="Settings_Theme_Desc" xml:space="preserve"><value>Pilih tampilan tema terang, gelap, atau ikuti sistem.</value></data>
+  <data name="Settings_Theme_Light" xml:space="preserve"><value>Mode Terang</value></data>
+  <data name="Settings_Theme_Dark" xml:space="preserve"><value>Mode Gelap</value></data>
+  <data name="Settings_Theme_System" xml:space="preserve"><value>Ikuti Sistem</value></data>
+  <data name="Settings_Language" xml:space="preserve"><value>Bahasa / Language</value></data>
+  <data name="Settings_Language_Desc" xml:space="preserve"><value>Pilih bahasa tampilan aplikasi.</value></data>
+  <data name="Settings_Language_System" xml:space="preserve"><value>Default Sistem</value></data>
+  <data name="Settings_Language_English" xml:space="preserve"><value>English</value></data>
+  <data name="Settings_Language_Indonesian" xml:space="preserve"><value>Bahasa Indonesia</value></data>
+
+  <!-- Settings Desktop & System Tray -->
+  <data name="Settings_DesktopStartup" xml:space="preserve"><value>DESKTOP &amp; TRAY SISTEM</value></data>
+  <data name="Settings_AutoStart" xml:space="preserve"><value>Jalankan Wadd Saat Komputer Menyala</value></data>
+  <data name="Settings_AutoStart_Desc" xml:space="preserve"><value>Otomatis jalankan Wadd saat Anda masuk ke komputer.</value></data>
+  <data name="Settings_StartMinimized" xml:space="preserve"><value>Mulai Dalam Keadaan Diminimalkan</value></data>
+  <data name="Settings_StartMinimized_Desc" xml:space="preserve"><value>Jalankan Wadd di latar belakang tanpa membuka jendela utama.</value></data>
+  <data name="Settings_MinimizeToTray" xml:space="preserve"><value>Minimalkan ke System Tray</value></data>
+  <data name="Settings_MinimizeToTray_Desc" xml:space="preserve"><value>Sembunyikan Wadd di area notifikasi bilah tugas saat diminimalkan.</value></data>
+  <data name="Settings_CloseToTray" xml:space="preserve"><value>Tombol Tutup Meminimalkan ke Tray</value></data>
+  <data name="Settings_CloseToTray_Desc" xml:space="preserve"><value>Mengklik tombol tutup (X) akan menyembunyikan Wadd alih-alih keluar.</value></data>
+
+  <!-- Settings Cloud Sync & AI -->
+  <data name="Settings_CloudSync" xml:space="preserve"><value>SINKRONISASI CLOUD &amp; CADANGAN</value></data>
+  <data name="Settings_GoogleDriveSync" xml:space="preserve"><value>Sinkronisasi Google Drive</value></data>
+  <data name="Settings_GoogleDriveSync_Desc" xml:space="preserve"><value>Sinkronkan tugas, target, dan pengaturan antar perangkat melalui Google Drive pribadi.</value></data>
+  <data name="Settings_SignIn" xml:space="preserve"><value>Masuk dengan Google</value></data>
+  <data name="Settings_SignOut" xml:space="preserve"><value>Keluar</value></data>
+  <data name="Settings_SyncNow" xml:space="preserve"><value>Sinkronkan Sekarang</value></data>
+  <data name="Settings_AiAssistant" xml:space="preserve"><value>ASISTEN &amp; PELATIH AI</value></data>
+  <data name="Settings_AiProvider" xml:space="preserve"><value>Penyedia AI</value></data>
+  <data name="Settings_AiApiKey" xml:space="preserve"><value>Kunci API</value></data>
+  <data name="Settings_Diagnostics" xml:space="preserve"><value>DIAGNOSTIK &amp; LOG SISTEM</value></data>
+  <data name="Settings_ViewLogs" xml:space="preserve"><value>Lihat Log</value></data>
+  <data name="Settings_About" xml:space="preserve"><value>Tentang Wadd</value></data>
+  <data name="Settings_Version" xml:space="preserve"><value>Versi</value></data>
+
+  <!-- Settings Header & Cloud Sync Extra -->
+  <data name="Settings_Subtitle" xml:space="preserve"><value>Kelola sinkronisasi cloud, pengingat, tampilan, dan preferensi aplikasi.</value></data>
+  <data name="Settings_GoogleDriveSync_SubDesc" xml:space="preserve"><value>Tugas Anda dicadangkan dengan aman ke Google Drive pribadi.</value></data>
+  <data name="Settings_Connected" xml:space="preserve"><value>Terhubung</value></data>
+  <data name="Settings_SyncNow_Button" xml:space="preserve"><value>Sinkronkan Sekarang dengan Google Drive</value></data>
+
+  <!-- Settings Notifications Extra -->
+  <data name="Settings_TaskAlerts_Heading" xml:space="preserve"><value>Pemberitahuan &amp; Jadwal Tugas</value></data>
+  <data name="Settings_TaskAlerts_Subtitle" xml:space="preserve"><value>Dapatkan pengingat bermanfaat agar Anda tidak melewatkan tugas atau tenggat waktu penting.</value></data>
+  <data name="Settings_AllowNotifications" xml:space="preserve"><value>Izinkan Notifikasi</value></data>
+  <data name="Settings_AllowNotifications_Desc" xml:space="preserve"><value>Terima pengingat pop-up dan pemberitahuan untuk tugas Anda.</value></data>
+  <data name="Settings_RemindAtSetTime" xml:space="preserve"><value>Ingatkan Sesuai Waktu</value></data>
+  <data name="Settings_RemindAtSetTime_Desc" xml:space="preserve"><value>Beri tahu saat waktu pengingat tugas telah tiba.</value></data>
+  <data name="Settings_MissedOverdue" xml:space="preserve"><value>Tugas Terlewat &amp; Lewat Waktu</value></data>
+  <data name="Settings_MissedOverdue_Desc" xml:space="preserve"><value>Beri tahu jika ada tugas yang melewati jadwal pengingat atau tenggat waktu.</value></data>
+  <data name="Settings_TasksDueToday" xml:space="preserve"><value>Tugas Jatuh Tempo Hari Ini</value></data>
+  <data name="Settings_TasksDueToday_Desc" xml:space="preserve"><value>Dapatkan pengingat untuk tugas-tugas yang dijadwalkan hari ini.</value></data>
+  <data name="Settings_RepeatUntilCompleted" xml:space="preserve"><value>Ulangi Sampai Selesai</value></data>
+  <data name="Settings_RepeatUntilCompleted_Desc" xml:space="preserve"><value>Seberapa sering mengingatkan jika tugas aktif belum diselesaikan.</value></data>
+
+  <!-- Settings Appearance Extra -->
+  <data name="Settings_ActiveThemeMode" xml:space="preserve"><value>Mode aktif:</value></data>
+
+  <!-- Settings Desktop Extra -->
+  <data name="Settings_DesktopStartup_Heading" xml:space="preserve"><value>Integrasi Windows &amp; System Tray</value></data>
+  <data name="Settings_DesktopStartup_Subtitle" xml:space="preserve"><value>Konfigurasikan mulai otomatis dan perilaku system tray latar belakang di Windows.</value></data>
+  <data name="Settings_ShowTrayIcon" xml:space="preserve"><value>Tampilkan Ikon System Tray</value></data>
+  <data name="Settings_ShowTrayIcon_Desc" xml:space="preserve"><value>Tampilkan ikon di area notifikasi taskbar Windows untuk akses cepat.</value></data>
+
+  <!-- Settings AI Extra -->
+  <data name="Settings_AiEngine" xml:space="preserve"><value>Mesin AI Target Hidup</value></data>
+  <data name="Settings_AiEngine_Desc" xml:space="preserve"><value>Wadd dilengkapi kecerdasan heuristik offline bawaan untuk Target Hidup. Anda juga dapat menghubungkan Google Gemini, OpenAI, Groq, DeepSeek, atau endpoint AI lokal untuk respon generatif langsung.</value></data>
+  <data name="Settings_TestAiConnection" xml:space="preserve"><value>Uji Koneksi API</value></data>
+  <data name="Settings_TestingAiConnection" xml:space="preserve"><value>Menguji Koneksi...</value></data>
+  <data name="Settings_AiOfflineNote" xml:space="preserve"><value>Mesin Offline Siap Pakai: Jika tidak ada kunci API atau sedang offline, Wadd otomatis menggunakan templat dekomposisi heuristik bawaan tanpa mengirim data apa pun ke internet.</value></data>
+
+  <!-- Settings Data Management & Diagnostics Extra -->
+  <data name="Settings_DataManagement" xml:space="preserve"><value>MANAJEMEN DATA</value></data>
+  <data name="Settings_ExportExcel" xml:space="preserve"><value>Ekspor ke Excel</value></data>
+  <data name="Settings_ExportExcel_Desc" xml:space="preserve"><value>Ekspor semua tugas, tenggat waktu, dan prioritas ke file Excel (.xlsx).</value></data>
+  <data name="Settings_ExportExcel_Button" xml:space="preserve"><value>Ekspor Tugas ke Excel</value></data>
+  <data name="Settings_Diagnostics_Heading" xml:space="preserve"><value>Log &amp; Penelusuran Aplikasi</value></data>
+  <data name="Settings_Diagnostics_Desc" xml:space="preserve"><value>Lihat dan ekspor log diagnostik untuk pemecahan masalah.</value></data>
+  <data name="Settings_LogLocation" xml:space="preserve"><value>Lokasi File Log</value></data>
+  <data name="Settings_CopyLogs" xml:space="preserve"><value>Salin Log Terbaru</value></data>
+  <data name="Settings_OpenLogsFolder" xml:space="preserve"><value>Buka Folder Log</value></data>
+  <data name="Settings_ClearLogs" xml:space="preserve"><value>Bersihkan Buffer Terbaru</value></data>
+  <data name="Settings_About_App" xml:space="preserve"><value>TENTANG APLIKASI</value></data>
+  <data name="Settings_Developer" xml:space="preserve"><value>Pengembang:</value></data>
+  <data name="Settings_Platforms" xml:space="preserve"><value>Platform:</value></data>
+  <data name="Settings_Copyright" xml:space="preserve"><value>Hak Cipta:</value></data>
+
+  <!-- Dynamic Option Descriptions -->
+  <data name="Tasks_Layout_Standard_Desc" xml:space="preserve"><value>Menampilkan tugas Hari Ini, Selesai Hari Ini, dan Mendatang</value></data>
+  <data name="Tasks_Layout_Focus" xml:space="preserve"><value>Fokus (Hari Ini → Mendatang → Selesai)</value></data>
+  <data name="Tasks_Layout_Focus_Desc" xml:space="preserve"><value>Menampilkan Hari Ini, Mendatang, dan tugas Selesai di bagian bawah</value></data>
+  <data name="Tasks_Layout_CompletedFirst" xml:space="preserve"><value>Catatan Awal (Selesai → Hari Ini → Mendatang)</value></data>
+  <data name="Tasks_Layout_CompletedFirst_Desc" xml:space="preserve"><value>Menampilkan Selesai Hari Ini di atas, lalu Hari Ini dan Mendatang</value></data>
+  <data name="Tasks_Layout_TodayCompletedOnly" xml:space="preserve"><value>Hanya Hari Ini &amp; Selesai</value></data>
+  <data name="Tasks_Layout_TodayCompletedOnly_Desc" xml:space="preserve"><value>Menampilkan tugas Hari Ini dan Selesai Hari Ini (Sembunyikan Mendatang)</value></data>
+  <data name="Tasks_Layout_TodayUpcomingOnly" xml:space="preserve"><value>Hanya Hari Ini &amp; Mendatang</value></data>
+  <data name="Tasks_Layout_TodayUpcomingOnly_Desc" xml:space="preserve"><value>Menampilkan tugas Hari Ini dan Mendatang (Sembunyikan Selesai)</value></data>
+
+  <data name="Tasks_Upcoming_Tomorrow" xml:space="preserve"><value>Hanya Besok</value></data>
+  <data name="Tasks_Upcoming_Tomorrow_Desc" xml:space="preserve"><value>Tugas terjadwal jatuh tempo besok</value></data>
+  <data name="Tasks_Upcoming_3Days" xml:space="preserve"><value>3 Hari Ke Depan</value></data>
+  <data name="Tasks_Upcoming_3Days_Desc" xml:space="preserve"><value>Tugas terjadwal dalam 3 hari ke depan</value></data>
+  <data name="Tasks_Upcoming_7Days" xml:space="preserve"><value>7 Hari Ke Depan</value></data>
+  <data name="Tasks_Upcoming_7Days_Desc" xml:space="preserve"><value>Tugas terjadwal dalam 7 hari ke depan</value></data>
+  <data name="Tasks_Upcoming_14Days" xml:space="preserve"><value>14 Hari Ke Depan</value></data>
+  <data name="Tasks_Upcoming_14Days_Desc" xml:space="preserve"><value>Tugas terjadwal dalam 14 hari ke depan</value></data>
+  <data name="Tasks_Upcoming_Month" xml:space="preserve"><value>Bulan Ini</value></data>
+  <data name="Tasks_Upcoming_Month_Desc" xml:space="preserve"><value>Tugas terjadwal jatuh tempo hingga akhir bulan ini</value></data>
+  <data name="Tasks_Upcoming_All" xml:space="preserve"><value>Semua Mendatang</value></data>
+  <data name="Tasks_Upcoming_All_Desc" xml:space="preserve"><value>Semua tugas masa depan tanpa batas tanggal</value></data>
+
+  <!-- Missing Settings & Views Localization Keys -->
+  <data name="Settings_RemindInAdvance" xml:space="preserve"><value>Ingatkan Sebelumnya</value></data>
+  <data name="Settings_RemindInAdvance_Desc" xml:space="preserve"><value>Seberapa awal Anda ingin diingatkan sebelum waktu tugas yang dijadwalkan.</value></data>
+  <data name="Settings_ThemeLayout_Heading" xml:space="preserve"><value>Tema &amp; Tata Letak Antarmuka</value></data>
+  <data name="Settings_ThemeLayout_Subtitle" xml:space="preserve"><value>Pilih tema warna, tata letak, dan preferensi tampilan tugas.</value></data>
+  <data name="Settings_TasksLayoutMode" xml:space="preserve"><value>Tata Letak Tugas Saya</value></data>
+  <data name="Settings_TasksLayoutMode_Desc" xml:space="preserve"><value>Pilih bagian mana yang muncul dan bagaimana urutannya pada Tugas Saya.</value></data>
+  <data name="Settings_UpcomingTasksScope" xml:space="preserve"><value>Cakupan Tugas Mendatang</value></data>
+  <data name="Settings_UpcomingTasksScope_Desc" xml:space="preserve"><value>Saring tugas terjadwal yang muncul di bagian Mendatang (mis. besok saja, minggu ini, bulan ini).</value></data>
+  <data name="Settings_AiCustomEndpoint" xml:space="preserve"><value>URL Dasar Endpoint Kustom</value></data>
+  <data name="Settings_AiCustomEndpoint_Desc" xml:space="preserve"><value>URL dasar untuk server kompatibel OpenAI Anda (mis. Ollama, LM Studio, vLLM).</value></data>
+  <data name="Settings_AiModel" xml:space="preserve"><value>Model AI</value></data>
+  <data name="Settings_AiLoadingModels" xml:space="preserve"><value>Memuat model...</value></data>
+  <data name="Settings_AiRefreshModels" xml:space="preserve"><value>Perbarui Model</value></data>
+  <data name="Settings_AiDiscoveredNote" xml:space="preserve"><value>Model otomatis terdeteksi dari API penyedia saat kunci API dimasukkan.</value></data>
+  <data name="Settings_SelectAiModel" xml:space="preserve"><value>Pilih Model AI</value></data>
+  <data name="Settings_AiSearchModels_Placeholder" xml:space="preserve"><value>Cari model (mis. claude, gpt, deepseek, llama)...</value></data>
+  <data name="Settings_AiChooseModel_Desc" xml:space="preserve"><value>Pilih model untuk Penjabaran Sasaran AI</value></data>
+  <data name="Common_Recommended" xml:space="preserve"><value>DIREKOMENDASIKAN</value></data>
+  <data name="Common_Clear" xml:space="preserve"><value>Bersihkan</value></data>
+  <data name="Tasks_MyTasks" xml:space="preserve"><value>Tugas Saya</value></data>
+  <data name="Main_StorageAndSync" xml:space="preserve"><value>PENYIMPANAN &amp; SINKRONISASI</value></data>
+  <data name="Main_SavedOnDevice" xml:space="preserve"><value>Tersimpan di Perangkat</value></data>
+  <data name="Main_SyncCloud" xml:space="preserve"><value>Sinkronkan Cloud</value></data>
+  <data name="Main_Syncing" xml:space="preserve"><value>Menyinkronkan...</value></data>
+  <data name="Main_SwitchDarkMode" xml:space="preserve"><value>Beralih ke Mode Gelap</value></data>
+  <data name="Main_SwitchLightMode" xml:space="preserve"><value>Beralih ke Mode Terang</value></data>
+  <data name="Tasks_TodayTasks" xml:space="preserve"><value>TUGAS HARI INI</value></data>
+  <data name="Tasks_CompletedToday" xml:space="preserve"><value>SELESAI HARI INI</value></data>
+  <data name="Tasks_UpcomingTasks" xml:space="preserve"><value>TUGAS MENDATANG</value></data>
+  <data name="Tasks_NoTasksYet" xml:space="preserve"><value>Belum ada tugas</value></data>
+  <data name="Tasks_NoTasksPrompt" xml:space="preserve"><value>Ketik sesuatu di atas lalu tekan Tambah tugas.</value></data>
+  <data name="Tasks_ComposerPlaceholder" xml:space="preserve"><value>Apa yang perlu Anda lakukan?</value></data>
+  <data name="Tasks_FilterByTag" xml:space="preserve"><value>Filter tugas berdasarkan Tag</value></data>
+  <data name="Tasks_ManageTags" xml:space="preserve"><value>Kelola Tag...</value></data>
+  <data name="Tasks_ExportToExcel" xml:space="preserve"><value>Ekspor tugas ke Excel</value></data>
+  <data name="Tasks_Export" xml:space="preserve"><value>Ekspor</value></data>
+  <data name="Tasks_NoUpcomingTasks" xml:space="preserve"><value>Tidak ada tugas mendatang yang dijadwalkan untuk periode ini.</value></data>
+  <data name="Tasks_ViewFullCalendar" xml:space="preserve"><value>Lihat Kalender &amp; Garis Waktu Lengkap</value></data>
+  <data name="Tasks_ViewFullCalendar_Desc" xml:space="preserve"><value>Jelajahi semua tenggat waktu mendatang dan kebiasaan berulang pada kisi kalender</value></data>
+  <data name="Tasks_ViewAllRecurring" xml:space="preserve"><value>Lihat Semua Tugas Berulang</value></data>
+  <data name="Tasks_ViewAllRecurring_Desc" xml:space="preserve"><value>Kelola semua pola tugas berulang dan kebiasaan</value></data>
+  <data name="Tasks_AddTask" xml:space="preserve"><value>Tambah tugas</value></data>
+  <data name="Goals_Title" xml:space="preserve"><value>Target Hidup &amp; Jurnal Refleksi</value></data>
+  <data name="Goals_Description" xml:space="preserve"><value>Atur sasaran visi jangka panjang, daftar pencapaian, dan catatan jurnal harian.</value></data>
+  <data name="Goals_NewGoal" xml:space="preserve"><value>Target Hidup Baru</value></data>
+  <data name="Goals_Categories" xml:space="preserve"><value>KATEGORI</value></data>
+  <data name="Goals_OverallProgress" xml:space="preserve"><value>Progres Sasaran Keseluruhan</value></data>
+  <data name="Goals_Milestones" xml:space="preserve"><value>Pencapaian</value></data>
+  <data name="Goals_AddStep" xml:space="preserve"><value>Tambah Langkah</value></data>
+  <data name="Goals_AddMilestonePlaceholder" xml:space="preserve"><value>Tambah langkah atau pencapaian berikutnya...</value></data>
+  <data name="Goals_ReopenGoal" xml:space="preserve"><value>Buka Kembali Target</value></data>
+  <data name="Goals_MarkAchieved" xml:space="preserve"><value>Tandai Tercapai</value></data>
+  <data name="Goals_SelectGoal" xml:space="preserve"><value>Pilih Target Hidup</value></data>
+  <data name="Goals_SelectGoal_Desc" xml:space="preserve"><value>Pilih target dari sebelah kiri untuk melihat pencapaian dan linimasa jurnal.</value></data>
+  <data name="Goals_NoSteps" xml:space="preserve"><value>Belum ada langkah</value></data>
+  <data name="Goals_AiSuggest" xml:space="preserve"><value>Saran AI</value></data>
+  <data name="Goals_CreateGoal" xml:space="preserve"><value>Buat Target</value></data>
+  <data name="Goals_GoalTitle" xml:space="preserve"><value>Judul Target</value></data>
+  <data name="Goals_Category" xml:space="preserve"><value>Kategori</value></data>
+  <data name="Goals_TargetDate" xml:space="preserve"><value>Target Tanggal Selesai</value></data>
+  <data name="Goals_VisionDescription" xml:space="preserve"><value>Visi &amp; Deskripsi</value></data>
+</root>

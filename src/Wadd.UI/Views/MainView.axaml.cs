@@ -119,4 +119,10 @@ public partial class MainView : UserControl
         if (DataContext is MainViewModel vm)
             vm.CloseAiModelPickerCommand.Execute(null);
     }
+
+    private void OnLanguagePickerBackgroundPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.CloseLanguagePickerCommand.Execute(null);
+    }
 }

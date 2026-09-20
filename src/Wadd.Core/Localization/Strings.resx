@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- App & Navigation -->
+  <data name="App_Title" xml:space="preserve"><value>Wadd</value></data>
+  <data name="Nav_Tasks" xml:space="preserve"><value>Tasks</value></data>
+  <data name="Nav_Calendar" xml:space="preserve"><value>Calendar</value></data>
+  <data name="Nav_Goals" xml:space="preserve"><value>Goals</value></data>
+  <data name="Nav_Search" xml:space="preserve"><value>Search</value></data>
+  <data name="Nav_Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="Nav_CompletedTasks" xml:space="preserve"><value>Completed Tasks</value></data>
+  <data name="Nav_RecurringTasks" xml:space="preserve"><value>Recurring Tasks</value></data>
+  <data name="Nav_TagsManagement" xml:space="preserve"><value>Tags Management</value></data>
+  <data name="Nav_ConflictCenter" xml:space="preserve"><value>Conflict Center</value></data>
+
+  <!-- Common Actions -->
+  <data name="Common_Add" xml:space="preserve"><value>Add</value></data>
+  <data name="Common_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Common_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Common_Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Common_Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Common_Done" xml:space="preserve"><value>Done</value></data>
+  <data name="Common_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Common_Search" xml:space="preserve"><value>Search...</value></data>
+  <data name="Common_Filter" xml:space="preserve"><value>Filter</value></data>
+  <data name="Common_All" xml:space="preserve"><value>All</value></data>
+  <data name="Common_Today" xml:space="preserve"><value>Today</value></data>
+  <data name="Common_Tomorrow" xml:space="preserve"><value>Tomorrow</value></data>
+  <data name="Common_Upcoming" xml:space="preserve"><value>Upcoming</value></data>
+  <data name="Common_Overdue" xml:space="preserve"><value>Overdue</value></data>
+  <data name="Common_NoDueDate" xml:space="preserve"><value>No Due Date</value></data>
+  <data name="Common_Loading" xml:space="preserve"><value>Loading...</value></data>
+  <data name="Common_Retry" xml:space="preserve"><value>Retry</value></data>
+  <data name="Common_Confirm" xml:space="preserve"><value>Confirm</value></data>
+  <data name="Common_Back" xml:space="preserve"><value>Back</value></data>
+
+  <!-- Tasks View & Details -->
+  <data name="Tasks_QuickAddPlaceholder" xml:space="preserve"><value>Add a task... (e.g. Call John tomorrow at 2pm)</value></data>
+  <data name="Tasks_EmptyTitle" xml:space="preserve"><value>No tasks found</value></data>
+  <data name="Tasks_EmptySubtitle" xml:space="preserve"><value>You're all caught up! Enjoy your day.</value></data>
+  <data name="Tasks_Title" xml:space="preserve"><value>Title</value></data>
+  <data name="Tasks_Description" xml:space="preserve"><value>Description</value></data>
+  <data name="Tasks_DueDate" xml:space="preserve"><value>Due Date</value></data>
+  <data name="Tasks_Reminder" xml:space="preserve"><value>Reminder</value></data>
+  <data name="Tasks_Priority" xml:space="preserve"><value>Priority</value></data>
+  <data name="Tasks_Priority_Low" xml:space="preserve"><value>Low</value></data>
+  <data name="Tasks_Priority_Normal" xml:space="preserve"><value>Normal</value></data>
+  <data name="Tasks_Priority_High" xml:space="preserve"><value>High</value></data>
+  <data name="Tasks_Priority_Urgent" xml:space="preserve"><value>Urgent</value></data>
+  <data name="Tasks_Layout_Standard" xml:space="preserve"><value>Standard List</value></data>
+  <data name="Tasks_Layout_Compact" xml:space="preserve"><value>Compact List</value></data>
+  <data name="Tasks_Layout_Cards" xml:space="preserve"><value>Card Grid</value></data>
+
+  <!-- Settings View Headers & Categories -->
+  <data name="Settings_Title" xml:space="preserve"><value>Settings</value></data>
+  <data name="Settings_General" xml:space="preserve"><value>GENERAL &amp; LAYOUT</value></data>
+  <data name="Settings_TasksLayout" xml:space="preserve"><value>Task List Layout</value></data>
+  <data name="Settings_TasksLayout_Desc" xml:space="preserve"><value>Choose how your tasks are displayed in the main list.</value></data>
+  <data name="Settings_UpcomingRange" xml:space="preserve"><value>Upcoming Tasks Range</value></data>
+  <data name="Settings_UpcomingRange_Desc" xml:space="preserve"><value>Number of days ahead to include in the upcoming view.</value></data>
+  <data name="Settings_ShowNotePreviews" xml:space="preserve"><value>Show Note Previews</value></data>
+  <data name="Settings_ShowNotePreviews_Desc" xml:space="preserve"><value>Display the first few lines of notes beneath each task item.</value></data>
+
+  <!-- Settings Notifications -->
+  <data name="Settings_Notifications" xml:space="preserve"><value>NOTIFICATIONS &amp; REMINDERS</value></data>
+  <data name="Settings_EnableNotifications" xml:space="preserve"><value>Enable Notifications</value></data>
+  <data name="Settings_EnableNotifications_Desc" xml:space="preserve"><value>Allow Wadd to send alerts for task reminders, due dates, and overdue tasks.</value></data>
+  <data name="Settings_TaskReminders" xml:space="preserve"><value>Task Reminders</value></data>
+  <data name="Settings_TaskReminders_Desc" xml:space="preserve"><value>Send an alert when a scheduled task reminder is triggered.</value></data>
+  <data name="Settings_DueDates" xml:space="preserve"><value>Due Date Alerts</value></data>
+  <data name="Settings_DueDates_Desc" xml:space="preserve"><value>Send an alert on the day a task is due.</value></data>
+  <data name="Settings_Overdue" xml:space="preserve"><value>Overdue Alerts</value></data>
+  <data name="Settings_Overdue_Desc" xml:space="preserve"><value>Alert about unfinished tasks past their due date.</value></data>
+  <data name="Settings_LeadTime" xml:space="preserve"><value>Advance Notice</value></data>
+  <data name="Settings_LeadTime_Desc" xml:space="preserve"><value>How early to alert before a scheduled reminder or due date.</value></data>
+  <data name="Settings_RepeatInterval" xml:space="preserve"><value>Repeat Notification Interval</value></data>
+  <data name="Settings_RepeatInterval_Desc" xml:space="preserve"><value>Repeatedly notify until the task is completed or dismissed.</value></data>
+  <data name="Settings_NotificationSound" xml:space="preserve"><value>Notification Sound</value></data>
+  <data name="Settings_NotificationSound_Desc" xml:space="preserve"><value>Play a chime when an alert or reminder arrives.</value></data>
+  <data name="Settings_TaskCompletionSound" xml:space="preserve"><value>Task Completion Sound</value></data>
+  <data name="Settings_TaskCompletionSound_Desc" xml:space="preserve"><value>Play a sound when a task, milestone, or goal is completed.</value></data>
+  <data name="Settings_AndroidVibration" xml:space="preserve"><value>Vibrate on Alert</value></data>
+  <data name="Settings_AndroidVibration_Desc" xml:space="preserve"><value>Vibrate your device when a notification arrives.</value></data>
+  <data name="Settings_AndroidBanners" xml:space="preserve"><value>Pop-up Banners</value></data>
+  <data name="Settings_AndroidBanners_Desc" xml:space="preserve"><value>Show notification banners on top of running apps.</value></data>
+  <data name="Settings_AndroidSticky" xml:space="preserve"><value>Keep in Notification Drawer</value></data>
+  <data name="Settings_AndroidSticky_Desc" xml:space="preserve"><value>Keep reminders pinned in your notification bar until dismissed.</value></data>
+  <data name="Settings_SendTestNotification" xml:space="preserve"><value>Send Test Notification</value></data>
+
+  <!-- Settings Appearance & Language -->
+  <data name="Settings_Appearance" xml:space="preserve"><value>APPEARANCE &amp; DISPLAY</value></data>
+  <data name="Settings_Theme" xml:space="preserve"><value>Color Theme</value></data>
+  <data name="Settings_Theme_Desc" xml:space="preserve"><value>Select your preferred light, dark, or system theme appearance.</value></data>
+  <data name="Settings_Theme_Light" xml:space="preserve"><value>Light Mode</value></data>
+  <data name="Settings_Theme_Dark" xml:space="preserve"><value>Dark Mode</value></data>
+  <data name="Settings_Theme_System" xml:space="preserve"><value>Follow System</value></data>
+  <data name="Settings_Language" xml:space="preserve"><value>Language / Bahasa</value></data>
+  <data name="Settings_Language_Desc" xml:space="preserve"><value>Choose application display language.</value></data>
+  <data name="Settings_Language_System" xml:space="preserve"><value>System Default</value></data>
+  <data name="Settings_Language_English" xml:space="preserve"><value>English</value></data>
+  <data name="Settings_Language_Indonesian" xml:space="preserve"><value>Bahasa Indonesia</value></data>
+
+  <!-- Settings Desktop & System Tray -->
+  <data name="Settings_DesktopStartup" xml:space="preserve"><value>DESKTOP &amp; SYSTEM TRAY</value></data>
+  <data name="Settings_AutoStart" xml:space="preserve"><value>Start Wadd on System Boot</value></data>
+  <data name="Settings_AutoStart_Desc" xml:space="preserve"><value>Automatically launch Wadd when you log in to your computer.</value></data>
+  <data name="Settings_StartMinimized" xml:space="preserve"><value>Start Minimized</value></data>
+  <data name="Settings_StartMinimized_Desc" xml:space="preserve"><value>Launch Wadd in the background without opening the main window.</value></data>
+  <data name="Settings_MinimizeToTray" xml:space="preserve"><value>Minimize to System Tray</value></data>
+  <data name="Settings_MinimizeToTray_Desc" xml:space="preserve"><value>Hide Wadd in the taskbar notification area when minimized.</value></data>
+  <data name="Settings_CloseToTray" xml:space="preserve"><value>Close Button Minimizes to Tray</value></data>
+  <data name="Settings_CloseToTray_Desc" xml:space="preserve"><value>Clicking the window close (X) button hides Wadd instead of exiting.</value></data>
+
+  <!-- Settings Cloud Sync & AI -->
+  <data name="Settings_CloudSync" xml:space="preserve"><value>CLOUD SYNC &amp; BACKUP</value></data>
+  <data name="Settings_GoogleDriveSync" xml:space="preserve"><value>Google Drive Sync</value></data>
+  <data name="Settings_GoogleDriveSync_Desc" xml:space="preserve"><value>Sync your tasks, goals, and settings across your devices via private Google Drive storage.</value></data>
+  <data name="Settings_SignIn" xml:space="preserve"><value>Sign In with Google</value></data>
+  <data name="Settings_SignOut" xml:space="preserve"><value>Sign Out</value></data>
+  <data name="Settings_SyncNow" xml:space="preserve"><value>Sync Now</value></data>
+  <data name="Settings_AiAssistant" xml:space="preserve"><value>AI ASSISTANT &amp; COACHING</value></data>
+  <data name="Settings_AiProvider" xml:space="preserve"><value>AI Provider</value></data>
+  <data name="Settings_AiApiKey" xml:space="preserve"><value>API Key</value></data>
+  <data name="Settings_Diagnostics" xml:space="preserve"><value>DIAGNOSTICS &amp; SYSTEM LOGS</value></data>
+  <data name="Settings_ViewLogs" xml:space="preserve"><value>View Logs</value></data>
+  <data name="Settings_About" xml:space="preserve"><value>About Wadd</value></data>
+  <data name="Settings_Version" xml:space="preserve"><value>Version</value></data>
+
+  <!-- Settings Header & Cloud Sync Extra -->
+  <data name="Settings_Subtitle" xml:space="preserve"><value>Manage cloud synchronization, reminders, appearance, and application preferences.</value></data>
+  <data name="Settings_GoogleDriveSync_SubDesc" xml:space="preserve"><value>Your tasks are safely backed up to your personal Google Drive.</value></data>
+  <data name="Settings_Connected" xml:space="preserve"><value>Connected</value></data>
+  <data name="Settings_SyncNow_Button" xml:space="preserve"><value>Sync Now with Google Drive</value></data>
+
+  <!-- Settings Notifications Extra -->
+  <data name="Settings_TaskAlerts_Heading" xml:space="preserve"><value>Task Alerts &amp; Schedules</value></data>
+  <data name="Settings_TaskAlerts_Subtitle" xml:space="preserve"><value>Get helpful reminders so you never miss an important task or deadline.</value></data>
+  <data name="Settings_AllowNotifications" xml:space="preserve"><value>Allow Notifications</value></data>
+  <data name="Settings_AllowNotifications_Desc" xml:space="preserve"><value>Receive pop-up reminders and alerts for your tasks.</value></data>
+  <data name="Settings_RemindAtSetTime" xml:space="preserve"><value>Remind at Set Time</value></data>
+  <data name="Settings_RemindAtSetTime_Desc" xml:space="preserve"><value>Notify you when a task's reminder time arrives.</value></data>
+  <data name="Settings_MissedOverdue" xml:space="preserve"><value>Missed &amp; Overdue Tasks</value></data>
+  <data name="Settings_MissedOverdue_Desc" xml:space="preserve"><value>Notify you if you have tasks that passed their reminder or due date.</value></data>
+  <data name="Settings_TasksDueToday" xml:space="preserve"><value>Tasks Due Today</value></data>
+  <data name="Settings_TasksDueToday_Desc" xml:space="preserve"><value>Get a friendly reminder for tasks scheduled for today.</value></data>
+  <data name="Settings_RepeatUntilCompleted" xml:space="preserve"><value>Repeat Until Completed</value></data>
+  <data name="Settings_RepeatUntilCompleted_Desc" xml:space="preserve"><value>How often to remind you if an active task hasn't been finished yet.</value></data>
+
+  <!-- Settings Appearance Extra -->
+  <data name="Settings_ActiveThemeMode" xml:space="preserve"><value>Active mode:</value></data>
+
+  <!-- Settings Desktop Extra -->
+  <data name="Settings_DesktopStartup_Heading" xml:space="preserve"><value>Windows &amp; System Tray Integration</value></data>
+  <data name="Settings_DesktopStartup_Subtitle" xml:space="preserve"><value>Configure automatic startup and background system tray behavior on Windows.</value></data>
+  <data name="Settings_ShowTrayIcon" xml:space="preserve"><value>Show System Tray Icon</value></data>
+  <data name="Settings_ShowTrayIcon_Desc" xml:space="preserve"><value>Display an icon in the Windows taskbar notification area for quick access.</value></data>
+
+  <!-- Settings AI Extra -->
+  <data name="Settings_AiEngine" xml:space="preserve"><value>Life Goals AI Engine</value></data>
+  <data name="Settings_AiEngine_Desc" xml:space="preserve"><value>Wadd includes built-in offline smart heuristics for Life Goals. You can also connect Google Gemini, OpenAI, Groq, DeepSeek, or local AI endpoints for live generative responses.</value></data>
+  <data name="Settings_TestAiConnection" xml:space="preserve"><value>Test API Connection</value></data>
+  <data name="Settings_TestingAiConnection" xml:space="preserve"><value>Testing Connection...</value></data>
+  <data name="Settings_AiOfflineNote" xml:space="preserve"><value>Out-of-the-box Offline Engine: If no API key is provided or offline, Wadd automatically uses smart built-in heuristic decomposition templates without sending any data over the internet.</value></data>
+
+  <!-- Settings Data Management & Diagnostics Extra -->
+  <data name="Settings_DataManagement" xml:space="preserve"><value>DATA MANAGEMENT</value></data>
+  <data name="Settings_ExportExcel" xml:space="preserve"><value>Export To Excel</value></data>
+  <data name="Settings_ExportExcel_Desc" xml:space="preserve"><value>Export all your tasks, due dates, and priorities to an Excel (.xlsx) file.</value></data>
+  <data name="Settings_ExportExcel_Button" xml:space="preserve"><value>Export Tasks to Excel</value></data>
+  <data name="Settings_Diagnostics_Heading" xml:space="preserve"><value>Application Logs &amp; Tracing</value></data>
+  <data name="Settings_Diagnostics_Desc" xml:space="preserve"><value>View and export diagnostic logs for problem solving and troubleshooting.</value></data>
+  <data name="Settings_LogLocation" xml:space="preserve"><value>Log File Location</value></data>
+  <data name="Settings_CopyLogs" xml:space="preserve"><value>Copy Recent Logs</value></data>
+  <data name="Settings_OpenLogsFolder" xml:space="preserve"><value>Open Logs Folder</value></data>
+  <data name="Settings_ClearLogs" xml:space="preserve"><value>Clear Recent Buffer</value></data>
+  <data name="Settings_About_App" xml:space="preserve"><value>ABOUT APPLICATION</value></data>
+  <data name="Settings_Developer" xml:space="preserve"><value>Developer:</value></data>
+  <data name="Settings_Platforms" xml:space="preserve"><value>Platforms:</value></data>
+  <data name="Settings_Copyright" xml:space="preserve"><value>Copyright:</value></data>
+
+  <!-- Dynamic Option Descriptions -->
+  <data name="Tasks_Layout_Standard_Desc" xml:space="preserve"><value>Shows Today, Completed Today, and Upcoming tasks</value></data>
+  <data name="Tasks_Layout_Focus" xml:space="preserve"><value>Focus (Today → Upcoming → Completed)</value></data>
+  <data name="Tasks_Layout_Focus_Desc" xml:space="preserve"><value>Shows Today, Upcoming, and Completed tasks at bottom</value></data>
+  <data name="Tasks_Layout_CompletedFirst" xml:space="preserve"><value>Log First (Completed → Today → Upcoming)</value></data>
+  <data name="Tasks_Layout_CompletedFirst_Desc" xml:space="preserve"><value>Shows Completed Today at top, then Today and Upcoming</value></data>
+  <data name="Tasks_Layout_TodayCompletedOnly" xml:space="preserve"><value>Today &amp; Completed Only</value></data>
+  <data name="Tasks_Layout_TodayCompletedOnly_Desc" xml:space="preserve"><value>Shows Today Tasks and Completed Today (Hides Upcoming)</value></data>
+  <data name="Tasks_Layout_TodayUpcomingOnly" xml:space="preserve"><value>Today &amp; Upcoming Only</value></data>
+  <data name="Tasks_Layout_TodayUpcomingOnly_Desc" xml:space="preserve"><value>Shows Today Tasks and Upcoming Tasks (Hides Completed)</value></data>
+
+  <data name="Tasks_Upcoming_Tomorrow" xml:space="preserve"><value>Tomorrow Only</value></data>
+  <data name="Tasks_Upcoming_Tomorrow_Desc" xml:space="preserve"><value>Scheduled tasks due tomorrow</value></data>
+  <data name="Tasks_Upcoming_3Days" xml:space="preserve"><value>Next 3 Days</value></data>
+  <data name="Tasks_Upcoming_3Days_Desc" xml:space="preserve"><value>Scheduled tasks within the next 3 days</value></data>
+  <data name="Tasks_Upcoming_7Days" xml:space="preserve"><value>Next 7 Days</value></data>
+  <data name="Tasks_Upcoming_7Days_Desc" xml:space="preserve"><value>Scheduled tasks within the next 7 days</value></data>
+  <data name="Tasks_Upcoming_14Days" xml:space="preserve"><value>Next 14 Days</value></data>
+  <data name="Tasks_Upcoming_14Days_Desc" xml:space="preserve"><value>Scheduled tasks within the next 14 days</value></data>
+  <data name="Tasks_Upcoming_Month" xml:space="preserve"><value>This Month</value></data>
+  <data name="Tasks_Upcoming_Month_Desc" xml:space="preserve"><value>Scheduled tasks due through the end of the current month</value></data>
+  <data name="Tasks_Upcoming_All" xml:space="preserve"><value>All Upcoming</value></data>
+  <data name="Tasks_Upcoming_All_Desc" xml:space="preserve"><value>All future scheduled tasks without date limit</value></data>
+
+  <!-- Missing Settings & Views Localization Keys -->
+  <data name="Settings_RemindInAdvance" xml:space="preserve"><value>Remind in Advance</value></data>
+  <data name="Settings_RemindInAdvance_Desc" xml:space="preserve"><value>How early you'd like to be reminded before a scheduled task time.</value></data>
+  <data name="Settings_ThemeLayout_Heading" xml:space="preserve"><value>Interface Theme &amp; Layout</value></data>
+  <data name="Settings_ThemeLayout_Subtitle" xml:space="preserve"><value>Choose your preferred color theme, layout mode, and task display options.</value></data>
+  <data name="Settings_TasksLayoutMode" xml:space="preserve"><value>My Tasks Layout Mode</value></data>
+  <data name="Settings_TasksLayoutMode_Desc" xml:space="preserve"><value>Choose which sections appear and how they are arranged on My Tasks.</value></data>
+  <data name="Settings_UpcomingTasksScope" xml:space="preserve"><value>Upcoming Tasks Scope</value></data>
+  <data name="Settings_UpcomingTasksScope_Desc" xml:space="preserve"><value>Filter which scheduled tasks appear in the Upcoming Tasks section (e.g. tomorrow only, this week, this month).</value></data>
+  <data name="Settings_AiCustomEndpoint" xml:space="preserve"><value>Custom Endpoint Base URL</value></data>
+  <data name="Settings_AiCustomEndpoint_Desc" xml:space="preserve"><value>Base URL for your OpenAI-compatible server (e.g. Ollama, LM Studio, vLLM).</value></data>
+  <data name="Settings_AiModel" xml:space="preserve"><value>AI Model</value></data>
+  <data name="Settings_AiLoadingModels" xml:space="preserve"><value>Loading models...</value></data>
+  <data name="Settings_AiRefreshModels" xml:space="preserve"><value>Refresh Models</value></data>
+  <data name="Settings_AiDiscoveredNote" xml:space="preserve"><value>Models automatically discovered from provider API when API key is entered.</value></data>
+  <data name="Settings_SelectAiModel" xml:space="preserve"><value>Select AI Model</value></data>
+  <data name="Settings_AiSearchModels_Placeholder" xml:space="preserve"><value>Search models (e.g. claude, gpt, deepseek, llama)...</value></data>
+  <data name="Settings_AiChooseModel_Desc" xml:space="preserve"><value>Choose model for AI Goal Breakdown</value></data>
+  <data name="Common_Recommended" xml:space="preserve"><value>RECOMMENDED</value></data>
+  <data name="Common_Clear" xml:space="preserve"><value>Clear</value></data>
+  <data name="Tasks_MyTasks" xml:space="preserve"><value>My Tasks</value></data>
+  <data name="Main_StorageAndSync" xml:space="preserve"><value>STORAGE &amp; SYNC</value></data>
+  <data name="Main_SavedOnDevice" xml:space="preserve"><value>Saved on Device</value></data>
+  <data name="Main_SyncCloud" xml:space="preserve"><value>Sync Cloud</value></data>
+  <data name="Main_Syncing" xml:space="preserve"><value>Syncing...</value></data>
+  <data name="Main_SwitchDarkMode" xml:space="preserve"><value>Switch to Dark Mode</value></data>
+  <data name="Main_SwitchLightMode" xml:space="preserve"><value>Switch to Light Mode</value></data>
+  <data name="Tasks_TodayTasks" xml:space="preserve"><value>TODAY TASKS</value></data>
+  <data name="Tasks_CompletedToday" xml:space="preserve"><value>COMPLETED TODAY</value></data>
+  <data name="Tasks_UpcomingTasks" xml:space="preserve"><value>UPCOMING TASKS</value></data>
+  <data name="Tasks_NoTasksYet" xml:space="preserve"><value>No tasks yet</value></data>
+  <data name="Tasks_NoTasksPrompt" xml:space="preserve"><value>Type something above and press Add task.</value></data>
+  <data name="Tasks_ComposerPlaceholder" xml:space="preserve"><value>What do you need to do?</value></data>
+  <data name="Tasks_FilterByTag" xml:space="preserve"><value>Filter tasks by Tag</value></data>
+  <data name="Tasks_ManageTags" xml:space="preserve"><value>Manage Tags...</value></data>
+  <data name="Tasks_ExportToExcel" xml:space="preserve"><value>Export tasks to Excel</value></data>
+  <data name="Tasks_Export" xml:space="preserve"><value>Export</value></data>
+  <data name="Tasks_NoUpcomingTasks" xml:space="preserve"><value>No upcoming tasks scheduled for this period.</value></data>
+  <data name="Tasks_ViewFullCalendar" xml:space="preserve"><value>View Full Calendar &amp; Timeline</value></data>
+  <data name="Tasks_ViewFullCalendar_Desc" xml:space="preserve"><value>Explore all upcoming deadlines and recurring habits on the calendar grid</value></data>
+  <data name="Tasks_ViewAllRecurring" xml:space="preserve"><value>View All Recurring Tasks</value></data>
+  <data name="Tasks_ViewAllRecurring_Desc" xml:space="preserve"><value>Manage all repeating task patterns and habits</value></data>
+  <data name="Tasks_AddTask" xml:space="preserve"><value>Add task</value></data>
+  <data name="Goals_Title" xml:space="preserve"><value>Life Goals &amp; Reflection Journal</value></data>
+  <data name="Goals_Description" xml:space="preserve"><value>Organize long-term vision targets, milestone checklists, and daily reflective journal entries.</value></data>
+  <data name="Goals_NewGoal" xml:space="preserve"><value>New Life Goal</value></data>
+  <data name="Goals_Categories" xml:space="preserve"><value>CATEGORIES</value></data>
+  <data name="Goals_OverallProgress" xml:space="preserve"><value>Overall Goal Progress</value></data>
+  <data name="Goals_Milestones" xml:space="preserve"><value>Milestones</value></data>
+  <data name="Goals_AddStep" xml:space="preserve"><value>Add Step</value></data>
+  <data name="Goals_AddMilestonePlaceholder" xml:space="preserve"><value>Add next step or milestone...</value></data>
+  <data name="Goals_ReopenGoal" xml:space="preserve"><value>Reopen Goal</value></data>
+  <data name="Goals_MarkAchieved" xml:space="preserve"><value>Mark Achieved</value></data>
+  <data name="Goals_SelectGoal" xml:space="preserve"><value>Select a Life Goal</value></data>
+  <data name="Goals_SelectGoal_Desc" xml:space="preserve"><value>Choose a goal from the left to view milestones and journal timeline.</value></data>
+  <data name="Goals_NoSteps" xml:space="preserve"><value>No steps</value></data>
+  <data name="Goals_AiSuggest" xml:space="preserve"><value>AI Suggest</value></data>
+  <data name="Goals_CreateGoal" xml:space="preserve"><value>Create Goal</value></data>
+  <data name="Goals_GoalTitle" xml:space="preserve"><value>Goal Title</value></data>
+  <data name="Goals_Category" xml:space="preserve"><value>Category</value></data>
+  <data name="Goals_TargetDate" xml:space="preserve"><value>Target Completion Date</value></data>
+  <data name="Goals_VisionDescription" xml:space="preserve"><value>Vision &amp; Description</value></data>
+</root>
