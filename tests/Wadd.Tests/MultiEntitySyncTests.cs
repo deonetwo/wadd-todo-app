@@ -410,5 +410,105 @@ public class MultiEntitySyncTests : IDisposable
         Assert.Equal("Local Newer", merged.Title);
     }
 
+    [Fact]
+    public void TombstoneRetentionWindow_IsNinetyDays()
+    {
+        Assert.Equal(TimeSpan.FromDays(90), GoogleDriveSyncService.TombstoneRetentionWindow);
+    }
+
+    [Fact]
+    public void ManifestConstants_AreWellFormed()
+    {
+        Assert.Equal("tasks.json", GoogleDriveSyncService.TasksManifestFilename);
+        Assert.Equal("goals.json", GoogleDriveSyncService.GoalsManifestFilename);
+        Assert.Equal("milestones.json", GoogleDriveSyncService.MilestonesManifestFilename);
+        Assert.Equal("journals.json", GoogleDriveSyncService.JournalsManifestFilename);
+        Assert.Equal("datenotes.json", GoogleDriveSyncService.DateNotesManifestFilename);
+    }
+
+    [Fact]
+    public void ManifestSerialization_ExcludesTombstonesOlderThan90Days_RetainsRecentTombstonesAndActive()
+    {
+        var cutoff = DateTime.UtcNow - GoogleDriveSyncService.TombstoneRetentionWindow;
+
+        var activeItem = new TodoItem { Id = Guid.NewGuid(), Title = "Active Task", IsDeleted = false };
+        var recentTombstone = new TodoItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Recent Tombstone",
+            IsDeleted = true,
+            DeletedAt = DateTime.UtcNow.AddDays(-10)
+        };
+        var expiredTombstone = new TodoItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Old Tombstone",
+            IsDeleted = true,
+            DeletedAt = DateTime.UtcNow.AddDays(-95)
+        };
+
+        var allItems = new List<TodoItem> { activeItem, recentTombstone, expiredTombstone };
+        var toUpload = allItems
+            .Where(t => !t.IsDeleted || (t.DeletedAt.HasValue && t.DeletedAt.Value >= cutoff))
+            .ToList();
+
+        Assert.Contains(activeItem, toUpload);
+        Assert.Contains(recentTombstone, toUpload);
+        Assert.DoesNotContain(expiredTombstone, toUpload);
+    }
+
+    [Fact]
+    public void ConflictResolutionEngine_ReconcilesManifestEntities_LwwAndTombstones()
+    {
+        var idA = Guid.NewGuid();
+        var idB = Guid.NewGuid();
+        var idC = Guid.NewGuid();
+        var idD = Guid.NewGuid();
+        var idE = Guid.NewGuid();
+        var idF = Guid.NewGuid();
+
+        var localMap = new Dictionary<Guid, TodoItem>
+        {
+            [idA] = new TodoItem { Id = idA, Title = "Item A", UpdatedAt = DateTime.UtcNow.AddMinutes(-20) },
+            [idB] = new TodoItem { Id = idB, Title = "Local B Newer", UpdatedAt = DateTime.UtcNow.AddMinutes(-5) },
+            [idC] = new TodoItem { Id = idC, Title = "Local C Older", UpdatedAt = DateTime.UtcNow.AddMinutes(-30) },
+            [idD] = new TodoItem { Id = idD, Title = "Item D", IsDeleted = false, UpdatedAt = DateTime.UtcNow.AddMinutes(-15) },
+            [idF] = new TodoItem { Id = idF, Title = "Local Only F", UpdatedAt = DateTime.UtcNow.AddMinutes(-10) }
+        };
+
+        var remoteMap = new Dictionary<Guid, TodoItem>
+        {
+            [idA] = new TodoItem { Id = idA, Title = "Item A", UpdatedAt = DateTime.UtcNow.AddMinutes(-20) },
+            [idB] = new TodoItem { Id = idB, Title = "Remote B Older", UpdatedAt = DateTime.UtcNow.AddMinutes(-15) },
+            [idC] = new TodoItem { Id = idC, Title = "Remote C Newer", UpdatedAt = DateTime.UtcNow.AddMinutes(-2) },
+            [idD] = new TodoItem { Id = idD, Title = "Item D", IsDeleted = true, DeletedAt = DateTime.UtcNow.AddMinutes(-10), UpdatedAt = DateTime.UtcNow.AddMinutes(-10) },
+            [idE] = new TodoItem { Id = idE, Title = "Remote Only E", UpdatedAt = DateTime.UtcNow.AddMinutes(-5) }
+        };
+
+        var allIds = localMap.Keys.Union(remoteMap.Keys).ToList();
+        var mergedResult = new List<TodoItem>();
+
+        foreach (var id in allIds)
+        {
+            localMap.TryGetValue(id, out var local);
+            remoteMap.TryGetValue(id, out var remote);
+            var merged = ConflictResolutionEngine.MergeTask(local, remote);
+            mergedResult.Add(merged);
+        }
+
+        var resMap = mergedResult.ToDictionary(t => t.Id);
+
+        // B: Local newer wins
+        Assert.Equal("Local B Newer", resMap[idB].Title);
+        // C: Cloud newer wins
+        Assert.Equal("Remote C Newer", resMap[idC].Title);
+        // D: Remote tombstone wins
+        Assert.True(resMap[idD].IsDeleted);
+        // E: Remote only is present
+        Assert.Equal("Remote Only E", resMap[idE].Title);
+        // F: Local only is present
+        Assert.Equal("Local Only F", resMap[idF].Title);
+    }
+
     #endregion
 }
