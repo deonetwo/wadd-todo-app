@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Android.App;
 using Android.Content;
 using Android.Content.PM;
+using Android.Media;
 using Android.OS;
 using Wadd.Core.Helpers;
 using Wadd.Core.Interfaces;
@@ -15,9 +16,12 @@ namespace Wadd.Android;
 /// </summary>
 public class AndroidNotificationService : INotificationService
 {
-    private const string ChannelId = "wadd_task_reminders";
+    private const string ChannelId = "wadd_task_reminders_v2";
     private const string ChannelName = "Wadd Task Reminders";
     private const string ChannelDesc = "Task due dates and reminder alerts";
+
+    private const string SilentChannelId = "wadd_task_reminders_v2_silent";
+    private const string SilentChannelName = "Wadd Task Reminders (Silent)";
 
     public const int TasksSummaryNotificationId = NotificationTagHelper.TasksSummaryNotificationId;
     public static int GetNotificationId(string? tag) => NotificationTagHelper.GetNotificationId(tag);
@@ -97,17 +101,41 @@ public class AndroidNotificationService : INotificationService
                 return;
             }
 
+            var targetChannelId = settings.PlayNotificationSound ? ChannelId : SilentChannelId;
+            var targetChannelName = settings.PlayNotificationSound ? ChannelName : SilentChannelName;
+
             // Ensure notification channel exists (API 26+)
             if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
             {
+                try
+                {
+                    // Clean up legacy channel if it exists
+                    notificationManager.DeleteNotificationChannel("wadd_task_reminders");
+                }
+                catch { }
+
                 var importance = settings.AndroidHighPriorityChannel
                     ? NotificationImportance.High
                     : NotificationImportance.Default;
 
-                var channel = new NotificationChannel(ChannelId, ChannelName, importance)
+                var channel = new NotificationChannel(targetChannelId, targetChannelName, importance)
                 {
                     Description = ChannelDesc
                 };
+
+                if (settings.PlayNotificationSound)
+                {
+                    var soundUri = global::Android.Net.Uri.Parse($"{ContentResolver.SchemeAndroidResource}://{context.PackageName}/{Resource.Raw.notification}");
+                    var audioAttrs = new AudioAttributes.Builder()
+                        .SetUsage(AudioUsageKind.NotificationEvent)?
+                        .SetContentType(AudioContentType.Sonification)?
+                        .Build();
+                    channel.SetSound(soundUri, audioAttrs);
+                }
+                else
+                {
+                    channel.SetSound(null, null);
+                }
 
                 channel.EnableVibration(settings.AndroidVibration);
                 if (settings.AndroidVibration)
@@ -133,7 +161,7 @@ public class AndroidNotificationService : INotificationService
                 intent,
                 pendingFlags);
 
-            var builder = new Notification.Builder(context, ChannelId)
+            var builder = new Notification.Builder(context, targetChannelId)
                 .SetContentTitle(title)
                 .SetContentText(message)
                 .SetStyle(new Notification.BigTextStyle().BigText(message))

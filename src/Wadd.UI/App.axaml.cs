@@ -66,6 +66,22 @@ public partial class App : Application
             {
                 collection.AddSingleton(typeof(Wadd.Core.Interfaces.INotificationService), androidNotifType);
             }
+
+            var androidAudioType = Type.GetType("Wadd.Android.AndroidAudioService, Wadd.Android")
+                                  ?? System.Reflection.Assembly.GetEntryAssembly()?.GetType("Wadd.Android.AndroidAudioService");
+            if (androidAudioType != null)
+            {
+                collection.AddSingleton(typeof(Wadd.Core.Interfaces.IAudioService), androidAudioType);
+            }
+        }
+        else if (OperatingSystem.IsWindows())
+        {
+            var winNotifType = Type.GetType("Wadd.Windows.WindowsNotificationService, Wadd.Windows")
+                              ?? System.Reflection.Assembly.GetEntryAssembly()?.GetType("Wadd.Windows.WindowsNotificationService");
+            if (winNotifType != null)
+            {
+                collection.AddSingleton(typeof(Wadd.Core.Interfaces.INotificationService), winNotifType);
+            }
         }
 
         collection.AddTransient<MainViewModel>();

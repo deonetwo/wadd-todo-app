@@ -272,7 +272,7 @@
             <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
               <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
                 <TextBlock Text="Notification Sound" Classes="heading"/>
-                <TextBlock Text="Play notification chime (notification.mp3) when an alert or reminder arrives."
+                <TextBlock Text="Play a chime when an alert or reminder arrives."
                            Classes="small"
                            TextWrapping="Wrap"
                            Foreground="{DynamicResource AppTextSecondaryBrush}"/>
@@ -290,7 +290,7 @@
             <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
               <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
                 <TextBlock Text="Task Completion Sound" Classes="heading"/>
-                <TextBlock Text="Play completion sound (completed.mp3) when a task, milestone, or goal is completed."
+                <TextBlock Text="Play a sound when a task, milestone, or goal is completed."
                            Classes="small"
                            TextWrapping="Wrap"
                            Foreground="{DynamicResource AppTextSecondaryBrush}"/>

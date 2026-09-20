@@ -772,34 +772,59 @@ public class NotificationSettingsTests
         }
     }
 
+#if WINDOWS || NET10_0_WINDOWS10_0_17763_0_OR_GREATER
     [Fact]
     public void WindowsNotificationService_WhenToastDispatchThrows_CallsAlertSoundFallback()
     {
-        var originalDispatcher = Wadd.Services.WindowsNotificationService.ToastDispatcher;
-        var originalAlertSound = Wadd.Services.WindowsNotificationService.AlertSoundPlayer;
+        var originalDispatcher = global::Wadd.Windows.WindowsNotificationService.ToastDispatcher;
+        var originalAlertSound = global::Wadd.Windows.WindowsNotificationService.AlertSoundPlayer;
 
         bool alertSoundCalled = false;
 
         try
         {
-            Wadd.Services.WindowsNotificationService.ToastDispatcher = (title, msg, sound, tag) =>
+            global::Wadd.Windows.WindowsNotificationService.ToastDispatcher = (title, msg, sound, tag) =>
             {
                 throw new InvalidOperationException("Simulated WinRT failure");
             };
-            Wadd.Services.WindowsNotificationService.AlertSoundPlayer = () =>
+            global::Wadd.Windows.WindowsNotificationService.AlertSoundPlayer = () =>
             {
                 alertSoundCalled = true;
             };
 
-            Wadd.Services.WindowsNotificationService.DispatchNativeWindowsToast("Test Title", "Test Message", false, "tag-1");
+            global::Wadd.Windows.WindowsNotificationService.DispatchNativeWindowsToast("Test Title", "Test Message", false, "tag-1");
 
             Assert.True(alertSoundCalled);
         }
         finally
         {
-            Wadd.Services.WindowsNotificationService.ToastDispatcher = originalDispatcher;
-            Wadd.Services.WindowsNotificationService.AlertSoundPlayer = originalAlertSound;
+            global::Wadd.Windows.WindowsNotificationService.ToastDispatcher = originalDispatcher;
+            global::Wadd.Windows.WindowsNotificationService.AlertSoundPlayer = originalAlertSound;
         }
     }
+
+    [Fact]
+    public void WindowsNotificationService_CreateToastNotification_SetsAllRequiredProperties()
+    {
+        var tag = "test-task-guid-1234";
+        var toast = global::Wadd.Windows.WindowsNotificationService.CreateToastNotification(
+            "Task Due Soon",
+            "Remember to buy milk",
+            playSound: false,
+            tag: tag);
+
+        Assert.Equal(tag, toast.Tag);
+        Assert.Equal("WaddTasks", toast.Group);
+        Assert.NotNull(toast.ExpirationTime);
+        Assert.True(toast.ExpirationTime.Value > DateTimeOffset.Now.AddDays(1.9));
+        Assert.True(toast.ExpirationTime.Value < DateTimeOffset.Now.AddDays(2.1));
+
+        var xml = toast.Content.GetXml();
+        Assert.Contains("scenario=\"reminder\"", xml);
+        Assert.Contains("<audio silent=\"true\"/>", xml);
+        Assert.Contains("<text>Task Due Soon</text>", xml);
+        Assert.Contains("<text>Remember to buy milk</text>", xml);
+    }
+#endif
 }
 

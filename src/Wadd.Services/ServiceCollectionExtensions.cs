@@ -39,6 +39,15 @@ public static class ServiceCollectionExtensions
                     services.AddSingleton(typeof(IAudioService), androidAudioType);
                 }
             }
+            else if (OperatingSystem.IsWindows())
+            {
+                var winNotifType = Type.GetType("Wadd.Windows.WindowsNotificationService, Wadd.Windows")
+                                  ?? System.Reflection.Assembly.GetEntryAssembly()?.GetType("Wadd.Windows.WindowsNotificationService");
+                if (winNotifType != null)
+                {
+                    services.AddSingleton(typeof(INotificationService), winNotifType);
+                }
+            }
             _sharedServiceProvider = services.BuildServiceProvider();
             return _sharedServiceProvider;
         }
@@ -69,7 +78,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IStartupService, WindowsStartupService>();
         services.AddSingleton<IAiGoalService, AiGoalService>();
         services.AddSingleton<IAudioService, AudioService>();
-        services.AddSingleton<INotificationService, WindowsNotificationService>();
+        services.AddSingleton<INotificationService, NoOpNotificationService>();
 
         return services;
     }
