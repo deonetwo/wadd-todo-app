@@ -19,7 +19,6 @@ public class AndroidAudioService : IAudioService, IDisposable
     private readonly object _initLock = new();
     private SoundPool? _soundPool;
     private int _completedSoundId;
-    private int _notificationSoundId;
     private readonly ConcurrentDictionary<int, bool> _loadedSounds = new();
     private bool _isDisposed;
 
@@ -76,7 +75,6 @@ public class AndroidAudioService : IAudioService, IDisposable
                 };
 
                 _completedSoundId = pool.Load(context, Resource.Raw.completed, 1);
-                _notificationSoundId = pool.Load(context, Resource.Raw.notification, 1);
 
                 _soundPool = pool;
             }
@@ -104,17 +102,7 @@ public class AndroidAudioService : IAudioService, IDisposable
 
     public void PlayNotificationSound()
     {
-        try
-        {
-            var settings = AppSettingsHelper.LoadSettings();
-            if (!settings.PlayNotificationSound) return;
-
-            PlaySample(_notificationSoundId, Resource.Raw.notification);
-        }
-        catch (Exception ex)
-        {
-            AppLogger.LogWarning("AndroidAudioService", "Failed to trigger notification sound", ex);
-        }
+        // No-op on Android: notification sounds are handled natively by the OS via NotificationChannel.
     }
 
     public void PlaySound(string soundFileName)
@@ -129,7 +117,7 @@ public class AndroidAudioService : IAudioService, IDisposable
                     PlayCompletedSound();
                     break;
                 case "notification.mp3":
-                    PlayNotificationSound();
+                    // No-op on Android: notification sounds are handled natively by the OS via NotificationChannel.
                     break;
                 default:
                     AppLogger.LogWarning("AndroidAudioService", $"Unknown sound file requested: {soundFileName}");

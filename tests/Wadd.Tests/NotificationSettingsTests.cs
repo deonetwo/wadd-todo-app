@@ -772,6 +772,128 @@ public class NotificationSettingsTests
         }
     }
 
+    [Fact]
+    public void AndroidNotificationChannelHelper_BuildChannelId_ProducesUniqueIdFor4Combinations_IgnoringSoundSetting()
+    {
+        var booleans = new[] { false, true };
+        var generatedIds = new HashSet<string>();
+
+        foreach (var highPriority in booleans)
+        {
+            foreach (var vibration in booleans)
+            {
+                // Channel ID should be identical regardless of PlayNotificationSound setting
+                var settingsSoundOn = new AppSettingsData
+                {
+                    PlayNotificationSound = true,
+                    AndroidHighPriorityChannel = highPriority,
+                    AndroidVibration = vibration
+                };
+
+                var settingsSoundOff = new AppSettingsData
+                {
+                    PlayNotificationSound = false,
+                    AndroidHighPriorityChannel = highPriority,
+                    AndroidVibration = vibration
+                };
+
+                var idSoundOn = AndroidNotificationChannelHelper.BuildChannelId(settingsSoundOn);
+                var idSoundOff = AndroidNotificationChannelHelper.BuildChannelId(settingsSoundOff);
+
+                // Sound toggle must NOT change the channel ID
+                Assert.Equal(idSoundOn, idSoundOff);
+                Assert.StartsWith("wadd_task_reminders_v3_", idSoundOn);
+
+                generatedIds.Add(idSoundOn);
+            }
+        }
+
+        // Exactly 4 combinations for (highPriority, vibration)
+        Assert.Equal(4, generatedIds.Count);
+    }
+
+    private class MockNotificationChannelManager : IAndroidNotificationChannelManager
+    {
+        public List<string> ExistingChannelIds { get; } = new();
+        public List<string> DeletedChannelIds { get; } = new();
+        public List<string> CreatedChannelIds { get; } = new();
+
+        public IEnumerable<string> GetNotificationChannelIds() => ExistingChannelIds;
+
+        public void DeleteNotificationChannel(string channelId)
+        {
+            DeletedChannelIds.Add(channelId);
+            ExistingChannelIds.Remove(channelId);
+        }
+
+        public void CreateNotificationChannel(string channelId, string channelName, string channelDesc, bool highPriority, bool vibration)
+        {
+            CreatedChannelIds.Add(channelId);
+            if (!ExistingChannelIds.Contains(channelId))
+            {
+                ExistingChannelIds.Add(channelId);
+            }
+        }
+    }
+
+    [Fact]
+    public void AndroidNotificationChannelHelper_SyncChannels_DeletesMismatchedStaleChannelAndDoesNotCreateSilentChannel()
+    {
+        var mockManager = new MockNotificationChannelManager();
+
+        // Combination 1: highPriority=true, vibration=true -> "wadd_task_reminders_v3_h1_v1"
+        var combo1Settings = new AppSettingsData
+        {
+            PlayNotificationSound = true,
+            AndroidHighPriorityChannel = true,
+            AndroidVibration = true
+        };
+        var channelId1 = AndroidNotificationChannelHelper.BuildChannelId(combo1Settings);
+
+        // Combination 2: highPriority=false, vibration=false -> "wadd_task_reminders_v3_h0_v0"
+        var combo2Settings = new AppSettingsData
+        {
+            PlayNotificationSound = false,
+            AndroidHighPriorityChannel = false,
+            AndroidVibration = false
+        };
+        var channelId2 = AndroidNotificationChannelHelper.BuildChannelId(combo2Settings);
+
+        // Pre-populate mock manager with channel IDs from 2 different combinations + legacy channels
+        mockManager.ExistingChannelIds.Add(channelId1);
+        mockManager.ExistingChannelIds.Add(channelId2);
+        mockManager.ExistingChannelIds.Add("wadd_task_reminders");
+        mockManager.ExistingChannelIds.Add("wadd_task_reminders_v2");
+        mockManager.ExistingChannelIds.Add("wadd_task_reminders_v2_silent");
+
+        // Execute channel sync with combo1 settings active
+        AndroidNotificationChannelHelper.SyncChannels(mockManager, combo1Settings);
+
+        // channelId2 (mismatched combination) and legacy channels must be deleted
+        Assert.Contains(channelId2, mockManager.DeletedChannelIds);
+        Assert.Contains("wadd_task_reminders", mockManager.DeletedChannelIds);
+        Assert.Contains("wadd_task_reminders_v2", mockManager.DeletedChannelIds);
+        Assert.Contains("wadd_task_reminders_v2_silent", mockManager.DeletedChannelIds);
+
+        // channelId1 (matching current settings) must NOT be deleted
+        Assert.DoesNotContain(channelId1, mockManager.DeletedChannelIds);
+
+        // Target channelId1 was created or ensured, and no silent channel was created
+        Assert.Contains(channelId1, mockManager.CreatedChannelIds);
+        Assert.DoesNotContain("wadd_task_reminders_v2_silent", mockManager.CreatedChannelIds);
+        Assert.DoesNotContain("wadd_task_reminders_v3_silent", mockManager.CreatedChannelIds);
+    }
+
+    [Fact]
+    public void AudioService_NotificationSoundCalls_DoNotThrow()
+    {
+        IAudioService service = new Wadd.Services.AudioService();
+        var ex1 = Record.Exception(() => service.PlaySound("notification.mp3"));
+        var ex2 = Record.Exception(() => service.PlayNotificationSound());
+        Assert.Null(ex1);
+        Assert.Null(ex2);
+    }
+
 #if WINDOWS || NET10_0_WINDOWS10_0_17763_0_OR_GREATER
     [Fact]
     public void WindowsNotificationService_WhenToastDispatchThrows_CallsAlertSoundFallback()
