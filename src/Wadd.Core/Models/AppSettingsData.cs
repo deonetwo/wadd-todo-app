@@ -28,7 +28,6 @@ public class AppSettingsData
 
     // Windows Desktop Notification Settings
     public bool WindowsToastNotifications { get; set; } = true;
-    public bool WindowsNotificationIncludeNotes { get; set; } = true;
 
     // Android Mobile Notification Settings
     public bool AndroidVibration { get; set; } = true;

@@ -37,7 +37,7 @@ public class AndroidApplication : AvaloniaAndroidApplication<App>
     Categories = new[] { global::Android.Content.Intent.CategoryDefault, global::Android.Content.Intent.CategoryBrowsable },
     DataScheme = "com.wadd.todoapp",
     DataPathPrefix = "/oauth2redirect")]
-public class MainActivity : AvaloniaMainActivity
+public class MainActivity : AvaloniaMainActivity, Wadd.Core.Interfaces.INotificationPermissionRequester
 {
     public const int RcSignIn = 9001;
     public const int RcNotification = 1010;

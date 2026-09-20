@@ -19,6 +19,12 @@ public class AndroidNotificationService : INotificationService
     private const string ChannelName = "Wadd Task Reminders";
     private const string ChannelDesc = "Task due dates and reminder alerts";
 
+    public const int TasksSummaryNotificationId = NotificationTagHelper.TasksSummaryNotificationId;
+    public static int GetNotificationId(string? tag) => NotificationTagHelper.GetNotificationId(tag);
+
+    internal static Func<Task<bool>>? PermissionRequesterOverride { get; set; }
+    internal static Action<Context, string, string, string?, AppSettingsData>? PostNativeNotificationOverride { get; set; }
+
     public bool IsSupported => true;
 
     public Task<bool> RequestPermissionAsync()
@@ -34,31 +40,51 @@ public class AndroidNotificationService : INotificationService
         return Task.FromResult(true);
     }
 
-    public Task ShowNotificationAsync(string title, string message, string? tag = null)
+    public async Task ShowNotificationAsync(string title, string message, string? tag = null)
     {
         var settings = AppSettingsHelper.LoadSettings();
         if (!settings.EnableNotifications)
         {
-            return Task.CompletedTask;
+            return;
         }
 
         var context = MainActivity.Instance ?? Application.Context;
         if (context == null)
         {
-            return Task.CompletedTask;
+            return;
         }
 
-        if (OperatingSystem.IsAndroidVersionAtLeast(33))
+        if (PermissionRequesterOverride != null)
+        {
+            var granted = await PermissionRequesterOverride();
+            if (!granted)
+            {
+                Wadd.Core.Logging.AppLogger.LogWarning("AndroidNotificationService", "POST_NOTIFICATIONS permission not granted; skipping notification.");
+                return;
+            }
+        }
+        else if (OperatingSystem.IsAndroidVersionAtLeast(33))
         {
             var activity = MainActivity.Instance;
             if (activity != null && activity.CheckSelfPermission("android.permission.POST_NOTIFICATIONS") != Permission.Granted)
             {
-                _ = activity.RequestNotificationPermissionAsync();
+                var granted = await activity.RequestNotificationPermissionAsync();
+                if (!granted)
+                {
+                    Wadd.Core.Logging.AppLogger.LogWarning("AndroidNotificationService", "POST_NOTIFICATIONS permission not granted; skipping notification.");
+                    return;
+                }
             }
         }
 
-        PostNativeNotification(context, title, message, tag, settings);
-        return Task.CompletedTask;
+        if (PostNativeNotificationOverride != null)
+        {
+            PostNativeNotificationOverride(context, title, message, tag, settings);
+        }
+        else
+        {
+            PostNativeNotification(context, title, message, tag, settings);
+        }
     }
 
     public static void PostNativeNotification(Context context, string title, string message, string? tag, AppSettingsData settings)
@@ -129,7 +155,7 @@ public class AndroidNotificationService : INotificationService
                 Wadd.Core.Logging.AppLogger.LogWarning("AndroidNotificationService", "Error loading large icon", ex);
             }
 
-            var notificationId = !string.IsNullOrWhiteSpace(tag) ? tag.GetHashCode() : (int)DateTime.UtcNow.Ticks;
+            var notificationId = NotificationTagHelper.GetNotificationId(tag);
             notificationManager.Notify(tag, notificationId, builder.Build());
         }
         catch (Exception ex)
@@ -149,7 +175,8 @@ public class AndroidNotificationService : INotificationService
         try
         {
             var notificationManager = (NotificationManager?)context.GetSystemService(Context.NotificationService);
-            notificationManager?.Cancel(tag, tag.GetHashCode());
+            var notificationId = NotificationTagHelper.GetNotificationId(tag);
+            notificationManager?.Cancel(tag, notificationId);
 
             if (Guid.TryParse(tag, out var taskId))
             {

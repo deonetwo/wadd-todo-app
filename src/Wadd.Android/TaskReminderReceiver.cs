@@ -103,7 +103,7 @@ public class TaskReminderReceiver : BroadcastReceiver
                     if (isFirstNotification || shouldRepeat)
                     {
                         SetLastNotifiedTime(context, task.Id, now);
-                        var body = (settings.WindowsNotificationIncludeNotes && !string.IsNullOrWhiteSpace(task.Description))
+                        var body = !string.IsNullOrWhiteSpace(task.Description)
                             ? $"{task.Title} - {task.Description}"
                             : task.Title;
                         pendingAlerts.Add((task, $"Reminder: {task.Title}", body));
@@ -123,7 +123,7 @@ public class TaskReminderReceiver : BroadcastReceiver
                     if (isFirstNotification || shouldRepeat)
                     {
                         SetLastNotifiedTime(context, task.Id, now);
-                        var body = (settings.WindowsNotificationIncludeNotes && !string.IsNullOrWhiteSpace(task.Description))
+                        var body = !string.IsNullOrWhiteSpace(task.Description)
                             ? $"{task.Title} - {task.Description}"
                             : task.Title;
                         pendingAlerts.Add((task, $"Overdue: {task.Title}", body));
@@ -139,7 +139,7 @@ public class TaskReminderReceiver : BroadcastReceiver
                 if (isFirstNotification || shouldRepeat)
                 {
                     SetLastNotifiedTime(context, task.Id, now);
-                    var body = (settings.WindowsNotificationIncludeNotes && !string.IsNullOrWhiteSpace(task.Description))
+                    var body = !string.IsNullOrWhiteSpace(task.Description)
                         ? $"{task.Title} - {task.Description}"
                         : task.Title;
                     pendingAlerts.Add((task, $"Due Today: {task.Title}", body));

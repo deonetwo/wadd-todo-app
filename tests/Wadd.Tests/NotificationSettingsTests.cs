@@ -29,7 +29,6 @@ public class NotificationSettingsTests
 
         // Windows defaults
         Assert.True(settings.WindowsToastNotifications);
-        Assert.True(settings.WindowsNotificationIncludeNotes);
 
         // Android defaults
         Assert.True(settings.AndroidVibration);
@@ -55,7 +54,6 @@ public class NotificationSettingsTests
                 NotificationRepeatIntervalMinutes = 60,
                 PlayNotificationSound = false,
                 WindowsToastNotifications = false,
-                WindowsNotificationIncludeNotes = false,
                 AndroidVibration = false,
                 AndroidHighPriorityChannel = false,
                 AndroidStickyReminders = true
@@ -74,7 +72,6 @@ public class NotificationSettingsTests
             Assert.False(loaded.PlayNotificationSound);
 
             Assert.False(loaded.WindowsToastNotifications);
-            Assert.False(loaded.WindowsNotificationIncludeNotes);
 
             Assert.False(loaded.AndroidVibration);
             Assert.False(loaded.AndroidHighPriorityChannel);
@@ -103,7 +100,6 @@ public class NotificationSettingsTests
             NotificationRepeatIntervalMinutes = 120,
             PlayNotificationSound = true,
             WindowsToastNotifications = true,
-            WindowsNotificationIncludeNotes = true,
             AndroidVibration = true,
             AndroidHighPriorityChannel = true,
             AndroidStickyReminders = false
@@ -121,7 +117,6 @@ public class NotificationSettingsTests
         Assert.Equal(120, deserialized.NotificationRepeatIntervalMinutes);
         Assert.True(deserialized.PlayNotificationSound);
         Assert.True(deserialized.WindowsToastNotifications);
-        Assert.True(deserialized.WindowsNotificationIncludeNotes);
         Assert.True(deserialized.AndroidVibration);
         Assert.True(deserialized.AndroidHighPriorityChannel);
         Assert.False(deserialized.AndroidStickyReminders);
@@ -722,4 +717,89 @@ public class NotificationSettingsTests
 
         Assert.Empty(mockService.ShownNotifications);
     }
+
+    [Fact]
+    public void NotificationTagHelper_GetNotificationId_IsDeterministicAcrossPostAndCancel()
+    {
+        var taskId = Guid.NewGuid();
+        var tag = taskId.ToString();
+
+        var idAtPost = NotificationTagHelper.GetNotificationId(tag);
+        var idAtCancel = NotificationTagHelper.GetNotificationId(tag);
+
+        Assert.Equal(taskId.GetHashCode(), idAtPost);
+        Assert.Equal(idAtPost, idAtCancel);
+
+        var summaryId1 = NotificationTagHelper.GetNotificationId("tasks-summary");
+        var summaryId2 = NotificationTagHelper.GetNotificationId("TASKS-SUMMARY");
+        Assert.Equal(NotificationTagHelper.TasksSummaryNotificationId, summaryId1);
+        Assert.Equal(NotificationTagHelper.TasksSummaryNotificationId, summaryId2);
+        Assert.Equal(90001, summaryId1);
+    }
+
+    [Theory]
+    [InlineData(true, false, false, false)] // Android 33+, not granted, request denied -> false
+    [InlineData(true, false, true, true)]   // Android 33+, not granted, request accepted -> true
+    [InlineData(true, true, false, true)]   // Android 33+, already granted -> true (no request needed)
+    [InlineData(false, false, false, true)] // Pre-Android 33 -> true (no request needed)
+    public async Task AndroidNotificationPermissionGate_EvaluatesCorrectly(
+        bool isAndroid33OrHigher,
+        bool isPermissionGranted,
+        bool requestResult,
+        bool expectedShouldProceed)
+    {
+        bool requestInvoked = false;
+        Func<Task<bool>> requestFunc = () =>
+        {
+            requestInvoked = true;
+            return Task.FromResult(requestResult);
+        };
+
+        var actual = await Wadd.Services.AndroidNotificationPermissionGate.ShouldProceedWithNotificationAsync(
+            isAndroid33OrHigher,
+            isPermissionGranted,
+            requestFunc);
+
+        Assert.Equal(expectedShouldProceed, actual);
+
+        if (isAndroid33OrHigher && !isPermissionGranted)
+        {
+            Assert.True(requestInvoked);
+        }
+        else
+        {
+            Assert.False(requestInvoked);
+        }
+    }
+
+    [Fact]
+    public void WindowsNotificationService_WhenToastDispatchThrows_CallsAlertSoundFallback()
+    {
+        var originalDispatcher = Wadd.Services.WindowsNotificationService.ToastDispatcher;
+        var originalAlertSound = Wadd.Services.WindowsNotificationService.AlertSoundPlayer;
+
+        bool alertSoundCalled = false;
+
+        try
+        {
+            Wadd.Services.WindowsNotificationService.ToastDispatcher = (title, msg, sound, tag) =>
+            {
+                throw new InvalidOperationException("Simulated WinRT failure");
+            };
+            Wadd.Services.WindowsNotificationService.AlertSoundPlayer = () =>
+            {
+                alertSoundCalled = true;
+            };
+
+            Wadd.Services.WindowsNotificationService.DispatchNativeWindowsToast("Test Title", "Test Message", false, "tag-1");
+
+            Assert.True(alertSoundCalled);
+        }
+        finally
+        {
+            Wadd.Services.WindowsNotificationService.ToastDispatcher = originalDispatcher;
+            Wadd.Services.WindowsNotificationService.AlertSoundPlayer = originalAlertSound;
+        }
+    }
 }
+

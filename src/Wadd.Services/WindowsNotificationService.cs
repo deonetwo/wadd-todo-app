@@ -1,6 +1,6 @@
 using System;
-using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Wadd.Core.Helpers;
 using Wadd.Core.Interfaces;
@@ -14,6 +14,12 @@ namespace Wadd.Services;
 public class WindowsNotificationService : INotificationService
 {
     public static event Action<string, string>? NotificationTriggered;
+
+    private static bool _isAumidRegistered;
+    private static readonly object _aumidLock = new();
+
+    internal static Action<string, string, bool, string?> ToastDispatcher { get; set; } = NativeWinRtToastDispatcher;
+    internal static Action AlertSoundPlayer { get; set; } = PlayAlertSound;
 
     public bool IsSupported => OperatingSystem.IsWindows();
 
@@ -64,11 +70,11 @@ public class WindowsNotificationService : INotificationService
 
     public Task CancelNotificationAsync(string tag)
     {
-        // Native Windows PowerShell toasts are self-expiring; no-op
+        // Native Windows toasts are self-expiring; no-op
         return Task.CompletedTask;
     }
 
-    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    [DllImport("user32.dll")]
     private static extern bool MessageBeep(uint uType);
 
     private static void PlayAlertSound()
@@ -146,88 +152,287 @@ public class WindowsNotificationService : INotificationService
         return null;
     }
 
-    private static void DispatchNativeWindowsToast(string title, string message, bool playSound, string? tag = null)
+    public static void EnsureAumidRegistered(string? logoPath)
+    {
+        if (_isAumidRegistered || !OperatingSystem.IsWindows()) return;
+        lock (_aumidLock)
+        {
+            if (_isAumidRegistered) return;
+            try
+            {
+                using var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"Software\Classes\AppUserModelId\Wadd.Todo");
+                if (key != null)
+                {
+                    key.SetValue("DisplayName", "Wadd ToDo");
+                    if (!string.IsNullOrWhiteSpace(logoPath))
+                    {
+                        key.SetValue("IconUri", logoPath);
+                    }
+                    key.SetValue("ShowInSettings", 1, Microsoft.Win32.RegistryValueKind.DWord);
+                }
+                _isAumidRegistered = true;
+            }
+            catch (Exception ex)
+            {
+                Wadd.Core.Logging.AppLogger.LogWarning("WindowsNotificationService", "Could not register AUMID in registry", ex);
+            }
+        }
+    }
+
+    public static void DispatchNativeWindowsToast(string title, string message, bool playSound, string? tag = null)
     {
         try
         {
-            var logoPath = EnsureLogoFileOnDisk();
-
-            // Escape special XML characters for safety
-            var safeTitle = System.Security.SecurityElement.Escape(title) ?? "Wadd Reminder";
-            var safeMessage = System.Security.SecurityElement.Escape(message) ?? string.Empty;
-
-            var audioXml = playSound ? string.Empty : "<audio silent=\"true\"/>";
-
-            // The logo is displayed at the top header via the AUMID IconUri registry setting;
-            // no bottom/body image is added per user requirement.
-            var toastXml = $"<toast scenario=\"reminder\"><visual><binding template=\"ToastGeneric\"><text>{safeTitle}</text><text>{safeMessage}</text></binding></visual>{audioXml}</toast>";
-
-            var uniqueTag = (string.IsNullOrWhiteSpace(tag) ? Guid.NewGuid().ToString() : tag).Replace("'", "''");
-
-            // PowerShell script using WinRT ToastNotificationManager with fresh AUMID registration and fallback
-            var escapedLogoPath = logoPath?.Replace("'", "''") ?? string.Empty;
-            var script = $@"
-[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
-[Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] | Out-Null
-
-$aumids = @('Wadd.Todo', 'Wadd.TodoApp')
-foreach ($id in $aumids) {{
-    $reg = ""HKCU:\Software\Classes\AppUserModelId\$id""
-    if (!(Test-Path $reg)) {{ New-Item -Path $reg -Force | Out-Null }}
-    Set-ItemProperty -Path $reg -Name 'DisplayName' -Value 'Wadd ToDo'
-    if ('{escapedLogoPath}') {{ Set-ItemProperty -Path $reg -Name 'IconUri' -Value '{escapedLogoPath}' }}
-    Set-ItemProperty -Path $reg -Name 'ShowInSettings' -Value 1 -Type DWord
-}}
-
-$xmlString = @'
-{toastXml}
-'@
-
-$xml = [Windows.Data.Xml.Dom.XmlDocument]::new()
-$xml.LoadXml($xmlString)
-$toast = [Windows.UI.Notifications.ToastNotification]::new($xml)
-$toast.Tag = '{uniqueTag}'
-$toast.Group = 'WaddTasks'
-$toast.ExpirationTime = [DateTimeOffset]::Now.AddDays(2)
-
-try {{
-    [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('Wadd.Todo').Show($toast)
-}} catch {{
-    try {{
-        [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('Wadd.TodoApp').Show($toast)
-    }} catch {{
-        $fallbackAumid = '{{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}}\WindowsPowerShell\v1.0\powershell.exe'
-        [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($fallbackAumid).Show($toast)
-    }}
-}}
-";
-
-            var encodedCommand = Convert.ToBase64String(System.Text.Encoding.Unicode.GetBytes(script));
-
-            var psi = new ProcessStartInfo
-            {
-                FileName = "powershell.exe",
-                Arguments = $"-NoProfile -WindowStyle Hidden -EncodedCommand {encodedCommand}",
-                CreateNoWindow = true,
-                UseShellExecute = false,
-                RedirectStandardError = true,
-                RedirectStandardOutput = true
-            };
-
-            using var process = Process.Start(psi);
-            if (process != null)
-            {
-                var stdErr = process.StandardError.ReadToEnd();
-                process.WaitForExit(3000);
-                if (!string.IsNullOrWhiteSpace(stdErr))
-                {
-                    Wadd.Core.Logging.AppLogger.LogWarning("WindowsNotificationService", $"Toast script error: {stdErr}");
-                }
-            }
+            ToastDispatcher(title, message, playSound, tag);
         }
         catch (Exception ex)
         {
-            Wadd.Core.Logging.AppLogger.LogError("WindowsNotificationService", "Error sending native Windows toast", ex);
+            Wadd.Core.Logging.AppLogger.LogWarning("WindowsNotificationService", "Error sending native Windows toast", ex);
+            try
+            {
+                AlertSoundPlayer();
+            }
+            catch (Exception soundEx)
+            {
+                Wadd.Core.Logging.AppLogger.LogWarning("WindowsNotificationService", "Could not play fallback alert sound", soundEx);
+            }
         }
     }
+
+    private static void NativeWinRtToastDispatcher(string title, string message, bool playSound, string? tag = null)
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        var logoPath = EnsureLogoFileOnDisk();
+        EnsureAumidRegistered(logoPath);
+
+        var safeTitle = System.Security.SecurityElement.Escape(title) ?? "Wadd Reminder";
+        var safeMessage = System.Security.SecurityElement.Escape(message) ?? string.Empty;
+        var audioXml = playSound ? string.Empty : "<audio silent=\"true\"/>";
+        var toastXml = $"<toast scenario=\"reminder\"><visual><binding template=\"ToastGeneric\"><text>{safeTitle}</text><text>{safeMessage}</text></binding></visual>{audioXml}</toast>";
+
+        var uniqueTag = string.IsNullOrWhiteSpace(tag) ? Guid.NewGuid().ToString() : tag;
+
+        IntPtr hXmlDocClass = IntPtr.Zero;
+        IntPtr hXml = IntPtr.Zero;
+        IntPtr hToastClass = IntPtr.Zero;
+        IntPtr hManagerClass = IntPtr.Zero;
+        IntPtr hAumid = IntPtr.Zero;
+        IntPtr hTag = IntPtr.Zero;
+        IntPtr hGroup = IntPtr.Zero;
+        IntPtr hPropValueClass = IntPtr.Zero;
+        IntPtr pToast = IntPtr.Zero;
+        IntPtr pExpireProp = IntPtr.Zero;
+
+        try
+        {
+            // 1. Load XML into XmlDocument
+            hXmlDocClass = CreateHString("Windows.Data.Xml.Dom.XmlDocument");
+            var xmlDocObj = RoActivateInstance(hXmlDocClass);
+            var xmlDoc = (IXmlDocumentIO)xmlDocObj;
+
+            hXml = CreateHString(toastXml);
+            xmlDoc.LoadXml(hXml);
+
+            // 2. Create ToastNotification via IToastNotificationFactory
+            hToastClass = CreateHString("Windows.UI.Notifications.ToastNotification");
+            var toastFactoryIid = typeof(IToastNotificationFactory).GUID;
+            var toastFactory = (IToastNotificationFactory)RoGetActivationFactory(hToastClass, ref toastFactoryIid);
+
+            var pXmlDoc = Marshal.GetIUnknownForObject(xmlDocObj);
+            try
+            {
+                pToast = toastFactory.CreateToastNotification(pXmlDoc);
+            }
+            finally
+            {
+                if (pXmlDoc != IntPtr.Zero) Marshal.Release(pXmlDoc);
+            }
+
+            // 3. Set Tag and Group (IToastNotification2)
+            var toastObj = Marshal.GetObjectForIUnknown(pToast);
+            if (toastObj is IToastNotification2 toast2)
+            {
+                hTag = CreateHString(uniqueTag);
+                hGroup = CreateHString("WaddTasks");
+                toast2.put_Tag(hTag);
+                toast2.put_Group(hGroup);
+            }
+
+            // 4. Set ExpirationTime (2 days)
+            try
+            {
+                if (toastObj is IToastNotification toast)
+                {
+                    hPropValueClass = CreateHString("Windows.Foundation.PropertyValue");
+                    var propValueStaticsIid = typeof(IPropertyValueStatics).GUID;
+                    var propFactory = (IPropertyValueStatics)RoGetActivationFactory(hPropValueClass, ref propValueStaticsIid);
+                    var expireFileTime = DateTime.UtcNow.AddDays(2).ToFileTimeUtc();
+                    propFactory.CreateDateTime(expireFileTime, out pExpireProp);
+                    if (pExpireProp != IntPtr.Zero)
+                    {
+                        toast.put_ExpirationTime(pExpireProp);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Wadd.Core.Logging.AppLogger.LogWarning("WindowsNotificationService", "Could not set toast expiration time", ex);
+            }
+
+            // 5. Show via ToastNotificationManager with AUMID "Wadd.Todo"
+            hManagerClass = CreateHString("Windows.UI.Notifications.ToastNotificationManager");
+            var managerIid = typeof(IToastNotificationManagerStatics).GUID;
+            var manager = (IToastNotificationManagerStatics)RoGetActivationFactory(hManagerClass, ref managerIid);
+
+            hAumid = CreateHString("Wadd.Todo");
+            var notifier = manager.CreateToastNotifierWithId(hAumid);
+            notifier.Show(pToast);
+        }
+        finally
+        {
+            if (pExpireProp != IntPtr.Zero) Marshal.Release(pExpireProp);
+            if (pToast != IntPtr.Zero) Marshal.Release(pToast);
+            if (hPropValueClass != IntPtr.Zero) WindowsDeleteString(hPropValueClass);
+            if (hGroup != IntPtr.Zero) WindowsDeleteString(hGroup);
+            if (hTag != IntPtr.Zero) WindowsDeleteString(hTag);
+            if (hAumid != IntPtr.Zero) WindowsDeleteString(hAumid);
+            if (hManagerClass != IntPtr.Zero) WindowsDeleteString(hManagerClass);
+            if (hToastClass != IntPtr.Zero) WindowsDeleteString(hToastClass);
+            if (hXml != IntPtr.Zero) WindowsDeleteString(hXml);
+            if (hXmlDocClass != IntPtr.Zero) WindowsDeleteString(hXmlDocClass);
+        }
+    }
+
+    private static IntPtr CreateHString(string str)
+    {
+        WindowsCreateString(str, str.Length, out var hstr);
+        return hstr;
+    }
+
+    #region WinRT COM Interop Definitions
+
+    [DllImport("combase.dll", PreserveSig = false)]
+    private static extern int WindowsCreateString([MarshalAs(UnmanagedType.LPWStr)] string sourceString, int length, out IntPtr hstring);
+
+    [DllImport("combase.dll", PreserveSig = false)]
+    private static extern int WindowsDeleteString(IntPtr hstring);
+
+    [DllImport("combase.dll", PreserveSig = false)]
+    [return: MarshalAs(UnmanagedType.IUnknown)]
+    private static extern object RoGetActivationFactory(IntPtr activatableClassId, [In] ref Guid iid);
+
+    [DllImport("combase.dll", PreserveSig = false)]
+    [return: MarshalAs(UnmanagedType.IUnknown)]
+    private static extern object RoActivateInstance(IntPtr activatableClassId);
+
+    [ComImport]
+    [Guid("6CD0E74E-EE65-4489-9EBF-CA43E87BA637")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface IXmlDocumentIO
+    {
+        void GetIids(out uint iidCount, out IntPtr iids);
+        void GetRuntimeClassName(out IntPtr className);
+        void GetTrustLevel(out int trustLevel);
+        void LoadXml([In] IntPtr xml);
+    }
+
+    [ComImport]
+    [Guid("04124B20-82C6-4229-B109-FD9ED4662B53")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface IToastNotificationFactory
+    {
+        void GetIids(out uint iidCount, out IntPtr iids);
+        void GetRuntimeClassName(out IntPtr className);
+        void GetTrustLevel(out int trustLevel);
+        IntPtr CreateToastNotification([In] IntPtr xmlContent);
+    }
+
+    [ComImport]
+    [Guid("997E2675-059E-4E60-8B06-1760917C8B80")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface IToastNotification
+    {
+        void GetIids(out uint iidCount, out IntPtr iids);
+        void GetRuntimeClassName(out IntPtr className);
+        void GetTrustLevel(out int trustLevel);
+        IntPtr get_Content();
+        void put_ExpirationTime([In] IntPtr expirationTime);
+        IntPtr get_ExpirationTime();
+    }
+
+    [ComImport]
+    [Guid("9DFB9FD1-143A-490E-90BF-B9FBA7132DE7")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface IToastNotification2
+    {
+        void GetIids(out uint iidCount, out IntPtr iids);
+        void GetRuntimeClassName(out IntPtr className);
+        void GetTrustLevel(out int trustLevel);
+        void put_Tag([In] IntPtr value);
+        IntPtr get_Tag();
+        void put_Group([In] IntPtr value);
+        IntPtr get_Group();
+        void put_SuppressPopup([MarshalAs(UnmanagedType.I1)] bool value);
+    }
+
+    [ComImport]
+    [Guid("75927B93-03F3-41EC-91D3-6E5BAC1B38E7")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface IToastNotifier
+    {
+        void GetIids(out uint iidCount, out IntPtr iids);
+        void GetRuntimeClassName(out IntPtr className);
+        void GetTrustLevel(out int trustLevel);
+        void Show([In] IntPtr notification);
+        void Hide([In] IntPtr notification);
+        int Setting { get; }
+        void AddToSchedule(IntPtr scheduledToast);
+        void RemoveFromSchedule(IntPtr scheduledToast);
+        IntPtr GetScheduledToastNotifications();
+    }
+
+    [ComImport]
+    [Guid("50AC103F-D235-4598-BBEF-98FE4D1A3AD4")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface IToastNotificationManagerStatics
+    {
+        void GetIids(out uint iidCount, out IntPtr iids);
+        void GetRuntimeClassName(out IntPtr className);
+        void GetTrustLevel(out int trustLevel);
+        IToastNotifier CreateToastNotifier();
+        IToastNotifier CreateToastNotifierWithId([In] IntPtr applicationId);
+        IntPtr GetTemplateContent(int type);
+    }
+
+    [ComImport]
+    [Guid("629BDBC8-D932-4FF4-96B9-8D96C5C1E858")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface IPropertyValueStatics
+    {
+        void GetIids(out uint iidCount, out IntPtr iids);
+        void GetRuntimeClassName(out IntPtr className);
+        void GetTrustLevel(out int trustLevel);
+        void CreateEmpty(out IntPtr prop);
+        void CreateUInt8(byte val, out IntPtr prop);
+        void CreateInt16(short val, out IntPtr prop);
+        void CreateUInt16(ushort val, out IntPtr prop);
+        void CreateInt32(int val, out IntPtr prop);
+        void CreateUInt32(uint val, out IntPtr prop);
+        void CreateInt64(long val, out IntPtr prop);
+        void CreateUInt64(ulong val, out IntPtr prop);
+        void CreateSingle(float val, out IntPtr prop);
+        void CreateDouble(double val, out IntPtr prop);
+        void CreateChar16(char val, out IntPtr prop);
+        void CreateBoolean([MarshalAs(UnmanagedType.I1)] bool val, out IntPtr prop);
+        void CreateString(IntPtr val, out IntPtr prop);
+        void CreateInspectable(IntPtr val, out IntPtr prop);
+        void CreateGuid(Guid val, out IntPtr prop);
+        void CreateDateTime(long universalTime, out IntPtr prop);
+    }
+
+    #endregion
 }

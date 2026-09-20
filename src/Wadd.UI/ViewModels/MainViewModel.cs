@@ -572,14 +572,6 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [ObservableProperty]
-    private bool _windowsNotificationIncludeNotes = true;
-
-    partial void OnWindowsNotificationIncludeNotesChanged(bool value)
-    {
-        SaveUserSettings();
-    }
-
-    [ObservableProperty]
     private bool _androidVibration = true;
 
     partial void OnAndroidVibrationChanged(bool value)
@@ -741,7 +733,7 @@ public partial class MainViewModel : ViewModelBase
                     {
                         _notifiedReminderIds.Add(item.Id);
                         _lastNotifiedTimes[item.Id] = now;
-                        var body = (WindowsNotificationIncludeNotes && item.HasDescription)
+                        var body = item.HasDescription
                             ? $"{item.Title} - {item.DescriptionPreview}"
                             : item.Title;
                         pendingAlerts.Add((item, TaskNotificationCategory.Reminder, $"Reminder: {item.Title}", body));
@@ -750,7 +742,7 @@ public partial class MainViewModel : ViewModelBase
                     else if (shouldRepeat)
                     {
                         _lastNotifiedTimes[item.Id] = now;
-                        var body = (WindowsNotificationIncludeNotes && item.HasDescription)
+                        var body = item.HasDescription
                             ? $"{item.Title} - {item.DescriptionPreview}"
                             : item.Title;
                         pendingAlerts.Add((item, TaskNotificationCategory.Reminder, $"Reminder: {item.Title}", body));
@@ -775,7 +767,7 @@ public partial class MainViewModel : ViewModelBase
                     {
                         _notifiedOverdueIds.Add(item.Id);
                         _lastNotifiedTimes[item.Id] = now;
-                        var body = (WindowsNotificationIncludeNotes && item.HasDescription)
+                        var body = item.HasDescription
                             ? $"{item.Title} - {item.DescriptionPreview}"
                             : item.Title;
                         pendingAlerts.Add((item, TaskNotificationCategory.Overdue, $"Overdue: {item.Title}", body));
@@ -784,7 +776,7 @@ public partial class MainViewModel : ViewModelBase
                     else if (shouldRepeat)
                     {
                         _lastNotifiedTimes[item.Id] = now;
-                        var body = (WindowsNotificationIncludeNotes && item.HasDescription)
+                        var body = item.HasDescription
                             ? $"{item.Title} - {item.DescriptionPreview}"
                             : item.Title;
                         pendingAlerts.Add((item, TaskNotificationCategory.Overdue, $"Overdue: {item.Title}", body));
@@ -804,7 +796,7 @@ public partial class MainViewModel : ViewModelBase
                 {
                     _notifiedDueDateIds.Add(item.Id);
                     _lastNotifiedTimes[item.Id] = now;
-                    var body = (WindowsNotificationIncludeNotes && item.HasDescription)
+                    var body = item.HasDescription
                         ? $"{item.Title} - {item.DescriptionPreview}"
                         : item.Title;
                     pendingAlerts.Add((item, TaskNotificationCategory.DueToday, $"Due Today: {item.Title}", body));
@@ -812,7 +804,7 @@ public partial class MainViewModel : ViewModelBase
                 else if (shouldRepeat)
                 {
                     _lastNotifiedTimes[item.Id] = now;
-                    var body = (WindowsNotificationIncludeNotes && item.HasDescription)
+                    var body = item.HasDescription
                         ? $"{item.Title} - {item.DescriptionPreview}"
                         : item.Title;
                     pendingAlerts.Add((item, TaskNotificationCategory.DueToday, $"Due Today: {item.Title}", body));
@@ -4208,7 +4200,6 @@ public partial class MainViewModel
         PlayNotificationSound = settings.PlayNotificationSound;
         PlayTaskCompletedSound = settings.PlayTaskCompletedSound;
         WindowsToastNotifications = true; // Always on
-        WindowsNotificationIncludeNotes = true; // Always on
         AndroidVibration = settings.AndroidVibration;
         AndroidHighPriorityChannel = settings.AndroidHighPriorityChannel;
         AndroidStickyReminders = settings.AndroidStickyReminders;
@@ -4237,7 +4228,6 @@ public partial class MainViewModel
         settings.PlayNotificationSound = PlayNotificationSound;
         settings.PlayTaskCompletedSound = PlayTaskCompletedSound;
         settings.WindowsToastNotifications = true; // Always on
-        settings.WindowsNotificationIncludeNotes = true; // Always on
         settings.AndroidVibration = AndroidVibration;
         settings.AndroidHighPriorityChannel = AndroidHighPriorityChannel;
         settings.AndroidStickyReminders = AndroidStickyReminders;
