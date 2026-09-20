@@ -1,6 +1,13 @@
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Wadd.Core.Models;
 using Wadd.Services;
@@ -511,4 +518,398 @@ public class MultiEntitySyncTests : IDisposable
     }
 
     #endregion
+
+    #region Google Drive Http Integration Tests (Pagination, Migration Concurrency, Active Pruning)
+
+    [Fact]
+    public async Task ListAppDataFolderFilesAsync_WithNextPageToken_ReturnsAllPages()
+    {
+        var fakeHandler = new FakeDriveHttpMessageHandler();
+        fakeHandler.PagedFiles = new List<List<(string Id, string Name, DateTime ModifiedTime)>>
+        {
+            new()
+            {
+                ("f-1", "file1.json", DateTime.UtcNow),
+                ("f-2", "file2.json", DateTime.UtcNow),
+                ("f-3", "file3.json", DateTime.UtcNow)
+            },
+            new()
+            {
+                ("f-4", "file4.json", DateTime.UtcNow),
+                ("f-5", "file5.json", DateTime.UtcNow),
+                ("f-6", "file6.json", DateTime.UtcNow)
+            },
+            new()
+            {
+                ("f-7", "file7.json", DateTime.UtcNow),
+                ("f-8", "file8.json", DateTime.UtcNow)
+            }
+        };
+
+        using var httpClient = new HttpClient(fakeHandler);
+        var syncService = new GoogleDriveSyncService(_todoService, httpClient: httpClient, goalService: _goalService);
+
+        var result = await syncService.ListAppDataFolderFilesAsync("fake-token", CancellationToken.None);
+
+        Assert.Equal(8, result.Count);
+        Assert.Equal("file1.json", result[0].Name);
+        Assert.Equal("file4.json", result[3].Name);
+        Assert.Equal("file8.json", result[7].Name);
+    }
+
+    [Fact]
+    public async Task EnsureManifestMigrationAsync_With55LegacyFiles_CompletesConcurrently_DeletesAll_UploadsManifests()
+    {
+        var fakeHandler = new FakeDriveHttpMessageHandler();
+        var remoteFiles = new List<GoogleDriveSyncService.DriveFileItem>();
+        var remoteFileMap = new Dictionary<string, GoogleDriveSyncService.DriveFileItem>(StringComparer.OrdinalIgnoreCase);
+        var fileIdMap = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        // 1. 15 Tasks
+        for (int i = 0; i < 15; i++)
+        {
+            var id = Guid.NewGuid();
+            string fileName = $"{id}.json";
+            string fileId = $"legacy-task-{i}";
+            var item = new TodoItem { Id = id, Title = $"Legacy Task {i}", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+            string json = JsonSerializer.Serialize(item);
+            fakeHandler.DriveFiles[fileId] = (fileName, json, DateTime.UtcNow);
+            var driveItem = new GoogleDriveSyncService.DriveFileItem(fileId, fileName, DateTime.UtcNow);
+            remoteFiles.Add(driveItem);
+            remoteFileMap[fileName] = driveItem;
+            fileIdMap[fileName] = fileId;
+        }
+
+        // 2. 10 Goals
+        for (int i = 0; i < 10; i++)
+        {
+            string id = $"goal-{Guid.NewGuid():N}";
+            string fileName = $"goal_{id}.json";
+            string fileId = $"legacy-goal-{i}";
+            var item = new LifeGoal { Id = id, Title = $"Legacy Goal {i}", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+            string json = JsonSerializer.Serialize(item);
+            fakeHandler.DriveFiles[fileId] = (fileName, json, DateTime.UtcNow);
+            var driveItem = new GoogleDriveSyncService.DriveFileItem(fileId, fileName, DateTime.UtcNow);
+            remoteFiles.Add(driveItem);
+            remoteFileMap[fileName] = driveItem;
+            fileIdMap[fileName] = fileId;
+        }
+
+        // 3. 10 Milestones
+        for (int i = 0; i < 10; i++)
+        {
+            string id = $"milestone-{Guid.NewGuid():N}";
+            string fileName = $"milestone_{id}.json";
+            string fileId = $"legacy-milestone-{i}";
+            var item = new GoalMilestone { Id = id, GoalId = "goal-1", Title = $"Legacy Milestone {i}", UpdatedAt = DateTime.UtcNow };
+            string json = JsonSerializer.Serialize(item);
+            fakeHandler.DriveFiles[fileId] = (fileName, json, DateTime.UtcNow);
+            var driveItem = new GoogleDriveSyncService.DriveFileItem(fileId, fileName, DateTime.UtcNow);
+            remoteFiles.Add(driveItem);
+            remoteFileMap[fileName] = driveItem;
+            fileIdMap[fileName] = fileId;
+        }
+
+        // 4. 10 Journals
+        for (int i = 0; i < 10; i++)
+        {
+            string id = $"journal-{Guid.NewGuid():N}";
+            string fileName = $"journal_{id}.json";
+            string fileId = $"legacy-journal-{i}";
+            var item = new JournalEntry { Id = id, Title = $"Legacy Journal {i}", Content = "Content", EntryDate = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+            string json = JsonSerializer.Serialize(item);
+            fakeHandler.DriveFiles[fileId] = (fileName, json, DateTime.UtcNow);
+            var driveItem = new GoogleDriveSyncService.DriveFileItem(fileId, fileName, DateTime.UtcNow);
+            remoteFiles.Add(driveItem);
+            remoteFileMap[fileName] = driveItem;
+            fileIdMap[fileName] = fileId;
+        }
+
+        // 5. 10 Date Notes
+        for (int i = 1; i <= 10; i++)
+        {
+            string dateKey = $"2026-09-{i:D2}";
+            string fileName = $"datenote_{dateKey}.json";
+            string fileId = $"legacy-datenote-{i}";
+            var item = new CalendarDateNote { DateKey = dateKey, NoteText = $"Note {i}", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+            string json = JsonSerializer.Serialize(item);
+            fakeHandler.DriveFiles[fileId] = (fileName, json, DateTime.UtcNow);
+            var driveItem = new GoogleDriveSyncService.DriveFileItem(fileId, fileName, DateTime.UtcNow);
+            remoteFiles.Add(driveItem);
+            remoteFileMap[fileName] = driveItem;
+            fileIdMap[fileName] = fileId;
+        }
+
+        Assert.Equal(55, remoteFiles.Count);
+
+        using var httpClient = new HttpClient(fakeHandler);
+        var syncService = new GoogleDriveSyncService(_todoService, httpClient: httpClient, goalService: _goalService);
+        syncService.SetAuthRecordForTesting(new UserAuthRecord { IsSignedIn = true, AccessToken = "test-token" });
+
+        // (a) Runs under real concurrency (16 semaphore) without throwing
+        await syncService.EnsureManifestMigrationAsync("test-token", remoteFiles, remoteFileMap, fileIdMap, CancellationToken.None);
+
+        // (b) All 55 legacy files are deleted
+        Assert.Equal(55, fakeHandler.DeletedFileIds.Count);
+
+        // (c) Each manifest file is uploaded with the correct merged content
+        Assert.True(fakeHandler.UploadedManifests.ContainsKey("tasks.json"));
+        Assert.True(fakeHandler.UploadedManifests.ContainsKey("goals.json"));
+        Assert.True(fakeHandler.UploadedManifests.ContainsKey("milestones.json"));
+        Assert.True(fakeHandler.UploadedManifests.ContainsKey("journals.json"));
+        Assert.True(fakeHandler.UploadedManifests.ContainsKey("datenotes.json"));
+
+        var uploadedTasks = JsonSerializer.Deserialize<List<TodoItem>>(fakeHandler.UploadedManifests["tasks.json"]);
+        var uploadedGoals = JsonSerializer.Deserialize<List<LifeGoal>>(fakeHandler.UploadedManifests["goals.json"]);
+        var uploadedMilestones = JsonSerializer.Deserialize<List<GoalMilestone>>(fakeHandler.UploadedManifests["milestones.json"]);
+        var uploadedJournals = JsonSerializer.Deserialize<List<JournalEntry>>(fakeHandler.UploadedManifests["journals.json"]);
+        var uploadedDateNotes = JsonSerializer.Deserialize<List<CalendarDateNote>>(fakeHandler.UploadedManifests["datenotes.json"]);
+
+        Assert.Equal(15, uploadedTasks!.Count);
+        Assert.Equal(10, uploadedGoals!.Count);
+        Assert.Equal(10, uploadedMilestones!.Count);
+        Assert.Equal(10, uploadedJournals!.Count);
+        Assert.Equal(10, uploadedDateNotes!.Count);
+
+        // (d) MigratedToManifests is true
+        Assert.True(syncService.MigratedToManifests);
+
+        // (e) Running a second time is an immediate no-op
+        fakeHandler.DeletedFileIds.Clear();
+        int uploadedCountBefore = fakeHandler.UploadedManifests.Count;
+        await syncService.EnsureManifestMigrationAsync("test-token", remoteFiles, remoteFileMap, fileIdMap, CancellationToken.None);
+        Assert.Empty(fakeHandler.DeletedFileIds);
+        Assert.Equal(uploadedCountBefore, fakeHandler.UploadedManifests.Count);
+    }
+
+    [Fact]
+    public async Task PruneExpiredCloudTombstonesAsync_ManifestWithExpiredTombstone_GetsReuploaded_CleanManifestUntouched()
+    {
+        var fakeHandler = new FakeDriveHttpMessageHandler();
+        var remoteFileMap = new Dictionary<string, GoogleDriveSyncService.DriveFileItem>(StringComparer.OrdinalIgnoreCase);
+        var fileIdMap = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        // 1. Expired Task (> 90 days ago) in local DB and remote tasks.json
+        var expiredTaskId = Guid.NewGuid();
+        var expiredTask = new TodoItem
+        {
+            Id = expiredTaskId,
+            Title = "Expired Deleted Task",
+            IsDeleted = true,
+            DeletedAt = DateTime.UtcNow.AddDays(-95),
+            UpdatedAt = DateTime.UtcNow.AddDays(-95)
+        };
+        await _todoService.BatchDirectUpsertFromSyncAsync(new[] { expiredTask });
+
+        string tasksFileId = "drive-tasks-id";
+        string tasksJson = JsonSerializer.Serialize(new List<TodoItem> { expiredTask });
+        fakeHandler.DriveFiles[tasksFileId] = ("tasks.json", tasksJson, DateTime.UtcNow.AddDays(-1));
+        remoteFileMap["tasks.json"] = new GoogleDriveSyncService.DriveFileItem(tasksFileId, "tasks.json", DateTime.UtcNow.AddDays(-1));
+        fileIdMap["tasks.json"] = tasksFileId;
+
+        // 2. Active Goal in local DB and remote goals.json (no expired tombstones)
+        var activeGoal = new LifeGoal
+        {
+            Id = "active-goal-1",
+            Title = "Active Goal",
+            IsDeleted = false,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        await _goalService.BatchDirectUpsertGoalsAsync(new[] { activeGoal });
+
+        string goalsFileId = "drive-goals-id";
+        string goalsJson = JsonSerializer.Serialize(new List<LifeGoal> { activeGoal });
+        fakeHandler.DriveFiles[goalsFileId] = ("goals.json", goalsJson, DateTime.UtcNow.AddDays(-1));
+        remoteFileMap["goals.json"] = new GoogleDriveSyncService.DriveFileItem(goalsFileId, "goals.json", DateTime.UtcNow.AddDays(-1));
+        fileIdMap["goals.json"] = goalsFileId;
+
+        using var httpClient = new HttpClient(fakeHandler);
+        var syncService = new GoogleDriveSyncService(_todoService, httpClient: httpClient, goalService: _goalService);
+        syncService.SetAuthRecordForTesting(new UserAuthRecord { IsSignedIn = true, AccessToken = "test-token", MigratedToManifests = true });
+
+        // Act: Run tombstone pruning pass
+        await syncService.PruneExpiredCloudTombstonesAsync("test-token", remoteFileMap, fileIdMap, CancellationToken.None);
+
+        // Assert: tasks.json was re-uploaded without the expired tombstone (empty list)
+        Assert.True(fakeHandler.UploadedManifests.ContainsKey("tasks.json"));
+        var prunedTasks = JsonSerializer.Deserialize<List<TodoItem>>(fakeHandler.UploadedManifests["tasks.json"]);
+        Assert.NotNull(prunedTasks);
+        Assert.Empty(prunedTasks);
+
+        // Assert: goals.json has no expired tombstones, so it was left untouched (never uploaded)
+        Assert.False(fakeHandler.UploadedManifests.ContainsKey("goals.json"));
+    }
+
+    #endregion
+}
+
+public class FakeDriveHttpMessageHandler : HttpMessageHandler
+{
+    public ConcurrentDictionary<string, (string Name, string Content, DateTime ModifiedTime)> DriveFiles { get; }
+        = new(StringComparer.OrdinalIgnoreCase);
+
+    public ConcurrentBag<string> DeletedFileIds { get; } = new();
+    public ConcurrentDictionary<string, string> UploadedManifests { get; } = new(StringComparer.OrdinalIgnoreCase);
+    public ConcurrentBag<HttpRequestMessage> CapturedRequests { get; } = new();
+
+    public List<List<(string Id, string Name, DateTime ModifiedTime)>>? PagedFiles { get; set; }
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        CapturedRequests.Add(request);
+        var uri = request.RequestUri?.ToString() ?? string.Empty;
+
+        // 1. List files in appDataFolder
+        if (request.Method == HttpMethod.Get && uri.Contains("/files?") && uri.Contains("spaces=appDataFolder"))
+        {
+            if (PagedFiles != null && PagedFiles.Count > 0)
+            {
+                string? pageToken = null;
+                var idx = uri.IndexOf("pageToken=", StringComparison.OrdinalIgnoreCase);
+                if (idx >= 0)
+                {
+                    var tokenPart = uri.Substring(idx + 10);
+                    var amp = tokenPart.IndexOf('&');
+                    pageToken = amp >= 0 ? tokenPart.Substring(0, amp) : tokenPart;
+                    pageToken = Uri.UnescapeDataString(pageToken);
+                }
+
+                int pageIndex = 0;
+                if (!string.IsNullOrEmpty(pageToken) && int.TryParse(pageToken, out var pi))
+                {
+                    pageIndex = pi;
+                }
+
+                if (pageIndex < PagedFiles.Count)
+                {
+                    var page = PagedFiles[pageIndex];
+                    string? nextToken = pageIndex + 1 < PagedFiles.Count ? (pageIndex + 1).ToString() : null;
+
+                    var responseObj = new
+                    {
+                        nextPageToken = nextToken,
+                        files = page.Select(f => new
+                        {
+                            id = f.Id,
+                            name = f.Name,
+                            modifiedTime = f.ModifiedTime.ToString("o")
+                        })
+                    };
+
+                    return new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(JsonSerializer.Serialize(responseObj), Encoding.UTF8, "application/json")
+                    };
+                }
+            }
+
+            // Single page default
+            var allFilesResponse = new
+            {
+                files = DriveFiles.Select(kvp => new
+                {
+                    id = kvp.Key,
+                    name = kvp.Value.Name,
+                    modifiedTime = kvp.Value.ModifiedTime.ToString("o")
+                })
+            };
+
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(allFilesResponse), Encoding.UTF8, "application/json")
+            };
+        }
+
+        // 2. Download file: GET /files/{id}?alt=media
+        if (request.Method == HttpMethod.Get && uri.Contains("/files/") && uri.Contains("alt=media"))
+        {
+            var segments = request.RequestUri!.AbsolutePath.Split('/');
+            var fileId = segments[^1];
+            if (DriveFiles.TryGetValue(fileId, out var fileData))
+            {
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(fileData.Content, Encoding.UTF8, "application/json")
+                };
+            }
+            return new HttpResponseMessage(HttpStatusCode.NotFound);
+        }
+
+        // 3. Delete file: DELETE /files/{id}
+        if (request.Method == HttpMethod.Delete && uri.Contains("/files/"))
+        {
+            var segments = request.RequestUri!.AbsolutePath.Split('/');
+            var fileId = segments[^1];
+            DeletedFileIds.Add(fileId);
+            DriveFiles.TryRemove(fileId, out _);
+            return new HttpResponseMessage(HttpStatusCode.NoContent);
+        }
+
+        // 4. Upload multipart (POST /files?uploadType=multipart)
+        if (request.Method == HttpMethod.Post && uri.Contains("/files") && uri.Contains("uploadType=multipart"))
+        {
+            string newId = "file-" + Guid.NewGuid().ToString("N");
+            string fileName = "unknown";
+            string payload = "";
+
+            if (request.Content is MultipartContent mc)
+            {
+                using var enumerator = mc.GetEnumerator();
+                if (enumerator.MoveNext())
+                {
+                    var metaJson = await enumerator.Current.ReadAsStringAsync(cancellationToken);
+                    using var doc = JsonDocument.Parse(metaJson);
+                    if (doc.RootElement.TryGetProperty("name", out var np)) fileName = np.GetString() ?? fileName;
+                }
+                if (enumerator.MoveNext())
+                {
+                    payload = await enumerator.Current.ReadAsStringAsync(cancellationToken);
+                }
+            }
+            else if (request.Content != null)
+            {
+                payload = await request.Content.ReadAsStringAsync(cancellationToken);
+            }
+
+            DriveFiles[newId] = (fileName, payload, DateTime.UtcNow);
+            UploadedManifests[fileName] = payload;
+
+            var resp = new { id = newId, name = fileName };
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(resp), Encoding.UTF8, "application/json")
+            };
+        }
+
+        // 5. Patch media (PATCH /files/{id}?uploadType=media)
+        if (request.Method == HttpMethod.Patch && uri.Contains("/files/") && uri.Contains("uploadType=media"))
+        {
+            var segments = request.RequestUri!.AbsolutePath.Split('/');
+            var fileId = segments[^1];
+            string payload = request.Content != null ? await request.Content.ReadAsStringAsync(cancellationToken) : "";
+
+            if (DriveFiles.TryGetValue(fileId, out var existing))
+            {
+                DriveFiles[fileId] = (existing.Name, payload, DateTime.UtcNow);
+                UploadedManifests[existing.Name] = payload;
+            }
+            else
+            {
+                DriveFiles[fileId] = (fileId, payload, DateTime.UtcNow);
+                UploadedManifests[fileId] = payload;
+            }
+
+            var resp = new { id = fileId };
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(resp), Encoding.UTF8, "application/json")
+            };
+        }
+
+        return new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("{}", Encoding.UTF8, "application/json")
+        };
+    }
 }

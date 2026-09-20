@@ -20,4 +20,8 @@
     <ProjectReference Include="..\Wadd.Core\Wadd.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Wadd.Tests" />
+  </ItemGroup>
+
 </Project>

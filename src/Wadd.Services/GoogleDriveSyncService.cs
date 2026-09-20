@@ -32,7 +32,10 @@ public class GoogleDriveSyncService : ISyncService
     public bool IsSignedIn => _authRecord?.IsSignedIn ?? false;
     public string? UserEmail => _authRecord?.UserEmail;
     public string? UserName => _authRecord?.UserName;
+    public bool MigratedToManifests => _authRecord?.MigratedToManifests ?? false;
     public event EventHandler? AuthStateChanged;
+
+    internal void SetAuthRecordForTesting(UserAuthRecord record) => _authRecord = record;
 
     private void NotifyAuthStateChanged() => AuthStateChanged?.Invoke(this, EventArgs.Empty);
 
@@ -1227,7 +1230,7 @@ public class GoogleDriveSyncService : ISyncService
             HasChangesApplied = results.Any(r => r);
 
             // Prune expired tombstones older than retention window (Issue #2)
-            await PruneExpiredCloudTombstonesAsync(token, remoteFileMap, cancellationToken);
+            await PruneExpiredCloudTombstonesAsync(token, remoteFileMap, fileIdMap, cancellationToken);
 
             var maxRemoteMod = remoteFiles.Where(f => f.ModifiedTime.HasValue).Select(f => f.ModifiedTime!.Value).DefaultIfEmpty(DateTime.MinValue).Max();
             _lastSyncTimestampUtc = DateTime.UtcNow > maxRemoteMod ? DateTime.UtcNow : maxRemoteMod;
@@ -1245,7 +1248,7 @@ public class GoogleDriveSyncService : ISyncService
         }
     }
 
-    private async Task EnsureManifestMigrationAsync(
+    internal async Task EnsureManifestMigrationAsync(
         string token,
         List<DriveFileItem> remoteFiles,
         Dictionary<string, DriveFileItem> remoteFileMap,
@@ -1274,6 +1277,7 @@ public class GoogleDriveSyncService : ISyncService
 
         Wadd.Core.Logging.AppLogger.LogInfo("GoogleDriveSyncService", $"Starting one-time migration of {legacyFiles.Count} legacy per-record files to consolidated manifests...");
 
+        var rawSqliteSvc = _todoService as SQLiteTodoService;
         var downloadSemaphore = new SemaphoreSlim(16);
         var downloadedTasks = new ConcurrentBag<TodoItem>();
         var downloadedGoals = new ConcurrentBag<LifeGoal>();
@@ -1328,7 +1332,6 @@ public class GoogleDriveSyncService : ISyncService
         await _dbWriteLock.WaitAsync(cancellationToken);
         try
         {
-            var rawSqliteSvc = _todoService as SQLiteTodoService;
             if (downloadedTasks.Count > 0)
             {
                 var localTasks = rawSqliteSvc != null
@@ -1408,14 +1411,18 @@ public class GoogleDriveSyncService : ISyncService
             _dbWriteLock.Release();
         }
 
-        // Delete legacy files from Google Drive
+        // Delete legacy files from Google Drive without concurrent dictionary mutations
+        var deletedFileNames = new ConcurrentBag<string>();
         var deleteTasks = legacyFiles.Select(async file =>
         {
             await downloadSemaphore.WaitAsync(cancellationToken);
             try
             {
-                await DeleteAppDataFileAsync(token, file.Id, file.Name, cancellationToken);
-                remoteFileMap.Remove(file.Name);
+                bool deleted = await DeleteAppDataFileAsync(token, file.Id, file.Name, cancellationToken);
+                if (deleted)
+                {
+                    deletedFileNames.Add(file.Name);
+                }
                 fileIdMap.Remove(file.Name);
             }
             catch { }
@@ -1425,6 +1432,74 @@ public class GoogleDriveSyncService : ISyncService
             }
         });
         await Task.WhenAll(deleteTasks);
+
+        foreach (var name in deletedFileNames)
+        {
+            remoteFileMap.Remove(name);
+        }
+
+        // Upload initial consolidated manifests with merged content
+        var cutoff = DateTime.UtcNow - TombstoneRetentionWindow;
+
+        // 1. Tasks Manifest
+        var allLocalTasks = rawSqliteSvc != null
+            ? (await rawSqliteSvc.GetAllRawAsync(cancellationToken)).ToList()
+            : (await _todoService.GetTodosAsync(cancellationToken)).ToList();
+        var tasksToUpload = allLocalTasks
+            .Where(t => !t.IsDeleted || (t.DeletedAt.HasValue && t.DeletedAt.Value >= cutoff))
+            .ToList();
+        await UploadJsonFileToAppDataFolderAsync(token, TasksManifestFilename, JsonSerializer.Serialize(tasksToUpload, JsonOptions), fileIdMap, "Tasks Manifest", cancellationToken);
+        if (fileIdMap.TryGetValue(TasksManifestFilename, out var tasksFileId))
+        {
+            remoteFileMap[TasksManifestFilename] = new DriveFileItem(tasksFileId, TasksManifestFilename, DateTime.UtcNow);
+        }
+
+        // 2. Goals & Milestones & Journals Manifests
+        if (_goalService != null)
+        {
+            var allGoals = (await _goalService.GetAllGoalsRawAsync(cancellationToken)).ToList();
+            var goalsToUpload = allGoals
+                .Where(g => !g.IsDeleted || (g.DeletedAt.HasValue && g.DeletedAt.Value >= cutoff))
+                .ToList();
+            await UploadJsonFileToAppDataFolderAsync(token, GoalsManifestFilename, JsonSerializer.Serialize(goalsToUpload, JsonOptions), fileIdMap, "Goals Manifest", cancellationToken);
+            if (fileIdMap.TryGetValue(GoalsManifestFilename, out var goalsFileId))
+            {
+                remoteFileMap[GoalsManifestFilename] = new DriveFileItem(goalsFileId, GoalsManifestFilename, DateTime.UtcNow);
+            }
+
+            var allMilestones = (await _goalService.GetAllMilestonesRawAsync(cancellationToken)).ToList();
+            var milestonesToUpload = allMilestones
+                .Where(m => !m.IsDeleted || (m.DeletedAt.HasValue && m.DeletedAt.Value >= cutoff))
+                .ToList();
+            await UploadJsonFileToAppDataFolderAsync(token, MilestonesManifestFilename, JsonSerializer.Serialize(milestonesToUpload, JsonOptions), fileIdMap, "Milestones Manifest", cancellationToken);
+            if (fileIdMap.TryGetValue(MilestonesManifestFilename, out var mFileId))
+            {
+                remoteFileMap[MilestonesManifestFilename] = new DriveFileItem(mFileId, MilestonesManifestFilename, DateTime.UtcNow);
+            }
+
+            var allJournals = (await _goalService.GetAllJournalEntriesRawAsync(cancellationToken)).ToList();
+            var journalsToUpload = allJournals
+                .Where(j => !j.IsDeleted || (j.DeletedAt.HasValue && j.DeletedAt.Value >= cutoff))
+                .ToList();
+            await UploadJsonFileToAppDataFolderAsync(token, JournalsManifestFilename, JsonSerializer.Serialize(journalsToUpload, JsonOptions), fileIdMap, "Journals Manifest", cancellationToken);
+            if (fileIdMap.TryGetValue(JournalsManifestFilename, out var jFileId))
+            {
+                remoteFileMap[JournalsManifestFilename] = new DriveFileItem(jFileId, JournalsManifestFilename, DateTime.UtcNow);
+            }
+        }
+
+        // 3. DateNotes Manifest
+        var allNotes = (await _todoService.GetAllDateNotesRawAsync(cancellationToken)).ToList();
+        var notesToUpload = allNotes
+            .Where(n => !n.IsDeleted || (n.DeletedAt.HasValue && n.DeletedAt.Value >= cutoff))
+            .ToList();
+        await UploadJsonFileToAppDataFolderAsync(token, DateNotesManifestFilename, JsonSerializer.Serialize(notesToUpload, JsonOptions), fileIdMap, "DateNotes Manifest", cancellationToken);
+        if (fileIdMap.TryGetValue(DateNotesManifestFilename, out var dnFileId))
+        {
+            remoteFileMap[DateNotesManifestFilename] = new DriveFileItem(dnFileId, DateNotesManifestFilename, DateTime.UtcNow);
+        }
+
+        _lastSyncTimestampUtc = DateTime.UtcNow;
 
         if (_authRecord != null)
         {
@@ -1607,9 +1682,9 @@ public class GoogleDriveSyncService : ISyncService
         return hasChanges;
     }
 
-    private record DriveFileItem(string Id, string Name, DateTime? ModifiedTime);
+    internal record DriveFileItem(string Id, string Name, DateTime? ModifiedTime);
 
-    private async Task<List<DriveFileItem>> ListAppDataFolderFilesAsync(string token, CancellationToken cancellationToken)
+    internal async Task<List<DriveFileItem>> ListAppDataFolderFilesAsync(string token, CancellationToken cancellationToken)
     {
         var result = new List<DriveFileItem>();
         string query = "trashed = false";
@@ -1670,107 +1745,138 @@ public class GoogleDriveSyncService : ISyncService
         return false;
     }
 
-    private async Task PruneExpiredCloudTombstonesAsync(
+    internal async Task PruneExpiredCloudTombstonesAsync(
         string token,
         Dictionary<string, DriveFileItem> remoteFileMap,
+        IDictionary<string, string> fileIdMap,
         CancellationToken cancellationToken)
     {
         try
         {
             var cutoff = DateTime.UtcNow - TombstoneRetentionWindow;
 
-            // 1. Tasks
+            // 1. Tasks Manifest
             var rawSqliteSvc = _todoService as SQLiteTodoService;
-            var tasks = rawSqliteSvc != null
+            var localTasks = rawSqliteSvc != null
                 ? await rawSqliteSvc.GetAllRawAsync(cancellationToken)
                 : await _todoService.GetTodosAsync(cancellationToken);
 
-            foreach (var task in tasks)
+            bool hasExpiredTasks = localTasks.Any(t => t.IsDeleted && t.DeletedAt.HasValue && t.DeletedAt.Value < cutoff);
+            if (hasExpiredTasks && remoteFileMap.TryGetValue(TasksManifestFilename, out var tasksFile))
             {
-                if (task.IsDeleted && task.DeletedAt.HasValue && task.DeletedAt.Value < cutoff)
+                var content = await DownloadAppDataFileAsync(token, tasksFile.Id, cancellationToken);
+                if (!string.IsNullOrWhiteSpace(content))
                 {
-                    string fileName = $"{task.Id}.json";
-                    if (remoteFileMap.TryGetValue(fileName, out var remoteFile))
+                    try
                     {
-                        if (await DeleteAppDataFileAsync(token, remoteFile.Id, $"Task {task.Id}", cancellationToken))
+                        var remoteList = JsonSerializer.Deserialize<List<TodoItem>>(content, JsonOptions) ?? new();
+                        if (remoteList.Any(t => t.IsDeleted && t.DeletedAt.HasValue && t.DeletedAt.Value < cutoff))
                         {
-                            remoteFileMap.Remove(fileName);
-                            Wadd.Core.Logging.AppLogger.LogInfo("GoogleDriveSyncService", $"Pruned expired cloud tombstone for Task {task.Id} (DeletedAt: {task.DeletedAt:O}).");
+                            var pruned = remoteList
+                                .Where(t => !t.IsDeleted || (t.DeletedAt.HasValue && t.DeletedAt.Value >= cutoff))
+                                .ToList();
+                            await UploadJsonFileToAppDataFolderAsync(token, TasksManifestFilename, JsonSerializer.Serialize(pruned, JsonOptions), fileIdMap, "Tasks Manifest (Tombstone Pruning)", cancellationToken);
+                            Wadd.Core.Logging.AppLogger.LogInfo("GoogleDriveSyncService", $"Pruned expired tombstones from {TasksManifestFilename} manifest.");
                         }
                     }
+                    catch { }
                 }
             }
 
-            // 2. Goals & Milestones & Journals
+            // 2. Goals & Milestones & Journals Manifests
             if (_goalService != null)
             {
-                var goals = await _goalService.GetAllGoalsRawAsync(cancellationToken);
-                foreach (var goal in goals)
+                var localGoals = await _goalService.GetAllGoalsRawAsync(cancellationToken);
+                bool hasExpiredGoals = localGoals.Any(g => g.IsDeleted && g.DeletedAt.HasValue && g.DeletedAt.Value < cutoff);
+                if (hasExpiredGoals && remoteFileMap.TryGetValue(GoalsManifestFilename, out var goalsFile))
                 {
-                    if (goal.IsDeleted && goal.DeletedAt.HasValue && goal.DeletedAt.Value < cutoff)
+                    var content = await DownloadAppDataFileAsync(token, goalsFile.Id, cancellationToken);
+                    if (!string.IsNullOrWhiteSpace(content))
                     {
-                        string fileName = $"goal_{goal.Id}.json";
-                        if (remoteFileMap.TryGetValue(fileName, out var rf))
+                        try
                         {
-                            if (await DeleteAppDataFileAsync(token, rf.Id, $"Goal {goal.Id}", cancellationToken))
+                            var remoteList = JsonSerializer.Deserialize<List<LifeGoal>>(content, JsonOptions) ?? new();
+                            if (remoteList.Any(g => g.IsDeleted && g.DeletedAt.HasValue && g.DeletedAt.Value < cutoff))
                             {
-                                remoteFileMap.Remove(fileName);
-                                Wadd.Core.Logging.AppLogger.LogInfo("GoogleDriveSyncService", $"Pruned expired cloud tombstone for Goal {goal.Id} (DeletedAt: {goal.DeletedAt:O}).");
+                                var pruned = remoteList
+                                    .Where(g => !g.IsDeleted || (g.DeletedAt.HasValue && g.DeletedAt.Value >= cutoff))
+                                    .ToList();
+                                await UploadJsonFileToAppDataFolderAsync(token, GoalsManifestFilename, JsonSerializer.Serialize(pruned, JsonOptions), fileIdMap, "Goals Manifest (Tombstone Pruning)", cancellationToken);
+                                Wadd.Core.Logging.AppLogger.LogInfo("GoogleDriveSyncService", $"Pruned expired tombstones from {GoalsManifestFilename} manifest.");
                             }
                         }
+                        catch { }
                     }
                 }
 
-                var milestones = await _goalService.GetAllMilestonesRawAsync(cancellationToken);
-                foreach (var m in milestones)
+                var localMilestones = await _goalService.GetAllMilestonesRawAsync(cancellationToken);
+                bool hasExpiredMilestones = localMilestones.Any(m => m.IsDeleted && m.DeletedAt.HasValue && m.DeletedAt.Value < cutoff);
+                if (hasExpiredMilestones && remoteFileMap.TryGetValue(MilestonesManifestFilename, out var milestonesFile))
                 {
-                    if (m.IsDeleted && m.DeletedAt.HasValue && m.DeletedAt.Value < cutoff)
+                    var content = await DownloadAppDataFileAsync(token, milestonesFile.Id, cancellationToken);
+                    if (!string.IsNullOrWhiteSpace(content))
                     {
-                        string fileName = $"milestone_{m.Id}.json";
-                        if (remoteFileMap.TryGetValue(fileName, out var rf))
+                        try
                         {
-                            if (await DeleteAppDataFileAsync(token, rf.Id, $"Milestone {m.Id}", cancellationToken))
+                            var remoteList = JsonSerializer.Deserialize<List<GoalMilestone>>(content, JsonOptions) ?? new();
+                            if (remoteList.Any(m => m.IsDeleted && m.DeletedAt.HasValue && m.DeletedAt.Value < cutoff))
                             {
-                                remoteFileMap.Remove(fileName);
-                                Wadd.Core.Logging.AppLogger.LogInfo("GoogleDriveSyncService", $"Pruned expired cloud tombstone for Milestone {m.Id} (DeletedAt: {m.DeletedAt:O}).");
+                                var pruned = remoteList
+                                    .Where(m => !m.IsDeleted || (m.DeletedAt.HasValue && m.DeletedAt.Value >= cutoff))
+                                    .ToList();
+                                await UploadJsonFileToAppDataFolderAsync(token, MilestonesManifestFilename, JsonSerializer.Serialize(pruned, JsonOptions), fileIdMap, "Milestones Manifest (Tombstone Pruning)", cancellationToken);
+                                Wadd.Core.Logging.AppLogger.LogInfo("GoogleDriveSyncService", $"Pruned expired tombstones from {MilestonesManifestFilename} manifest.");
                             }
                         }
+                        catch { }
                     }
                 }
 
-                var journals = await _goalService.GetAllJournalEntriesRawAsync(cancellationToken);
-                foreach (var j in journals)
+                var localJournals = await _goalService.GetAllJournalEntriesRawAsync(cancellationToken);
+                bool hasExpiredJournals = localJournals.Any(j => j.IsDeleted && j.DeletedAt.HasValue && j.DeletedAt.Value < cutoff);
+                if (hasExpiredJournals && remoteFileMap.TryGetValue(JournalsManifestFilename, out var journalsFile))
                 {
-                    if (j.IsDeleted && j.DeletedAt.HasValue && j.DeletedAt.Value < cutoff)
+                    var content = await DownloadAppDataFileAsync(token, journalsFile.Id, cancellationToken);
+                    if (!string.IsNullOrWhiteSpace(content))
                     {
-                        string fileName = $"journal_{j.Id}.json";
-                        if (remoteFileMap.TryGetValue(fileName, out var rf))
+                        try
                         {
-                            if (await DeleteAppDataFileAsync(token, rf.Id, $"Journal {j.Id}", cancellationToken))
+                            var remoteList = JsonSerializer.Deserialize<List<JournalEntry>>(content, JsonOptions) ?? new();
+                            if (remoteList.Any(j => j.IsDeleted && j.DeletedAt.HasValue && j.DeletedAt.Value < cutoff))
                             {
-                                remoteFileMap.Remove(fileName);
-                                Wadd.Core.Logging.AppLogger.LogInfo("GoogleDriveSyncService", $"Pruned expired cloud tombstone for Journal {j.Id} (DeletedAt: {j.DeletedAt:O}).");
+                                var pruned = remoteList
+                                    .Where(j => !j.IsDeleted || (j.DeletedAt.HasValue && j.DeletedAt.Value >= cutoff))
+                                    .ToList();
+                                await UploadJsonFileToAppDataFolderAsync(token, JournalsManifestFilename, JsonSerializer.Serialize(pruned, JsonOptions), fileIdMap, "Journals Manifest (Tombstone Pruning)", cancellationToken);
+                                Wadd.Core.Logging.AppLogger.LogInfo("GoogleDriveSyncService", $"Pruned expired tombstones from {JournalsManifestFilename} manifest.");
                             }
                         }
+                        catch { }
                     }
                 }
             }
 
-            // 3. Date Notes
-            var dateNotes = await _todoService.GetAllDateNotesRawAsync(cancellationToken);
-            foreach (var note in dateNotes)
+            // 3. Date Notes Manifest
+            var localNotes = await _todoService.GetAllDateNotesRawAsync(cancellationToken);
+            bool hasExpiredNotes = localNotes.Any(n => n.IsDeleted && n.DeletedAt.HasValue && n.DeletedAt.Value < cutoff);
+            if (hasExpiredNotes && remoteFileMap.TryGetValue(DateNotesManifestFilename, out var notesFile))
             {
-                if (note.IsDeleted && note.DeletedAt.HasValue && note.DeletedAt.Value < cutoff)
+                var content = await DownloadAppDataFileAsync(token, notesFile.Id, cancellationToken);
+                if (!string.IsNullOrWhiteSpace(content))
                 {
-                    string fileName = $"datenote_{note.DateKey}.json";
-                    if (remoteFileMap.TryGetValue(fileName, out var rf))
+                    try
                     {
-                        if (await DeleteAppDataFileAsync(token, rf.Id, $"DateNote {note.DateKey}", cancellationToken))
+                        var remoteList = JsonSerializer.Deserialize<List<CalendarDateNote>>(content, JsonOptions) ?? new();
+                        if (remoteList.Any(n => n.IsDeleted && n.DeletedAt.HasValue && n.DeletedAt.Value < cutoff))
                         {
-                            remoteFileMap.Remove(fileName);
-                            Wadd.Core.Logging.AppLogger.LogInfo("GoogleDriveSyncService", $"Pruned expired cloud tombstone for DateNote {note.DateKey} (DeletedAt: {note.DeletedAt:O}).");
+                            var pruned = remoteList
+                                .Where(n => !n.IsDeleted || (n.DeletedAt.HasValue && n.DeletedAt.Value >= cutoff))
+                                .ToList();
+                            await UploadJsonFileToAppDataFolderAsync(token, DateNotesManifestFilename, JsonSerializer.Serialize(pruned, JsonOptions), fileIdMap, "DateNotes Manifest (Tombstone Pruning)", cancellationToken);
+                            Wadd.Core.Logging.AppLogger.LogInfo("GoogleDriveSyncService", $"Pruned expired tombstones from {DateNotesManifestFilename} manifest.");
                         }
                     }
+                    catch { }
                 }
             }
         }
