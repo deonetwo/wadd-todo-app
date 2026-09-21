@@ -141,7 +141,8 @@ public class AndroidNotificationService : INotificationService
                 .SetSmallIcon(Resource.Drawable.icon)
                 .SetContentIntent(pendingIntent)
                 .SetAutoCancel(!settings.AndroidStickyReminders)
-                .SetOngoing(settings.AndroidStickyReminders);
+                .SetOngoing(settings.AndroidStickyReminders)
+                .SetVisibility(NotificationVisibility.Public);
 
             try
             {
@@ -242,7 +243,8 @@ internal class AndroidNotificationChannelManagerAdapter : IAndroidNotificationCh
 
         var channel = new NotificationChannel(channelId, channelName, importance)
         {
-            Description = channelDesc
+            Description = channelDesc,
+            LockscreenVisibility = NotificationVisibility.Public
         };
 
         // Omitting SetSound leaves the channel with Android's system default notification sound URI.
