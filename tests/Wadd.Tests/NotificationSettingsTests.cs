@@ -943,6 +943,7 @@ public class NotificationSettingsTests
 
         var xml = toast.Content.GetXml();
         Assert.Contains("scenario=\"reminder\"", xml);
+        Assert.Contains("launch=\"action=openApp\"", xml);
         Assert.Contains("<audio silent=\"true\"/>", xml);
         Assert.Contains("<text>Task Due Soon</text>", xml);
         Assert.Contains("<text>Remember to buy milk</text>", xml);

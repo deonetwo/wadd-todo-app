@@ -2,6 +2,9 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Threading;
 using DesktopNotifications.Windows;
 using Wadd.Core.Helpers;
 using Wadd.Core.Interfaces;
@@ -21,6 +24,7 @@ namespace Wadd.Windows;
 public class WindowsNotificationService : INotificationService
 {
     public static event Action<string, string>? NotificationTriggered;
+    public static event Action<string?>? ToastActivated;
 
     private static bool _isAumidRegistered;
     private static readonly object _aumidLock = new();
@@ -205,7 +209,7 @@ public class WindowsNotificationService : INotificationService
         var safeTitle = System.Security.SecurityElement.Escape(title) ?? "Wadd Reminder";
         var safeMessage = System.Security.SecurityElement.Escape(message) ?? string.Empty;
         var audioXml = playSound ? string.Empty : "<audio silent=\"true\"/>";
-        var toastXml = $"<toast scenario=\"reminder\"><visual><binding template=\"ToastGeneric\"><text>{safeTitle}</text><text>{safeMessage}</text></binding></visual>{audioXml}</toast>";
+        var toastXml = $"<toast launch=\"action=openApp\" scenario=\"reminder\"><visual><binding template=\"ToastGeneric\"><text>{safeTitle}</text><text>{safeMessage}</text></binding></visual>{audioXml}</toast>";
 
         var uniqueTag = string.IsNullOrWhiteSpace(tag) ? Guid.NewGuid().ToString() : tag;
 
@@ -233,6 +237,40 @@ public class WindowsNotificationService : INotificationService
         EnsureAumidAndShortcutRegistered();
 
         var toast = CreateToastNotification(title, message, playSound, tag);
+        toast.Activated += (sender, args) =>
+        {
+            try
+            {
+                var launchArgs = (args as ToastActivatedEventArgs)?.Arguments;
+                ToastActivated?.Invoke(launchArgs);
+
+                Dispatcher.UIThread.Post(() =>
+                {
+                    try
+                    {
+                        var appLifetime = Avalonia.Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime;
+                        if (appLifetime?.MainWindow is Window window)
+                        {
+                            window.WindowState = WindowState.Normal;
+                            window.Show();
+                            window.Activate();
+                            window.Topmost = true;
+                            window.Topmost = false;
+                            window.Focus();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Wadd.Core.Logging.AppLogger.LogWarning("WindowsNotificationService", "Failed to bring window to front on toast activation", ex);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Wadd.Core.Logging.AppLogger.LogWarning("WindowsNotificationService", "Error handling toast activation", ex);
+            }
+        };
+
         var notifier = ToastNotificationManager.CreateToastNotifier("Wadd.Todo");
         notifier.Show(toast);
     }
