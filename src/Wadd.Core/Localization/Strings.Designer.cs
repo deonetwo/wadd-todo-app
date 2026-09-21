@@ -168,6 +168,11 @@ public class Strings
     public static string Settings_GoogleDriveSync => ResourceManager.GetString("Settings_GoogleDriveSync", resourceCulture) ?? "Google Drive Sync";
     public static string Settings_GoogleDriveSync_Desc => ResourceManager.GetString("Settings_GoogleDriveSync_Desc", resourceCulture) ?? "Sync your tasks, goals, and settings across your devices via private Google Drive storage.";
     public static string Settings_SignIn => ResourceManager.GetString("Settings_SignIn", resourceCulture) ?? "Sign In with Google";
+    public static string Settings_SigningIn => ResourceManager.GetString("Settings_SigningIn", resourceCulture) ?? "Signing in...";
+    public static string Settings_SigningIn_Waiting => ResourceManager.GetString("Settings_SigningIn_Waiting", resourceCulture) ?? "Waiting for Google authentication... Please complete sign-in in your browser or account prompt.";
+    public static string Main_SigningInGoogle => ResourceManager.GetString("Main_SigningInGoogle", resourceCulture) ?? "Signing in with Google Account...";
+    public static string Main_SignedInSuccess => ResourceManager.GetString("Main_SignedInSuccess", resourceCulture) ?? "Signed in as {0}. Connected to Google Drive.";
+    public static string Main_SignInCancelled => ResourceManager.GetString("Main_SignInCancelled", resourceCulture) ?? "Sign-in cancelled.";
     public static string Settings_SignOut => ResourceManager.GetString("Settings_SignOut", resourceCulture) ?? "Sign Out";
     public static string Settings_SyncNow => ResourceManager.GetString("Settings_SyncNow", resourceCulture) ?? "Sync Now";
     public static string Settings_AiAssistant => ResourceManager.GetString("Settings_AiAssistant", resourceCulture) ?? "AI ASSISTANT & COACHING";

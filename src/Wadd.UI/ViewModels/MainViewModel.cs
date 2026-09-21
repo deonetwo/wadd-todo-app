@@ -2329,7 +2329,7 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [ObservableProperty]
-    private bool _isCompact;
+    private bool _isCompact = OperatingSystem.IsAndroid();
 
     partial void OnIsCompactChanged(bool value)
     {
@@ -2373,6 +2373,7 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(StorageStatusText))]
+    [NotifyPropertyChangedFor(nameof(IsSyncingOrSigningIn))]
     private bool _isSyncing;
 
     [ObservableProperty]
@@ -2382,10 +2383,18 @@ public partial class MainViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(StorageStatusText))]
     private bool _isGoogleSignedIn;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(StorageStatusText))]
+    [NotifyPropertyChangedFor(nameof(IsSyncingOrSigningIn))]
+    private bool _isGoogleSigningIn;
+
+    public bool IsSyncingOrSigningIn => IsSyncing || IsGoogleSigningIn;
+
     public string StorageStatusText
     {
         get
         {
+            if (IsGoogleSigningIn) return LocalizationManager.Instance["Main_SigningInGoogle"] ?? "Signing in with Google Account...";
             if (IsSyncing) return "Syncing with cloud…";
             if (IsGoogleSignedIn) return "Synced with Google Drive";
             return "Saved on device";
@@ -3240,6 +3249,7 @@ public partial class MainViewModel : ViewModelBase
         _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
         _audioService = audioService ?? App.Services?.GetService<IAudioService>() ?? new Wadd.Services.AudioService();
         _goalsVM = new GoalsViewModel(_goalService, _aiGoalService, _audioService);
+        _goalsVM.IsCompact = IsCompact;
         _goalsVM.StatusNotificationRequested = (msg, type) => ShowStatusBubble(msg, type);
         _goalsVM.DataMutated += () => RequestDebouncedAutoSync();
         _goalsVM.ConfirmDeleteRequested = (title, msg, itemName, details) => RequestDeleteConfirmationAsync(title, msg, itemName, details);
@@ -3840,26 +3850,51 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
+    private CancellationTokenSource? _googleSignInCts;
+
     [RelayCommand]
     private async Task SignInWithGoogleAsync()
     {
+        if (IsGoogleSigningIn) return;
+
+        _googleSignInCts?.Cancel();
+        _googleSignInCts?.Dispose();
+        _googleSignInCts = new CancellationTokenSource();
+        var ct = _googleSignInCts.Token;
+
         try
         {
-            StatusMessage = "Signing in with Google Account...";
-            var success = await _syncService.SignInAsync();
+            IsGoogleSigningIn = true;
+            StatusMessage = LocalizationManager.Instance["Main_SigningInGoogle"] ?? "Signing in with Google Account...";
+            var success = await _syncService.SignInAsync(ct);
             UpdateGoogleAuthState();
             if (success)
             {
-                StatusMessage = $"Signed in as {GoogleUserEmail}. Connected to Google Drive.";
+                var template = LocalizationManager.Instance["Main_SignedInSuccess"] ?? "Signed in as {0}. Connected to Google Drive.";
+                StatusMessage = string.Format(template, GoogleUserEmail);
                 AppLogger.LogInfo("GoogleAuth", "Triggering post-sign-in auto-sync.");
-                _ = TriggerAutoSyncAsync();
+                await TriggerAutoSyncAsync();
             }
+        }
+        catch (OperationCanceledException)
+        {
+            StatusMessage = LocalizationManager.Instance["Main_SignInCancelled"] ?? "Sign-in cancelled.";
         }
         catch (Exception ex)
         {
             AppLogger.LogError("GoogleAuth", $"Sign-in failed: {ex.Message}", ex);
             StatusMessage = $"Sign-in failed: {ex.Message}";
         }
+        finally
+        {
+            IsGoogleSigningIn = false;
+        }
+    }
+
+    [RelayCommand]
+    private void CancelGoogleSignIn()
+    {
+        _googleSignInCts?.Cancel();
     }
 
     [RelayCommand]

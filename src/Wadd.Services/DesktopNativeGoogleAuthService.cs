@@ -14,4 +14,13 @@ public class DesktopNativeGoogleAuthService : INativeGoogleAuthService
             ErrorMessage = "Native Google Sign-In is not supported on desktop platforms."
         });
     }
+
+    public Task<NativeAuthResult> TrySilentSignInAsync(string googleClientId, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(new NativeAuthResult
+        {
+            IsSuccess = false,
+            ErrorMessage = "Native Google Sign-In is not supported on desktop platforms."
+        });
+    }
 }

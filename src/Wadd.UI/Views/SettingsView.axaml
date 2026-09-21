@@ -49,17 +49,52 @@
 
           <!-- Signed Out State -->
           <StackPanel IsVisible="{Binding !IsGoogleSignedIn}" Spacing="14">
-            <Button Classes="primary"
-                    Command="{Binding SignInWithGoogleCommand}"
-                    HorizontalAlignment="Left"
-                    ToolTip.Tip="{loc:Localize Settings_SignIn}">
-              <StackPanel Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">
-                <Border Width="20" Height="20" CornerRadius="10" Background="#F0FDFA" VerticalAlignment="Center">
-                  <TextBlock Text="G" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Border>
-                <TextBlock Text="{loc:Localize Settings_SignIn}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/>
-              </StackPanel>
-            </Button>
+            <WrapPanel Orientation="Horizontal">
+              <Button Classes="primary"
+                      Command="{Binding SignInWithGoogleCommand}"
+                      IsEnabled="{Binding !IsGoogleSigningIn}"
+                      HorizontalAlignment="Left"
+                      ToolTip.Tip="{loc:Localize Settings_SignIn}"
+                      Margin="0,0,10,0">
+                <Panel>
+                  <!-- Idle State -->
+                  <StackPanel Orientation="Horizontal" Spacing="9" VerticalAlignment="Center" IsVisible="{Binding !IsGoogleSigningIn}">
+                    <Border Width="20" Height="20" CornerRadius="10" Background="#F0FDFA" VerticalAlignment="Center">
+                      <TextBlock Text="G" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <TextBlock Text="{loc:Localize Settings_SignIn}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                  </StackPanel>
+
+                  <!-- Signing In State -->
+                  <StackPanel Orientation="Horizontal" Spacing="9" VerticalAlignment="Center" IsVisible="{Binding IsGoogleSigningIn}">
+                    <PathIcon Data="{StaticResource SyncIconData}" Width="14" Height="14" Foreground="#F0FDFA" VerticalAlignment="Center"/>
+                    <TextBlock Text="{loc:Localize Settings_SigningIn}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                  </StackPanel>
+                </Panel>
+              </Button>
+
+              <!-- Cancel Button (visible when signing in) -->
+              <Button Classes="outline"
+                      Command="{Binding CancelGoogleSignInCommand}"
+                      IsVisible="{Binding IsGoogleSigningIn}"
+                      VerticalAlignment="Center">
+                <TextBlock Text="{loc:Localize Common_Cancel}" FontSize="12"/>
+              </Button>
+            </WrapPanel>
+
+            <!-- Loading Indicator & Status Bar -->
+            <StackPanel IsVisible="{Binding IsGoogleSigningIn}" Spacing="6" Margin="0,2,0,0">
+              <ProgressBar IsIndeterminate="True"
+                           Height="3"
+                           CornerRadius="1.5"
+                           Foreground="{DynamicResource AppPrimaryBrush}"
+                           Background="{DynamicResource AppBorderBrush}"/>
+              <TextBlock Text="{loc:Localize Settings_SigningIn_Waiting}"
+                         Classes="small"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"
+                         TextWrapping="Wrap"/>
+            </StackPanel>
+
             <Grid ColumnDefinitions="Auto,*" Margin="0,2,0,0">
               <TextBlock Grid.Column="0" Text="🔒" FontSize="12" VerticalAlignment="Top" Margin="0,1,6,0"/>
               <TextBlock Grid.Column="1" Text="{loc:Localize Settings_GoogleDriveSync_SubDesc}" Classes="small" TextWrapping="Wrap" VerticalAlignment="Center"/>
@@ -112,7 +147,8 @@
             <Button Classes="primary" Command="{Binding SyncCommand}" IsEnabled="{Binding !IsSyncing}" HorizontalAlignment="Left">
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <PathIcon Data="{StaticResource SyncIconData}" Width="13" Height="13"/>
-                <TextBlock Text="{loc:Localize Settings_SyncNow_Button}"/>
+                <TextBlock Text="{loc:Localize Settings_SyncNow_Button}" IsVisible="{Binding !IsSyncing}"/>
+                <TextBlock Text="{loc:Localize Main_Syncing}" IsVisible="{Binding IsSyncing}"/>
               </StackPanel>
             </Button>
           </StackPanel>

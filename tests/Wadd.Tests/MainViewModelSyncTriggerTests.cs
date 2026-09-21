@@ -33,15 +33,21 @@ public class MockSyncService : ISyncService
     public int SignOutCallCount { get; private set; }
     public int SyncCallCount { get; private set; }
     public bool SignInResult { get; set; } = true;
+    public TaskCompletionSource<bool>? SignInDelayTcs;
 
     public TaskCompletionSource<bool> SyncCalledTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-    public Task<bool> SignInAsync(CancellationToken cancellationToken = default)
+    public async Task<bool> SignInAsync(CancellationToken cancellationToken = default)
     {
         SignInCallCount++;
+        if (SignInDelayTcs != null)
+        {
+            using var reg = cancellationToken.Register(() => SignInDelayTcs.TrySetCanceled(cancellationToken));
+            await SignInDelayTcs.Task;
+        }
         IsSignedIn = SignInResult;
         AuthStateChanged?.Invoke(this, EventArgs.Empty);
-        return Task.FromResult(SignInResult);
+        return SignInResult;
     }
 
     public Task SignOutAsync(CancellationToken cancellationToken = default)
@@ -186,5 +192,80 @@ public class MainViewModelSyncTriggerTests : IDisposable
         var resolved = ServiceCollectionExtensions.GetOrCreateServiceProvider();
         Assert.Same(provider, resolved);
         Assert.Same(mockSync, resolved.GetRequiredService<ISyncService>());
+    }
+
+    [Fact]
+    public async Task SignInWithGoogle_ShowsLoadingState_AndResetsWhenDone()
+    {
+        var mockSync = new MockSyncService
+        {
+            IsSignedIn = false,
+            SignInResult = true,
+            SignInDelayTcs = new TaskCompletionSource<bool>()
+        };
+        var vm = CreateViewModel(mockSync);
+
+        Assert.False(vm.IsGoogleSigningIn);
+        Assert.False(vm.IsSyncingOrSigningIn);
+
+        var task = vm.SignInWithGoogleCommand.ExecuteAsync(null);
+
+        // Assert loading state is active while waiting
+        Assert.True(vm.IsGoogleSigningIn);
+        Assert.True(vm.IsSyncingOrSigningIn);
+
+        // Finish sign-in
+        mockSync.SignInDelayTcs.SetResult(true);
+        await task;
+
+        // Assert loading state is cleared and sign-in completed
+        Assert.False(vm.IsGoogleSigningIn);
+        Assert.True(vm.IsGoogleSignedIn);
+    }
+
+    [Fact]
+    public async Task SignInWithGoogle_CanBeCancelled_AndResetsLoadingState()
+    {
+        var mockSync = new MockSyncService
+        {
+            IsSignedIn = false,
+            SignInResult = true,
+            SignInDelayTcs = new TaskCompletionSource<bool>()
+        };
+        var vm = CreateViewModel(mockSync);
+
+        Assert.False(vm.IsGoogleSigningIn);
+
+        var task = vm.SignInWithGoogleCommand.ExecuteAsync(null);
+        Assert.True(vm.IsGoogleSigningIn);
+
+        // Cancel
+        vm.CancelGoogleSignInCommand.Execute(null);
+        await task;
+
+        // Verify cancelled and reset
+        Assert.False(vm.IsGoogleSigningIn);
+        Assert.False(vm.IsGoogleSignedIn);
+    }
+
+    [Fact]
+    public void IsSyncingOrSigningIn_TrueWhenEitherIsActive()
+    {
+        var mockSync = new MockSyncService();
+        var vm = CreateViewModel(mockSync);
+
+        Assert.False(vm.IsSyncingOrSigningIn);
+
+        vm.IsSyncing = true;
+        Assert.True(vm.IsSyncingOrSigningIn);
+
+        vm.IsSyncing = false;
+        Assert.False(vm.IsSyncingOrSigningIn);
+
+        vm.IsGoogleSigningIn = true;
+        Assert.True(vm.IsSyncingOrSigningIn);
+
+        vm.IsGoogleSigningIn = false;
+        Assert.False(vm.IsSyncingOrSigningIn);
     }
 }

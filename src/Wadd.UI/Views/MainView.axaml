@@ -211,7 +211,7 @@
                      HorizontalAlignment="Center"
                      Fill="{DynamicResource AppPrimaryBrush}"
                      IsVisible="{Binding IsSyncing}"
-                     ToolTip.Tip="Syncing…"/>
+                     ToolTip.Tip="{Binding StorageStatusText}"/>
           </StackPanel>
 
           <Border Grid.Row="2"
@@ -439,6 +439,17 @@
          COMPACT / MOBILE LAYOUT — full height + bottom tab bar
     ══════════════════════════════════════════════════════ -->
     <Grid IsVisible="{Binding IsCompact}" RowDefinitions="*,Auto">
+
+      <!-- Compact Top-Edge Activity Progress Bar -->
+      <ProgressBar Grid.Row="0"
+                   IsIndeterminate="True"
+                   IsVisible="{Binding IsSyncing}"
+                   Height="2"
+                   VerticalAlignment="Top"
+                   HorizontalAlignment="Stretch"
+                   Foreground="{DynamicResource AppPrimaryBrush}"
+                   Background="Transparent"
+                   ZIndex="100"/>
 
       <!-- Compact content views -->
       <Panel Grid.Row="0">

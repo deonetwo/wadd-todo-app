@@ -95,7 +95,7 @@ public partial class GoalsViewModel : ViewModelBase
     private bool _isCreatingJournal;
 
     [ObservableProperty]
-    private bool _isCompact;
+    private bool _isCompact = OperatingSystem.IsAndroid();
 
     [ObservableProperty]
     private bool _isJournalCollapsibleExpanded = true;
@@ -920,10 +920,14 @@ public partial class GoalsViewModel : ViewModelBase
         AllJournalEntries.Clear();
         var rawEntries = await _goalService.GetJournalEntriesAsync();
 
-        var goalsMap = Goals.GroupBy(g => g.Id).ToDictionary(g => g.Key, g => g.First().Title);
+        var goalsMap = Goals
+            .Where(g => g != null && !string.IsNullOrEmpty(g.Id))
+            .GroupBy(g => g.Id)
+            .ToDictionary(g => g.Key, g => g.First().Title ?? string.Empty);
 
         foreach (var entry in rawEntries)
         {
+            if (entry == null) continue;
             string? goalTitle = !string.IsNullOrEmpty(entry.GoalId) && goalsMap.TryGetValue(entry.GoalId, out var t) ? t : null;
             AllJournalEntries.Add(new JournalEntryItemViewModel(entry, goalTitle));
         }

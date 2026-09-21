@@ -174,6 +174,8 @@
   <data name="Settings_GoogleDriveSync" xml:space="preserve"><value>Sinkronisasi Google Drive</value></data>
   <data name="Settings_GoogleDriveSync_Desc" xml:space="preserve"><value>Sinkronkan tugas, target, dan pengaturan antar perangkat melalui Google Drive pribadi.</value></data>
   <data name="Settings_SignIn" xml:space="preserve"><value>Masuk dengan Google</value></data>
+  <data name="Settings_SigningIn" xml:space="preserve"><value>Sedang masuk...</value></data>
+  <data name="Settings_SigningIn_Waiting" xml:space="preserve"><value>Menunggu autentikasi Google... Silakan selesaikan proses masuk di peramban atau konfirmasi akun.</value></data>
   <data name="Settings_SignOut" xml:space="preserve"><value>Keluar</value></data>
   <data name="Settings_SyncNow" xml:space="preserve"><value>Sinkronkan Sekarang</value></data>
   <data name="Settings_AiAssistant" xml:space="preserve"><value>ASISTEN &amp; PELATIH AI</value></data>
@@ -285,6 +287,9 @@
   <data name="Main_SavedOnDevice" xml:space="preserve"><value>Tersimpan di Perangkat</value></data>
   <data name="Main_SyncCloud" xml:space="preserve"><value>Sinkronkan Cloud</value></data>
   <data name="Main_Syncing" xml:space="preserve"><value>Menyinkronkan...</value></data>
+  <data name="Main_SigningInGoogle" xml:space="preserve"><value>Sedang masuk dengan Akun Google...</value></data>
+  <data name="Main_SignedInSuccess" xml:space="preserve"><value>Berhasil masuk sebagai {0}. Terhubung ke Google Drive.</value></data>
+  <data name="Main_SignInCancelled" xml:space="preserve"><value>Proses masuk dibatalkan.</value></data>
   <data name="Main_SwitchDarkMode" xml:space="preserve"><value>Beralih ke Mode Gelap</value></data>
   <data name="Main_SwitchLightMode" xml:space="preserve"><value>Beralih ke Mode Terang</value></data>
   <data name="Tasks_TodayTasks" xml:space="preserve"><value>TUGAS HARI INI</value></data>

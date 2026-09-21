@@ -14,4 +14,5 @@ public interface INativeGoogleAuthService
 {
     bool IsSupported { get; }
     Task<NativeAuthResult> SignInAsync(string googleClientId, CancellationToken cancellationToken = default);
+    Task<NativeAuthResult> TrySilentSignInAsync(string googleClientId, CancellationToken cancellationToken = default);
 }

@@ -354,9 +354,17 @@ public class GoogleDriveSyncService : ISyncService
 
             if (!string.IsNullOrWhiteSpace(nativeResult.ErrorMessage))
             {
+                if (nativeResult.ErrorMessage.Contains("cancelled", StringComparison.OrdinalIgnoreCase) ||
+                    nativeResult.ErrorMessage.Contains("canceled", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new OperationCanceledException("Google Sign-In was cancelled by user.");
+                }
+
                 Wadd.Core.Logging.AppLogger.LogError("GoogleDriveSyncService", $"Native Google Sign-In failed: {nativeResult.ErrorMessage}");
                 throw new InvalidOperationException($"Native Google Sign-In failed: {nativeResult.ErrorMessage}");
             }
+
+            return false;
         }
 
         var localRedirectUri = "http://localhost:5001/";
@@ -700,12 +708,25 @@ public class GoogleDriveSyncService : ISyncService
       p { color: #94a3b8 !important; }
     }
     .card { text-align: center; padding: 24px; max-width: 320px; }
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid rgba(13, 148, 136, 0.15);
+      border-top-color: #0d9488;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px auto;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
     h2 { font-size: 1.25rem; font-weight: 600; margin: 0 0 6px 0; }
     p { color: #64748b; font-size: 0.875rem; margin: 0; }
   </style>
 </head>
 <body>
   <div class='card'>
+    <div class='spinner'></div>
     <h2>Connecting...</h2>
     <p>Please wait.</p>
   </div>
@@ -812,7 +833,7 @@ public class GoogleDriveSyncService : ISyncService
         {
             try
             {
-                var nativeResult = await _nativeAuthService.SignInAsync(GoogleClientId, cancellationToken);
+                var nativeResult = await _nativeAuthService.TrySilentSignInAsync(GoogleClientId, cancellationToken);
                 if (nativeResult.IsSuccess && !string.IsNullOrWhiteSpace(nativeResult.AccessToken))
                 {
                     _authRecord ??= new UserAuthRecord();
@@ -822,7 +843,10 @@ public class GoogleDriveSyncService : ISyncService
                     return true;
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Wadd.Core.Logging.AppLogger.LogWarning("GoogleDriveSyncService", "Silent native token refresh failed", ex);
+            }
         }
 
         if (_authRecord == null) return false;

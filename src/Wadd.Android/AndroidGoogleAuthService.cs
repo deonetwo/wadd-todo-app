@@ -60,4 +60,52 @@ public class AndroidGoogleAuthService : INativeGoogleAuthService
             };
         }
     }
+
+    public async Task<NativeAuthResult> TrySilentSignInAsync(string googleClientId, CancellationToken cancellationToken = default)
+    {
+        var context = global::Android.App.Application.Context;
+        if (context == null)
+        {
+            return new NativeAuthResult { IsSuccess = false, ErrorMessage = "Android Application context is unavailable." };
+        }
+
+        try
+        {
+            var lastAccount = global::Android.Gms.Auth.Api.SignIn.GoogleSignIn.GetLastSignedInAccount(context);
+            if (lastAccount != null && !string.IsNullOrWhiteSpace(lastAccount.Email))
+            {
+                var acct = lastAccount.Account ?? new global::Android.Accounts.Account(lastAccount.Email, "com.google");
+                var accessToken = await Task.Run(() =>
+                {
+                    try
+                    {
+                        return global::Android.Gms.Auth.GoogleAuthUtil.GetToken(context, acct, "oauth2:https://www.googleapis.com/auth/drive.file email profile");
+                    }
+                    catch (Exception ex)
+                    {
+                        Wadd.Core.Logging.AppLogger.LogWarning("AndroidGoogleAuthService", "Silent GoogleAuthUtil.GetToken failed", ex);
+                        return null;
+                    }
+                }, cancellationToken);
+
+                if (!string.IsNullOrWhiteSpace(accessToken))
+                {
+                    return new NativeAuthResult
+                    {
+                        IsSuccess = true,
+                        IdToken = lastAccount.IdToken,
+                        AccessToken = accessToken,
+                        Email = lastAccount.Email,
+                        DisplayName = lastAccount.DisplayName
+                    };
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Wadd.Core.Logging.AppLogger.LogWarning("AndroidGoogleAuthService", "TrySilentSignInAsync failed", ex);
+        }
+
+        return new NativeAuthResult { IsSuccess = false, ErrorMessage = "No active Google account session found for silent refresh." };
+    }
 }

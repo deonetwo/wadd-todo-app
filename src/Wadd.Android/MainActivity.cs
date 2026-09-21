@@ -191,6 +191,16 @@ public class MainActivity : AvaloniaMainActivity, Wadd.Core.Interfaces.INotifica
             var tcs = PendingAuthTcs;
             PendingAuthTcs = null;
 
+            if (resultCode == Result.Canceled || data == null)
+            {
+                tcs.TrySetResult(new Wadd.Core.Interfaces.NativeAuthResult
+                {
+                    IsSuccess = false,
+                    ErrorMessage = "Google Sign-In was cancelled by user."
+                });
+                return;
+            }
+
             _ = System.Threading.Tasks.Task.Run(() =>
             {
                 try
@@ -201,11 +211,14 @@ public class MainActivity : AvaloniaMainActivity, Wadd.Core.Interfaces.INotifica
                         string? accessToken = null;
                         try
                         {
-                            var acct = account.Account ?? new global::Android.Accounts.Account(account.Email ?? "", "com.google");
-                            accessToken = global::Android.Gms.Auth.GoogleAuthUtil.GetToken(
-                                this,
-                                acct,
-                                "oauth2:https://www.googleapis.com/auth/drive.file email profile");
+                            if (!string.IsNullOrWhiteSpace(account.Email))
+                            {
+                                var acct = account.Account ?? new global::Android.Accounts.Account(account.Email, "com.google");
+                                accessToken = global::Android.Gms.Auth.GoogleAuthUtil.GetToken(
+                                    this,
+                                    acct,
+                                    "oauth2:https://www.googleapis.com/auth/drive.file email profile");
+                            }
                         }
                         catch (Exception ex)
                         {

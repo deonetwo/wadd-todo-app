@@ -95,7 +95,10 @@ public class AppLoggerTests
     public void AppLogger_LogEmitted_EventFiresOnLog()
     {
         LogEntry? capturedEntry = null;
-        Action<LogEntry> handler = entry => capturedEntry = entry;
+        Action<LogEntry> handler = entry =>
+        {
+            if (entry.Source == "EventSource") capturedEntry = entry;
+        };
 
         AppLogger.LogEmitted += handler;
         try
