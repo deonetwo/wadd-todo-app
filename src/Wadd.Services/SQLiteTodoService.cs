@@ -164,8 +164,37 @@ public class SQLiteTodoService : ITodoService
         await EnsureInitializedAsync();
 
         var existing = await _database.Table<TodoItemEntity>().FirstOrDefaultAsync(x => x.Id == item.Id);
+        if (existing == null)
+        {
+            return false;
+        }
+
+        bool isUnchanged = string.Equals(existing.Title, item.Title, StringComparison.Ordinal)
+            && string.Equals(existing.Description, item.Description, StringComparison.Ordinal)
+            && existing.IsCompleted == item.IsCompleted
+            && existing.Priority == item.Priority
+            && existing.DueDate == item.DueDate
+            && existing.ReminderAt == item.ReminderAt
+            && string.Equals(existing.Category, item.Category, StringComparison.Ordinal)
+            && existing.IsDeleted == item.IsDeleted
+            && existing.SeriesId == item.SeriesId
+            && existing.IsRecurring == item.IsRecurring
+            && string.Equals(existing.RecurrenceType, item.RecurrenceType, StringComparison.Ordinal)
+            && existing.CustomRecurrenceInterval == item.CustomRecurrenceInterval
+            && string.Equals(existing.CustomRecurrenceUnit, item.CustomRecurrenceUnit, StringComparison.Ordinal)
+            && string.Equals(existing.CustomWeeklyDays, item.CustomWeeklyDays, StringComparison.Ordinal);
+
+        if (isUnchanged)
+        {
+            item.Version = existing.Version;
+            item.UpdatedAt = existing.UpdatedAt;
+            item.CompletedAt = existing.CompletedAt;
+            item.DeletedAt = existing.DeletedAt;
+            return true;
+        }
+
         item.UpdatedAt = DateTime.UtcNow;
-        item.Version = (existing?.Version ?? item.Version) + 1;
+        item.Version = existing.Version + 1;
         if (item.IsCompleted)
         {
             item.CompletedAt ??= DateTime.UtcNow;

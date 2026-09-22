@@ -259,4 +259,87 @@ public class SyncEngineTests
         Assert.Equal(id1, id2);
         Assert.NotEqual(Guid.Empty, id1);
     }
+
+    [Fact]
+    public async Task UpdateTodo_WhenUnchanged_DoesNotBumpVersionOrLogSync()
+    {
+        var service = new SQLiteTodoService(_testDbPath);
+        var item = await service.AddTodoAsync(new TodoItem
+        {
+            Title = "Task A",
+            Description = "Desc A",
+            Priority = TodoPriority.High
+        });
+
+        // Mark all logs as synced to isolate the update test
+        var initialLogs = await service.SyncLogRepository.GetPendingLogsAsync();
+        await service.SyncLogRepository.MarkLogsAsSyncedAsync(initialLogs.Select(l => l.Id));
+
+        var originalVersion = item.Version;
+        var originalUpdated = item.UpdatedAt;
+
+        // Call update with identical content
+        var clone = new TodoItem
+        {
+            Id = item.Id,
+            Title = item.Title,
+            Description = item.Description,
+            Priority = item.Priority,
+            Category = item.Category,
+            DueDate = item.DueDate,
+            ReminderAt = item.ReminderAt,
+            IsCompleted = item.IsCompleted,
+            IsDeleted = item.IsDeleted,
+            IsRecurring = item.IsRecurring,
+            RecurrenceType = item.RecurrenceType,
+            CustomRecurrenceInterval = item.CustomRecurrenceInterval,
+            CustomRecurrenceUnit = item.CustomRecurrenceUnit,
+            CustomWeeklyDays = item.CustomWeeklyDays,
+            Version = originalVersion,
+            UpdatedAt = originalUpdated
+        };
+
+        var updateResult = await service.UpdateTodoAsync(clone);
+        Assert.True(updateResult);
+
+        // Version and timestamps should remain unchanged
+        Assert.Equal(originalVersion, clone.Version);
+        Assert.Equal(originalUpdated, clone.UpdatedAt);
+
+        // No new pending sync logs should be created
+        var pendingLogsAfter = await service.SyncLogRepository.GetPendingLogsAsync();
+        Assert.Empty(pendingLogsAfter);
+
+        await service.CloseAsync();
+        try { File.Delete(_testDbPath); } catch { }
+    }
+
+    [Fact]
+    public async Task UpdateTodo_WhenChanged_BumpsVersionAndLogsSync()
+    {
+        var service = new SQLiteTodoService(_testDbPath);
+        var item = await service.AddTodoAsync(new TodoItem
+        {
+            Title = "Original Title",
+            Description = "Original Desc"
+        });
+
+        var initialLogs = await service.SyncLogRepository.GetPendingLogsAsync();
+        await service.SyncLogRepository.MarkLogsAsSyncedAsync(initialLogs.Select(l => l.Id));
+
+        var originalVersion = item.Version;
+
+        item.Title = "Updated Title";
+        var updateResult = await service.UpdateTodoAsync(item);
+        Assert.True(updateResult);
+
+        Assert.Equal(originalVersion + 1, item.Version);
+
+        var pendingLogsAfter = await service.SyncLogRepository.GetPendingLogsAsync();
+        var updateLog = pendingLogsAfter.FirstOrDefault(l => l.RecordId == item.Id && l.Operation == SyncOperation.Update);
+        Assert.NotNull(updateLog);
+
+        await service.CloseAsync();
+        try { File.Delete(_testDbPath); } catch { }
+    }
 }

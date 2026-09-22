@@ -3919,6 +3919,8 @@ public partial class MainViewModel : ViewModelBase
         if (IsSyncing) return;
         try
         {
+            _autoSyncDebounceTimer?.Stop();
+
             if (SelectedDetailTask != null)
             {
                 await _todoService.UpdateTodoAsync(SelectedDetailTask.Model);
@@ -3991,6 +3993,7 @@ public partial class MainViewModel : ViewModelBase
     internal async Task TriggerAutoSyncAsync()
     {
         if (IsSyncing || !IsGoogleSignedIn) return;
+        _autoSyncDebounceTimer?.Stop();
         AppLogger.LogInfo("Sync", "Triggering auto-sync (Foreground)...");
         try
         {

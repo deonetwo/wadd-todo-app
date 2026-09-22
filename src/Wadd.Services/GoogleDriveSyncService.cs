@@ -1120,6 +1120,7 @@ public class GoogleDriveSyncService : ISyncService
     private Timer? _debounceTimer;
     private readonly HashSet<Guid> _pendingPushQueue = new();
     private DateTime _lastSyncTimestampUtc = DateTime.MinValue;
+    private DateTime _maxUploadedModifiedTimeUtc = DateTime.MinValue;
 
     public void EnqueueLocalMutation(Guid taskId)
     {
@@ -1167,6 +1168,7 @@ public class GoogleDriveSyncService : ISyncService
         try
         {
             var syncStartUtc = DateTime.UtcNow;
+            _maxUploadedModifiedTimeUtc = DateTime.MinValue;
             var token = _authRecord.AccessToken;
 
             // 1. Fetch full remote file metadata list from Google Drive appDataFolder (1 single HTTP GET request ~150-250ms)
@@ -1288,6 +1290,10 @@ public class GoogleDriveSyncService : ISyncService
             await PruneExpiredCloudTombstonesAsync(token, remoteFileMap, fileIdMap, cancellationToken);
 
             var maxRemoteMod = remoteFiles.Where(f => f.ModifiedTime.HasValue).Select(f => f.ModifiedTime!.Value).DefaultIfEmpty(DateTime.MinValue).Max();
+            if (_maxUploadedModifiedTimeUtc > maxRemoteMod)
+            {
+                maxRemoteMod = _maxUploadedModifiedTimeUtc;
+            }
             _lastSyncTimestampUtc = DateTime.UtcNow > maxRemoteMod ? DateTime.UtcNow : maxRemoteMod;
             if (_authRecord != null)
             {
@@ -2106,16 +2112,21 @@ public class GoogleDriveSyncService : ISyncService
 
         if (!string.IsNullOrWhiteSpace(existingFileId))
         {
-            string uploadUrl = $"https://www.googleapis.com/upload/drive/v3/files/{existingFileId}?uploadType=media";
+            string uploadUrl = $"https://www.googleapis.com/upload/drive/v3/files/{existingFileId}?uploadType=media&fields=id,name,modifiedTime";
             using var response = await SendWithRetryAsync(() => new HttpRequestMessage(HttpMethod.Patch, uploadUrl)
             {
                 Content = new StringContent(payloadJson, Encoding.UTF8, "application/json")
             }, cancellationToken);
             await EnsureDriveSuccessAsync(response, $"Update {itemDescription} in AppData");
+
+            if (response.IsSuccessStatusCode)
+            {
+                await TrackUploadedFileAsync(response, fileName, remoteFileMap, cancellationToken);
+            }
         }
         else
         {
-            string uploadUrl = "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart";
+            string uploadUrl = "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,modifiedTime";
             var boundary = "---WaddBoundary" + Guid.NewGuid().ToString("N");
             var metadataJson = JsonSerializer.Serialize(new
             {
@@ -2132,24 +2143,40 @@ public class GoogleDriveSyncService : ISyncService
             }, cancellationToken);
             await EnsureDriveSuccessAsync(response, $"Upload {itemDescription} to AppData");
 
-            if (response.IsSuccessStatusCode && remoteFileMap != null)
+            if (response.IsSuccessStatusCode)
             {
-                try
-                {
-                    var respJson = await response.Content.ReadAsStringAsync(cancellationToken);
-                    using var doc = JsonDocument.Parse(respJson);
-                    if (doc.RootElement.TryGetProperty("id", out var idProp))
-                    {
-                        var newId = idProp.GetString();
-                        if (!string.IsNullOrWhiteSpace(newId))
-                        {
-                            remoteFileMap[fileName] = newId;
-                        }
-                    }
-                }
-                catch { }
+                await TrackUploadedFileAsync(response, fileName, remoteFileMap, cancellationToken);
             }
         }
+    }
+
+    private async Task TrackUploadedFileAsync(HttpResponseMessage response, string fileName, IDictionary<string, string>? remoteFileMap, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var respJson = await response.Content.ReadAsStringAsync(cancellationToken);
+            using var doc = JsonDocument.Parse(respJson);
+            if (doc.RootElement.TryGetProperty("id", out var idProp))
+            {
+                var newId = idProp.GetString();
+                if (!string.IsNullOrWhiteSpace(newId) && remoteFileMap != null)
+                {
+                    remoteFileMap[fileName] = newId;
+                }
+            }
+            if (doc.RootElement.TryGetProperty("modifiedTime", out var modProp) && modProp.TryGetDateTime(out var modTime))
+            {
+                var modUtc = EnsureUtc(modTime);
+                lock (_syncLock)
+                {
+                    if (modUtc > _maxUploadedModifiedTimeUtc)
+                    {
+                        _maxUploadedModifiedTimeUtc = modUtc;
+                    }
+                }
+            }
+        }
+        catch { }
     }
 
     private async Task<bool> SyncGoalsAsync(string token, Dictionary<string, DriveFileItem> remoteFileMap, IDictionary<string, string> fileIdMap, CancellationToken cancellationToken)
