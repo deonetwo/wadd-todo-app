@@ -244,6 +244,7 @@ public class ConflictResolutionEngine
             IsAchieved = goal.IsAchieved,
             CreatedAt = goal.CreatedAt,
             UpdatedAt = goal.UpdatedAt,
+            OrderIndex = goal.OrderIndex,
             IsDeleted = goal.IsDeleted,
             DeletedAt = goal.DeletedAt
         };

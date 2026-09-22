@@ -178,18 +178,47 @@ public partial class GoalsViewModel : ViewModelBase
         await LoadAllGoalsAsync();
     }
 
+    private int _loadGoalsVersion;
+
     public async Task LoadAllGoalsAsync()
     {
-        Goals.Clear();
-        var rawGoals = await _goalService.GetGoalsAsync();
-        foreach (var g in rawGoals.OrderByDescending(x => x.UpdatedAt))
+        int currentVersion = Interlocked.Increment(ref _loadGoalsVersion);
+        var rawGoals = (await _goalService.GetGoalsAsync()).ToList();
+
+        var sortedGoals = rawGoals
+            .OrderBy(x => x.OrderIndex)
+            .ThenBy(x => x.CreatedAt)
+            .ToList();
+
+        bool needsReindex = sortedGoals.Count > 1 && sortedGoals.All(g => g.OrderIndex == 0);
+
+        var loadedGoals = new List<LifeGoalItemViewModel>();
+        for (int i = 0; i < sortedGoals.Count; i++)
         {
+            var g = sortedGoals[i];
+            if (needsReindex)
+            {
+                g.OrderIndex = i;
+                _ = _goalService.SaveGoalAsync(g);
+            }
+
             var milestones = (await _goalService.GetMilestonesForGoalAsync(g.Id)).ToList();
             int completed = milestones.Count(m => m.IsCompleted);
             int total = milestones.Count;
 
             var vm = new LifeGoalItemViewModel(g);
             vm.UpdateMilestonesSummary(completed, total);
+            loadedGoals.Add(vm);
+        }
+
+        if (currentVersion != _loadGoalsVersion)
+        {
+            return;
+        }
+
+        Goals.Clear();
+        foreach (var vm in loadedGoals)
+        {
             Goals.Add(vm);
         }
 
@@ -479,12 +508,14 @@ public partial class GoalsViewModel : ViewModelBase
             var category = string.IsNullOrWhiteSpace(NewGoalCategory) ? "Uncategorized" : NewGoalCategory.Trim();
             if (category.Length > 24) category = category.Substring(0, 24).Trim();
 
+            int maxOrder = Goals.Count > 0 ? Goals.Max(g => g.OrderIndex) + 1 : 0;
             var goal = new LifeGoal
             {
                 Title = title,
                 Description = desc,
                 Category = category,
-                TargetDate = NewGoalTargetDate?.Date
+                TargetDate = NewGoalTargetDate?.Date,
+                OrderIndex = maxOrder
             };
 
             var saved = await _goalService.SaveGoalAsync(goal);
@@ -514,7 +545,7 @@ public partial class GoalsViewModel : ViewModelBase
             var milestones = (await _goalService.GetMilestonesForGoalAsync(saved.Id)).ToList();
             vm.UpdateMilestonesSummary(milestones.Count(m => m.IsCompleted), milestones.Count);
 
-            Goals.Insert(0, vm);
+            Goals.Add(vm);
 
             SelectedCategoryFilter = "All";
             UpdateCategories();
@@ -528,6 +559,62 @@ public partial class GoalsViewModel : ViewModelBase
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[GoalsViewModel] Error saving goal: {ex}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task MoveGoalUpAsync(LifeGoalItemViewModel? goalVm)
+    {
+        var target = goalVm ?? SelectedGoal;
+        if (target == null) return;
+
+        int filteredIndex = FilteredGoals.IndexOf(target);
+        if (filteredIndex > 0)
+        {
+            var prevGoal = FilteredGoals[filteredIndex - 1];
+            int idxTarget = Goals.IndexOf(target);
+            int idxPrev = Goals.IndexOf(prevGoal);
+
+            if (idxTarget >= 0 && idxPrev >= 0)
+            {
+                Goals.Move(idxTarget, idxPrev);
+                for (int i = 0; i < Goals.Count; i++)
+                {
+                    Goals[i].OrderIndex = i;
+                    await _goalService.SaveGoalAsync(Goals[i].Model);
+                }
+                ApplyCategoryFilter();
+                SelectedGoal = target;
+                NotifyDataMutated();
+            }
+        }
+    }
+
+    [RelayCommand]
+    private async Task MoveGoalDownAsync(LifeGoalItemViewModel? goalVm)
+    {
+        var target = goalVm ?? SelectedGoal;
+        if (target == null) return;
+
+        int filteredIndex = FilteredGoals.IndexOf(target);
+        if (filteredIndex >= 0 && filteredIndex < FilteredGoals.Count - 1)
+        {
+            var nextGoal = FilteredGoals[filteredIndex + 1];
+            int idxTarget = Goals.IndexOf(target);
+            int idxNext = Goals.IndexOf(nextGoal);
+
+            if (idxTarget >= 0 && idxNext >= 0)
+            {
+                Goals.Move(idxTarget, idxNext);
+                for (int i = 0; i < Goals.Count; i++)
+                {
+                    Goals[i].OrderIndex = i;
+                    await _goalService.SaveGoalAsync(Goals[i].Model);
+                }
+                ApplyCategoryFilter();
+                SelectedGoal = target;
+                NotifyDataMutated();
+            }
         }
     }
 

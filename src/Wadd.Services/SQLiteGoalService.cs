@@ -63,7 +63,8 @@ public class SQLiteGoalService : IGoalService
         await EnsureInitializedAsync();
         var entities = await _database.Table<LifeGoalEntity>()
             .Where(x => !x.IsDeleted)
-            .OrderByDescending(x => x.CreatedAt)
+            .OrderBy(x => x.OrderIndex)
+            .ThenByDescending(x => x.CreatedAt)
             .ToListAsync();
         return entities.Select(e => e.ToDomain());
     }

@@ -24,6 +24,9 @@ public class LifeGoalEntity
     public DateTime? UpdatedAt { get; set; }
 
     [Indexed]
+    public int OrderIndex { get; set; }
+
+    [Indexed]
     public bool IsDeleted { get; set; } = false;
 
     public DateTime? DeletedAt { get; set; }
@@ -40,6 +43,7 @@ public class LifeGoalEntity
             IsAchieved = IsAchieved,
             CreatedAt = CreatedAt,
             UpdatedAt = UpdatedAt,
+            OrderIndex = OrderIndex,
             IsDeleted = IsDeleted,
             DeletedAt = DeletedAt
         };
@@ -58,6 +62,7 @@ public class LifeGoalEntity
             IsAchieved = item.IsAchieved,
             CreatedAt = item.CreatedAt == default ? DateTime.UtcNow : item.CreatedAt,
             UpdatedAt = item.UpdatedAt,
+            OrderIndex = item.OrderIndex,
             IsDeleted = item.IsDeleted,
             DeletedAt = item.DeletedAt
         };

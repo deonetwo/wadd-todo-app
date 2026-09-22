@@ -28,6 +28,19 @@ public partial class LifeGoalItemViewModel : ViewModelBase
 
     public string Id => Model.Id;
 
+    public int OrderIndex
+    {
+        get => Model.OrderIndex;
+        set
+        {
+            if (Model.OrderIndex != value)
+            {
+                Model.OrderIndex = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
     public string Title
     {
         get => Model.Title;

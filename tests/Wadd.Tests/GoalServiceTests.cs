@@ -223,4 +223,75 @@ public class GoalServiceTests : IDisposable
         Assert.NotNull(persisted);
         Assert.False(persisted.IsAchieved);
     }
+
+    [Fact]
+    public async Task GoalsViewModel_ManualReordering_MovesGoalsAndPersistsOrder()
+    {
+        var goalA = await _goalService.SaveGoalAsync(new LifeGoal { Title = "Goal A", OrderIndex = 0, CreatedAt = DateTime.UtcNow.AddMinutes(-3) });
+        var goalB = await _goalService.SaveGoalAsync(new LifeGoal { Title = "Goal B", OrderIndex = 1, CreatedAt = DateTime.UtcNow.AddMinutes(-2) });
+        var goalC = await _goalService.SaveGoalAsync(new LifeGoal { Title = "Goal C", OrderIndex = 2, CreatedAt = DateTime.UtcNow.AddMinutes(-1) });
+
+        var vm = new Wadd.UI.ViewModels.GoalsViewModel(_goalService);
+        await vm.LoadAllGoalsAsync();
+
+        Assert.Equal(3, vm.Goals.Count);
+        Assert.Equal("Goal A", vm.Goals[0].Title);
+        Assert.Equal("Goal B", vm.Goals[1].Title);
+        Assert.Equal("Goal C", vm.Goals[2].Title);
+
+        // Move Goal B Up -> should become [Goal B, Goal A, Goal C]
+        await vm.MoveGoalUpCommand.ExecuteAsync(vm.Goals[1]);
+
+        Assert.Equal("Goal B", vm.Goals[0].Title);
+        Assert.Equal("Goal A", vm.Goals[1].Title);
+        Assert.Equal("Goal C", vm.Goals[2].Title);
+
+        var dbA = await _goalService.GetGoalByIdAsync(goalA.Id);
+        var dbB = await _goalService.GetGoalByIdAsync(goalB.Id);
+        var dbC = await _goalService.GetGoalByIdAsync(goalC.Id);
+
+        Assert.Equal(0, dbB!.OrderIndex);
+        Assert.Equal(1, dbA!.OrderIndex);
+        Assert.Equal(2, dbC!.OrderIndex);
+
+        // Move Goal B Down -> should become [Goal A, Goal B, Goal C]
+        await vm.MoveGoalDownCommand.ExecuteAsync(vm.Goals[0]);
+
+        Assert.Equal("Goal A", vm.Goals[0].Title);
+        Assert.Equal("Goal B", vm.Goals[1].Title);
+        Assert.Equal("Goal C", vm.Goals[2].Title);
+
+        // Reload from database to ensure persistence
+        var reloadVm = new Wadd.UI.ViewModels.GoalsViewModel(_goalService);
+        await reloadVm.LoadAllGoalsAsync();
+
+        Assert.Equal("Goal A", reloadVm.Goals[0].Title);
+        Assert.Equal("Goal B", reloadVm.Goals[1].Title);
+        Assert.Equal("Goal C", reloadVm.Goals[2].Title);
+    }
+
+    [Fact]
+    public async Task GoalsViewModel_StableCreationOrder_DoesNotReshuffleOnUpdate()
+    {
+        var goal1 = await _goalService.SaveGoalAsync(new LifeGoal { Title = "Goal 1", OrderIndex = 0, CreatedAt = DateTime.UtcNow.AddMinutes(-5) });
+        var goal2 = await _goalService.SaveGoalAsync(new LifeGoal { Title = "Goal 2", OrderIndex = 1, CreatedAt = DateTime.UtcNow.AddMinutes(-4) });
+
+        var vm = new Wadd.UI.ViewModels.GoalsViewModel(_goalService);
+        await vm.LoadAllGoalsAsync();
+
+        Assert.Equal("Goal 1", vm.Goals[0].Title);
+        Assert.Equal("Goal 2", vm.Goals[1].Title);
+
+        // Modify Goal 1 much later so UpdatedAt is newer than Goal 2
+        goal1.Description = "Updated description";
+        goal1.UpdatedAt = DateTime.UtcNow.AddHours(2);
+        await _goalService.SaveGoalAsync(goal1);
+
+        // Reload goals
+        await vm.LoadAllGoalsAsync();
+
+        // Goal 1 must STAY at index 0 because OrderIndex is preserved
+        Assert.Equal("Goal 1", vm.Goals[0].Title);
+        Assert.Equal("Goal 2", vm.Goals[1].Title);
+    }
 }

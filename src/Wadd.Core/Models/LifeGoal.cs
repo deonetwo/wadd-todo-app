@@ -18,6 +18,8 @@ public class LifeGoal
 
     public DateTime? UpdatedAt { get; set; }
 
+    public int OrderIndex { get; set; }
+
     public bool IsDeleted { get; set; } = false;
 
     public DateTime? DeletedAt { get; set; }
