@@ -122,18 +122,19 @@ public partial class LifeGoalItemViewModel : ViewModelBase
     {
         CompletedMilestonesCount = completed;
         TotalMilestonesCount = total;
-        ProgressPercentage = total > 0 ? ((double)completed / total) * 100.0 : (IsAchieved ? 100.0 : 0.0);
 
         if (total > 0)
         {
-            if (completed == total && !Model.IsAchieved)
+            bool shouldBeAchieved = (completed == total);
+            if (Model.IsAchieved != shouldBeAchieved)
             {
-                Model.IsAchieved = true;
+                Model.IsAchieved = shouldBeAchieved;
             }
-            else if (completed < total && Model.IsAchieved)
-            {
-                Model.IsAchieved = false;
-            }
+            ProgressPercentage = ((double)completed / total) * 100.0;
+        }
+        else
+        {
+            ProgressPercentage = Model.IsAchieved ? 100.0 : 0.0;
         }
 
         OnPropertyChanged(nameof(CompletedMilestonesCount));
@@ -141,5 +142,7 @@ public partial class LifeGoalItemViewModel : ViewModelBase
         OnPropertyChanged(nameof(ProgressPercentage));
         OnPropertyChanged(nameof(IsAchieved));
         OnPropertyChanged(nameof(StatusText));
+        OnPropertyChanged(nameof(StatusBadgeText));
+        OnPropertyChanged(nameof(HasMilestones));
     }
 }

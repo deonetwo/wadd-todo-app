@@ -762,11 +762,18 @@ public partial class GoalsViewModel : ViewModelBase
     {
         if (SelectedGoal == null) return;
 
+        bool wasAchieved = SelectedGoal.IsAchieved;
         int total = CurrentMilestones.Count;
         int completed = CurrentMilestones.Count(m => m.IsCompleted);
 
         SelectedGoal.UpdateMilestonesSummary(completed, total);
         _ = _goalService.SaveGoalAsync(SelectedGoal.Model);
+        OnPropertyChanged(nameof(SelectedGoal));
+
+        if (!wasAchieved && SelectedGoal.IsAchieved)
+        {
+            _audioService?.PlayCompletedSound();
+        }
     }
 
     [RelayCommand]
