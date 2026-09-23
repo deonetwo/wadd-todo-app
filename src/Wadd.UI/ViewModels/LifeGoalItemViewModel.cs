@@ -26,6 +26,20 @@ public partial class LifeGoalItemViewModel : ViewModelBase
         _model = model ?? throw new ArgumentNullException(nameof(model));
     }
 
+    public void UpdateFrom(LifeGoal model, int completed, int total)
+    {
+        Model = model ?? throw new ArgumentNullException(nameof(model));
+        UpdateMilestonesSummary(completed, total);
+        OnPropertyChanged(nameof(Title));
+        OnPropertyChanged(nameof(Description));
+        OnPropertyChanged(nameof(HasDescription));
+        OnPropertyChanged(nameof(Category));
+        OnPropertyChanged(nameof(TargetDate));
+        OnPropertyChanged(nameof(FormattedTargetDate));
+        OnPropertyChanged(nameof(HasTargetDate));
+        OnPropertyChanged(nameof(OrderIndex));
+    }
+
     public string Id => Model.Id;
 
     public int OrderIndex

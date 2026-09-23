@@ -294,4 +294,33 @@ public class GoalServiceTests : IDisposable
         Assert.Equal("Goal 1", vm.Goals[0].Title);
         Assert.Equal("Goal 2", vm.Goals[1].Title);
     }
+
+    [Fact]
+    public async Task GoalsViewModel_LoadAllGoalsAsync_PreservesSelectedGoalFocusAcrossSync()
+    {
+        var goal1 = await _goalService.SaveGoalAsync(new LifeGoal { Title = "Goal 1", OrderIndex = 0, CreatedAt = DateTime.UtcNow.AddMinutes(-3) });
+        var goal2 = await _goalService.SaveGoalAsync(new LifeGoal { Title = "Goal 2", OrderIndex = 1, CreatedAt = DateTime.UtcNow.AddMinutes(-2) });
+        var goal3 = await _goalService.SaveGoalAsync(new LifeGoal { Title = "Goal 3", OrderIndex = 2, CreatedAt = DateTime.UtcNow.AddMinutes(-1) });
+
+        var vm = new Wadd.UI.ViewModels.GoalsViewModel(_goalService);
+        await vm.LoadAllGoalsAsync();
+
+        Assert.Equal(3, vm.Goals.Count);
+
+        // Select the third goal (index 2)
+        var targetGoal = vm.Goals[2];
+        vm.SelectedGoal = targetGoal;
+        Assert.Equal("Goal 3", vm.SelectedGoal.Title);
+        Assert.True(targetGoal.IsSelected);
+
+        // Simulate background autosync reloading all goals
+        await vm.LoadAllGoalsAsync();
+
+        // Focus / selection must REMAIN on Goal 3, not jump back to Goal 1!
+        Assert.NotNull(vm.SelectedGoal);
+        Assert.Equal(goal3.Id, vm.SelectedGoal.Id);
+        Assert.Equal("Goal 3", vm.SelectedGoal.Title);
+        Assert.True(vm.Goals.First(g => g.Id == goal3.Id).IsSelected);
+        Assert.False(vm.Goals.First(g => g.Id == goal1.Id).IsSelected);
+    }
 }

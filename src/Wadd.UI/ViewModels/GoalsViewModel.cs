@@ -192,7 +192,7 @@ public partial class GoalsViewModel : ViewModelBase
 
         bool needsReindex = sortedGoals.Count > 1 && sortedGoals.All(g => g.OrderIndex == 0);
 
-        var loadedGoals = new List<LifeGoalItemViewModel>();
+        var loadedData = new List<(LifeGoal Goal, int Completed, int Total)>();
         for (int i = 0; i < sortedGoals.Count; i++)
         {
             var g = sortedGoals[i];
@@ -205,10 +205,7 @@ public partial class GoalsViewModel : ViewModelBase
             var milestones = (await _goalService.GetMilestonesForGoalAsync(g.Id)).ToList();
             int completed = milestones.Count(m => m.IsCompleted);
             int total = milestones.Count;
-
-            var vm = new LifeGoalItemViewModel(g);
-            vm.UpdateMilestonesSummary(completed, total);
-            loadedGoals.Add(vm);
+            loadedData.Add((g, completed, total));
         }
 
         if (currentVersion != _loadGoalsVersion)
@@ -216,48 +213,106 @@ public partial class GoalsViewModel : ViewModelBase
             return;
         }
 
-        Goals.Clear();
-        foreach (var vm in loadedGoals)
+        string? previousSelectedId = SelectedGoal?.Id;
+
+        // In-place collection synchronization to preserve UI state, scroll position, and focus
+        var incomingIds = new HashSet<string>(loadedData.Select(x => x.Goal.Id));
+
+        // Remove goals no longer present
+        for (int i = Goals.Count - 1; i >= 0; i--)
         {
-            Goals.Add(vm);
+            if (!incomingIds.Contains(Goals[i].Id))
+            {
+                Goals.RemoveAt(i);
+            }
+        }
+
+        // Insert, update, and reorder goals
+        for (int i = 0; i < loadedData.Count; i++)
+        {
+            var (goal, completed, total) = loadedData[i];
+            int existingIndex = -1;
+            for (int j = 0; j < Goals.Count; j++)
+            {
+                if (Goals[j].Id == goal.Id)
+                {
+                    existingIndex = j;
+                    break;
+                }
+            }
+
+            if (existingIndex < 0)
+            {
+                var vm = new LifeGoalItemViewModel(goal);
+                vm.UpdateMilestonesSummary(completed, total);
+                Goals.Insert(i, vm);
+            }
+            else
+            {
+                Goals[existingIndex].UpdateFrom(goal, completed, total);
+                if (existingIndex != i)
+                {
+                    Goals.Move(existingIndex, i);
+                }
+            }
         }
 
         UpdateCategories();
-        ApplyCategoryFilter();
-
-        if (SelectedGoal == null)
-        {
-            SelectedGoal = FilteredGoals.FirstOrDefault();
-        }
-        else
-        {
-            foreach (var g in Goals)
-            {
-                g.IsSelected = g.Id == SelectedGoal.Id;
-            }
-        }
+        ApplyCategoryFilter(previousSelectedId);
 
         await LoadAllJournalEntriesAsync();
     }
 
-    private void ApplyCategoryFilter()
+    private void ApplyCategoryFilter(string? preferredSelectedId = null)
     {
-        FilteredGoals.Clear();
-        var query = Goals.AsEnumerable();
+        string? targetSelectedId = preferredSelectedId ?? SelectedGoal?.Id;
 
+        var query = Goals.AsEnumerable();
         if (!string.IsNullOrWhiteSpace(SelectedCategoryFilter) && !SelectedCategoryFilter.Equals("All", StringComparison.OrdinalIgnoreCase))
         {
             query = query.Where(g => g.Category.Equals(SelectedCategoryFilter, StringComparison.OrdinalIgnoreCase));
         }
 
-        foreach (var g in query)
+        var matchingList = query.ToList();
+
+        // In-place synchronization of FilteredGoals to preserve scroll position and focus
+        var matchingIds = new HashSet<string>(matchingList.Select(x => x.Id));
+        for (int i = FilteredGoals.Count - 1; i >= 0; i--)
         {
-            FilteredGoals.Add(g);
+            if (!matchingIds.Contains(FilteredGoals[i].Id))
+            {
+                FilteredGoals.RemoveAt(i);
+            }
         }
 
-        if (SelectedGoal != null && !FilteredGoals.Contains(SelectedGoal))
+        for (int i = 0; i < matchingList.Count; i++)
+        {
+            var item = matchingList[i];
+            int existingIndex = FilteredGoals.IndexOf(item);
+            if (existingIndex < 0)
+            {
+                FilteredGoals.Insert(i, item);
+            }
+            else if (existingIndex != i)
+            {
+                FilteredGoals.Move(existingIndex, i);
+            }
+        }
+
+        // Restore or retain selected goal without resetting focus to top
+        var matchingSelected = FilteredGoals.FirstOrDefault(g => g.Id == targetSelectedId);
+        if (matchingSelected != null)
+        {
+            SelectedGoal = matchingSelected;
+        }
+        else if (SelectedGoal == null || !FilteredGoals.Contains(SelectedGoal))
         {
             SelectedGoal = FilteredGoals.FirstOrDefault();
+        }
+
+        foreach (var g in Goals)
+        {
+            g.IsSelected = (SelectedGoal != null && g.Id == SelectedGoal.Id);
         }
     }
 
