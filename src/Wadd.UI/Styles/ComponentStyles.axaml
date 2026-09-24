@@ -12,6 +12,11 @@
     <Setter Property="helpers:MouseDragScrollHelper.IsEnabled" Value="True"/>
   </Style>
 
+  <!-- Global Button Focus: Make all buttons non-focusable so clicking them does not steal/trap keyboard focus or trigger on spacebar -->
+  <Style Selector="Button">
+    <Setter Property="Focusable" Value="False"/>
+  </Style>
+
   <!-- ═══════════════════════════════════════════════════════════════
        1. BUTTON HIERARCHY (3-TIER SYSTEM)
   ═══════════════════════════════════════════════════════════════ -->
@@ -719,6 +724,7 @@
        GLOBAL ACCESSIBLE CHECKBOX (Brand Ocean Teal Theme)
   ═══════════════════════════════════════════════════════════════ -->
   <Style Selector="CheckBox">
+    <Setter Property="Focusable"               Value="True"/>
     <Setter Property="Foreground"              Value="{DynamicResource AppTextPrimaryBrush}"/>
     <Setter Property="FontSize"                Value="13"/>
     <Setter Property="FontWeight"              Value="Medium"/>
