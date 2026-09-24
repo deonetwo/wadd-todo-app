@@ -246,6 +246,69 @@ public class AiGoalServiceTests
         Assert.Contains(result.SuggestedMilestones, m => m.Contains("Step One Already Done", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(result.SuggestedMilestones, m => m.Contains("Next Pending Step", StringComparison.OrdinalIgnoreCase));
     }
+
+    [Fact]
+    public void BuildGoalPromptContext_IncludesAvailableTags()
+    {
+        var tags = new List<string> { "Work", "Urgent", "Personal" };
+        var context = AiGoalService.BuildGoalPromptContext(
+            goalTitleOrPrompt: "Complete Q3 Audit",
+            category: null,
+            targetDate: null,
+            description: null,
+            existingMilestones: null,
+            newMilestoneDraft: null,
+            availableTags: tags);
+
+        Assert.Contains("Available User Tags / Categories: Work, Urgent, Personal", context);
+    }
+
+    [Fact]
+    public void BuildMilestonesPromptContext_IncludesAvailableTags()
+    {
+        var tags = new List<string> { "Frontend", "UI/UX" };
+        var context = AiGoalService.BuildMilestonesPromptContext(
+            goalTitle: "Redesign Landing Page",
+            category: "Design",
+            description: "Modern look",
+            existingMilestones: null,
+            targetDate: null,
+            newMilestoneDraft: null,
+            availableTags: tags);
+
+        Assert.Contains("Available User Tags / Categories: Frontend, UI/UX", context);
+    }
+
+    [Fact]
+    public void BuildJournalPromptContext_IncludesAvailableTags()
+    {
+        var tags = new List<string> { "Habits", "Fitness" };
+        var context = AiGoalService.BuildJournalPromptContext(
+            goalTitle: "Morning Routine",
+            completedSteps: 2,
+            totalSteps: 5,
+            recentMilestone: "Wake up at 6am",
+            category: "Health & Fitness",
+            description: "Build consistency",
+            allMilestones: null,
+            currentJournalDraft: "Great day!",
+            availableTags: tags);
+
+        Assert.Contains("Available User Tags / Categories: Habits, Fitness", context);
+    }
+
+    [Fact]
+    public async Task GenerateGoalDetailsAsync_WithMatchingAvailableTag_PicksAvailableTagAsCategory()
+    {
+        var availableTags = new List<string> { "Mobile Dev", "Cloud Architecture", "Finance" };
+
+        var result = await _aiGoalService.GenerateGoalDetailsAsync(
+            goalTitleOrPrompt: "Build Mobile Dev application in Avalonia",
+            availableTags: availableTags);
+
+        Assert.NotNull(result);
+        Assert.Equal("Mobile Dev", result.Category);
+    }
 }
 
 

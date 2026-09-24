@@ -55,9 +55,10 @@ public class AiGoalService : IAiGoalService
         DateTime? targetDate = null,
         string? description = null,
         IReadOnlyList<string>? existingMilestones = null,
-        string? newMilestoneDraft = null)
+        string? newMilestoneDraft = null,
+        IReadOnlyList<string>? availableTags = null)
     {
-        var context = BuildGoalPromptContext(goalTitleOrPrompt, category, targetDate, description, existingMilestones, newMilestoneDraft);
+        var context = BuildGoalPromptContext(goalTitleOrPrompt, category, targetDate, description, existingMilestones, newMilestoneDraft, availableTags);
         var fallbackTitle = !string.IsNullOrWhiteSpace(goalTitleOrPrompt) ? goalTitleOrPrompt.Trim() : "New Life Goal";
 
         if (string.IsNullOrWhiteSpace(context))
@@ -79,8 +80,8 @@ public class AiGoalService : IAiGoalService
             try
             {
                 var liveResult = IsGeminiProvider()
-                    ? await GenerateGoalWithGeminiAsync(context, fallbackTitle, category, targetDate, description, existingMilestones)
-                    : await GenerateGoalWithOpenAiAsync(context, fallbackTitle, category, targetDate, description, existingMilestones);
+                    ? await GenerateGoalWithGeminiAsync(context, fallbackTitle, category, targetDate, description, existingMilestones, availableTags)
+                    : await GenerateGoalWithOpenAiAsync(context, fallbackTitle, category, targetDate, description, existingMilestones, availableTags);
 
                 if (liveResult != null)
                 {
@@ -97,7 +98,7 @@ public class AiGoalService : IAiGoalService
             }
         }
 
-        var offline = GenerateGoalSmartOffline(fallbackTitle, category, targetDate, description, existingMilestones, newMilestoneDraft);
+        var offline = GenerateGoalSmartOffline(fallbackTitle, category, targetDate, description, existingMilestones, newMilestoneDraft, availableTags);
         offline.IsLiveAi = false;
         offline.SourceLabel = "Smart Offline Engine";
         return offline;
@@ -109,7 +110,8 @@ public class AiGoalService : IAiGoalService
         string? description = null,
         IReadOnlyList<string>? existingMilestones = null,
         DateTime? targetDate = null,
-        string? newMilestoneDraft = null)
+        string? newMilestoneDraft = null,
+        IReadOnlyList<string>? availableTags = null)
     {
         var title = !string.IsNullOrWhiteSpace(goalTitle) ? goalTitle.Trim() : "My Goal";
 
@@ -118,8 +120,8 @@ public class AiGoalService : IAiGoalService
             try
             {
                 var liveMilestones = IsGeminiProvider()
-                    ? await GenerateMilestonesWithGeminiAsync(title, category, description, existingMilestones, targetDate, newMilestoneDraft)
-                    : await GenerateMilestonesWithOpenAiAsync(title, category, description, existingMilestones, targetDate, newMilestoneDraft);
+                    ? await GenerateMilestonesWithGeminiAsync(title, category, description, existingMilestones, targetDate, newMilestoneDraft, availableTags)
+                    : await GenerateMilestonesWithOpenAiAsync(title, category, description, existingMilestones, targetDate, newMilestoneDraft, availableTags);
 
                 if (liveMilestones != null && liveMilestones.Count > 0)
                 {
@@ -132,7 +134,7 @@ public class AiGoalService : IAiGoalService
             }
         }
 
-        return GenerateMilestonesSmartOffline(title, category, description, existingMilestones, targetDate, newMilestoneDraft);
+        return GenerateMilestonesSmartOffline(title, category, description, existingMilestones, targetDate, newMilestoneDraft, availableTags);
     }
 
     public async Task<JournalDraftResult> GenerateJournalPromptAsync(
@@ -143,7 +145,8 @@ public class AiGoalService : IAiGoalService
         string? category = null,
         string? description = null,
         IReadOnlyList<string>? allMilestones = null,
-        string? currentJournalDraft = null)
+        string? currentJournalDraft = null,
+        IReadOnlyList<string>? availableTags = null)
     {
         var title = !string.IsNullOrWhiteSpace(goalTitle) ? goalTitle.Trim() : "My Goal";
 
@@ -152,8 +155,8 @@ public class AiGoalService : IAiGoalService
             try
             {
                 var liveJournal = IsGeminiProvider()
-                    ? await GenerateJournalWithGeminiAsync(title, completedSteps, totalSteps, recentMilestone, category, description, allMilestones, currentJournalDraft)
-                    : await GenerateJournalWithOpenAiAsync(title, completedSteps, totalSteps, recentMilestone, category, description, allMilestones, currentJournalDraft);
+                    ? await GenerateJournalWithGeminiAsync(title, completedSteps, totalSteps, recentMilestone, category, description, allMilestones, currentJournalDraft, availableTags)
+                    : await GenerateJournalWithOpenAiAsync(title, completedSteps, totalSteps, recentMilestone, category, description, allMilestones, currentJournalDraft, availableTags);
 
                 if (liveJournal != null)
                 {
@@ -399,7 +402,8 @@ public class AiGoalService : IAiGoalService
         DateTime? targetDate,
         string? description,
         IReadOnlyList<string>? existingMilestones,
-        string? newMilestoneDraft)
+        string? newMilestoneDraft,
+        IReadOnlyList<string>? availableTags = null)
     {
         var sb = new StringBuilder();
 
@@ -411,6 +415,17 @@ public class AiGoalService : IAiGoalService
         if (!string.IsNullOrWhiteSpace(category) && !category.Equals("Uncategorized", StringComparison.OrdinalIgnoreCase))
         {
             sb.AppendLine($"- Category: \"{category.Trim()}\"");
+        }
+
+        var cleanTags = availableTags?
+            .Where(t => !string.IsNullOrWhiteSpace(t))
+            .Select(t => t.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (cleanTags != null && cleanTags.Count > 0)
+        {
+            sb.AppendLine($"- Available User Tags / Categories: {string.Join(", ", cleanTags)}");
         }
 
         if (targetDate.HasValue)
@@ -456,7 +471,8 @@ public class AiGoalService : IAiGoalService
         string? description,
         IReadOnlyList<string>? existingMilestones,
         DateTime? targetDate,
-        string? newMilestoneDraft)
+        string? newMilestoneDraft,
+        IReadOnlyList<string>? availableTags = null)
     {
         var sb = new StringBuilder();
         sb.AppendLine($"- Goal Title: \"{goalTitle.Trim()}\"");
@@ -464,6 +480,17 @@ public class AiGoalService : IAiGoalService
         if (!string.IsNullOrWhiteSpace(category) && !category.Equals("Uncategorized", StringComparison.OrdinalIgnoreCase))
         {
             sb.AppendLine($"- Category: \"{category.Trim()}\"");
+        }
+
+        var cleanTags = availableTags?
+            .Where(t => !string.IsNullOrWhiteSpace(t))
+            .Select(t => t.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (cleanTags != null && cleanTags.Count > 0)
+        {
+            sb.AppendLine($"- Available User Tags / Categories: {string.Join(", ", cleanTags)}");
         }
 
         if (!string.IsNullOrWhiteSpace(description))
@@ -507,7 +534,8 @@ public class AiGoalService : IAiGoalService
         string? category,
         string? description,
         IReadOnlyList<string>? allMilestones,
-        string? currentJournalDraft)
+        string? currentJournalDraft,
+        IReadOnlyList<string>? availableTags = null)
     {
         var sb = new StringBuilder();
         sb.AppendLine($"- Goal: \"{goalTitle.Trim()}\"");
@@ -516,6 +544,17 @@ public class AiGoalService : IAiGoalService
         if (!string.IsNullOrWhiteSpace(category))
         {
             sb.AppendLine($"- Category: \"{category.Trim()}\"");
+        }
+
+        var cleanTags = availableTags?
+            .Where(t => !string.IsNullOrWhiteSpace(t))
+            .Select(t => t.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (cleanTags != null && cleanTags.Count > 0)
+        {
+            sb.AppendLine($"- Available User Tags / Categories: {string.Join(", ", cleanTags)}");
         }
 
         if (!string.IsNullOrWhiteSpace(description))
@@ -555,12 +594,13 @@ public class AiGoalService : IAiGoalService
         string? userCategory,
         DateTime? userTargetDate,
         string? userDescription,
-        IReadOnlyList<string>? userMilestones)
+        IReadOnlyList<string>? userMilestones,
+        IReadOnlyList<string>? availableTags = null)
     {
         var systemPrompt = @"You are a world-class life coach and productivity expert.
-Analyze the user's provided goal information. Use all provided details (title, category, target date, vision/description, and existing draft steps) to generate an enriched, cohesive goal plan.
+Analyze the user's provided goal information. Use all provided details (title, category, target date, vision/description, existing draft steps, and available tags/categories) to generate an enriched, cohesive goal plan.
 - title: concise, motivating goal title (max 50 chars). Retain or refine the user's title if provided.
-- category: one of 'Health & Fitness', 'Career & Business', 'Finance & Wealth', 'Learning & Skills', 'Personal Growth', 'Travel & Lifestyle'. Respect the user's category if given.
+- category: If relevant, prefer selecting the best matching category from the user's available tags/categories list. Otherwise, select one of 'Health & Fitness', 'Career & Business', 'Finance & Wealth', 'Learning & Skills', 'Personal Growth', 'Travel & Lifestyle'. Respect the user's category if explicitly given.
 - estimatedDays: realistic integer number of days to achieve this goal (e.g. 30, 60, 90, 180, 365). If a target date is provided, align estimatedDays with that timeline.
 - description: an inspiring 2-3 sentence vision and strategy breakdown explaining why it matters and the daily key habit required. Build upon and polish the user's description if provided.
 - suggestedMilestones: an array of 3 to 6 sequential, highly actionable milestone steps. Seamlessly incorporate and expand upon any existing/draft steps without duplicating.
@@ -625,9 +665,10 @@ Return strictly valid JSON only without markdown code fences:
         string? description,
         IReadOnlyList<string>? existingMilestones = null,
         DateTime? targetDate = null,
-        string? newMilestoneDraft = null)
+        string? newMilestoneDraft = null,
+        IReadOnlyList<string>? availableTags = null)
     {
-        var context = BuildMilestonesPromptContext(goalTitle, category, description, existingMilestones, targetDate, newMilestoneDraft);
+        var context = BuildMilestonesPromptContext(goalTitle, category, description, existingMilestones, targetDate, newMilestoneDraft, availableTags);
         var promptText = $@"You are an expert goal decomposition assistant.
 Analyze the user's goal information below. Generate an array of 3 to 5 sequential, concrete, highly actionable milestone steps that advance this goal without repeating or duplicating any of the existing steps.
 
@@ -689,7 +730,8 @@ Return strictly valid JSON only: {{ ""milestones"": [""Step 1..."", ""Step 2..."
         string? category = null,
         string? description = null,
         IReadOnlyList<string>? allMilestones = null,
-        string? currentJournalDraft = null)
+        string? currentJournalDraft = null,
+        IReadOnlyList<string>? availableTags = null)
     {
         var systemPrompt = @"You are an encouraging, insightful reflection coach.
 Given a user's goal progress and detailed context, generate a reflective journal entry draft with:
@@ -698,7 +740,7 @@ Given a user's goal progress and detailed context, generate a reflective journal
 
 Return strictly valid JSON only: { ""title"": ""..."", ""content"": ""..."" }";
 
-        var context = BuildJournalPromptContext(goalTitle, completedSteps, totalSteps, recentMilestone, category, description, allMilestones, currentJournalDraft);
+        var context = BuildJournalPromptContext(goalTitle, completedSteps, totalSteps, recentMilestone, category, description, allMilestones, currentJournalDraft, availableTags);
 
         var requestBody = new
         {
@@ -866,12 +908,13 @@ Return strictly valid JSON only: { ""title"": ""..."", ""content"": ""..."" }";
         string? userCategory,
         DateTime? userTargetDate,
         string? userDescription,
-        IReadOnlyList<string>? userMilestones)
+        IReadOnlyList<string>? userMilestones,
+        IReadOnlyList<string>? availableTags = null)
     {
         var systemPrompt = @"You are a world-class life coach and productivity expert.
-Analyze the user's provided goal information. Use all provided details (title, category, target date, vision/description, and existing draft steps) to generate an enriched, cohesive goal plan.
+Analyze the user's provided goal information. Use all provided details (title, category, target date, vision/description, existing draft steps, and available tags/categories) to generate an enriched, cohesive goal plan.
 - title: concise, motivating goal title (max 50 chars). Retain or refine the user's title if provided.
-- category: one of 'Health & Fitness', 'Career & Business', 'Finance & Wealth', 'Learning & Skills', 'Personal Growth', 'Travel & Lifestyle'. Respect the user's category if given.
+- category: If relevant, prefer selecting the best matching category from the user's available tags/categories list. Otherwise, select one of 'Health & Fitness', 'Career & Business', 'Finance & Wealth', 'Learning & Skills', 'Personal Growth', 'Travel & Lifestyle'. Respect the user's category if explicitly given.
 - estimatedDays: realistic integer number of days to achieve this goal (e.g. 30, 60, 90, 180, 365). If a target date is provided, align estimatedDays with that timeline.
 - description: an inspiring 2-3 sentence vision and strategy breakdown explaining why it matters and the daily key habit required. Build upon and polish the user's description if provided.
 - suggestedMilestones: an array of 3 to 6 sequential, highly actionable milestone steps. Seamlessly incorporate and expand upon any existing/draft steps without duplicating.
@@ -897,11 +940,12 @@ Return strictly valid JSON only without markdown code fences:
         string? description,
         IReadOnlyList<string>? existingMilestones = null,
         DateTime? targetDate = null,
-        string? newMilestoneDraft = null)
+        string? newMilestoneDraft = null,
+        IReadOnlyList<string>? availableTags = null)
     {
-        var context = BuildMilestonesPromptContext(goalTitle, category, description, existingMilestones, targetDate, newMilestoneDraft);
+        var context = BuildMilestonesPromptContext(goalTitle, category, description, existingMilestones, targetDate, newMilestoneDraft, availableTags);
         var systemPrompt = @"You are an expert goal decomposition assistant.
-Given goal details, category, vision, target date, and any existing milestone progress or drafts, generate an array of 3 to 5 sequential, concrete, and highly actionable milestone steps that build logically without duplicating existing steps.
+Given goal details, category, vision, target date, available tags, and any existing milestone progress or drafts, generate an array of 3 to 5 sequential, concrete, and highly actionable milestone steps that build logically without duplicating existing steps.
 Return strictly valid JSON only: { ""milestones"": [""Step 1..."", ""Step 2..."", ...] }";
 
         var text = await SendOpenAiChatRequestAsync(systemPrompt, $"Goal Information:\n{context}");
@@ -918,7 +962,8 @@ Return strictly valid JSON only: { ""milestones"": [""Step 1..."", ""Step 2...""
         string? category = null,
         string? description = null,
         IReadOnlyList<string>? allMilestones = null,
-        string? currentJournalDraft = null)
+        string? currentJournalDraft = null,
+        IReadOnlyList<string>? availableTags = null)
     {
         var systemPrompt = @"You are an encouraging, insightful reflection coach.
 Given a user's goal progress and context, generate a reflective journal entry draft with:
@@ -927,7 +972,7 @@ Given a user's goal progress and context, generate a reflective journal entry dr
 
 Return strictly valid JSON only: { ""title"": ""..."", ""content"": ""..."" }";
 
-        var context = BuildJournalPromptContext(goalTitle, completedSteps, totalSteps, recentMilestone, category, description, allMilestones, currentJournalDraft);
+        var context = BuildJournalPromptContext(goalTitle, completedSteps, totalSteps, recentMilestone, category, description, allMilestones, currentJournalDraft, availableTags);
 
         var text = await SendOpenAiChatRequestAsync(systemPrompt, $"Goal & Progress Context:\n{context}");
         if (string.IsNullOrWhiteSpace(text)) return null;
@@ -1065,13 +1110,14 @@ Return strictly valid JSON only: { ""title"": ""..."", ""content"": ""..."" }";
         DateTime? targetDate = null,
         string? description = null,
         IReadOnlyList<string>? existingMilestones = null,
-        string? newMilestoneDraft = null)
+        string? newMilestoneDraft = null,
+        IReadOnlyList<string>? availableTags = null)
     {
         var cleanPrompt = !string.IsNullOrWhiteSpace(prompt) ? prompt.Trim() : "New Life Goal";
         var lower = cleanPrompt.ToLowerInvariant();
         var cat = !string.IsNullOrWhiteSpace(category) && !category.Equals("Uncategorized", StringComparison.OrdinalIgnoreCase)
             ? category.Trim()
-            : DetectCategory(lower);
+            : DetectCategory(lower, availableTags);
 
         var (_, defaultDesc, defaultMilestones) = GenerateDomainTemplates(cleanPrompt, cat);
 
@@ -1112,8 +1158,23 @@ Return strictly valid JSON only: { ""title"": ""..."", ""content"": ""..."" }";
         };
     }
 
-    private static string DetectCategory(string lower)
+    private static string DetectCategory(string lower, IReadOnlyList<string>? availableTags = null)
     {
+        if (availableTags != null)
+        {
+            foreach (var tag in availableTags)
+            {
+                if (string.IsNullOrWhiteSpace(tag)) continue;
+                var cleanTag = tag.Trim();
+                if (cleanTag.Equals("Uncategorized", StringComparison.OrdinalIgnoreCase)) continue;
+                var tagLower = cleanTag.ToLowerInvariant();
+                if (lower.Contains(tagLower) || tagLower.Contains(lower))
+                {
+                    return cleanTag;
+                }
+            }
+        }
+
         if (ContainsAny(lower, "run", "marathon", "workout", "weight", "diet", "gym", "yoga", "health", "muscle", "walk", "cycle", "swim", "fitness", "sleep", "water", "cardio"))
             return "Health & Fitness";
 
@@ -1240,11 +1301,12 @@ Return strictly valid JSON only: { ""title"": ""..."", ""content"": ""..."" }";
         string? description,
         IReadOnlyList<string>? existingMilestones = null,
         DateTime? targetDate = null,
-        string? newMilestoneDraft = null)
+        string? newMilestoneDraft = null,
+        IReadOnlyList<string>? availableTags = null)
     {
         var cat = !string.IsNullOrWhiteSpace(category) && !category.Equals("Uncategorized", StringComparison.OrdinalIgnoreCase)
             ? category.Trim()
-            : DetectCategory(title.ToLowerInvariant());
+            : DetectCategory(title.ToLowerInvariant(), availableTags);
 
         var (_, _, defaultMilestones) = GenerateDomainTemplates(title, cat);
 

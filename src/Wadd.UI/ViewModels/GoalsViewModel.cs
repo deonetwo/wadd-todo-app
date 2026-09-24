@@ -37,6 +37,66 @@ public partial class GoalsViewModel : ViewModelBase
         DataMutated?.Invoke();
     }
 
+    public Func<IEnumerable<string>>? GetAvailableTagsFunc { get; set; }
+
+    public IReadOnlyList<string> GetAvailableTags()
+    {
+        var tags = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        // 1. Task tags/categories from MainViewModel
+        if (GetAvailableTagsFunc != null)
+        {
+            var externalTags = GetAvailableTagsFunc();
+            if (externalTags != null)
+            {
+                foreach (var tag in externalTags)
+                {
+                    if (!string.IsNullOrWhiteSpace(tag))
+                    {
+                        var trimmed = tag.Trim();
+                        if (!trimmed.Equals("All", StringComparison.OrdinalIgnoreCase) &&
+                            !trimmed.Equals("All Categories", StringComparison.OrdinalIgnoreCase) &&
+                            !trimmed.Equals("Uncategorized", StringComparison.OrdinalIgnoreCase))
+                        {
+                            tags.Add(trimmed);
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Goal categories from Categories collection and Goals
+        foreach (var cat in Categories)
+        {
+            if (!string.IsNullOrWhiteSpace(cat.Name))
+            {
+                var trimmed = cat.Name.Trim();
+                if (!trimmed.Equals("All", StringComparison.OrdinalIgnoreCase) &&
+                    !trimmed.Equals("All Categories", StringComparison.OrdinalIgnoreCase) &&
+                    !trimmed.Equals("Uncategorized", StringComparison.OrdinalIgnoreCase))
+                {
+                    tags.Add(trimmed);
+                }
+            }
+        }
+
+        foreach (var goal in Goals)
+        {
+            if (!string.IsNullOrWhiteSpace(goal.Category))
+            {
+                var trimmed = goal.Category.Trim();
+                if (!trimmed.Equals("All", StringComparison.OrdinalIgnoreCase) &&
+                    !trimmed.Equals("All Categories", StringComparison.OrdinalIgnoreCase) &&
+                    !trimmed.Equals("Uncategorized", StringComparison.OrdinalIgnoreCase))
+                {
+                    tags.Add(trimmed);
+                }
+            }
+        }
+
+        return tags.ToList();
+    }
+
     public ObservableCollection<LifeGoalItemViewModel> Goals { get; } = new();
     public ObservableCollection<LifeGoalItemViewModel> FilteredGoals { get; } = new();
     public ObservableCollection<GoalMilestoneItemViewModel> CurrentMilestones { get; } = new();
@@ -490,7 +550,8 @@ public partial class GoalsViewModel : ViewModelBase
                 targetDate: NewGoalTargetDate,
                 description: NewGoalDescription,
                 existingMilestones: existingSteps.Count > 0 ? existingSteps : null,
-                newMilestoneDraft: NewPendingMilestoneTitle);
+                newMilestoneDraft: NewPendingMilestoneTitle,
+                availableTags: GetAvailableTags());
 
             if (!string.IsNullOrWhiteSpace(result.Title))
             {
@@ -958,7 +1019,8 @@ public partial class GoalsViewModel : ViewModelBase
                 description: SelectedGoal.Description,
                 existingMilestones: existingTitles,
                 targetDate: SelectedGoal.TargetDate,
-                newMilestoneDraft: draftStep);
+                newMilestoneDraft: draftStep,
+                availableTags: GetAvailableTags());
 
             if (suggested != null && suggested.Count > 0)
             {
@@ -1026,7 +1088,8 @@ public partial class GoalsViewModel : ViewModelBase
                 description: SelectedGoal.Description,
                 existingMilestones: null,
                 targetDate: SelectedGoal.TargetDate,
-                newMilestoneDraft: draftStep);
+                newMilestoneDraft: draftStep,
+                availableTags: GetAvailableTags());
 
             if (suggested != null && suggested.Count > 0)
             {
@@ -1116,7 +1179,8 @@ public partial class GoalsViewModel : ViewModelBase
                 category: SelectedGoal.Category,
                 description: SelectedGoal.Description,
                 allMilestones: allMilestonesList,
-                currentJournalDraft: draftUserContent);
+                currentJournalDraft: draftUserContent,
+                availableTags: GetAvailableTags());
 
             if (draft != null)
             {

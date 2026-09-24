@@ -882,6 +882,7 @@ public partial class MainViewModel : ViewModelBase
         {
             value.StatusNotificationRequested = (msg, type) => ShowStatusBubble(msg, type);
             value.DataMutated += () => RequestDebouncedAutoSync();
+            value.GetAvailableTagsFunc = () => ExistingCategories;
         }
     }
 
@@ -3253,6 +3254,7 @@ public partial class MainViewModel : ViewModelBase
         _goalsVM.StatusNotificationRequested = (msg, type) => ShowStatusBubble(msg, type);
         _goalsVM.DataMutated += () => RequestDebouncedAutoSync();
         _goalsVM.ConfirmDeleteRequested = (title, msg, itemName, details) => RequestDeleteConfirmationAsync(title, msg, itemName, details);
+        _goalsVM.GetAvailableTagsFunc = () => ExistingCategories;
         WindowsNotificationService.NotificationTriggered += (title, message) =>
         {
             Dispatcher.UIThread.InvokeAsync(() =>
