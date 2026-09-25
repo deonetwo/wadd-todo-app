@@ -2506,6 +2506,138 @@ public partial class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsMoreActive));
     }
 
+    public bool HandleBackNavigation()
+    {
+        // 1. Conflict resolution dialog
+        if (IsConflictDialogVisible)
+        {
+            IsConflictDialogVisible = false;
+            return true;
+        }
+
+        // 2. Delete confirmation dialog
+        if (IsDeleteConfirmationOpen)
+        {
+            CancelDelete();
+            return true;
+        }
+
+        // 3. Task review wizard or review prompt
+        if (IsTaskWizardVisible)
+        {
+            IsTaskWizardVisible = false;
+            return true;
+        }
+        if (IsReviewPromptVisible)
+        {
+            IsReviewPromptVisible = false;
+            return true;
+        }
+
+        // 4. Mobile Task Composer sub-sheets & composer
+        if (IsMobileDueDateSheetOpen)
+        {
+            CloseMobileDueDateSheet();
+            return true;
+        }
+        if (IsMobileReminderSheetOpen)
+        {
+            CloseMobileReminderSheet();
+            return true;
+        }
+        if (IsMobileRepeatSheetOpen)
+        {
+            CloseMobileRepeatSheet();
+            return true;
+        }
+        if (IsMobileCategorySheetOpen)
+        {
+            CloseMobileCategorySheet();
+            return true;
+        }
+        if (IsMobileTaskComposerOpen)
+        {
+            CloseMobileTaskComposer();
+            return true;
+        }
+
+        // 5. Mobile Filter & Range Sheets
+        if (IsMobileTagFilterSheetOpen)
+        {
+            CloseMobileTagFilterSheet();
+            return true;
+        }
+        if (IsMobileCompletedDateFilterSheetOpen)
+        {
+            CloseMobileCompletedDateFilterSheet();
+            return true;
+        }
+        if (IsUpcomingTasksRangePickerSheetOpen)
+        {
+            CloseUpcomingTasksRangePicker();
+            return true;
+        }
+
+        // 6. Picker Sheets (Tasks layout, Language, AI Provider, AI Model)
+        if (IsTasksLayoutPickerSheetOpen)
+        {
+            CloseTasksLayoutPicker();
+            return true;
+        }
+        if (IsLanguagePickerSheetOpen)
+        {
+            CloseLanguagePicker();
+            return true;
+        }
+        if (IsAiProviderPickerSheetOpen)
+        {
+            CloseAiProviderPicker();
+            return true;
+        }
+        if (IsAiModelPickerSheetOpen)
+        {
+            CloseAiModelPicker();
+            return true;
+        }
+
+        // 7. Navigation Side Menu
+        if (IsSideMenuOpen)
+        {
+            CloseSideMenu();
+            return true;
+        }
+
+        // 8. Mobile More Sheet
+        if (IsMobileMoreSheetOpen)
+        {
+            CloseMobileMoreSheet();
+            return true;
+        }
+
+        // 9. Task Detail Drawer
+        if (IsDetailDrawerOpen)
+        {
+            CloseDetailDrawer();
+            return true;
+        }
+
+        // 10. Goals view sub-views & modals
+        if (IsGoalsView && GoalsVM != null && GoalsVM.HandleBackNavigation())
+        {
+            return true;
+        }
+
+        // 11. Child tabs navigation (Return to Tasks root tab)
+        if (SelectedNavIndex != 0)
+        {
+            SelectedNavIndex = 0;
+            return true;
+        }
+
+        // Root view with nothing open
+        return false;
+    }
+
     [ObservableProperty]
     private bool _isReviewPromptVisible;
 

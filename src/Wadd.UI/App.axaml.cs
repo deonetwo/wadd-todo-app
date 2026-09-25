@@ -14,6 +14,13 @@ namespace Wadd.UI;
 public partial class App : Application
 {
     public static IServiceProvider? Services { get; private set; }
+    public static MainViewModel? MainViewModelInstance { get; set; }
+
+    public static bool HandleBackPress()
+    {
+        return MainViewModelInstance?.HandleBackNavigation() ?? false;
+    }
+
     private TrayIcon? _trayIcon;
     private bool _isExplicitExit;
 
@@ -94,6 +101,7 @@ public partial class App : Application
         ServiceCollectionExtensions.SetSharedServiceProvider(Services);
 
         var mainViewModel = Services.GetRequiredService<MainViewModel>();
+        MainViewModelInstance = mainViewModel;
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {

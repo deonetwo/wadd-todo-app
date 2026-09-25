@@ -323,4 +323,33 @@ public class GoalServiceTests : IDisposable
         Assert.True(vm.Goals.First(g => g.Id == goal3.Id).IsSelected);
         Assert.False(vm.Goals.First(g => g.Id == goal1.Id).IsSelected);
     }
+
+    [Fact]
+    public void GoalsViewModel_HandleBackNavigation_DismissesModalsInOrder()
+    {
+        var vm = new Wadd.UI.ViewModels.GoalsViewModel(_goalService);
+
+        // When nothing open, returns false
+        Assert.False(vm.HandleBackNavigation());
+
+        // 1. Mobile detail view
+        vm.IsMobileDetailViewOpen = true;
+        Assert.True(vm.HandleBackNavigation());
+        Assert.False(vm.IsMobileDetailViewOpen);
+
+        // 2. Creating goal form
+        vm.IsCreatingGoal = true;
+        Assert.True(vm.HandleBackNavigation());
+        Assert.False(vm.IsCreatingGoal);
+
+        // 3. Journal bottom sheet
+        vm.IsJournalBottomSheetOpen = true;
+        Assert.True(vm.HandleBackNavigation());
+        Assert.False(vm.IsJournalBottomSheetOpen);
+
+        // 4. Milestone AI Choice modal
+        vm.IsMilestoneAiChoiceModalOpen = true;
+        Assert.True(vm.HandleBackNavigation());
+        Assert.False(vm.IsMilestoneAiChoiceModalOpen);
+    }
 }

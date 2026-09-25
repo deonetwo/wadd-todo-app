@@ -61,6 +61,7 @@ public class MainActivity : AvaloniaMainActivity, Wadd.Core.Interfaces.INotifica
         RequestNotificationPermissionIfRequired();
         Wadd.Core.Helpers.WaddDatabaseNotifier.DataChanged += OnDatabaseChanged;
         TaskAlarmScheduler.RescheduleAll(this);
+        RegisterBackNavigationHandler();
 
         try
         {
@@ -337,5 +338,78 @@ public class MainActivity : AvaloniaMainActivity, Wadd.Core.Interfaces.INotifica
         base.OnDestroy();
         Wadd.Core.Helpers.WaddDatabaseNotifier.DataChanged -= OnDatabaseChanged;
         App.SaveThemeAndSettings();
+    }
+
+    private long _lastBackPressedTicks;
+
+    private void RegisterBackNavigationHandler()
+    {
+        if (OperatingSystem.IsAndroidVersionAtLeast(33))
+        {
+            try
+            {
+                OnBackInvokedDispatcher.RegisterOnBackInvokedCallback(
+                    global::Android.Window.IOnBackInvokedDispatcher.PriorityDefault,
+                    new CustomBackInvokedCallback(PerformBackAction));
+            }
+            catch (Exception ex)
+            {
+                Wadd.Core.Logging.AppLogger.LogWarning("MainActivity", "Could not register OnBackInvokedCallback", ex);
+            }
+        }
+    }
+
+    private void PerformBackAction()
+    {
+        try
+        {
+            if (App.HandleBackPress())
+            {
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            Wadd.Core.Logging.AppLogger.LogError("MainActivity", "Error handling in-app back press", ex);
+        }
+
+        var nowTicks = DateTime.UtcNow.Ticks;
+        var diffSeconds = TimeSpan.FromTicks(nowTicks - _lastBackPressedTicks).TotalSeconds;
+
+        if (diffSeconds <= 2.0)
+        {
+            // Second press within 2s -> minimize to background, do NOT terminate app
+            MoveTaskToBack(true);
+        }
+        else
+        {
+            _lastBackPressedTicks = nowTicks;
+            var isIndonesian = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.Equals("id", StringComparison.OrdinalIgnoreCase);
+            var toastMsg = isIndonesian ? "Tekan sekali lagi untuk keluar" : "Press back again to exit";
+            global::Android.Widget.Toast.MakeText(this, toastMsg, global::Android.Widget.ToastLength.Short)?.Show();
+        }
+    }
+
+    public override void OnBackPressed()
+    {
+        PerformBackAction();
+    }
+
+    public override bool OnKeyDown(Keycode keyCode, KeyEvent? e)
+    {
+        if (keyCode == Keycode.Back && e?.Action == KeyEventActions.Down)
+        {
+            PerformBackAction();
+            return true;
+        }
+        return base.OnKeyDown(keyCode, e);
+    }
+
+    [System.Runtime.Versioning.SupportedOSPlatform("android33.0")]
+    private sealed class CustomBackInvokedCallback : Java.Lang.Object, global::Android.Window.IOnBackInvokedCallback
+    {
+        private readonly Action _callback;
+        public CustomBackInvokedCallback(Action callback) => _callback = callback;
+        public void OnBackInvoked() => _callback();
     }
 }

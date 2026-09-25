@@ -97,6 +97,41 @@ public partial class GoalsViewModel : ViewModelBase
         return tags.ToList();
     }
 
+    public bool HandleBackNavigation()
+    {
+        if (IsMilestoneAiChoiceModalOpen)
+        {
+            IsMilestoneAiChoiceModalOpen = false;
+            return true;
+        }
+
+        if (IsJournalBottomSheetOpen)
+        {
+            CloseJournalBottomSheet();
+            return true;
+        }
+
+        if (IsCreatingGoal)
+        {
+            CancelCreateGoal();
+            return true;
+        }
+
+        if (IsCreatingJournal)
+        {
+            CancelCreateJournal();
+            return true;
+        }
+
+        if (IsMobileDetailViewOpen)
+        {
+            CloseMobileDetail();
+            return true;
+        }
+
+        return false;
+    }
+
     public ObservableCollection<LifeGoalItemViewModel> Goals { get; } = new();
     public ObservableCollection<LifeGoalItemViewModel> FilteredGoals { get; } = new();
     public ObservableCollection<GoalMilestoneItemViewModel> CurrentMilestones { get; } = new();
