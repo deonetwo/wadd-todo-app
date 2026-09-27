@@ -8,4 +8,7 @@ public interface IThemeService
     event EventHandler<ThemeMode>? ThemeChanged;
     void SetTheme(ThemeMode mode);
     void ToggleTheme();
+    void LoadTheme();
+    void SaveTheme();
 }
+

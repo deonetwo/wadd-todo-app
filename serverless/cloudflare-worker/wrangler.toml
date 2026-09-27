@@ -1,0 +1,12 @@
+name = "wadd-oauth-proxy"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# Environment variables (Non-sensitive)
+[vars]
+# You can set your Google Client ID here, or let the app pass it in the request body
+# GOOGLE_CLIENT_ID = "YOUR_CLIENT_ID.apps.googleusercontent.com"
+
+# Sensitive variables (Add via Cloudflare Dashboard or `npx wrangler secret put GOOGLE_CLIENT_SECRET`)
+# - GOOGLE_CLIENT_SECRET
+# - APP_PROXY_SECRET (Optional extra layer of security)

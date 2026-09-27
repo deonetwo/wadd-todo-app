@@ -1,0 +1,253 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Wadd.UI.ViewModels;assembly=Wadd.UI"
+             mc:Ignorable="d" d:DesignWidth="980" d:DesignHeight="680"
+             x:Class="Wadd.UI.Views.ConflictResolutionView"
+             x:DataType="vm:ConflictResolutionViewModel">
+
+  <Grid RowDefinitions="Auto,Auto,*">
+
+    <!-- ═══ HEADER SECTION ═══ -->
+    <Border Grid.Row="0"
+            Background="{DynamicResource AppSurfaceElevatedBrush}"
+            BorderBrush="{DynamicResource AppBorderBrush}"
+            BorderThickness="0,0,0,1"
+            Padding="28,20">
+      <Grid RowDefinitions="Auto,12,Auto" ColumnDefinitions="*,Auto">
+
+        <!-- Consumer Header -->
+        <StackPanel Grid.Row="0" Grid.Column="0" Spacing="4">
+          <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <PathIcon Data="{StaticResource SyncIconData}" Width="18" Height="18" Foreground="{DynamicResource AppPrimaryBrush}"/>
+            <TextBlock Text="Review Task Changes" FontSize="20" FontWeight="Bold"/>
+          </StackPanel>
+          <TextBlock Text="This task was modified on another device. Choose which version you want to keep."
+                     FontSize="13"
+                     Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+        </StackPanel>
+
+        <!-- Consumer Batch Actions -->
+        <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+          <Button Classes="outline" Command="{Binding PromptAcceptAllLocalCommand}">
+            <TextBlock Text="Keep All (This Device)" FontSize="12" FontWeight="SemiBold"/>
+          </Button>
+          <Button Classes="outline" Command="{Binding PromptAcceptAllCloudCommand}">
+            <TextBlock Text="Keep All (Other Device)" FontSize="12" FontWeight="SemiBold"/>
+          </Button>
+        </StackPanel>
+
+        <!-- Progress Bar -->
+        <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" RowDefinitions="Auto,6">
+          <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,4">
+            <TextBlock Grid.Column="0" Text="{Binding ProgressText}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+            <TextBlock Grid.Column="1" Text="{Binding RemainingCount, StringFormat='{}{0} remaining'}" FontSize="12" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+          </Grid>
+          <ProgressBar Grid.Row="1"
+                       Value="{Binding ProgressPercentage}"
+                       Maximum="100"
+                       Minimum="0"
+                       Height="6"
+                       CornerRadius="3"
+                       Foreground="{DynamicResource AppPrimaryBrush}"
+                       Background="{DynamicResource AppBorderBrush}"/>
+        </Grid>
+      </Grid>
+    </Border>
+
+    <!-- ═══ MAIN CONTENT SECTION ═══ -->
+    <Grid Grid.Row="2" ColumnDefinitions="280,*">
+
+      <!-- ─── LEFT PANEL: TASKS TO REVIEW LIST ─── -->
+      <Border Grid.Column="0"
+              BorderBrush="{DynamicResource AppBorderBrush}"
+              BorderThickness="0,0,1,0"
+              Background="{DynamicResource AppBackgroundBrush}">
+        <Grid RowDefinitions="Auto,*">
+          <Border Grid.Row="0" Padding="16,12" Background="{DynamicResource AppSurfaceElevatedBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="0,0,0,1">
+            <TextBlock Text="TASKS TO REVIEW" Classes="micro"/>
+          </Border>
+
+          <ListBox Grid.Row="1"
+                   ItemsSource="{Binding Conflicts}"
+                   SelectedItem="{Binding SelectedConflict, Mode=TwoWay}"
+                   Background="Transparent"
+                   Padding="8">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:ConflictItemViewModel">
+                <Border Padding="12,10"
+                        CornerRadius="8"
+                        Margin="0,0,0,6"
+                        Background="{DynamicResource AppSurfaceElevatedBrush}"
+                        BorderBrush="{DynamicResource AppBorderBrush}"
+                        BorderThickness="1">
+                  <StackPanel Spacing="3">
+                    <TextBlock Text="{Binding RecordName}" FontWeight="Bold" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Text="Has different edits on another device" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </Grid>
+      </Border>
+
+      <!-- ─── RIGHT PANEL: SIDE-BY-SIDE CONSUMER CARDS ─── -->
+      <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="28,24">
+        <StackPanel Spacing="24" IsVisible="{Binding SelectedConflict, Converter={x:Static ObjectConverters.IsNotNull}}">
+
+          <!-- 2 CONSUMER CARDS: THIS DEVICE vs OTHER DEVICE -->
+          <Grid ColumnDefinitions="*,*">
+
+            <!-- CARD 1: THIS DEVICE -->
+            <Border Grid.Column="0"
+                    Margin="0,0,10,0"
+                    Padding="20"
+                    CornerRadius="12"
+                    Background="{DynamicResource AppSurfaceElevatedBrush}"
+                    BorderBrush="{DynamicResource AppPrimaryBrush}"
+                    BorderThickness="2">
+              <Grid RowDefinitions="Auto,*,Auto">
+                <!-- Card Header -->
+                <StackPanel Grid.Row="0" Margin="0,0,0,16" Spacing="2">
+                  <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <TextBlock Text="💻" FontSize="16"/>
+                    <TextBlock Text="This Device" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                  </StackPanel>
+                  <TextBlock Text="Changes made on this machine" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                </StackPanel>
+
+                <!-- Values (Only Differing Fields) -->
+                <ItemsControl Grid.Row="1" ItemsSource="{Binding SelectedConflict.FieldDiffs}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:FieldDiffViewModel">
+                      <StackPanel Margin="0,0,0,14" Spacing="2">
+                        <TextBlock Text="{Binding DisplayName}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                        <TextBlock Text="{Binding LocalValue}" FontSize="13" FontWeight="Bold" TextWrapping="Wrap"/>
+                      </StackPanel>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Action Button -->
+                <Button Grid.Row="2"
+                        Margin="0,16,0,0"
+                        Classes="primary"
+                        Command="{Binding KeepLocalCommand}"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center">
+                  <TextBlock Text="Keep This Version" FontSize="13" FontWeight="Bold"/>
+                </Button>
+              </Grid>
+            </Border>
+
+            <!-- CARD 2: OTHER DEVICE -->
+            <Border Grid.Column="1"
+                    Margin="10,0,0,0"
+                    Padding="20"
+                    CornerRadius="12"
+                    Background="{DynamicResource AppSurfaceElevatedBrush}"
+                    BorderBrush="#3B82F6"
+                    BorderThickness="2">
+              <Grid RowDefinitions="Auto,*,Auto">
+                <!-- Card Header -->
+                <StackPanel Grid.Row="0" Margin="0,0,0,16" Spacing="2">
+                  <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <TextBlock Text="☁️" FontSize="16"/>
+                    <TextBlock Text="Other Device" FontSize="16" FontWeight="Bold" Foreground="#3B82F6"/>
+                  </StackPanel>
+                  <TextBlock Text="Changes synced from another connected device" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                </StackPanel>
+
+                <!-- Values (Only Differing Fields) -->
+                <ItemsControl Grid.Row="1" ItemsSource="{Binding SelectedConflict.FieldDiffs}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:FieldDiffViewModel">
+                      <StackPanel Margin="0,0,0,14" Spacing="2">
+                        <TextBlock Text="{Binding DisplayName}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                        <TextBlock Text="{Binding CloudValue}" FontSize="13" FontWeight="Bold" TextWrapping="Wrap"/>
+                      </StackPanel>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Action Button -->
+                <Button Grid.Row="2"
+                        Margin="0,16,0,0"
+                        Classes="outline"
+                        Command="{Binding KeepCloudCommand}"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center">
+                  <TextBlock Text="Keep Other Version" FontSize="13" FontWeight="Bold"/>
+                </Button>
+              </Grid>
+            </Border>
+
+          </Grid>
+
+          <!-- ADVANCED: CUSTOM MERGE PER FIELD (COLLAPSIBLE) -->
+          <Expander Header="Or choose values item by item..." IsExpanded="False">
+            <StackPanel Spacing="12" Margin="0,8,0,0">
+              <ItemsControl ItemsSource="{Binding SelectedConflict.FieldDiffs}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:FieldDiffViewModel">
+                    <Border Margin="0,0,0,8" Padding="12,10" CornerRadius="8" Background="{DynamicResource AppSurfaceBrush}">
+                      <Grid ColumnDefinitions="140,*,*,Auto" VerticalAlignment="Center">
+                        <TextBlock Grid.Column="0" Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="12"/>
+                        <TextBlock Grid.Column="1" Text="{Binding LocalValue}" FontSize="12" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                        <TextBlock Grid.Column="2" Text="{Binding CloudValue}" FontSize="12" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                        <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8">
+                          <RadioButton IsChecked="{Binding UseLocal, Mode=TwoWay}" GroupName="{Binding FieldName}" Content="This Device" FontSize="11"/>
+                          <RadioButton IsChecked="{Binding UseCloud, Mode=TwoWay}" GroupName="{Binding FieldName}" Content="Other Device" FontSize="11"/>
+                        </StackPanel>
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <Button Classes="primary" Command="{Binding ApplySelectionCommand}" HorizontalAlignment="Right" Padding="16,8">
+                <TextBlock Text="Keep Selected Values" FontSize="12" FontWeight="Bold"/>
+              </Button>
+            </StackPanel>
+          </Expander>
+
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
+
+    <!-- ═══ BATCH ACTION CONFIRMATION OVERLAY ═══ -->
+    <Border Grid.Row="0" Grid.RowSpan="3"
+            IsVisible="{Binding IsConfirmationVisible}"
+            Background="#A0000000"
+            ZIndex="1000">
+      <Border Background="{DynamicResource AppSurfaceBrush}"
+              BorderBrush="{DynamicResource AppBorderBrush}"
+              BorderThickness="1"
+              CornerRadius="14"
+              Padding="28,24"
+              MaxWidth="460"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center">
+        <StackPanel Spacing="18">
+          <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+            <PathIcon Data="{StaticResource SyncIconData}" Width="20" Height="20" Foreground="{DynamicResource AppPrimaryBrush}"/>
+            <TextBlock Text="Confirm Choice" FontSize="16" FontWeight="Bold"/>
+          </StackPanel>
+
+          <TextBlock Text="{Binding ConfirmationMessage}" FontSize="13" TextWrapping="Wrap" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+
+          <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button Classes="outline" Command="{Binding CancelBatchActionCommand}">
+              <TextBlock Text="Cancel" FontSize="12"/>
+            </Button>
+            <Button Classes="primary" Command="{Binding ConfirmBatchActionCommand}">
+              <TextBlock Text="Confirm Choice" FontSize="12" FontWeight="Bold"/>
+            </Button>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </Border>
+
+  </Grid>
+</UserControl>

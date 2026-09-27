@@ -1,0 +1,61 @@
+<Project>
+  <PropertyGroup>
+    <Version>1.4.3</Version>
+    <AssemblyVersion>1.4.3.0</AssemblyVersion>
+    <FileVersion>1.4.3.0</FileVersion>
+
+    <GoogleClientId Condition="'$(GoogleClientId)' == ''">$(GOOGLE_CLIENT_ID)</GoogleClientId>
+    <GoogleClientSecret Condition="'$(GoogleClientSecret)' == ''">$(GOOGLE_CLIENT_SECRET)</GoogleClientSecret>
+    <FirebaseApiKey Condition="'$(FirebaseApiKey)' == ''">$(FIREBASE_API_KEY)</FirebaseApiKey>
+    <FirebaseProjectId Condition="'$(FirebaseProjectId)' == ''">$(FIREBASE_PROJECT_ID)</FirebaseProjectId>
+    <OAuthProxyUrl Condition="'$(OAuthProxyUrl)' == ''">$(OAUTH_PROXY_URL)</OAuthProxyUrl>
+    <OAuthProxySecret Condition="'$(OAuthProxySecret)' == ''">$(OAUTH_PROXY_SECRET)</OAuthProxySecret>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(GoogleClientId)' != ''">
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>GoogleClientId</_Parameter1>
+      <_Parameter2>$(GoogleClientId)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(GoogleClientSecret)' != ''">
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>GoogleClientSecret</_Parameter1>
+      <_Parameter2>$(GoogleClientSecret)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(FirebaseApiKey)' != ''">
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>FirebaseApiKey</_Parameter1>
+      <_Parameter2>$(FirebaseApiKey)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(FirebaseProjectId)' != ''">
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>FirebaseProjectId</_Parameter1>
+      <_Parameter2>$(FirebaseProjectId)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(OAuthProxyUrl)' != ''">
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>OAuthProxyUrl</_Parameter1>
+      <_Parameter2>$(OAuthProxyUrl)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(OAuthProxySecret)' != ''">
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>OAuthProxySecret</_Parameter1>
+      <_Parameter2>$(OAuthProxySecret)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+</Project>

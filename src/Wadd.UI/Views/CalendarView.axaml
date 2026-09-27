@@ -1,0 +1,820 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Wadd.UI.ViewModels;assembly=Wadd.UI"
+             xmlns:controls="clr-namespace:Wadd.UI.Controls;assembly=Wadd.UI"
+             mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="800"
+             x:Class="Wadd.UI.Views.CalendarView"
+             x:DataType="vm:MainViewModel">
+
+  <UserControl.Styles>
+    <!-- Filter Toggle Button Pill Style aligned with Dark Emerald Theme -->
+    <Style Selector="ToggleButton.filter-pill">
+      <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource AppTextSecondaryBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Padding" Value="12,5"/>
+      <Setter Property="CornerRadius" Value="14"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Transitions">
+        <Transitions>
+          <BrushTransition Property="Background" Duration="0:0:0.15"/>
+          <BrushTransition Property="Foreground" Duration="0:0:0.15"/>
+          <BrushTransition Property="BorderBrush" Duration="0:0:0.15"/>
+        </Transitions>
+      </Setter>
+    </Style>
+
+    <!-- Pointerover Unchecked -->
+    <Style Selector="ToggleButton.filter-pill:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AppHoverBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryBrush}"/>
+    </Style>
+
+    <!-- Checked State (Active Soft-Tinted Pill) -->
+    <Style Selector="ToggleButton.filter-pill:checked /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AppAccentTintBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource AppPrimaryBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryBrush}"/>
+    </Style>
+    <Style Selector="ToggleButton.filter-pill:checked TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource AppPrimaryBrush}"/>
+      <Setter Property="FontWeight" Value="Bold"/>
+    </Style>
+    <Style Selector="ToggleButton.filter-pill:checked PathIcon">
+      <Setter Property="Foreground" Value="{DynamicResource AppPrimaryBrush}"/>
+    </Style>
+
+    <!-- Checked State Hover -->
+    <Style Selector="ToggleButton.filter-pill:checked:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AppHoverBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource AppPrimaryHoverBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryHoverBrush}"/>
+    </Style>
+    <Style Selector="ToggleButton.filter-pill:checked:pointerover TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource AppPrimaryHoverBrush}"/>
+    </Style>
+    <Style Selector="ToggleButton.filter-pill:checked:pointerover PathIcon">
+      <Setter Property="Foreground" Value="{DynamicResource AppPrimaryHoverBrush}"/>
+    </Style>
+  </UserControl.Styles>
+
+  <Panel>
+    <!-- ══════════════ LEFT / CENTER CALENDAR SECTION ══════════════ -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Margin="16,16,16,32" Spacing="0">
+
+        <!-- Page Header (Adaptive Layout: Landscape vs Portrait) -->
+        <!-- Landscape Mode Header -->
+        <Grid IsVisible="{Binding !IsSingleColumnCalendar}" ColumnDefinitions="*,Auto" Margin="0,0,0,24">
+          <StackPanel Grid.Column="0" Spacing="6">
+            <TextBlock Text="CALENDAR &amp; TIMELINE" Classes="micro" Foreground="{DynamicResource AppPrimaryBrush}"/>
+            
+            <!-- Editable Month & Year Selectors -->
+            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+              <ComboBox ItemsSource="{Binding MonthOptions}"
+                        SelectedIndex="{Binding SelectedMonthIndex}"
+                        FontSize="20"
+                        FontWeight="Bold"
+                        Padding="10,4"
+                        MinWidth="150"
+                        CornerRadius="8"
+                        Background="{DynamicResource AppSurfaceBrush}"
+                        BorderBrush="{DynamicResource AppBorderBrush}"
+                        ToolTip.Tip="Select month"/>
+
+              <ComboBox ItemsSource="{Binding YearOptions}"
+                        SelectedItem="{Binding SelectedYear}"
+                        FontSize="20"
+                        FontWeight="Bold"
+                        Padding="10,4"
+                        MinWidth="100"
+                        CornerRadius="8"
+                        Background="{DynamicResource AppSurfaceBrush}"
+                        BorderBrush="{DynamicResource AppBorderBrush}"
+                        ToolTip.Tip="Select year"/>
+            </StackPanel>
+
+            <TextBlock Text="Upcoming task schedule, deadline overview, and repeating task occurrences."
+                       Classes="small"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+          </StackPanel>
+
+          <!-- Navigation Controls -->
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
+            <Button Classes="outline" Command="{Binding JumpToTodayCommand}" Padding="12,6">
+              <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <PathIcon Data="{StaticResource CalendarIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                <TextBlock Text="Today" FontSize="12" FontWeight="SemiBold"/>
+              </StackPanel>
+            </Button>
+            <Button Classes="icon-btn" Command="{Binding PreviousMonthCommand}" ToolTip.Tip="Previous month">
+              <TextBlock Text="◄" FontSize="12"/>
+            </Button>
+            <Button Classes="icon-btn" Command="{Binding NextMonthCommand}" ToolTip.Tip="Next month">
+              <TextBlock Text="►" FontSize="12"/>
+            </Button>
+          </StackPanel>
+        </Grid>
+
+        <!-- Portrait Mode Header -->
+        <StackPanel IsVisible="{Binding IsSingleColumnCalendar}" Spacing="12" Margin="0,0,0,16">
+          <TextBlock Text="CALENDAR &amp; TIMELINE" Classes="micro" Foreground="{DynamicResource AppPrimaryBrush}"/>
+
+          <!-- Editable Month & Year Selectors -->
+          <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <ComboBox ItemsSource="{Binding MonthOptions}"
+                      SelectedIndex="{Binding SelectedMonthIndex}"
+                      FontSize="18"
+                      FontWeight="Bold"
+                      Padding="8,4"
+                      CornerRadius="8"
+                      Background="{DynamicResource AppSurfaceBrush}"
+                      BorderBrush="{DynamicResource AppBorderBrush}"/>
+
+            <ComboBox ItemsSource="{Binding YearOptions}"
+                      SelectedItem="{Binding SelectedYear}"
+                      FontSize="18"
+                      FontWeight="Bold"
+                      Padding="8,4"
+                      CornerRadius="8"
+                      Background="{DynamicResource AppSurfaceBrush}"
+                      BorderBrush="{DynamicResource AppBorderBrush}"/>
+          </StackPanel>
+
+          <!-- Controls Bar -->
+          <WrapPanel Orientation="Horizontal" Margin="0,2,0,0">
+            <Button Classes="outline" Command="{Binding JumpToTodayCommand}" Padding="10,5" Margin="0,0,8,6">
+              <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <PathIcon Data="{StaticResource CalendarIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                <TextBlock Text="Today" FontSize="12" FontWeight="SemiBold"/>
+              </StackPanel>
+            </Button>
+
+            <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,0,6">
+              <Button Classes="icon-btn" Command="{Binding PreviousMonthCommand}" ToolTip.Tip="Previous month">
+                <TextBlock Text="◄" FontSize="12"/>
+              </Button>
+              <Button Classes="icon-btn" Command="{Binding NextMonthCommand}" ToolTip.Tip="Next month">
+                <TextBlock Text="►" FontSize="12"/>
+              </Button>
+            </StackPanel>
+          </WrapPanel>
+        </StackPanel>
+
+        <Separator Classes="divider" Margin="0,0,0,14"/>
+
+        <!-- Recurrence & Task Filter Toggle Pills Bar (Responsive WrapPanel) -->
+        <WrapPanel Orientation="Horizontal" Margin="0,0,0,16">
+          <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,0,8,6">
+            <PathIcon Data="{StaticResource TracingIconData}" Width="13" Height="13" Foreground="{DynamicResource AppPrimaryBrush}"/>
+            <TextBlock Text="Filter:" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+          </StackPanel>
+
+          <ToggleButton IsChecked="{Binding IsStandardFilterEnabled}" Classes="filter-pill" ToolTip.Tip="Toggle One-off Tasks" Margin="0,0,6,6">
+            <TextBlock Text="One-off"/>
+          </ToggleButton>
+          <ToggleButton IsChecked="{Binding IsDailyFilterEnabled}" Classes="filter-pill" ToolTip.Tip="Toggle Daily Tasks" Margin="0,0,6,6">
+            <TextBlock Text="Daily"/>
+          </ToggleButton>
+          <ToggleButton IsChecked="{Binding IsWeekdaysFilterEnabled}" Classes="filter-pill" ToolTip.Tip="Toggle Weekdays Tasks" Margin="0,0,6,6">
+            <TextBlock Text="Weekdays"/>
+          </ToggleButton>
+          <ToggleButton IsChecked="{Binding IsWeeklyFilterEnabled}" Classes="filter-pill" ToolTip.Tip="Toggle Weekly Tasks" Margin="0,0,6,6">
+            <TextBlock Text="Weekly"/>
+          </ToggleButton>
+          <ToggleButton IsChecked="{Binding IsMonthlyFilterEnabled}" Classes="filter-pill" ToolTip.Tip="Toggle Monthly Tasks" Margin="0,0,6,6">
+            <TextBlock Text="Monthly"/>
+          </ToggleButton>
+          <ToggleButton IsChecked="{Binding IsYearlyFilterEnabled}" Classes="filter-pill" ToolTip.Tip="Toggle Yearly Tasks" Margin="0,0,6,6">
+            <TextBlock Text="Yearly"/>
+          </ToggleButton>
+
+          <Separator Classes="divider" Width="1" Height="16" Margin="2,0,8,6"/>
+
+          <ToggleButton IsChecked="{Binding IsCompletedFilterEnabled}" Classes="filter-pill" ToolTip.Tip="Toggle Completed Tasks" Margin="0,0,6,6">
+            <TextBlock Text="Completed"/>
+          </ToggleButton>
+
+          <Separator Classes="divider" Width="1" Height="16" Margin="2,0,8,6"/>
+
+          <!-- Category Filter Dropdown Button -->
+          <Button Classes="outline"
+                  Padding="8,4"
+                  CornerRadius="8"
+                  Background="{DynamicResource AppSurfaceBrush}"
+                  BorderBrush="{DynamicResource AppBorderBrush}"
+                  Margin="0,0,6,6"
+                  ToolTip.Tip="Filter calendar tasks by Tag">
+            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+              <PathIcon Data="{StaticResource TagIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+              <TextBlock Text="{Binding CategoryFilterButtonText}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
+              <PathIcon Data="{StaticResource ChevronDownIconData}" Width="9" Height="9" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center" Margin="2,0,0,0"/>
+            </StackPanel>
+            <Button.Flyout>
+              <Flyout Placement="BottomEdgeAlignedLeft">
+                <StackPanel Spacing="6" Width="200">
+                  <TextBlock Text="FILTER BY TAG" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="4,2,0,4"/>
+                  <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding CategoryFilterOptions}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <CheckBox Content="{Binding Name}"
+                                    IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                    Margin="4,3"
+                                    FontSize="12"
+                                    FontWeight="Medium"/>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+                  <Separator Classes="divider" Margin="0,4"/>
+                  <Button Classes="ghost"
+                          Command="{Binding OpenTagsViewCommand}"
+                          CommandParameter="{Binding $parent[Button].Flyout}"
+                          x:CompileBindings="False"
+                          HorizontalAlignment="Stretch"
+                          HorizontalContentAlignment="Left"
+                          Padding="8,6"
+                          CornerRadius="6">
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                      <PathIcon Data="{StaticResource SettingsIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                      <TextBlock Text="Manage Tags..." Foreground="{DynamicResource AppPrimaryBrush}" FontSize="13" FontWeight="SemiBold"/>
+                    </StackPanel>
+                  </Button>
+                </StackPanel>
+              </Flyout>
+            </Button.Flyout>
+          </Button>
+        </WrapPanel>
+
+        <!-- ════════ 7-Column Month Grid View ════════ -->
+        <StackPanel IsVisible="{Binding !IsSingleColumnCalendar}">
+          <!-- Weekday Headers Row (Sun-Sat) -->
+          <UniformGrid Columns="7" Margin="0,0,0,8">
+            <TextBlock Text="SUN" HorizontalAlignment="Center" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            <TextBlock Text="MON" HorizontalAlignment="Center" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            <TextBlock Text="TUE" HorizontalAlignment="Center" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            <TextBlock Text="WED" HorizontalAlignment="Center" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            <TextBlock Text="THU" HorizontalAlignment="Center" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            <TextBlock Text="FRI" HorizontalAlignment="Center" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            <TextBlock Text="SAT" HorizontalAlignment="Center" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+          </UniformGrid>
+
+          <!-- 42-Cell Month Grid -->
+          <ItemsControl ItemsSource="{Binding CalendarDays}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <UniformGrid Columns="7"/>
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:CalendarDayViewModel">
+                <Button Classes="calendar-day-btn"
+                        Command="{Binding $parent[UserControl].DataContext.SelectDayCommand}"
+                        CommandParameter="{Binding}">
+                  <Button.Styles>
+                    <Style Selector="Button.calendar-day-btn">
+                      <Setter Property="CornerRadius" Value="10"/>
+                      <Setter Property="Padding" Value="0"/>
+                      <Setter Property="Margin" Value="3"/>
+                      <Setter Property="Background" Value="Transparent"/>
+                      <Setter Property="BorderThickness" Value="0"/>
+                      <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                      <Setter Property="VerticalAlignment" Value="Stretch"/>
+                      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                      <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                      <Setter Property="Cursor" Value="Hand"/>
+                    </Style>
+                    <Style Selector="Button.calendar-day-btn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                      <Setter Property="Background" Value="Transparent"/>
+                      <Setter Property="CornerRadius" Value="10"/>
+                    </Style>
+                    <Style Selector="Button.calendar-day-btn:pointerover /template/ ContentPresenter">
+                      <Setter Property="Background" Value="Transparent"/>
+                      <Setter Property="CornerRadius" Value="10"/>
+                    </Style>
+                  </Button.Styles>
+
+                  <Border Height="112"
+                          Padding="9"
+                          CornerRadius="10"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Stretch"
+                          Classes.inactive="{Binding !IsCurrentMonth}"
+                          Classes.selected="{Binding IsSelected}">
+                    <Border.Styles>
+                      <!-- Active Month Base Card -->
+                      <Style Selector="Border">
+                        <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}"/>
+                        <Setter Property="BorderThickness" Value="1"/>
+                        <Setter Property="Transitions">
+                          <Transitions>
+                            <BrushTransition Property="Background" Duration="0:0:0.15"/>
+                            <BrushTransition Property="BorderBrush" Duration="0:0:0.15"/>
+                          </Transitions>
+                        </Setter>
+                      </Style>
+
+                      <!-- Active Card Hover Effect (Exact CornerRadius 10) -->
+                      <Style Selector="Border:pointerover">
+                        <Setter Property="Background" Value="{DynamicResource AppHoverBrush}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryBrush}"/>
+                      </Style>
+
+                      <!-- Inactive Month Card -->
+                      <Style Selector="Border.inactive">
+                        <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtleBrush}"/>
+                        <Setter Property="BorderBrush" Value="Transparent"/>
+                        <Setter Property="Opacity" Value="0.45"/>
+                      </Style>
+
+                      <!-- Today Card Highlight -->
+                      <Style Selector="Border.today">
+                        <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryBrush}"/>
+                        <Setter Property="BorderThickness" Value="2"/>
+                      </Style>
+
+                      <!-- Selected Day Highlight -->
+                      <Style Selector="Border.selected">
+                        <Setter Property="Background" Value="{DynamicResource AppPrimarySubtleBrush}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryBrush}"/>
+                        <Setter Property="BorderThickness" Value="2"/>
+                      </Style>
+                    </Border.Styles>
+
+                    <Grid RowDefinitions="Auto,*">
+                      <!-- Day Header: Date Number + Note Icon + Today Pill -->
+                      <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,6">
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding DayNumberText}"
+                                     FontSize="14"
+                                     FontWeight="Bold"
+                                     Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+
+                          <!-- Note Indicator Badge (No blinking or outline on hover) -->
+                          <Border IsVisible="{Binding HasNote}"
+                                  ToolTip.Tip="{Binding NoteText}"
+                                  ToolTip.Placement="Bottom"
+                                  ToolTip.VerticalOffset="4"
+                                  Background="Transparent"
+                                  BorderBrush="Transparent"
+                                  BorderThickness="0"
+                                  Padding="2,0"
+                                  VerticalAlignment="Center">
+                            <Border.Styles>
+                              <Style Selector="Border:pointerover">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="BorderBrush" Value="Transparent"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                              </Style>
+                            </Border.Styles>
+                            <PathIcon Data="{StaticResource NoteIconData}"
+                                      Width="11" Height="11"
+                                      Foreground="{DynamicResource AppPrimaryBrush}"
+                                      IsHitTestVisible="False"
+                                      VerticalAlignment="Center"/>
+                          </Border>
+                        </StackPanel>
+
+                        <!-- Today Indicator Badge -->
+                        <Border Grid.Column="1"
+                                IsVisible="{Binding IsToday}"
+                                Background="{DynamicResource AppPrimaryBrush}"
+                                CornerRadius="8"
+                                Padding="5,1">
+                          <TextBlock Text="TODAY"
+                                     FontSize="9"
+                                     FontWeight="Bold"
+                                     Foreground="#F0FDFA"/>
+                        </Border>
+                      </Grid>
+
+                      <!-- Day Content: Task List Badges -->
+                      <StackPanel Grid.Row="1" Spacing="3">
+                        <ItemsControl ItemsSource="{Binding VisibleTasks}">
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:TodoItemViewModel">
+                              <Border Background="{DynamicResource AppSurfaceSubtleBrush}"
+                                      CornerRadius="5"
+                                      Padding="5,3"
+                                      Margin="0,1"
+                                      ToolTip.Tip="{Binding Title}"
+                                      Classes.completed="{Binding IsCompleted}">
+                                <Border.Styles>
+                                  <Style Selector="Border.completed">
+                                    <Setter Property="Opacity" Value="0.5"/>
+                                  </Style>
+                                </Border.Styles>
+
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                  <!-- Priority Accent Dot -->
+                                  <Border Grid.Column="0"
+                                          Width="5" Height="5"
+                                          CornerRadius="3"
+                                          Background="{DynamicResource AppPrimaryBrush}"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,5,0"/>
+
+                                  <!-- Task Title -->
+                                  <TextBlock Grid.Column="1"
+                                             Text="{Binding Title}"
+                                             FontSize="10"
+                                             FontWeight="Medium"
+                                             Foreground="{DynamicResource AppTextPrimaryBrush}"
+                                             TextWrapping="NoWrap"
+                                             TextTrimming="CharacterEllipsis"/>
+
+                                  <!-- Mini Recurrence Indicator Icon -->
+                                  <PathIcon Grid.Column="2"
+                                            IsVisible="{Binding HasRecurrence}"
+                                            Data="{StaticResource RepeatIconData}"
+                                            Width="8" Height="8"
+                                            Foreground="{DynamicResource AppAccentBrush}"
+                                            Margin="3,0,0,0"
+                                            VerticalAlignment="Center"/>
+                                </Grid>
+                              </Border>
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Overflow Badge (+X more) -->
+                        <Border IsVisible="{Binding HasOverflow}"
+                                Background="{DynamicResource AppAccentTintBrush}"
+                                CornerRadius="4"
+                                Padding="4,2"
+                                HorizontalAlignment="Left"
+                                Margin="0,2,0,0">
+                          <TextBlock Text="{Binding OverflowCountText}"
+                                     FontSize="9"
+                                     FontWeight="Bold"
+                                     Foreground="{DynamicResource AppAccentBrush}"/>
+                        </Border>
+                      </StackPanel>
+                    </Grid>
+                  </Border>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+
+        <!-- ════════ Single Column Schedule / Portrait Agenda View (Google Calendar Style) ════════ -->
+        <StackPanel IsVisible="{Binding IsSingleColumnCalendar}" Spacing="8" Margin="0,4,0,0">
+          <ItemsControl ItemsSource="{Binding CalendarDays}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:CalendarDayViewModel">
+                <Button IsVisible="{Binding IsCurrentMonth}"
+                        Classes="ghost"
+                        Command="{Binding $parent[UserControl].DataContext.SelectDayCommand}"
+                        CommandParameter="{Binding}"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch"
+                        Padding="0"
+                        Margin="0,0,0,8"
+                        CornerRadius="12">
+                  <Border Background="{DynamicResource AppSurfaceBrush}"
+                          BorderBrush="{DynamicResource AppBorderBrush}"
+                          BorderThickness="1"
+                          CornerRadius="12"
+                          Padding="14,12"
+                          HorizontalAlignment="Stretch">
+                    <Grid ColumnDefinitions="Auto,*">
+                      <!-- Left Date Pillar (Fixed 46px Column Width for clean vertical task alignment) -->
+                      <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Top" Margin="0,2,12,0" Width="46" HorizontalAlignment="Left">
+                        <TextBlock Text="{Binding DayOfWeekShortText}"
+                                   FontSize="11"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                        <TextBlock Text="{Binding DayNumberText}"
+                                   FontSize="20"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                        <Border IsVisible="{Binding IsToday}"
+                                Background="{DynamicResource AppPrimaryBrush}"
+                                CornerRadius="6"
+                                Padding="4,1"
+                                HorizontalAlignment="Left"
+                                Margin="0,1,0,0">
+                          <TextBlock Text="TODAY" FontSize="8.5" FontWeight="Bold" Foreground="#F0FDFA"/>
+                        </Border>
+                      </StackPanel>
+
+                      <!-- Right Day Tasks Agenda Stream -->
+                      <StackPanel Grid.Column="1" Spacing="6">
+                        <!-- Date Note Banner if Present (Strictly 1 line collapsed note) -->
+                        <Border IsVisible="{Binding HasNote}"
+                                Background="{DynamicResource AppPrimarySubtleBrush}"
+                                CornerRadius="6"
+                                Padding="8,4"
+                                MaxHeight="26"
+                                ClipToBounds="True"
+                                Margin="0,0,0,2">
+                          <Grid ColumnDefinitions="Auto,*" VerticalAlignment="Center">
+                            <PathIcon Grid.Column="0" Data="{StaticResource NoteIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding FirstLineNoteText}"
+                                       FontSize="11"
+                                       FontWeight="Medium"
+                                       Foreground="{DynamicResource AppTextPrimaryBrush}"
+                                       TextWrapping="NoWrap"
+                                       TextTrimming="CharacterEllipsis"
+                                       VerticalAlignment="Center"/>
+                          </Grid>
+                        </Border>
+
+                        <!-- Agenda Tasks (Limited to 2 Visible Tasks) -->
+                        <ItemsControl ItemsSource="{Binding VisibleTasks}" IsVisible="{Binding HasTasks}">
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:TodoItemViewModel">
+                              <Border Classes="task-row" Classes.completed="{Binding IsCompleted}" Margin="0,0,0,4" Padding="8,5">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                  <CheckBox Grid.Column="0"
+                                            Classes="task-checkbox"
+                                            IsChecked="{Binding IsCompleted, Mode=OneWay}"
+                                            Command="{Binding $parent[UserControl].DataContext.ToggleTodoCommand}"
+                                            CommandParameter="{Binding}"/>
+
+                                  <Button Grid.Column="1"
+                                          Classes="task-row-btn"
+                                          Command="{Binding $parent[UserControl].DataContext.OpenDetailDrawerCommand}"
+                                          CommandParameter="{Binding}"
+                                          Padding="0"
+                                          HorizontalAlignment="Stretch"
+                                          HorizontalContentAlignment="Left"
+                                          VerticalAlignment="Center"
+                                          Background="Transparent"
+                                          BorderThickness="0"
+                                          Cursor="Hand"
+                                          ToolTip.Tip="Click to open task details &amp; notes">
+                                    <StackPanel Spacing="2" VerticalAlignment="Center">
+                                      <TextBlock Text="{Binding Title}"
+                                                 Classes="body-bold task-title"
+                                                 FontSize="12"
+                                                 TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                  </Button>
+                                </Grid>
+                              </Border>
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Overflow Badge (+X more · Tap to view all) -->
+                        <Border IsVisible="{Binding HasOverflow}"
+                                Background="{DynamicResource AppPrimarySubtleBrush}"
+                                BorderBrush="{DynamicResource AppPrimaryBrush}"
+                                BorderThickness="1"
+                                CornerRadius="10"
+                                Padding="8,4"
+                                HorizontalAlignment="Left"
+                                Margin="0,2,0,2">
+                          <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding OverflowCountText}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                            <TextBlock Text="· Tap to view details" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                          </StackPanel>
+                        </Border>
+
+                        <!-- Empty Day State -->
+                        <TextBlock Text="No tasks scheduled"
+                                   IsVisible="{Binding !HasTasks}"
+                                   FontSize="12"
+                                   FontStyle="Italic"
+                                   Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                   Margin="0,4,0,2"/>
+                      </StackPanel>
+                    </Grid>
+                  </Border>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- ══════════════ DAY DETAILS OVERLAY (BOTTOM SHEET ON MOBILE / SIDEBAR ON DESKTOP) ══════════════ -->
+    <Border IsVisible="{Binding IsSidebarOpen}"
+            Background="#A0000000"
+            ZIndex="2100"
+            PointerPressed="OnSidebarBackdropPressed">
+      <Panel>
+        <Border PointerPressed="OnSidebarContentPressed"
+                Background="{DynamicResource AppSurfaceBrush}"
+                BorderBrush="{DynamicResource AppBorderBrush}"
+                BoxShadow="0 12 40 0 #A0000000"
+                Classes="day-detail-panel"
+                Classes.compact="{Binding IsCompact}">
+          <Border.Styles>
+            <!-- Desktop Layout: Right Drawer -->
+            <Style Selector="Border.day-detail-panel">
+              <Setter Property="Width" Value="340"/>
+              <Setter Property="HorizontalAlignment" Value="Right"/>
+              <Setter Property="VerticalAlignment" Value="Stretch"/>
+              <Setter Property="BorderThickness" Value="1,0,0,0"/>
+              <Setter Property="CornerRadius" Value="0"/>
+            </Style>
+
+            <!-- Compact / Mobile Layout: Bottom Sheet Overlay -->
+            <Style Selector="Border.day-detail-panel.compact">
+              <Setter Property="Width" Value="NaN"/>
+              <Setter Property="HorizontalAlignment" Value="Stretch"/>
+              <Setter Property="VerticalAlignment" Value="Bottom"/>
+              <Setter Property="MaxHeight" Value="520"/>
+              <Setter Property="BorderThickness" Value="1,1,1,0"/>
+              <Setter Property="CornerRadius" Value="12,12,0,0"/>
+              <Setter Property="Margin" Value="0"/>
+            </Style>
+          </Border.Styles>
+
+          <Grid RowDefinitions="Auto,Auto,*,Auto">
+            <!-- Mobile Bottom Sheet Drag Handle Bar -->
+            <Border Grid.Row="0"
+                    IsVisible="{Binding IsCompact}"
+                    HorizontalAlignment="Center"
+                    Width="36"
+                    Height="4"
+                    CornerRadius="2"
+                    Background="{DynamicResource AppBorderBrush}"
+                    Margin="0,10,0,0"/>
+
+            <!-- Sheet Header -->
+            <Border Grid.Row="1" Padding="16,12,16,10">
+              <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0" Spacing="2">
+                  <TextBlock Text="DAY DETAILS" Classes="micro" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                  <TextBlock Text="{Binding SelectedDateTitle}" FontSize="16" FontWeight="Bold"/>
+                </StackPanel>
+
+                <!-- Close Button -->
+                <Button Grid.Column="1"
+                        Classes="icon-btn"
+                        Command="{Binding CloseSidebarCommand}"
+                        ToolTip.Tip="Close panel"
+                        VerticalAlignment="Center">
+                  <PathIcon Data="{StaticResource CloseIconData}" Width="12" Height="12"/>
+                </Button>
+              </Grid>
+            </Border>
+
+            <!-- Tasks List -->
+            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+              <StackPanel Margin="16,0,16,12" Spacing="10">
+                <Separator Classes="divider" Margin="0,0,0,4"/>
+
+                <!-- Empty State -->
+                <StackPanel IsVisible="{Binding !HasSelectedDateTasks}" Spacing="8" Margin="0,20,0,20" HorizontalAlignment="Center">
+                  <PathIcon Data="{StaticResource CalendarIconData}" Width="28" Height="28" Foreground="{DynamicResource AppTextSecondaryBrush}" HorizontalAlignment="Center"/>
+                  <TextBlock Text="No tasks scheduled for this day" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}" HorizontalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Selected Date Tasks List -->
+                <ItemsControl ItemsSource="{Binding SelectedDateTasks}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:TodoItemViewModel">
+                      <Border Classes="task-row" Classes.completed="{Binding IsCompleted}" Margin="0,3">
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                          <!-- Checkbox -->
+                          <CheckBox Grid.Column="0"
+                                    Classes="task-checkbox"
+                                    IsChecked="{Binding IsCompleted, Mode=OneWay}"
+                                    Command="{Binding $parent[UserControl].DataContext.ToggleTodoCommand}"
+                                    CommandParameter="{Binding}"/>
+
+                          <!-- Task Info -->
+                          <Button Grid.Column="1"
+                                  Classes="task-row-btn"
+                                  Command="{Binding $parent[UserControl].DataContext.OpenDetailDrawerCommand}"
+                                  CommandParameter="{Binding}"
+                                  Padding="0"
+                                  HorizontalAlignment="Stretch"
+                                  HorizontalContentAlignment="Left"
+                                  VerticalAlignment="Center"
+                                  Background="Transparent"
+                                  BorderThickness="0"
+                                  Cursor="Hand"
+                                  ToolTip.Tip="Click to open task details &amp; notes">
+                            <StackPanel Spacing="3" VerticalAlignment="Center">
+                              <TextBlock Text="{Binding Title}"
+                                         Classes="body-bold task-title"
+                                         FontSize="13"
+                                         TextWrapping="Wrap"/>
+                              <!-- Note preview in list view: single-line preview with ellipsis -->
+                              <Panel IsVisible="{Binding HasDescription}" IsHitTestVisible="False">
+                                <controls:MarkdownTextBlock MarkdownText="{Binding DescriptionPreview}"
+                                                             IsVisible="{Binding $parent[UserControl].DataContext.ShowNotePreviewsInList}"
+                                                             FontSize="11"
+                                                             Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                                             Opacity="0.85"
+                                                             MaxLines="1"
+                                                             TextTrimming="CharacterEllipsis"/>
+                              </Panel>
+
+                              <!-- Badges -->
+                              <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,0">
+                                <!-- Overdue Date Badge -->
+                                <Border IsVisible="{Binding IsOverdue}"
+                                        Background="{DynamicResource AppAccentDangerSubtleBrush}"
+                                        CornerRadius="4"
+                                        Padding="4,1">
+                                  <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <PathIcon Data="{StaticResource CalendarIconData}" Width="9" Height="9" Foreground="{DynamicResource AppAccentDangerBrush}"/>
+                                    <TextBlock Text="{Binding ContextDueDateFormatted}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppAccentDangerBrush}"/>
+                                  </StackPanel>
+                                </Border>
+
+                                <!-- Normal Due Date Badge -->
+                                <Border IsVisible="{Binding HasDueDateOnly}"
+                                        Background="{DynamicResource AppPrimarySubtleBrush}"
+                                        CornerRadius="4"
+                                        Padding="4,1">
+                                  <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <PathIcon Data="{StaticResource CalendarIconData}" Width="9" Height="9" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                                    <TextBlock Text="{Binding ContextDueDateFormatted}" FontSize="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                                  </StackPanel>
+                                </Border>
+
+                                <Border IsVisible="{Binding HasRecurrence}"
+                                        Background="{DynamicResource AppAccentTintBrush}"
+                                        CornerRadius="4"
+                                        Padding="4,1">
+                                  <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <PathIcon Data="{StaticResource RepeatIconData}" Width="9" Height="9" Foreground="{DynamicResource AppAccentBrush}"/>
+                                    <TextBlock Text="{Binding RecurrenceFormatted}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AppAccentBrush}"/>
+                                  </StackPanel>
+                                </Border>
+
+                              </StackPanel>
+
+                              <!-- Category Badges (Dedicated Row) -->
+                              <ItemsControl ItemsSource="{Binding Categories}" IsVisible="{Binding HasCategories}" Margin="0,3,0,0">
+                                <ItemsControl.ItemsPanel>
+                                  <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                  </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                  <DataTemplate>
+                                    <Border Background="{DynamicResource AppTagBackgroundBrush}"
+                                            CornerRadius="4"
+                                            Padding="4,1"
+                                            Margin="0,0,3,2">
+                                      <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <PathIcon Data="{StaticResource TagIconData}" Width="9" Height="9" Foreground="{DynamicResource AppTagForegroundBrush}"/>
+                                        <TextBlock Text="{Binding}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AppTagForegroundBrush}"/>
+                                      </StackPanel>
+                                    </Border>
+                                  </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                              </ItemsControl>
+                            </StackPanel>
+                          </Button>
+
+                          <!-- Delete -->
+                          <Button Grid.Column="2"
+                                  Classes="danger"
+                                  Command="{Binding $parent[UserControl].DataContext.DeleteTodoCommand}"
+                                  CommandParameter="{Binding}"
+                                  VerticalAlignment="Center">
+                            <PathIcon Data="{StaticResource CloseIconData}" Width="10" Height="10"/>
+                          </Button>
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </ScrollViewer>
+
+            <!-- Bottom Day Note Section -->
+            <Border Grid.Row="3" Padding="14,8,14,14" Background="{DynamicResource AppSurfaceBrush}">
+              <StackPanel Spacing="6">
+                <TextBlock Text="DAY NOTE" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                <TextBox Text="{Binding SelectedDayNoteText, Mode=TwoWay}"
+                         PlaceholderText="Add note or context for this date…"
+                         AcceptsReturn="True"
+                         TextWrapping="Wrap"
+                         MinHeight="60"
+                         MaxHeight="100"
+                         FontSize="12"
+                         CornerRadius="6"
+                         Padding="14,10"
+                         VerticalContentAlignment="Top"
+                         HorizontalContentAlignment="Left"
+                         Classes="styled"/>
+              </StackPanel>
+            </Border>
+          </Grid>
+        </Border>
+      </Panel>
+    </Border>
+  </Panel>
+</UserControl>

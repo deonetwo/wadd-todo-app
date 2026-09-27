@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Styling;
 using Wadd.Core.Enums;
+using Wadd.Core.Helpers;
 using Wadd.Core.Interfaces;
 
 namespace Wadd.Services;
@@ -11,11 +12,55 @@ public class ThemeService : IThemeService
 
     public ThemeMode CurrentTheme => _currentTheme;
 
+    public bool IsDarkMode
+    {
+        get
+        {
+            if (_currentTheme == ThemeMode.Dark) return true;
+            if (_currentTheme == ThemeMode.Light) return false;
+            return Application.Current?.ActualThemeVariant == ThemeVariant.Dark;
+        }
+    }
+
     public event EventHandler<ThemeMode>? ThemeChanged;
+
+    public ThemeService()
+    {
+        if (Application.Current != null)
+        {
+            Application.Current.ActualThemeVariantChanged += (s, e) =>
+            {
+                ThemeChanged?.Invoke(this, _currentTheme);
+            };
+        }
+
+        LoadTheme();
+    }
+
+    public void LoadTheme()
+    {
+        var settings = AppSettingsHelper.LoadSettings();
+        _currentTheme = settings.ThemeMode;
+        ApplyThemeVariant(_currentTheme);
+    }
+
+    public void SaveTheme()
+    {
+        var settings = AppSettingsHelper.LoadSettings();
+        settings.ThemeMode = _currentTheme;
+        AppSettingsHelper.SaveSettings(settings);
+    }
 
     public void SetTheme(ThemeMode mode)
     {
         _currentTheme = mode;
+        ApplyThemeVariant(mode);
+        SaveTheme();
+        ThemeChanged?.Invoke(this, mode);
+    }
+
+    private static void ApplyThemeVariant(ThemeMode mode)
+    {
         if (Application.Current != null)
         {
             Application.Current.RequestedThemeVariant = mode switch
@@ -25,18 +70,11 @@ public class ThemeService : IThemeService
                 _ => ThemeVariant.Default
             };
         }
-        ThemeChanged?.Invoke(this, mode);
     }
 
     public void ToggleTheme()
     {
-        var nextTheme = _currentTheme switch
-        {
-            ThemeMode.System => ThemeMode.Light,
-            ThemeMode.Light => ThemeMode.Dark,
-            ThemeMode.Dark => ThemeMode.System,
-            _ => ThemeMode.System
-        };
+        var nextTheme = IsDarkMode ? ThemeMode.Light : ThemeMode.Dark;
         SetTheme(nextTheme);
     }
 }

@@ -1,0 +1,1177 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Wadd.UI.ViewModels;assembly=Wadd.UI"
+             xmlns:models="clr-namespace:Wadd.Core.Models;assembly=Wadd.Core"
+             xmlns:loc="clr-namespace:Wadd.UI.Localization;assembly=Wadd.UI"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="700"
+             x:Class="Wadd.UI.Views.SettingsView"
+             x:DataType="vm:MainViewModel">
+
+  <UserControl.Styles>
+    <Style Selector="StackPanel.view-container">
+      <Setter Property="Margin" Value="64,48,80,180"/>
+    </Style>
+    <Style Selector="StackPanel.view-container.compact">
+      <Setter Property="Margin" Value="16,20,16,40"/>
+    </Style>
+    <Style Selector="FlyoutPresenter.ai-model-flyout">
+      <Setter Property="MaxWidth" Value="3000"/>
+      <Setter Property="Padding" Value="10"/>
+      <Setter Property="CornerRadius" Value="8"/>
+    </Style>
+  </UserControl.Styles>
+
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Classes="view-container" Classes.compact="{Binding IsCompact}" Spacing="24" HorizontalAlignment="Stretch">
+
+      <!-- Header -->
+      <StackPanel Spacing="4">
+        <TextBlock Text="{loc:Localize Settings_Title}" Classes="display"/>
+        <TextBlock Text="{loc:Localize Settings_Subtitle}"
+                   Classes="small"
+                   TextWrapping="Wrap"
+                   Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+      </StackPanel>
+
+      <!-- 1. Cloud Synchronization & Account (Highest Importance) -->
+      <Border Classes="content-block">
+        <StackPanel Spacing="16">
+          <TextBlock Text="{loc:Localize Settings_CloudSync}" Classes="micro"/>
+          <StackPanel Spacing="4">
+            <TextBlock Text="{loc:Localize Settings_GoogleDriveSync}" Classes="heading"/>
+            <TextBlock Text="{loc:Localize Settings_GoogleDriveSync_Desc}"
+                       Classes="small"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+          </StackPanel>
+
+          <!-- Signed Out State -->
+          <StackPanel IsVisible="{Binding !IsGoogleSignedIn}" Spacing="14">
+            <WrapPanel Orientation="Horizontal">
+              <Button Classes="primary"
+                      Command="{Binding SignInWithGoogleCommand}"
+                      IsEnabled="{Binding !IsGoogleSigningIn}"
+                      HorizontalAlignment="Left"
+                      ToolTip.Tip="{loc:Localize Settings_SignIn}"
+                      Margin="0,0,10,0">
+                <Panel>
+                  <!-- Idle State -->
+                  <StackPanel Orientation="Horizontal" Spacing="9" VerticalAlignment="Center" IsVisible="{Binding !IsGoogleSigningIn}">
+                    <Border Width="20" Height="20" CornerRadius="10" Background="#F0FDFA" VerticalAlignment="Center">
+                      <TextBlock Text="G" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <TextBlock Text="{loc:Localize Settings_SignIn}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                  </StackPanel>
+
+                  <!-- Signing In State -->
+                  <StackPanel Orientation="Horizontal" Spacing="9" VerticalAlignment="Center" IsVisible="{Binding IsGoogleSigningIn}">
+                    <PathIcon Data="{StaticResource SyncIconData}" Width="14" Height="14" Foreground="#F0FDFA" VerticalAlignment="Center"/>
+                    <TextBlock Text="{loc:Localize Settings_SigningIn}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                  </StackPanel>
+                </Panel>
+              </Button>
+
+              <!-- Cancel Button (visible when signing in) -->
+              <Button Classes="outline"
+                      Command="{Binding CancelGoogleSignInCommand}"
+                      IsVisible="{Binding IsGoogleSigningIn}"
+                      VerticalAlignment="Center">
+                <TextBlock Text="{loc:Localize Common_Cancel}" FontSize="12"/>
+              </Button>
+            </WrapPanel>
+
+            <!-- Loading Indicator & Status Bar -->
+            <StackPanel IsVisible="{Binding IsGoogleSigningIn}" Spacing="6" Margin="0,2,0,0">
+              <ProgressBar IsIndeterminate="True"
+                           Height="3"
+                           CornerRadius="1.5"
+                           Foreground="{DynamicResource AppPrimaryBrush}"
+                           Background="{DynamicResource AppBorderBrush}"/>
+              <TextBlock Text="{loc:Localize Settings_SigningIn_Waiting}"
+                         Classes="small"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"
+                         TextWrapping="Wrap"/>
+            </StackPanel>
+
+            <Grid ColumnDefinitions="Auto,*" Margin="0,2,0,0">
+              <TextBlock Grid.Column="0" Text="🔒" FontSize="12" VerticalAlignment="Top" Margin="0,1,6,0"/>
+              <TextBlock Grid.Column="1" Text="{loc:Localize Settings_GoogleDriveSync_SubDesc}" Classes="small" TextWrapping="Wrap" VerticalAlignment="Center"/>
+            </Grid>
+          </StackPanel>
+
+          <!-- Signed In State -->
+          <StackPanel IsVisible="{Binding IsGoogleSignedIn}" Spacing="16">
+            <Border Background="{DynamicResource AppSurfaceElevatedBrush}"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="14,12">
+              <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                <Border Grid.Column="0" Width="36" Height="36" CornerRadius="18" Background="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center">
+                  <TextBlock Text="G" FontSize="18" FontWeight="Bold" Foreground="#F0FDFA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding GoogleUserEmail}"
+                             FontWeight="SemiBold"
+                             FontSize="14"
+                             Foreground="{DynamicResource AppTextPrimaryBrush}"
+                             TextTrimming="CharacterEllipsis"
+                             VerticalAlignment="Center"/>
+                  <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding GoogleUserName}"
+                               Classes="small"
+                               Foreground="{DynamicResource AppTextSecondaryBrush}"
+                               TextTrimming="CharacterEllipsis"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,0"/>
+                    <Border Background="{DynamicResource AppAccentTintBrush}"
+                            CornerRadius="4"
+                            Padding="6,2"
+                            VerticalAlignment="Center">
+                      <TextBlock Text="{loc:Localize Settings_Connected}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                    </Border>
+                  </WrapPanel>
+                </StackPanel>
+
+                <Button Grid.Column="2"
+                        Classes="outline"
+                        Command="{Binding SignOutGoogleCommand}"
+                        VerticalAlignment="Center">
+                  <TextBlock Text="{loc:Localize Settings_SignOut}" FontSize="12"/>
+                </Button>
+              </Grid>
+            </Border>
+
+            <Button Classes="primary" Command="{Binding SyncCommand}" IsEnabled="{Binding !IsSyncing}" HorizontalAlignment="Left">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <PathIcon Data="{StaticResource SyncIconData}" Width="13" Height="13"/>
+                <TextBlock Text="{loc:Localize Settings_SyncNow_Button}" IsVisible="{Binding !IsSyncing}"/>
+                <TextBlock Text="{loc:Localize Main_Syncing}" IsVisible="{Binding IsSyncing}"/>
+              </StackPanel>
+            </Button>
+          </StackPanel>
+
+        </StackPanel>
+      </Border>
+
+      <!-- 2. Reminders & Notifications (High Importance) -->
+      <Border Classes="content-block">
+        <StackPanel Spacing="16">
+          <TextBlock Text="{loc:Localize Settings_Notifications}" Classes="micro"/>
+          <StackPanel Spacing="4">
+            <TextBlock Text="{loc:Localize Settings_TaskAlerts_Heading}" Classes="heading"/>
+            <TextBlock Text="{loc:Localize Settings_TaskAlerts_Subtitle}"
+                       Classes="small"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+          </StackPanel>
+
+          <!-- 1. Master Notifications Toggle -->
+          <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+            <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+              <TextBlock Text="{loc:Localize Settings_AllowNotifications}" Classes="heading"/>
+              <TextBlock Text="{loc:Localize Settings_AllowNotifications_Desc}"
+                         Classes="small"
+                         TextWrapping="Wrap"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1"
+                          IsChecked="{Binding EnableNotifications, Mode=TwoWay}"
+                          OnContent=""
+                          OffContent=""
+                          VerticalAlignment="Center"/>
+          </Grid>
+
+          <!-- Sub-options (enabled when Master Switch is ON) -->
+          <StackPanel Spacing="16" IsEnabled="{Binding EnableNotifications}">
+
+            <Separator Classes="divider" Margin="0,4"/>
+
+            <!-- 2. Task Reminders Alert -->
+            <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+              <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+                <TextBlock Text="{loc:Localize Settings_RemindAtSetTime}" Classes="heading"/>
+                <TextBlock Text="{loc:Localize Settings_RemindAtSetTime_Desc}"
+                           Classes="small"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </StackPanel>
+              <ToggleSwitch Grid.Column="1"
+                            IsChecked="{Binding NotifyOnTaskReminder, Mode=TwoWay}"
+                            OnContent=""
+                            OffContent=""
+                            VerticalAlignment="Center"/>
+            </Grid>
+
+            <Separator Classes="divider" Margin="0,4"/>
+
+            <!-- 3. Overdue & Missed Tasks Alert -->
+            <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+              <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+                <TextBlock Text="{loc:Localize Settings_MissedOverdue}" Classes="heading"/>
+                <TextBlock Text="{loc:Localize Settings_MissedOverdue_Desc}"
+                           Classes="small"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </StackPanel>
+              <ToggleSwitch Grid.Column="1"
+                            IsChecked="{Binding NotifyOnOverdueTasks, Mode=TwoWay}"
+                            OnContent=""
+                            OffContent=""
+                            VerticalAlignment="Center"/>
+            </Grid>
+
+            <Separator Classes="divider" Margin="0,4"/>
+
+            <!-- 4. Due Date Alerts -->
+            <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+              <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+                <TextBlock Text="{loc:Localize Settings_TasksDueToday}" Classes="heading"/>
+                <TextBlock Text="{loc:Localize Settings_TasksDueToday_Desc}"
+                           Classes="small"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </StackPanel>
+              <ToggleSwitch Grid.Column="1"
+                            IsChecked="{Binding NotifyOnTaskDueDate, Mode=TwoWay}"
+                            OnContent=""
+                            OffContent=""
+                            VerticalAlignment="Center"/>
+            </Grid>
+
+            <Separator Classes="divider" Margin="0,4"/>
+
+            <!-- 5. Repeat Frequency for Unfinished Tasks -->
+            <StackPanel Spacing="10" Margin="0,4,0,0">
+              <StackPanel Spacing="4">
+                <TextBlock Text="{loc:Localize Settings_RepeatUntilCompleted}" Classes="heading"/>
+                <TextBlock Text="{loc:Localize Settings_RepeatUntilCompleted_Desc}"
+                           Classes="small"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </StackPanel>
+
+              <ComboBox ItemsSource="{Binding NotificationRepeatIntervalOptions}"
+                        SelectedItem="{Binding SelectedNotificationRepeatIntervalOption, Mode=TwoWay}"
+                        HorizontalAlignment="Left"
+                        MinWidth="320"
+                        MaxWidth="440"
+                        Margin="0,2,0,0">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="vm:NotificationRepeatIntervalOption">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,2">
+                      <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                        <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                      </StackPanel>
+                    </Grid>
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+            </StackPanel>
+
+            <Separator Classes="divider" Margin="0,4"/>
+
+            <!-- 6. Reminder Lead Time -->
+            <StackPanel Spacing="10" Margin="0,4,0,0">
+              <StackPanel Spacing="4">
+                <TextBlock Text="{loc:Localize Settings_RemindInAdvance}" Classes="heading"/>
+                <TextBlock Text="{loc:Localize Settings_RemindInAdvance_Desc}"
+                           Classes="small"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </StackPanel>
+
+              <ComboBox ItemsSource="{Binding NotificationLeadTimeOptions}"
+                        SelectedItem="{Binding SelectedNotificationLeadTimeOption, Mode=TwoWay}"
+                        HorizontalAlignment="Left"
+                        MinWidth="320"
+                        MaxWidth="440"
+                        Margin="0,2,0,0">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="vm:NotificationLeadTimeOption">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,2">
+                      <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                        <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                      </StackPanel>
+                    </Grid>
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+            </StackPanel>
+
+            <Separator Classes="divider" Margin="0,4"/>
+
+            <!-- 7. Notification Sound (Desktop only; Android uses OS default notification sound) -->
+            <StackPanel IsVisible="{Binding IsDesktopPlatform}">
+              <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+                <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+                  <TextBlock Text="{loc:Localize Settings_NotificationSound}" Classes="heading"/>
+                  <TextBlock Text="{loc:Localize Settings_NotificationSound_Desc}"
+                             Classes="small"
+                             TextWrapping="Wrap"
+                             Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                </StackPanel>
+                <ToggleSwitch Grid.Column="1"
+                              IsChecked="{Binding PlayNotificationSound, Mode=TwoWay}"
+                              OnContent=""
+                              OffContent=""
+                              VerticalAlignment="Center"/>
+              </Grid>
+
+              <Separator Classes="divider" Margin="0,4"/>
+            </StackPanel>
+
+            <!-- 8. Task Completion Sound -->
+            <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+              <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+                <TextBlock Text="{loc:Localize Settings_TaskCompletionSound}" Classes="heading"/>
+                <TextBlock Text="{loc:Localize Settings_TaskCompletionSound_Desc}"
+                           Classes="small"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </StackPanel>
+              <ToggleSwitch Grid.Column="1"
+                            IsChecked="{Binding PlayTaskCompletedSound, Mode=TwoWay}"
+                            OnContent=""
+                            OffContent=""
+                            VerticalAlignment="Center"/>
+            </Grid>
+
+            <!-- 8. Android Platform Notification Preferences (ONLY ON ANDROID) -->
+            <StackPanel Spacing="16" IsVisible="{Binding IsAndroidPlatform}">
+              <Separator Classes="divider" Margin="0,4"/>
+
+              <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+                <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+                  <TextBlock Text="{loc:Localize Settings_AndroidVibration}" Classes="heading"/>
+                  <TextBlock Text="{loc:Localize Settings_AndroidVibration_Desc}"
+                             Classes="small"
+                             TextWrapping="Wrap"
+                             Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                </StackPanel>
+                <ToggleSwitch Grid.Column="1"
+                              IsChecked="{Binding AndroidVibration, Mode=TwoWay}"
+                              OnContent=""
+                              OffContent=""
+                              VerticalAlignment="Center"/>
+              </Grid>
+
+              <Separator Classes="divider" Margin="0,4"/>
+
+              <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+                <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+                  <TextBlock Text="{loc:Localize Settings_AndroidBanners}" Classes="heading"/>
+                  <TextBlock Text="{loc:Localize Settings_AndroidBanners_Desc}"
+                             Classes="small"
+                             TextWrapping="Wrap"
+                             Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                </StackPanel>
+                <ToggleSwitch Grid.Column="1"
+                              IsChecked="{Binding AndroidHighPriorityChannel, Mode=TwoWay}"
+                              OnContent=""
+                              OffContent=""
+                              VerticalAlignment="Center"/>
+              </Grid>
+
+              <Separator Classes="divider" Margin="0,4"/>
+
+              <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+                <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+                  <TextBlock Text="{loc:Localize Settings_AndroidSticky}" Classes="heading"/>
+                  <TextBlock Text="{loc:Localize Settings_AndroidSticky_Desc}"
+                             Classes="small"
+                             TextWrapping="Wrap"
+                             Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                </StackPanel>
+                <ToggleSwitch Grid.Column="1"
+                              IsChecked="{Binding AndroidStickyReminders, Mode=TwoWay}"
+                              OnContent=""
+                              OffContent=""
+                              VerticalAlignment="Center"/>
+              </Grid>
+            </StackPanel>
+
+            <Separator Classes="divider" Margin="0,4"/>
+
+            <!-- Test Notification Action Button -->
+            <Button Classes="outline"
+                    Command="{Binding SendTestNotificationCommand}"
+                    HorizontalAlignment="Left"
+                    Margin="0,4,0,0">
+              <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <PathIcon Data="{StaticResource BellIconData}" Width="13" Height="13" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                <TextBlock Text="{loc:Localize Settings_SendTestNotification}" FontSize="12" FontWeight="SemiBold"/>
+              </StackPanel>
+            </Button>
+
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <!-- 3. Appearance & Theme (Medium-High Importance) -->
+      <Border Classes="content-block">
+        <StackPanel Spacing="16">
+          <TextBlock Text="{loc:Localize Settings_Appearance}" Classes="micro"/>
+          <StackPanel Spacing="4">
+            <TextBlock Text="{loc:Localize Settings_ThemeLayout_Heading}" Classes="heading"/>
+            <TextBlock Text="{loc:Localize Settings_ThemeLayout_Subtitle}"
+                       Classes="small"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+          </StackPanel>
+
+          <WrapPanel Orientation="Horizontal" Margin="0,4,0,0">
+            <Button Classes="outline"
+                    Command="{Binding SetThemeModeCommand}"
+                    CommandParameter="System"
+                    Margin="0,0,8,8">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <PathIcon Data="{StaticResource MonitorIconData}" Width="14" Height="14"/>
+                <TextBlock Text="{loc:Localize Settings_Theme_System}"/>
+              </StackPanel>
+            </Button>
+
+            <Button Classes="outline"
+                    Command="{Binding SetThemeModeCommand}"
+                    CommandParameter="Light"
+                    Margin="0,0,8,8">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <PathIcon Data="{StaticResource SunIconData}" Width="14" Height="14"/>
+                <TextBlock Text="{loc:Localize Settings_Theme_Light}"/>
+              </StackPanel>
+            </Button>
+
+            <Button Classes="outline"
+                    Command="{Binding SetThemeModeCommand}"
+                    CommandParameter="Dark"
+                    Margin="0,0,8,8">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <PathIcon Data="{StaticResource MoonIconData}" Width="14" Height="14"/>
+                <TextBlock Text="{loc:Localize Settings_Theme_Dark}"/>
+              </StackPanel>
+            </Button>
+          </WrapPanel>
+
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <TextBlock Text="{loc:Localize Settings_ActiveThemeMode}" Classes="small"/>
+            <TextBlock Text="{Binding CurrentThemeLabel}" Classes="small"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource AppPrimaryBrush}"/>
+          </StackPanel>
+
+          <Separator Classes="divider" Margin="0,4"/>
+
+          <!-- Language Preference -->
+          <StackPanel Spacing="10" Margin="0,4,0,0">
+            <StackPanel Spacing="4">
+              <TextBlock Text="{loc:Localize Settings_Language}" Classes="heading"/>
+              <TextBlock Text="{loc:Localize Settings_Language_Desc}"
+                         Classes="small"
+                         TextWrapping="Wrap"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            </StackPanel>
+
+            <!-- 1. PC / Desktop View: ComboBox Dropdown (IsVisible="{Binding !IsCompact}") -->
+            <ComboBox IsVisible="{Binding !IsCompact}"
+                      ItemsSource="{Binding LanguageOptions}"
+                      SelectedItem="{Binding SelectedLanguageOption, Mode=TwoWay}"
+                      HorizontalAlignment="Left"
+                      MinWidth="320"
+                      MaxWidth="440"
+                      Margin="0,2,0,0">
+              <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:LanguageOption">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,2">
+                    <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                      <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                    </StackPanel>
+                  </Grid>
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+
+            <!-- 2. Mobile / Portrait View: Bottom Sheet Action Card (IsVisible="{Binding IsCompact}") -->
+            <Button IsVisible="{Binding IsCompact}"
+                    Classes="ghost"
+                    Command="{Binding OpenLanguagePickerCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
+                    Padding="14,12"
+                    CornerRadius="10"
+                    Background="{DynamicResource AppSurfaceSubtleBrush}"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    BorderThickness="1">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding SelectedLanguageOption.Name, FallbackValue='System Default'}"
+                             FontSize="13"
+                             FontWeight="SemiBold"
+                             Foreground="{DynamicResource AppTextPrimaryBrush}"
+                             TextTrimming="CharacterEllipsis"/>
+                  <TextBlock Text="{Binding SelectedLanguageOption.Description, FallbackValue='Follow device system language'}"
+                             FontSize="11"
+                             Foreground="{DynamicResource AppTextSecondaryBrush}"
+                             TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+                <PathIcon Grid.Column="1"
+                          Data="{StaticResource ChevronRightIconData}"
+                          Width="14" Height="14"
+                          Foreground="{DynamicResource AppTextSecondaryBrush}"
+                          VerticalAlignment="Center"/>
+              </Grid>
+            </Button>
+          </StackPanel>
+
+          <Separator Classes="divider" Margin="0,4"/>
+
+          <!-- Task Note Previews Preference -->
+          <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+            <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+              <TextBlock Text="{loc:Localize Settings_ShowNotePreviews}" Classes="heading"/>
+              <TextBlock Text="{loc:Localize Settings_ShowNotePreviews_Desc}"
+                         Classes="small"
+                         TextWrapping="Wrap"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1"
+                          IsChecked="{Binding ShowNotePreviewsInList, Mode=TwoWay}"
+                          OnContent=""
+                          OffContent=""
+                          VerticalAlignment="Center"/>
+          </Grid>
+
+          <Separator Classes="divider" Margin="0,4"/>
+
+          <!-- My Tasks View Layout Mode Setting (Adaptive Desktop Dropdown + Mobile Bottom Sheet) -->
+          <StackPanel Spacing="10" Margin="0,4,0,0">
+            <StackPanel Spacing="4">
+              <TextBlock Text="{loc:Localize Settings_TasksLayoutMode}" Classes="heading"/>
+              <TextBlock Text="{loc:Localize Settings_TasksLayoutMode_Desc}"
+                         Classes="small"
+                         TextWrapping="Wrap"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            </StackPanel>
+
+            <!-- 1. PC / Desktop View: ComboBox Dropdown (IsVisible="{Binding !IsCompact}") -->
+            <ComboBox IsVisible="{Binding !IsCompact}"
+                      ItemsSource="{Binding TasksLayoutOptions}"
+                      SelectedItem="{Binding SelectedTasksLayoutOption, Mode=TwoWay}"
+                      HorizontalAlignment="Left"
+                      MinWidth="320"
+                      MaxWidth="440"
+                      Margin="0,2,0,0">
+              <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:TasksLayoutOption">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,2">
+                    <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                      <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                    </StackPanel>
+                  </Grid>
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+
+            <!-- 2. Mobile / Portrait View: Bottom Sheet Action Card (IsVisible="{Binding IsCompact}") -->
+            <Button IsVisible="{Binding IsCompact}"
+                    Classes="ghost"
+                    Command="{Binding OpenTasksLayoutPickerCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
+                    Padding="14,12"
+                    CornerRadius="10"
+                    Background="{DynamicResource AppSurfaceSubtleBrush}"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    BorderThickness="1">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding SelectedTasksLayoutOption.Name, FallbackValue='Standard'}"
+                             FontSize="13"
+                             FontWeight="SemiBold"
+                             Foreground="{DynamicResource AppTextPrimaryBrush}"
+                             TextTrimming="CharacterEllipsis"/>
+                  <TextBlock Text="{Binding SelectedTasksLayoutOption.Description, FallbackValue='Shows Today, Completed Today, and Upcoming tasks'}"
+                             FontSize="11"
+                             Foreground="{DynamicResource AppTextSecondaryBrush}"
+                             TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+                <PathIcon Grid.Column="1"
+                          Data="{StaticResource ChevronRightIconData}"
+                          Width="14" Height="14"
+                          Foreground="{DynamicResource AppTextSecondaryBrush}"
+                          VerticalAlignment="Center"/>
+              </Grid>
+            </Button>
+          </StackPanel>
+
+          <Separator Classes="divider" Margin="0,4"/>
+
+          <!-- Upcoming Tasks Scope Setting (Adaptive Desktop Dropdown + Mobile Bottom Sheet) -->
+          <StackPanel Spacing="10" Margin="0,4,0,0">
+            <StackPanel Spacing="4">
+              <TextBlock Text="{loc:Localize Settings_UpcomingTasksScope}" Classes="heading"/>
+              <TextBlock Text="{loc:Localize Settings_UpcomingTasksScope_Desc}"
+                         Classes="small"
+                         TextWrapping="Wrap"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            </StackPanel>
+
+            <!-- 1. PC / Desktop View: ComboBox Dropdown (IsVisible="{Binding !IsCompact}") -->
+            <ComboBox IsVisible="{Binding !IsCompact}"
+                      ItemsSource="{Binding UpcomingTasksRangeOptions}"
+                      SelectedItem="{Binding SelectedUpcomingTasksRangeOption, Mode=TwoWay}"
+                      HorizontalAlignment="Left"
+                      MinWidth="320"
+                      MaxWidth="440"
+                      Margin="0,2,0,0">
+              <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:UpcomingTasksRangeOption">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,2">
+                    <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                      <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                    </StackPanel>
+                  </Grid>
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+
+            <!-- 2. Mobile / Portrait View: Bottom Sheet Action Card (IsVisible="{Binding IsCompact}") -->
+            <Button IsVisible="{Binding IsCompact}"
+                    Classes="ghost"
+                    Command="{Binding OpenUpcomingTasksRangePickerCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
+                    Padding="14,12"
+                    CornerRadius="10"
+                    Background="{DynamicResource AppSurfaceSubtleBrush}"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    BorderThickness="1">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding SelectedUpcomingTasksRangeOption.Name, FallbackValue='All Upcoming'}"
+                             FontSize="13"
+                             FontWeight="SemiBold"
+                             Foreground="{DynamicResource AppTextPrimaryBrush}"
+                             TextTrimming="CharacterEllipsis"/>
+                  <TextBlock Text="{Binding SelectedUpcomingTasksRangeOption.Description, FallbackValue='All future scheduled tasks without date limit'}"
+                             FontSize="11"
+                             Foreground="{DynamicResource AppTextSecondaryBrush}"
+                             TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+                <PathIcon Grid.Column="1"
+                          Data="{StaticResource ChevronRightIconData}"
+                          Width="14" Height="14"
+                          Foreground="{DynamicResource AppTextSecondaryBrush}"
+                          VerticalAlignment="Center"/>
+              </Grid>
+            </Button>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <!-- 4. System & Windows Desktop Integration (Desktop Only - Medium Importance) -->
+      <Border Classes="content-block" IsVisible="{Binding IsDesktopPlatform}">
+        <StackPanel Spacing="16">
+          <TextBlock Text="{loc:Localize Settings_DesktopStartup}" Classes="micro"/>
+          <StackPanel Spacing="4">
+            <TextBlock Text="{loc:Localize Settings_DesktopStartup_Heading}" Classes="heading"/>
+            <TextBlock Text="{loc:Localize Settings_DesktopStartup_Subtitle}"
+                       Classes="small"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+          </StackPanel>
+
+          <!-- 1. Launch on Startup -->
+          <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+            <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+              <TextBlock Text="{loc:Localize Settings_AutoStart}" Classes="heading"/>
+              <TextBlock Text="{loc:Localize Settings_AutoStart_Desc}"
+                         Classes="small"
+                         TextWrapping="Wrap"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1"
+                          IsChecked="{Binding AutoStartOnBoot, Mode=TwoWay}"
+                          OnContent=""
+                          OffContent=""
+                          VerticalAlignment="Center"/>
+          </Grid>
+
+          <!-- 1b. Start Minimized to Tray (Sub-option when startup is enabled) -->
+          <Grid ColumnDefinitions="*,Auto" Margin="16,0,0,0" IsVisible="{Binding AutoStartOnBoot}">
+            <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+              <TextBlock Text="{loc:Localize Settings_StartMinimized}" Classes="heading" FontSize="13"/>
+              <TextBlock Text="{loc:Localize Settings_StartMinimized_Desc}"
+                         Classes="small"
+                         TextWrapping="Wrap"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1"
+                          IsChecked="{Binding StartMinimized, Mode=TwoWay}"
+                          OnContent=""
+                          OffContent=""
+                          VerticalAlignment="Center"/>
+          </Grid>
+
+          <Separator Classes="divider" Margin="0,4"/>
+
+          <!-- 2. Show Tray Icon -->
+          <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+            <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+              <TextBlock Text="{loc:Localize Settings_ShowTrayIcon}" Classes="heading"/>
+              <TextBlock Text="{loc:Localize Settings_ShowTrayIcon_Desc}"
+                         Classes="small"
+                         TextWrapping="Wrap"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1"
+                          IsChecked="{Binding EnableTrayIcon, Mode=TwoWay}"
+                          OnContent=""
+                          OffContent=""
+                          VerticalAlignment="Center"/>
+          </Grid>
+
+          <Separator Classes="divider" Margin="0,4"/>
+
+          <!-- 3. Close to Tray -->
+          <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+            <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+              <TextBlock Text="{loc:Localize Settings_CloseToTray}" Classes="heading"/>
+              <TextBlock Text="{loc:Localize Settings_CloseToTray_Desc}"
+                         Classes="small"
+                         TextWrapping="Wrap"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1"
+                          IsChecked="{Binding CloseToTray, Mode=TwoWay}"
+                          OnContent=""
+                          OffContent=""
+                          VerticalAlignment="Center"/>
+          </Grid>
+
+          <Separator Classes="divider" Margin="0,4"/>
+
+          <!-- 4. Minimize to Tray -->
+          <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+            <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
+              <TextBlock Text="{loc:Localize Settings_MinimizeToTray}" Classes="heading"/>
+              <TextBlock Text="{loc:Localize Settings_MinimizeToTray_Desc}"
+                         Classes="small"
+                         TextWrapping="Wrap"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1"
+                          IsChecked="{Binding MinimizeToTray, Mode=TwoWay}"
+                          OnContent=""
+                          OffContent=""
+                          VerticalAlignment="Center"/>
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <!-- 5. AI Assistant & Goal Generation (Advanced Feature) -->
+      <Border Classes="content-block">
+        <StackPanel Spacing="16">
+          <TextBlock Text="{loc:Localize Settings_AiAssistant}" Classes="micro"/>
+          <StackPanel Spacing="4">
+            <TextBlock Text="{loc:Localize Settings_AiEngine}" Classes="heading"/>
+            <TextBlock Text="{loc:Localize Settings_AiEngine_Desc}"
+                       Classes="small"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+          </StackPanel>
+
+          <!-- Provider Dropdown Selector (Desktop ComboBox + Mobile Bottom Sheet Action Card) -->
+          <StackPanel Spacing="6" HorizontalAlignment="Stretch">
+            <TextBlock Text="{loc:Localize Settings_AiProvider}" Classes="small" FontWeight="SemiBold"/>
+
+            <!-- Desktop ComboBox -->
+            <ComboBox IsVisible="{Binding !IsCompact}"
+                      ItemsSource="{Binding AiProviderOptions}"
+                      SelectedItem="{Binding SelectedAiProviderOption, Mode=TwoWay}"
+                      HorizontalAlignment="Stretch"
+                      MinHeight="38">
+              <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:AiProviderOption">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,2">
+                    <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" TextWrapping="Wrap"/>
+                      <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" TextWrapping="Wrap"/>
+                    </StackPanel>
+                  </Grid>
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+
+            <!-- Mobile Bottom Sheet Action Card -->
+            <Button IsVisible="{Binding IsCompact}"
+                    Classes="ghost"
+                    Command="{Binding OpenAiProviderPickerCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
+                    Padding="14,12"
+                    CornerRadius="10"
+                    Background="{DynamicResource AppSurfaceSubtleBrush}"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    BorderThickness="1">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding SelectedAiProviderOption.Name, FallbackValue='OpenRouter'}"
+                             FontSize="13"
+                             FontWeight="SemiBold"
+                             Foreground="{DynamicResource AppTextPrimaryBrush}"
+                             TextTrimming="CharacterEllipsis"/>
+                  <TextBlock Text="{Binding SelectedAiProviderOption.Description, FallbackValue='Unified API for 100+ models'}"
+                             FontSize="11"
+                             Foreground="{DynamicResource AppTextSecondaryBrush}"
+                             TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+                <PathIcon Grid.Column="1"
+                          Data="{StaticResource ChevronRightIconData}"
+                          Width="14" Height="14"
+                          Foreground="{DynamicResource AppTextSecondaryBrush}"
+                          VerticalAlignment="Center"/>
+              </Grid>
+            </Button>
+          </StackPanel>
+
+          <!-- API Key Input -->
+          <StackPanel Spacing="6" HorizontalAlignment="Stretch">
+            <TextBlock Text="{loc:Localize Settings_AiApiKey}" Classes="small" FontWeight="SemiBold"/>
+            <TextBox Text="{Binding AiApiKey, Mode=TwoWay}"
+                     Classes="styled"
+                     PlaceholderText="{Binding AiKeyWatermark}"
+                     PasswordChar="•"
+                     Padding="12,8"
+                     MinHeight="38"
+                     CornerRadius="6"
+                     HorizontalAlignment="Stretch"
+                     VerticalContentAlignment="Center"/>
+            <TextBlock Text="{Binding AiKeyHelpText}"
+                       Classes="micro"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"
+                       TextWrapping="Wrap"
+                       Margin="2,1,0,0"/>
+          </StackPanel>
+
+          <!-- Custom Endpoint Base URL (Visible only when Custom provider selected) -->
+          <StackPanel Spacing="6" HorizontalAlignment="Stretch" IsVisible="{Binding ShowCustomBaseUrlField}">
+            <TextBlock Text="{loc:Localize Settings_AiCustomEndpoint}" Classes="small" FontWeight="SemiBold"/>
+            <TextBox Text="{Binding AiCustomBaseUrl, Mode=TwoWay}"
+                     Classes="styled"
+                     PlaceholderText="e.g. http://localhost:11434/v1"
+                     Padding="12,8"
+                     MinHeight="38"
+                     CornerRadius="6"
+                     HorizontalAlignment="Stretch"
+                     VerticalContentAlignment="Center"/>
+            <TextBlock Text="{loc:Localize Settings_AiCustomEndpoint_Desc}"
+                       Classes="micro"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"
+                       TextWrapping="Wrap"
+                       Margin="2,1,0,0"/>
+          </StackPanel>
+
+          <!-- Model Selection (Desktop Searchable Dropdown + Mobile Bottom Sheet Action Card) -->
+          <StackPanel Spacing="6" HorizontalAlignment="Stretch">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <TextBlock Text="{loc:Localize Settings_AiModel}" Classes="small" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                <TextBlock Text="{loc:Localize Settings_AiLoadingModels}" FontSize="11" Foreground="{DynamicResource AppPrimaryBrush}" IsVisible="{Binding IsLoadingModels}" VerticalAlignment="Center"/>
+              </StackPanel>
+              <Button Grid.Column="1"
+                      Command="{Binding RefreshAvailableModelsCommand}"
+                      Classes="btn-text"
+                      Padding="6,2"
+                      Height="24"
+                      ToolTip.Tip="{loc:Localize Settings_AiRefreshModels}">
+                <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                  <PathIcon Data="{StaticResource UndoIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                  <TextBlock Text="{loc:Localize Settings_AiRefreshModels}" FontSize="11" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                </StackPanel>
+              </Button>
+            </Grid>
+
+            <!-- Indeterminate ProgressBar while fetching live models -->
+            <ProgressBar IsIndeterminate="True" Height="2" CornerRadius="1" Foreground="{DynamicResource AppPrimaryBrush}" IsVisible="{Binding IsLoadingModels}" Margin="0,-2,0,2"/>
+
+            <!-- Desktop Searchable DropDownButton -->
+            <DropDownButton x:Name="AiModelDropDownButton"
+                            IsVisible="{Binding !IsCompact}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Stretch"
+                            Padding="14,12"
+                            Background="{DynamicResource AppSurfaceBrush}"
+                            BorderBrush="{DynamicResource AppBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            MinHeight="44">
+              <DropDownButton.Flyout>
+                <Flyout Placement="BottomEdgeAlignedLeft"
+                        FlyoutPresenterClasses="ai-model-flyout"
+                        Opening="OnAiModelFlyoutOpening">
+                  <StackPanel x:Name="AiModelFlyoutContainer" HorizontalAlignment="Stretch" Spacing="8">
+                    <!-- Built-in Search Bar inside Dropdown Popup -->
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBox Grid.Column="0"
+                               Text="{Binding ModelSearchQuery, Mode=TwoWay}"
+                               Classes="styled"
+                               PlaceholderText="{loc:Localize Settings_AiSearchModels_Placeholder}"
+                               Padding="10,6"
+                               MinHeight="34"
+                               CornerRadius="6"
+                               VerticalContentAlignment="Center"/>
+                      <Button Grid.Column="1"
+                              Command="{Binding ClearModelSearchCommand}"
+                              Classes="btn-text"
+                              Padding="8,0"
+                              Height="34"
+                              Margin="4,0,0,0"
+                              IsVisible="{Binding ModelSearchQuery, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                              ToolTip.Tip="{loc:Localize Common_Clear}">
+                        <PathIcon Data="{StaticResource TrashIconData}" Width="12" Height="12" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                      </Button>
+                    </Grid>
+
+                    <!-- Virtualized ListBox for instant 0ms open and smooth scrolling -->
+                    <ListBox ItemsSource="{Binding FilteredModels}"
+                             SelectedItem="{Binding SelectedModelOption, Mode=TwoWay}"
+                             MaxHeight="260"
+                             Background="Transparent"
+                             HorizontalAlignment="Stretch"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                      <ListBox.Styles>
+                        <Style Selector="ListBoxItem">
+                          <Setter Property="Padding" Value="10,8"/>
+                          <Setter Property="CornerRadius" Value="6"/>
+                          <Setter Property="MinHeight" Value="32"/>
+                        </Style>
+                      </ListBox.Styles>
+                      <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="models:AiModelOption">
+                          <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="13" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,6,0"/>
+                            <Border Grid.Column="1" Background="{DynamicResource AppTagBackgroundBrush}" CornerRadius="4" Padding="5,1" IsVisible="{Binding IsRecommended}" VerticalAlignment="Center">
+                              <TextBlock Text="{loc:Localize Common_Recommended}" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource AppTagForegroundBrush}"/>
+                            </Border>
+                          </Grid>
+                        </DataTemplate>
+                      </ListBox.ItemTemplate>
+                    </ListBox>
+                  </StackPanel>
+                </Flyout>
+              </DropDownButton.Flyout>
+
+              <!-- Selected Model View on the DropDownButton face -->
+              <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0" Spacing="3" Margin="0,0,8,0">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Text="{Binding SelectedModelOption.Name, FallbackValue='Select AI Model'}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}" TextWrapping="Wrap" Margin="0,0,6,0"/>
+                    <Border Grid.Column="1" Background="{DynamicResource AppTagBackgroundBrush}" CornerRadius="4" Padding="5,1" IsVisible="{Binding SelectedModelOption.IsRecommended, FallbackValue=False}" VerticalAlignment="Center">
+                      <TextBlock Text="{loc:Localize Common_Recommended}" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource AppTagForegroundBrush}"/>
+                    </Border>
+                  </Grid>
+                  <TextBlock Text="{Binding SelectedModelOption.Id}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" Opacity="0.85" TextWrapping="Wrap" IsVisible="{Binding SelectedModelOption, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                  <TextBlock Text="{Binding SelectedModelOption.Description}" FontSize="12" Foreground="{DynamicResource AppTextSecondaryBrush}" TextWrapping="Wrap" MaxLines="3" TextTrimming="CharacterEllipsis" IsVisible="{Binding SelectedModelOption.HasDescription, FallbackValue=False}" Margin="0,2,0,0"/>
+                </StackPanel>
+              </Grid>
+            </DropDownButton>
+
+            <!-- Mobile Bottom Sheet Action Card -->
+            <Button IsVisible="{Binding IsCompact}"
+                    Classes="ghost"
+                    Command="{Binding OpenAiModelPickerCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
+                    Padding="14,12"
+                    CornerRadius="10"
+                    Background="{DynamicResource AppSurfaceSubtleBrush}"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    BorderThickness="1">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Text="{Binding SelectedModelOption.Name, FallbackValue='Select AI Model'}"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppTextPrimaryBrush}"
+                               TextTrimming="CharacterEllipsis"
+                               Margin="0,0,6,0"/>
+                    <Border Grid.Column="1" Background="{DynamicResource AppTagBackgroundBrush}" CornerRadius="4" Padding="5,1" IsVisible="{Binding SelectedModelOption.IsRecommended, FallbackValue=False}" VerticalAlignment="Center">
+                      <TextBlock Text="{loc:Localize Common_Recommended}" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource AppTagForegroundBrush}"/>
+                    </Border>
+                  </Grid>
+                  <TextBlock Text="{Binding SelectedModelOption.Description, FallbackValue='Choose model for AI Goal Breakdown'}"
+                             FontSize="11"
+                             Foreground="{DynamicResource AppTextSecondaryBrush}"
+                             TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+                <PathIcon Grid.Column="1"
+                          Data="{StaticResource ChevronRightIconData}"
+                          Width="14" Height="14"
+                          Foreground="{DynamicResource AppTextSecondaryBrush}"
+                          VerticalAlignment="Center"/>
+              </Grid>
+            </Button>
+
+            <TextBlock Text="{loc:Localize Settings_AiDiscoveredNote}"
+                       Classes="micro"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"
+                       TextWrapping="Wrap"
+                       Margin="2,1,0,0"/>
+          </StackPanel>
+
+          <!-- Test API Connection Button -->
+          <Button Command="{Binding TestAiConnectionCommand}"
+                  Classes="btn-secondary"
+                  HorizontalAlignment="Left"
+                  Padding="14,8"
+                  MinHeight="36"
+                  CornerRadius="6"
+                  Margin="0,2,0,0"
+                  IsEnabled="{Binding !IsTestingAiConnection}">
+            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+              <PathIcon Data="{StaticResource SparkleIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}"/>
+              <TextBlock Text="{loc:Localize Settings_TestAiConnection}" FontSize="12" FontWeight="SemiBold" IsVisible="{Binding !IsTestingAiConnection}"/>
+              <TextBlock Text="{loc:Localize Settings_TestingAiConnection}" FontSize="12" FontWeight="SemiBold" IsVisible="{Binding IsTestingAiConnection}"/>
+            </StackPanel>
+          </Button>
+
+          <!-- Helpful note -->
+          <Border Background="{DynamicResource AppSurfaceSubtleBrush}"
+                  BorderBrush="{DynamicResource AppBorderBrush}"
+                  BorderThickness="1"
+                  CornerRadius="8"
+                  Padding="12,10"
+                  HorizontalAlignment="Stretch">
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+              <PathIcon Grid.Column="0" Data="{StaticResource SparkleIconData}" Width="14" Height="14" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Top" Margin="0,2,0,0"/>
+              <TextBlock Grid.Column="1"
+                         Text="{loc:Localize Settings_AiOfflineNote}"
+                         Classes="small"
+                         Foreground="{DynamicResource AppTextSecondaryBrush}"
+                         TextWrapping="Wrap"/>
+            </Grid>
+          </Border>
+        </StackPanel>
+      </Border>
+
+      <!-- 6. Data Management & Export (Low Importance) -->
+      <Border Classes="content-block">
+        <StackPanel Spacing="14">
+          <TextBlock Text="{loc:Localize Settings_DataManagement}" Classes="micro"/>
+          <StackPanel Spacing="4">
+            <TextBlock Text="{loc:Localize Settings_ExportExcel}" Classes="heading"/>
+            <TextBlock Text="{loc:Localize Settings_ExportExcel_Desc}"
+                       Classes="small"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+          </StackPanel>
+
+          <Button Classes="outline" Command="{Binding ExportToExcelCommand}" HorizontalAlignment="Left">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <PathIcon Data="{StaticResource ExportIconData}" Width="14" Height="14"/>
+              <TextBlock Text="{loc:Localize Settings_ExportExcel_Button}"/>
+            </StackPanel>
+          </Button>
+        </StackPanel>
+      </Border>
+
+      <!-- 7. Diagnostics & Logs -->
+      <Border Classes="content-block">
+        <StackPanel Spacing="16">
+          <TextBlock Text="{loc:Localize Settings_Diagnostics}" Classes="micro"/>
+          <StackPanel Spacing="4">
+            <TextBlock Text="{loc:Localize Settings_Diagnostics_Heading}" Classes="heading"/>
+            <TextBlock Text="{loc:Localize Settings_Diagnostics_Desc}"
+                       Classes="small"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+          </StackPanel>
+
+          <!-- Current Log File Info -->
+          <Border Background="{DynamicResource AppSurfaceSubtleBrush}"
+                  BorderBrush="{DynamicResource AppBorderBrush}"
+                  BorderThickness="1"
+                  CornerRadius="8"
+                  Padding="12,10">
+            <StackPanel Spacing="4">
+              <TextBlock Text="{loc:Localize Settings_LogLocation}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              <TextBlock Text="{Binding CurrentLogFilePath}"
+                         Classes="small"
+                         FontFamily="Cascadia Code,Consolas,Courier New,monospace"
+                         TextWrapping="Wrap"
+                         Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+            </StackPanel>
+          </Border>
+
+          <!-- Action Buttons -->
+          <WrapPanel Orientation="Horizontal">
+            <Button Classes="outline"
+                    Command="{Binding CopyDiagnosticsLogsCommand}"
+                    Margin="0,0,8,8"
+                    ToolTip.Tip="{loc:Localize Settings_CopyLogs}">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <PathIcon Data="{StaticResource DocumentIconData}" Width="13" Height="13"/>
+                <TextBlock Text="{loc:Localize Settings_CopyLogs}"/>
+              </StackPanel>
+            </Button>
+
+            <Button Classes="outline"
+                    Command="{Binding OpenLogsFolderCommand}"
+                    IsVisible="{Binding IsDesktopPlatform}"
+                    Margin="0,0,8,8"
+                    ToolTip.Tip="{loc:Localize Settings_OpenLogsFolder}">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <PathIcon Data="{StaticResource FolderIconData}" Width="13" Height="13"/>
+                <TextBlock Text="{loc:Localize Settings_OpenLogsFolder}"/>
+              </StackPanel>
+            </Button>
+
+            <Button Classes="btn-text"
+                    Command="{Binding ClearLogsCommand}"
+                    Margin="0,0,8,8"
+                    ToolTip.Tip="{loc:Localize Settings_ClearLogs}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <PathIcon Data="{StaticResource TrashIconData}" Width="12" Height="12" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                <TextBlock Text="{loc:Localize Settings_ClearLogs}" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </StackPanel>
+            </Button>
+          </WrapPanel>
+        </StackPanel>
+      </Border>
+
+      <!-- 8. About Application (Informational - Bottom) -->
+      <Border Classes="content-block">
+        <StackPanel Spacing="14">
+          <TextBlock Text="{loc:Localize Settings_About_App}" Classes="micro"/>
+          <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto" Margin="0,4,0,0">
+            <!-- App Logo & Name -->
+            <Image Grid.Row="0" Grid.Column="0" Source="avares://Wadd.UI/Assets/logo.png"
+                   Width="40" Height="40" Margin="0,0,16,12" VerticalAlignment="Center"/>
+            <StackPanel Grid.Row="0" Grid.Column="1" VerticalAlignment="Center">
+              <TextBlock Text="Wadd ToDo" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+              <TextBlock Text="Version 1.4.3 (.NET 10 + Avalonia UI 12)" Classes="small" TextWrapping="Wrap" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+            </StackPanel>
+
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Localize Settings_Developer}" Classes="small" FontWeight="SemiBold" Margin="0,0,16,6"/>
+            <TextBlock Grid.Row="1" Grid.Column="1" Text="Dewanto (Wadd Software Engineering)" Classes="small" TextWrapping="Wrap" Margin="0,0,0,6"/>
+
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Localize Settings_Platforms}" Classes="small" FontWeight="SemiBold" Margin="0,0,16,6"/>
+            <TextBlock Grid.Row="2" Grid.Column="1" Text="Windows (x64/Arm64) &amp; Android (min API 21+)" Classes="small" TextWrapping="Wrap" Margin="0,0,0,6"/>
+
+            <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Localize Settings_Copyright}" Classes="small" FontWeight="SemiBold" Margin="0,0,16,0"/>
+            <TextBlock Grid.Row="3" Grid.Column="1" Text="© 2026 Wadd Application. All rights reserved." Classes="small" TextWrapping="Wrap"/>
+          </Grid>
+        </StackPanel>
+      </Border>
+
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

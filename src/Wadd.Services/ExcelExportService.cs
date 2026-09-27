@@ -72,6 +72,10 @@ public class ExcelExportService : IExportService
             { "Title", item.Title },
             { "Description", item.Description },
             { "Status", item.IsCompleted ? "Completed" : "Pending" },
+            { "Due Date", item.DueDate?.ToString("yyyy-MM-dd") ?? "None" },
+            { "Reminder", item.ReminderAt?.ToString("yyyy-MM-dd HH:mm") ?? "None" },
+            { "Recurrence", Wadd.Core.Helpers.RecurrenceHelper.FormatRecurrenceText(item.IsRecurring, item.RecurrenceType, item.CustomRecurrenceInterval, item.CustomRecurrenceUnit, item.CustomWeeklyDays) },
+            { "Category", string.IsNullOrWhiteSpace(item.Category) ? "Uncategorized" : item.Category },
             { "Created Date", item.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss") }
         });
     }
