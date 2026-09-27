@@ -111,6 +111,12 @@ public partial class GoalsViewModel : ViewModelBase
             return true;
         }
 
+        if (IsEditingGoal)
+        {
+            CancelEditGoal();
+            return true;
+        }
+
         if (IsCreatingGoal)
         {
             CancelCreateGoal();
@@ -161,6 +167,7 @@ public partial class GoalsViewModel : ViewModelBase
 
     partial void OnSelectedGoalChanged(LifeGoalItemViewModel? value)
     {
+        IsEditingGoal = false;
         foreach (var g in Goals.ToList())
         {
             if (g != null)
@@ -231,6 +238,35 @@ public partial class GoalsViewModel : ViewModelBase
     private void ClearNewGoalTargetDate()
     {
         NewGoalTargetDate = null;
+    }
+
+    // Goal Edit Mode Properties
+    [ObservableProperty]
+    private bool _isEditingGoal;
+
+    [ObservableProperty]
+    private string _editGoalTitle = string.Empty;
+
+    [ObservableProperty]
+    private string _editGoalDescription = string.Empty;
+
+    [ObservableProperty]
+    private string _editGoalCategory = string.Empty;
+
+    [ObservableProperty]
+    private DateTime? _editGoalTargetDate;
+
+    public bool HasEditGoalTargetDate => EditGoalTargetDate.HasValue;
+
+    partial void OnEditGoalTargetDateChanged(DateTime? value)
+    {
+        OnPropertyChanged(nameof(HasEditGoalTargetDate));
+    }
+
+    [RelayCommand]
+    private void ClearEditGoalTargetDate()
+    {
+        EditGoalTargetDate = null;
     }
 
     // New Milestone Form Property
@@ -711,6 +747,59 @@ public partial class GoalsViewModel : ViewModelBase
         {
             System.Diagnostics.Debug.WriteLine($"[GoalsViewModel] Error saving goal: {ex}");
         }
+    }
+
+    [RelayCommand]
+    private void StartEditGoal()
+    {
+        if (SelectedGoal == null) return;
+        EditGoalTitle = SelectedGoal.Title;
+        EditGoalCategory = SelectedGoal.Category;
+        EditGoalTargetDate = SelectedGoal.TargetDate;
+        EditGoalDescription = SelectedGoal.Description ?? string.Empty;
+        IsEditingGoal = true;
+    }
+
+    [RelayCommand]
+    private void CancelEditGoal()
+    {
+        IsEditingGoal = false;
+        EditGoalTitle = string.Empty;
+        EditGoalCategory = string.Empty;
+        EditGoalTargetDate = null;
+        EditGoalDescription = string.Empty;
+    }
+
+    [RelayCommand]
+    private async Task SaveGoalEditAsync()
+    {
+        if (SelectedGoal == null) return;
+        if (string.IsNullOrWhiteSpace(EditGoalTitle))
+        {
+            NotifyStatus("Goal title cannot be empty.", NotificationBubbleType.Warning);
+            return;
+        }
+
+        var title = EditGoalTitle.Trim();
+        if (title.Length > 100) title = title.Substring(0, 100).Trim();
+
+        var desc = string.IsNullOrWhiteSpace(EditGoalDescription) ? null : EditGoalDescription.Trim();
+        if (desc != null && desc.Length > 1000) desc = desc.Substring(0, 1000).Trim();
+
+        var category = string.IsNullOrWhiteSpace(EditGoalCategory) ? "Uncategorized" : EditGoalCategory.Trim();
+        if (category.Length > 24) category = category.Substring(0, 24).Trim();
+
+        SelectedGoal.Title = title;
+        SelectedGoal.Description = desc;
+        SelectedGoal.Category = category;
+        SelectedGoal.TargetDate = EditGoalTargetDate?.Date;
+
+        await _goalService.SaveGoalAsync(SelectedGoal.Model);
+        UpdateCategories();
+        ApplyCategoryFilter();
+        IsEditingGoal = false;
+        NotifyDataMutated();
+        NotifyStatus("Goal updated successfully.", NotificationBubbleType.Success);
     }
 
     [RelayCommand]

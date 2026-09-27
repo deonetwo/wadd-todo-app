@@ -180,6 +180,24 @@ public static class RecurrenceHelper
                     result.Add(day);
                 }
             }
+            else
+            {
+                var matched = part.Trim().ToLowerInvariant() switch
+                {
+                    "mon" => DayOfWeek.Monday,
+                    "tue" => DayOfWeek.Tuesday,
+                    "wed" => DayOfWeek.Wednesday,
+                    "thu" => DayOfWeek.Thursday,
+                    "fri" => DayOfWeek.Friday,
+                    "sat" => DayOfWeek.Saturday,
+                    "sun" => DayOfWeek.Sunday,
+                    _ => (DayOfWeek?)null
+                };
+                if (matched.HasValue && !result.Contains(matched.Value))
+                {
+                    result.Add(matched.Value);
+                }
+            }
         }
         return result;
     }

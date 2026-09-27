@@ -604,22 +604,26 @@ public class NotificationSettingsTests
     public async Task GoalsViewModel_CurrentMilestones_MoveUpAndDown_UpdatesOrderIndex()
     {
         var tempPath = Path.Combine(Path.GetTempPath(), "WaddGoalMilestoneOrderTest_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempPath);
         try
         {
             var goalService = new Wadd.Services.SQLiteGoalService(Path.Combine(tempPath, "test.db"));
             var aiService = new Wadd.Services.AiGoalService(new System.Net.Http.HttpClient()) { ApiKey = string.Empty };
-            var vm = new GoalsViewModel(goalService, aiService);
 
             var goal = await goalService.SaveGoalAsync(new Wadd.Core.Models.LifeGoal { Title = "Test Move Goal" });
             var m1 = await goalService.SaveMilestoneAsync(new Wadd.Core.Models.GoalMilestone { GoalId = goal.Id, Title = "Alpha", OrderIndex = 0 });
             var m2 = await goalService.SaveMilestoneAsync(new Wadd.Core.Models.GoalMilestone { GoalId = goal.Id, Title = "Beta", OrderIndex = 1 });
             var m3 = await goalService.SaveMilestoneAsync(new Wadd.Core.Models.GoalMilestone { GoalId = goal.Id, Title = "Gamma", OrderIndex = 2 });
 
+            var vm = new GoalsViewModel(goalService, aiService);
             await vm.LoadAllGoalsAsync();
             vm.SelectedGoal = vm.Goals.First(g => g.Id == goal.Id);
 
             // Wait for milestones to load
-            await Task.Delay(50);
+            for (int i = 0; i < 20 && vm.CurrentMilestones.Count < 3; i++)
+            {
+                await Task.Delay(50);
+            }
 
             Assert.Equal(3, vm.CurrentMilestones.Count);
             Assert.Equal("Alpha", vm.CurrentMilestones[0].Title);

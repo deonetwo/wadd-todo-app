@@ -87,7 +87,25 @@ public partial class TodoItemViewModel : ViewModelBase
 
     public DateTime CreatedAt => Model.CreatedAt;
 
-    public DateTime? DueDate => Model.DueDate;
+    public DateTime? DueDate
+    {
+        get => Model.DueDate;
+        set
+        {
+            if (Model.DueDate != value)
+            {
+                Model.DueDate = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(HasDueDate));
+                OnPropertyChanged(nameof(DueDateFormatted));
+                OnPropertyChanged(nameof(ContextDueDateFormatted));
+                OnPropertyChanged(nameof(IsOverdue));
+                OnPropertyChanged(nameof(HasDueDateOnly));
+                OnPropertyChanged(nameof(IsDueToday));
+                OnPropertyChanged(nameof(HasAnyBadges));
+            }
+        }
+    }
 
     public bool HasDueDate => Model.DueDate.HasValue;
 
@@ -153,7 +171,21 @@ public partial class TodoItemViewModel : ViewModelBase
         }
     }
 
-    public DateTime? ReminderAt => Model.ReminderAt;
+    public DateTime? ReminderAt
+    {
+        get => Model.ReminderAt;
+        set
+        {
+            if (Model.ReminderAt != value)
+            {
+                Model.ReminderAt = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(HasReminder));
+                OnPropertyChanged(nameof(ReminderAtFormatted));
+                OnPropertyChanged(nameof(HasAnyBadges));
+            }
+        }
+    }
 
     public bool HasReminder => Model.ReminderAt.HasValue;
 
@@ -191,15 +223,25 @@ public partial class TodoItemViewModel : ViewModelBase
         }
     }
 
+    public Guid? SeriesId => Model.SeriesId;
+
     public bool IsRecurring => Model.IsRecurring;
 
     public string RecurrenceType => Model.RecurrenceType;
 
-    public bool HasRecurrence => Model.IsRecurring && !string.IsNullOrWhiteSpace(Model.RecurrenceType) && !Model.RecurrenceType.Equals("None", StringComparison.OrdinalIgnoreCase);
+    public bool IsRecurringSeriesItem =>
+        Model.IsRecurring ||
+        (Model.SeriesId.HasValue && Model.SeriesId.Value != Guid.Empty) ||
+        (!string.IsNullOrWhiteSpace(Model.RecurrenceType) && !Model.RecurrenceType.Equals("None", StringComparison.OrdinalIgnoreCase));
+
+    public bool HasRecurrence =>
+        IsRecurringSeriesItem &&
+        !string.IsNullOrWhiteSpace(Model.RecurrenceType) &&
+        !Model.RecurrenceType.Equals("None", StringComparison.OrdinalIgnoreCase);
 
     public bool HasAnyBadges => HasDueDate || HasReminder || HasRecurrence;
 
-    public string RecurrenceFormatted => Wadd.Core.Helpers.RecurrenceHelper.FormatRecurrenceText(Model.IsRecurring, Model.RecurrenceType, Model.CustomRecurrenceInterval, Model.CustomRecurrenceUnit, Model.CustomWeeklyDays);
+    public string RecurrenceFormatted => Wadd.Core.Helpers.RecurrenceHelper.FormatRecurrenceText(HasRecurrence, Model.RecurrenceType, Model.CustomRecurrenceInterval, Model.CustomRecurrenceUnit, Model.CustomWeeklyDays);
 
     public string? Category
     {
@@ -261,6 +303,8 @@ public partial class TodoItemViewModel : ViewModelBase
         OnPropertyChanged(nameof(CompletedAtFormatted));
         OnPropertyChanged(nameof(IsRecurring));
         OnPropertyChanged(nameof(RecurrenceType));
+        OnPropertyChanged(nameof(SeriesId));
+        OnPropertyChanged(nameof(IsRecurringSeriesItem));
         OnPropertyChanged(nameof(HasRecurrence));
         OnPropertyChanged(nameof(RecurrenceFormatted));
         OnPropertyChanged(nameof(Category));

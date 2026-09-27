@@ -1286,10 +1286,13 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanEditSelectedDetailTask))]
+    [NotifyPropertyChangedFor(nameof(ShowRecurringManageShortcut))]
     private TodoItemViewModel? _selectedDetailTask;
 
     partial void OnSelectedDetailTaskChanged(TodoItemViewModel? oldValue, TodoItemViewModel? newValue)
     {
+        IsEditingDetailTask = false;
         if (oldValue != null)
         {
             oldValue.PropertyChanged -= OnSelectedDetailTaskPropertyChanged;
@@ -1298,10 +1301,21 @@ public partial class MainViewModel : ViewModelBase
         {
             newValue.PropertyChanged += OnSelectedDetailTaskPropertyChanged;
         }
+        OnPropertyChanged(nameof(CanEditSelectedDetailTask));
+        OnPropertyChanged(nameof(ShowRecurringManageShortcut));
     }
 
     private async void OnSelectedDetailTaskPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
+        if (e.PropertyName == nameof(TodoItemViewModel.IsCompleted) ||
+            e.PropertyName == nameof(TodoItemViewModel.IsRecurring) ||
+            e.PropertyName == nameof(TodoItemViewModel.HasRecurrence) ||
+            e.PropertyName == nameof(TodoItemViewModel.IsRecurringSeriesItem))
+        {
+            OnPropertyChanged(nameof(CanEditSelectedDetailTask));
+            OnPropertyChanged(nameof(ShowRecurringManageShortcut));
+        }
+
         if (SelectedDetailTask != null && (e.PropertyName == nameof(TodoItemViewModel.Description) || e.PropertyName == nameof(TodoItemViewModel.Title)))
         {
             await _todoService.UpdateTodoAsync(SelectedDetailTask.Model);
@@ -1311,6 +1325,206 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty]
     private bool _isDetailDrawerOpen;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanEditSelectedDetailTask))]
+    [NotifyPropertyChangedFor(nameof(ShowRecurringManageShortcut))]
+    private bool _isEditingDetailTask;
+
+    public bool IsSelectedDetailTaskRecurring =>
+        SelectedDetailTask != null &&
+        (SelectedDetailTask.IsRecurring ||
+         SelectedDetailTask.IsRecurringSeriesItem ||
+         (SelectedDetailTask.Model.SeriesId.HasValue && SelectedDetailTask.Model.SeriesId.Value != Guid.Empty) ||
+         (!string.IsNullOrWhiteSpace(SelectedDetailTask.Model.RecurrenceType) &&
+          !SelectedDetailTask.Model.RecurrenceType.Equals("None", StringComparison.OrdinalIgnoreCase)));
+
+    public bool CanEditSelectedDetailTask =>
+        !IsEditingDetailTask &&
+        SelectedDetailTask != null &&
+        (!IsSelectedDetailTaskRecurring || (IsRecurringView && !SelectedDetailTask.IsCompleted));
+
+    public bool ShowRecurringManageShortcut =>
+        !IsEditingDetailTask &&
+        SelectedDetailTask != null &&
+        IsSelectedDetailTaskRecurring &&
+        (!IsRecurringView || SelectedDetailTask.IsCompleted);
+
+    [ObservableProperty]
+    private string _editDetailTitle = string.Empty;
+
+    [ObservableProperty]
+    private string _editDetailDescription = string.Empty;
+
+    // Due Date
+    [ObservableProperty]
+    private DateTime? _editDetailDueDate;
+
+    public bool HasEditDetailDueDate => EditDetailDueDate.HasValue;
+
+    partial void OnEditDetailDueDateChanged(DateTime? value) => OnPropertyChanged(nameof(HasEditDetailDueDate));
+
+    [RelayCommand]
+    private void ClearEditDetailDueDate() => EditDetailDueDate = null;
+
+    // Reminder
+    [ObservableProperty]
+    private DateTime? _editDetailReminderDate;
+
+    [ObservableProperty]
+    private TimeSpan? _editDetailReminderTime;
+
+    public bool HasEditDetailReminder => EditDetailReminderDate.HasValue || EditDetailReminderTime.HasValue;
+
+    partial void OnEditDetailReminderDateChanged(DateTime? value) => OnPropertyChanged(nameof(HasEditDetailReminder));
+    partial void OnEditDetailReminderTimeChanged(TimeSpan? value) => OnPropertyChanged(nameof(HasEditDetailReminder));
+
+    [RelayCommand]
+    private void ClearEditDetailReminder()
+    {
+        EditDetailReminderDate = null;
+        EditDetailReminderTime = null;
+    }
+
+    // Categories / Tags
+    public ObservableCollection<string> EditDetailCategories { get; } = new();
+
+    public bool HasEditDetailCategories => EditDetailCategories.Count > 0;
+
+    [ObservableProperty]
+    private string _editDetailCategoryInput = string.Empty;
+
+    [RelayCommand]
+    private void AddEditDetailCategory(string? category)
+    {
+        var tag = string.IsNullOrWhiteSpace(category) ? EditDetailCategoryInput : category;
+        if (string.IsNullOrWhiteSpace(tag)) return;
+
+        tag = tag.Trim();
+        if (!EditDetailCategories.Contains(tag, StringComparer.OrdinalIgnoreCase))
+        {
+            EditDetailCategories.Add(tag);
+            EditDetailCategoryInput = string.Empty;
+            OnPropertyChanged(nameof(HasEditDetailCategories));
+        }
+    }
+
+    [RelayCommand]
+    private void RemoveEditDetailCategory(string? category)
+    {
+        if (string.IsNullOrWhiteSpace(category)) return;
+        var existing = EditDetailCategories.FirstOrDefault(x => x.Equals(category, StringComparison.OrdinalIgnoreCase));
+        if (existing != null)
+        {
+            EditDetailCategories.Remove(existing);
+            OnPropertyChanged(nameof(HasEditDetailCategories));
+        }
+    }
+
+    // Recurrence
+    [ObservableProperty]
+    private string _editDetailRecurrenceType = "None";
+
+    partial void OnEditDetailRecurrenceTypeChanged(string value)
+    {
+        OnPropertyChanged(nameof(IsEditDetailRepeatEnabled));
+        OnPropertyChanged(nameof(IsEditDetailCustomRecurrenceVisible));
+        OnPropertyChanged(nameof(IsEditDetailWeeklyDaysPickerVisible));
+    }
+
+    public bool IsEditDetailRepeatEnabled => !string.IsNullOrWhiteSpace(EditDetailRecurrenceType) && !EditDetailRecurrenceType.Equals("None", StringComparison.OrdinalIgnoreCase);
+
+    [ObservableProperty]
+    private int _editDetailCustomInterval = 1;
+
+    partial void OnEditDetailCustomIntervalChanged(int value)
+    {
+        if (value < 1) EditDetailCustomInterval = 1;
+    }
+
+    [ObservableProperty]
+    private string _editDetailCustomUnit = "Days";
+
+    partial void OnEditDetailCustomUnitChanged(string value)
+    {
+        OnPropertyChanged(nameof(IsEditDetailWeeklyDaysPickerVisible));
+    }
+
+    [ObservableProperty]
+    private bool _isEditDetailMondaySelected;
+    [ObservableProperty]
+    private bool _isEditDetailTuesdaySelected;
+    [ObservableProperty]
+    private bool _isEditDetailWednesdaySelected;
+    [ObservableProperty]
+    private bool _isEditDetailThursdaySelected;
+    [ObservableProperty]
+    private bool _isEditDetailFridaySelected;
+    [ObservableProperty]
+    private bool _isEditDetailSaturdaySelected;
+    [ObservableProperty]
+    private bool _isEditDetailSundaySelected;
+
+    public bool IsEditDetailCustomRecurrenceVisible => IsEditDetailRepeatEnabled && EditDetailRecurrenceType == "Custom";
+
+    public bool IsEditDetailWeeklyDaysPickerVisible => IsEditDetailCustomRecurrenceVisible && EditDetailCustomUnit == "Weeks";
+
+    private void ParseEditDetailWeeklyDays(string? weeklyDays)
+    {
+        ClearEditDetailWeeklyDays();
+        if (string.IsNullOrWhiteSpace(weeklyDays)) return;
+        var days = RecurrenceHelper.ParseWeeklyDays(weeklyDays);
+        IsEditDetailMondaySelected = days.Contains(DayOfWeek.Monday);
+        IsEditDetailTuesdaySelected = days.Contains(DayOfWeek.Tuesday);
+        IsEditDetailWednesdaySelected = days.Contains(DayOfWeek.Wednesday);
+        IsEditDetailThursdaySelected = days.Contains(DayOfWeek.Thursday);
+        IsEditDetailFridaySelected = days.Contains(DayOfWeek.Friday);
+        IsEditDetailSaturdaySelected = days.Contains(DayOfWeek.Saturday);
+        IsEditDetailSundaySelected = days.Contains(DayOfWeek.Sunday);
+    }
+
+    private void ClearEditDetailWeeklyDays()
+    {
+        IsEditDetailMondaySelected = false;
+        IsEditDetailTuesdaySelected = false;
+        IsEditDetailWednesdaySelected = false;
+        IsEditDetailThursdaySelected = false;
+        IsEditDetailFridaySelected = false;
+        IsEditDetailSaturdaySelected = false;
+        IsEditDetailSundaySelected = false;
+    }
+
+    private string GetEditDetailWeeklyDaysString()
+    {
+        var days = new List<string>();
+        if (IsEditDetailMondaySelected) days.Add("Monday");
+        if (IsEditDetailTuesdaySelected) days.Add("Tuesday");
+        if (IsEditDetailWednesdaySelected) days.Add("Wednesday");
+        if (IsEditDetailThursdaySelected) days.Add("Thursday");
+        if (IsEditDetailFridaySelected) days.Add("Friday");
+        if (IsEditDetailSaturdaySelected) days.Add("Saturday");
+        if (IsEditDetailSundaySelected) days.Add("Sunday");
+        return string.Join(",", days);
+    }
+
+    // Recurring Edit Prompt
+    [ObservableProperty]
+    private bool _isRecurringEditPromptVisible;
+
+    [RelayCommand]
+    private void CancelRecurringEditPrompt() => IsRecurringEditPromptVisible = false;
+
+    [RelayCommand]
+    private async Task ConfirmRecurringEditOccurrenceOnlyAsync()
+    {
+        await ApplyTaskEditsAsync(rescheduleOccurrenceOnly: true);
+    }
+
+    [RelayCommand]
+    private async Task ConfirmRecurringEditAllOccurrencesAsync()
+    {
+        await ApplyTaskEditsAsync(rescheduleOccurrenceOnly: false);
+    }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsNotePreviewMode))]
@@ -1323,24 +1537,122 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private async Task NavigateToRecurringTaskAsync()
+    {
+        if (SelectedDetailTask == null) return;
+
+        var targetId = SelectedDetailTask.Model.SeriesId ?? SelectedDetailTask.Id;
+
+        // Switch to Repeating Tasks view (Nav index 2)
+        SelectedNavIndex = 2;
+
+        // Locate recurring series parent template
+        var recurringItem = AllRecurringTodoItems.FirstOrDefault(x => x.Id == targetId)
+                         ?? TodoItems.FirstOrDefault(x => x.Id == targetId && x.IsRecurring);
+
+        if (recurringItem == null)
+        {
+            var dbItem = await _todoService.GetByIdAsync(targetId);
+            if (dbItem != null)
+            {
+                recurringItem = new TodoItemViewModel(dbItem);
+            }
+        }
+
+        recurringItem ??= SelectedDetailTask;
+
+        // Keep drawer open for this recurring template
+        SelectedDetailTask = recurringItem;
+        IsEditingDetailTask = false;
+        IsRecurringEditPromptVisible = false;
+
+        OnPropertyChanged(nameof(CanEditSelectedDetailTask));
+        OnPropertyChanged(nameof(ShowRecurringManageShortcut));
+    }
+
+    [RelayCommand]
+    private void StartEditDetailTask()
+    {
+        if (SelectedDetailTask == null) return;
+        // In Option 1: recurring tasks can ONLY be edited when in the Repeating Tasks view and if not completed
+        if (IsSelectedDetailTaskRecurring && (!IsRecurringView || SelectedDetailTask.IsCompleted)) return;
+
+        EditDetailTitle = SelectedDetailTask.Title;
+        EditDetailDescription = SelectedDetailTask.Description ?? string.Empty;
+        EditDetailDueDate = SelectedDetailTask.DueDate;
+        EditDetailReminderDate = SelectedDetailTask.ReminderAt?.Date;
+        EditDetailReminderTime = SelectedDetailTask.ReminderAt?.TimeOfDay;
+
+        EditDetailCategories.Clear();
+        foreach (var cat in SelectedDetailTask.Categories)
+        {
+            EditDetailCategories.Add(cat);
+        }
+        EditDetailCategoryInput = string.Empty;
+        OnPropertyChanged(nameof(HasEditDetailCategories));
+
+        var recType = SelectedDetailTask.Model.RecurrenceType;
+        if (SelectedDetailTask.IsRecurring && !string.IsNullOrWhiteSpace(recType) && !recType.Equals("None", StringComparison.OrdinalIgnoreCase))
+        {
+            EditDetailRecurrenceType = recType;
+            EditDetailCustomInterval = SelectedDetailTask.Model.CustomRecurrenceInterval ?? 1;
+            EditDetailCustomUnit = SelectedDetailTask.Model.CustomRecurrenceUnit ?? "Days";
+            ParseEditDetailWeeklyDays(SelectedDetailTask.Model.CustomWeeklyDays);
+        }
+        else
+        {
+            EditDetailRecurrenceType = "None";
+            EditDetailCustomInterval = 1;
+            EditDetailCustomUnit = "Days";
+            ClearEditDetailWeeklyDays();
+        }
+
+        IsRecurringEditPromptVisible = false;
+        IsEditingDetailTask = true;
+        OnPropertyChanged(nameof(CanEditSelectedDetailTask));
+        OnPropertyChanged(nameof(ShowRecurringManageShortcut));
+    }
+
+    [RelayCommand]
+    private void CancelDetailTaskEdit()
+    {
+        IsRecurringEditPromptVisible = false;
+        IsEditingDetailTask = false;
+        EditDetailTitle = string.Empty;
+        EditDetailDescription = string.Empty;
+        EditDetailDueDate = null;
+        EditDetailReminderDate = null;
+        EditDetailReminderTime = null;
+        EditDetailCategories.Clear();
+        EditDetailCategoryInput = string.Empty;
+        EditDetailRecurrenceType = "None";
+        OnPropertyChanged(nameof(HasEditDetailCategories));
+        OnPropertyChanged(nameof(CanEditSelectedDetailTask));
+        OnPropertyChanged(nameof(ShowRecurringManageShortcut));
+    }
+
+    [RelayCommand]
     private void OpenDetailDrawer(TodoItemViewModel? item)
     {
         if (item == null) return;
+        IsRecurringEditPromptVisible = false;
+        IsEditingDetailTask = false;
         IsNoteEditMode = true;
         SelectedDetailTask = item;
         IsDetailDrawerOpen = true;
+        OnPropertyChanged(nameof(CanEditSelectedDetailTask));
+        OnPropertyChanged(nameof(ShowRecurringManageShortcut));
     }
 
     [RelayCommand]
     private async Task CloseDetailDrawerAsync()
     {
-        if (SelectedDetailTask != null)
-        {
-            await _todoService.UpdateTodoAsync(SelectedDetailTask.Model);
-            RequestDebouncedAutoSync();
-        }
+        IsRecurringEditPromptVisible = false;
+        IsEditingDetailTask = false;
         IsDetailDrawerOpen = false;
         SelectedDetailTask = null;
+        OnPropertyChanged(nameof(CanEditSelectedDetailTask));
+        OnPropertyChanged(nameof(ShowRecurringManageShortcut));
     }
 
     private void CloseDetailDrawer() => _ = CloseDetailDrawerAsync();
@@ -1349,9 +1661,105 @@ public partial class MainViewModel : ViewModelBase
     private async Task SaveDetailTaskAsync()
     {
         if (SelectedDetailTask == null) return;
-        await _todoService.UpdateTodoAsync(SelectedDetailTask.Model);
+        if (IsSelectedDetailTaskRecurring && (!IsRecurringView || SelectedDetailTask.IsCompleted)) return;
+
+        if (string.IsNullOrWhiteSpace(EditDetailTitle))
+        {
+            StatusMessage = "Task title cannot be empty.";
+            return;
+        }
+
+        // When saving from Recurring view (or saving a non-recurring task),
+        // apply edits directly to the task/series without prompting.
+        await ApplyTaskEditsAsync(rescheduleOccurrenceOnly: false);
+    }
+
+    private async Task ApplyTaskEditsAsync(bool rescheduleOccurrenceOnly)
+    {
+        if (SelectedDetailTask == null) return;
+
+        DateTime? reminderAt = null;
+        if (EditDetailReminderDate.HasValue)
+        {
+            reminderAt = EditDetailReminderDate.Value.Date + (EditDetailReminderTime ?? TimeSpan.Zero);
+        }
+        else if (EditDetailReminderTime.HasValue)
+        {
+            var baseDate = EditDetailDueDate?.Date ?? DateTime.Today;
+            reminderAt = baseDate.Date + EditDetailReminderTime.Value;
+        }
+
+        string categoryString = string.Join(", ", EditDetailCategories);
+
+        if (rescheduleOccurrenceOnly)
+        {
+            // 1. Create a standalone one-off task for the new date
+            var oneOff = new TodoItem
+            {
+                Id = Guid.NewGuid(),
+                SeriesId = SelectedDetailTask.Model.SeriesId ?? SelectedDetailTask.Id,
+                Title = EditDetailTitle.Trim(),
+                Description = string.IsNullOrWhiteSpace(EditDetailDescription) ? string.Empty : EditDetailDescription.Trim(),
+                DueDate = EditDetailDueDate?.Date,
+                ReminderAt = reminderAt,
+                Category = categoryString,
+                Priority = SelectedDetailTask.Priority,
+                IsCompleted = false,
+                IsRecurring = false,
+                RecurrenceType = "None"
+            };
+            await _todoService.AddTodoAsync(oneOff);
+            TodoItems.Add(new TodoItemViewModel(oneOff));
+
+            // 2. Advance the recurring parent task to its next scheduled cycle
+            var allTodos = await _todoService.GetTodosAsync();
+            var originalDate = SelectedDetailTask.DueDate?.Date ?? DateTime.Today;
+            var nextDueDate = RecurrenceHelper.CalculateNextUncompletedDueDate(SelectedDetailTask.Model, originalDate, allTodos);
+            SelectedDetailTask.Model.DueDate = nextDueDate;
+            if (SelectedDetailTask.Model.ReminderAt.HasValue)
+            {
+                SelectedDetailTask.Model.ReminderAt = nextDueDate.Date + SelectedDetailTask.Model.ReminderAt.Value.TimeOfDay;
+            }
+            SelectedDetailTask.Title = EditDetailTitle.Trim();
+            SelectedDetailTask.Description = string.IsNullOrWhiteSpace(EditDetailDescription) ? string.Empty : EditDetailDescription.Trim();
+            SelectedDetailTask.Category = categoryString;
+
+            await _todoService.UpdateTodoAsync(SelectedDetailTask.Model);
+        }
+        else
+        {
+            // Update the task (or series) directly
+            SelectedDetailTask.Title = EditDetailTitle.Trim();
+            SelectedDetailTask.Description = string.IsNullOrWhiteSpace(EditDetailDescription) ? string.Empty : EditDetailDescription.Trim();
+            SelectedDetailTask.DueDate = EditDetailDueDate?.Date;
+            SelectedDetailTask.ReminderAt = reminderAt;
+            SelectedDetailTask.Category = categoryString;
+
+            bool isRepeat = !string.IsNullOrWhiteSpace(EditDetailRecurrenceType) &&
+                            !EditDetailRecurrenceType.Equals("None", StringComparison.OrdinalIgnoreCase);
+
+            SelectedDetailTask.Model.IsRecurring = isRepeat;
+            SelectedDetailTask.Model.RecurrenceType = isRepeat ? EditDetailRecurrenceType : "None";
+            SelectedDetailTask.Model.CustomRecurrenceInterval = isRepeat && EditDetailRecurrenceType == "Custom" ? EditDetailCustomInterval : null;
+            SelectedDetailTask.Model.CustomRecurrenceUnit = isRepeat && EditDetailRecurrenceType == "Custom" ? EditDetailCustomUnit : null;
+            SelectedDetailTask.Model.CustomWeeklyDays = isRepeat && EditDetailRecurrenceType == "Custom" && EditDetailCustomUnit == "Weeks" ? GetEditDetailWeeklyDaysString() : null;
+
+            if (isRepeat && (!SelectedDetailTask.Model.SeriesId.HasValue || SelectedDetailTask.Model.SeriesId == Guid.Empty))
+            {
+                SelectedDetailTask.Model.SeriesId = SelectedDetailTask.Id;
+            }
+
+            await _todoService.UpdateTodoAsync(SelectedDetailTask.Model);
+        }
+
+        SelectedDetailTask.UpdateFromModel(SelectedDetailTask.Model);
+
+        IsRecurringEditPromptVisible = false;
+        IsEditingDetailTask = false;
         RequestDebouncedAutoSync();
         UpdateSubCollections();
+        OnPropertyChanged(nameof(CanEditSelectedDetailTask));
+        OnPropertyChanged(nameof(ShowRecurringManageShortcut));
     }
 
     [ObservableProperty]
@@ -2504,6 +2912,8 @@ public partial class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsGoalsView));
         OnPropertyChanged(nameof(IsSettingsView));
         OnPropertyChanged(nameof(IsMoreActive));
+        OnPropertyChanged(nameof(CanEditSelectedDetailTask));
+        OnPropertyChanged(nameof(ShowRecurringManageShortcut));
     }
 
     public bool HandleBackNavigation()
@@ -2617,6 +3027,16 @@ public partial class MainViewModel : ViewModelBase
         // 9. Task Detail Drawer
         if (IsDetailDrawerOpen)
         {
+            if (IsRecurringEditPromptVisible)
+            {
+                CancelRecurringEditPrompt();
+                return true;
+            }
+            if (IsEditingDetailTask)
+            {
+                CancelDetailTaskEdit();
+                return true;
+            }
             CloseDetailDrawer();
             return true;
         }

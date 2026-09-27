@@ -32,210 +32,579 @@
     </Style>
   </UserControl.Styles>
 
-  <Border Background="{DynamicResource AppSurfaceBrush}"
-          BorderBrush="{DynamicResource AppBorderBrush}"
-          BorderThickness="1,0,0,0"
-          BoxShadow="-4 0 20 0 #40000000">
+  <Grid>
+    <!-- ── Main Drawer Panel ── -->
+    <Border Background="{DynamicResource AppSurfaceBrush}"
+            BorderBrush="{DynamicResource AppBorderBrush}"
+            BorderThickness="1,0,0,0"
+            BoxShadow="-4 0 20 0 #40000000">
 
-    <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="16,10,16,14">
-      <!-- ── Mobile Drag Handle Pill ── -->
-      <Border Grid.Row="0"
-              Width="36" Height="4"
-              CornerRadius="2"
-              Background="{DynamicResource AppBorderBrush}"
-              HorizontalAlignment="Center"
-              Margin="0,0,0,10"/>
+      <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="16,10,16,14">
+        <!-- ── Mobile Drag Handle Pill ── -->
+        <Border Grid.Row="0"
+                Width="36" Height="4"
+                CornerRadius="2"
+                Background="{DynamicResource AppBorderBrush}"
+                HorizontalAlignment="Center"
+                Margin="0,0,0,10"/>
 
-      <!-- ── Drawer Header ── -->
-      <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,14">
-        <CheckBox Grid.Column="0"
-                  Classes="task-checkbox"
-                  IsChecked="{Binding SelectedDetailTask.IsCompleted, Mode=OneWay}"
-                  Command="{Binding ToggleTodoCommand}"
-                  CommandParameter="{Binding SelectedDetailTask}"
-                  VerticalAlignment="Center"/>
+        <!-- ── Drawer Header ── -->
+        <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,14">
+          <CheckBox Grid.Column="0"
+                    Classes="task-checkbox"
+                    IsChecked="{Binding SelectedDetailTask.IsCompleted, Mode=OneWay}"
+                    Command="{Binding ToggleTodoCommand}"
+                    CommandParameter="{Binding SelectedDetailTask}"
+                    VerticalAlignment="Center"/>
 
-        <TextBlock Grid.Column="1"
-                   Text="Task Details"
-                   FontSize="14"
-                   FontWeight="Bold"
-                   Foreground="{DynamicResource AppTextSecondaryBrush}"
-                   VerticalAlignment="Center"
-                   Margin="10,0,0,0"/>
+          <TextBlock Grid.Column="1"
+                     Text="Task Details"
+                     FontSize="14"
+                     FontWeight="Bold"
+                     Foreground="{DynamicResource AppTextSecondaryBrush}"
+                     VerticalAlignment="Center"
+                     Margin="10,0,0,0"/>
 
-        <Button Grid.Column="2"
-                Classes="icon-btn"
-                Command="{Binding CloseDetailDrawerCommand}"
-                ToolTip.Tip="Close task details">
-          <PathIcon Data="{StaticResource CloseIconData}" Width="14" Height="14"/>
-        </Button>
-      </Grid>
+          <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
+            <Button Classes="icon-btn"
+                    Command="{Binding StartEditDetailTaskCommand}"
+                    IsVisible="{Binding CanEditSelectedDetailTask}"
+                    ToolTip.Tip="Edit task">
+              <PathIcon Data="{StaticResource EditIconData}" Width="14" Height="14"/>
+            </Button>
 
-      <!-- ── Drawer Content ScrollViewer ── -->
-      <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="0,0,4,16">
-        <StackPanel Spacing="20" Margin="0,0,0,16" IsVisible="{Binding SelectedDetailTask, Converter={x:Static ObjectConverters.IsNotNull}}">
-
-          <!-- 1. Task Title Editor -->
-          <StackPanel Spacing="4">
-            <TextBlock Text="TITLE" Classes="micro" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-            <TextBox Classes="detail-title"
-                     Text="{Binding SelectedDetailTask.Title, Mode=TwoWay}"
-                     FontSize="18"
-                     FontWeight="SemiBold"
-                     TextWrapping="Wrap"
-                     PlaceholderText="Task title..."/>
+            <Button Classes="icon-btn"
+                    Command="{Binding CloseDetailDrawerCommand}"
+                    ToolTip.Tip="Close task details">
+              <PathIcon Data="{StaticResource CloseIconData}" Width="14" Height="14"/>
+            </Button>
           </StackPanel>
-
-          <!-- 2. Note / Description Editor -->
-          <StackPanel Spacing="8">
-            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-              <PathIcon Data="{StaticResource NoteIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}"/>
-              <TextBlock Text="NOTE &amp; DESCRIPTION" Classes="micro" Foreground="{DynamicResource AppPrimaryBrush}"/>
-            </StackPanel>
-
-            <!-- Direct Multiline Note Editor -->
-            <TextBox Classes="detail-note"
-                     Text="{Binding SelectedDetailTask.Description, Mode=TwoWay}"
-                     PlaceholderText="Add optional notes, sub-steps, or links..."
-                     AcceptsReturn="True"
-                     TextWrapping="Wrap"
-                     MinHeight="120"
-                     MaxHeight="320"
-                     FontSize="13"
-                     VerticalContentAlignment="Top"
-                     HorizontalContentAlignment="Left"/>
-          </StackPanel>
-
-          <!-- Divider -->
-          <Separator Classes="divider" Margin="0,4"/>
-
-          <!-- 3. Metadata Quick Actions -->
-          <StackPanel Spacing="14">
-            <TextBlock Text="METADATA &amp; SCHEDULE" Classes="micro" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-
-            <!-- Due Date Badge & Action -->
-            <Grid ColumnDefinitions="Auto,*" MinHeight="24">
-              <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Width="95">
-                <PathIcon Data="{StaticResource CalendarIconData}" Width="14" Height="14" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
-                <TextBlock Text="Due Date" FontSize="13" FontWeight="Medium" VerticalAlignment="Center"/>
-              </StackPanel>
-              <Panel Grid.Column="1" VerticalAlignment="Center">
-                <TextBlock Text="{Binding SelectedDetailTask.DueDateFormatted}"
-                           IsVisible="{Binding SelectedDetailTask.HasDueDate}"
-                           FontSize="13"
-                           Foreground="{DynamicResource AppTextPrimaryBrush}"/>
-                <TextBlock Text="No due date"
-                           IsVisible="{Binding !SelectedDetailTask.HasDueDate}"
-                           FontSize="13"
-                           FontStyle="Italic"
-                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-              </Panel>
-            </Grid>
-
-            <!-- Reminder Badge -->
-            <Grid ColumnDefinitions="Auto,*" MinHeight="24">
-              <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Width="95">
-                <PathIcon Data="{StaticResource BellIconData}" Width="14" Height="14" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
-                <TextBlock Text="Reminder" FontSize="13" FontWeight="Medium" VerticalAlignment="Center"/>
-              </StackPanel>
-              <Panel Grid.Column="1" VerticalAlignment="Center">
-                <TextBlock Text="{Binding SelectedDetailTask.ReminderAtFormatted}"
-                           IsVisible="{Binding SelectedDetailTask.HasReminder}"
-                           FontSize="13"
-                           Foreground="{DynamicResource AppTextPrimaryBrush}"/>
-                <TextBlock Text="No reminder set"
-                           IsVisible="{Binding !SelectedDetailTask.HasReminder}"
-                           FontSize="13"
-                           FontStyle="Italic"
-                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-              </Panel>
-            </Grid>
-
-            <!-- Recurrence Badge -->
-            <Grid ColumnDefinitions="Auto,*" MinHeight="24">
-              <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Width="95">
-                <PathIcon Data="{StaticResource RepeatIconData}" Width="14" Height="14" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
-                <TextBlock Text="Repeat" FontSize="13" FontWeight="Medium" VerticalAlignment="Center"/>
-              </StackPanel>
-              <Panel Grid.Column="1" VerticalAlignment="Center">
-                <TextBlock Text="{Binding SelectedDetailTask.RecurrenceFormatted}"
-                           IsVisible="{Binding SelectedDetailTask.HasRecurrence}"
-                           FontSize="13"
-                           Foreground="{DynamicResource AppTextPrimaryBrush}"/>
-                <TextBlock Text="Does not repeat"
-                           IsVisible="{Binding !SelectedDetailTask.HasRecurrence}"
-                           FontSize="13"
-                           FontStyle="Italic"
-                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-              </Panel>
-            </Grid>
-
-            <!-- Tags / Categories -->
-            <Grid ColumnDefinitions="Auto,*" MinHeight="24">
-              <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top" Height="20" Width="95">
-                <PathIcon Data="{StaticResource TagIconData}" Width="14" Height="14" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
-                <TextBlock Text="Tags" FontSize="13" FontWeight="Medium" VerticalAlignment="Center"/>
-              </StackPanel>
-
-              <Panel Grid.Column="1" VerticalAlignment="Top">
-                <ItemsControl ItemsSource="{Binding SelectedDetailTask.Categories}" IsVisible="{Binding SelectedDetailTask.HasCategories}">
-                  <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                      <WrapPanel Orientation="Horizontal"/>
-                    </ItemsPanelTemplate>
-                  </ItemsControl.ItemsPanel>
-                  <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                      <Border Background="{DynamicResource AppTagBackgroundBrush}"
-                              CornerRadius="4"
-                              Padding="8,3"
-                              Margin="0,0,6,6"
-                              VerticalAlignment="Top">
-                        <TextBlock Text="{Binding}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTagForegroundBrush}" VerticalAlignment="Center"/>
-                      </Border>
-                    </DataTemplate>
-                  </ItemsControl.ItemTemplate>
-                </ItemsControl>
-
-                <TextBlock Text="No tags assigned"
-                           IsVisible="{Binding !SelectedDetailTask.HasCategories}"
-                           FontSize="13"
-                           FontStyle="Italic"
-                           Foreground="{DynamicResource AppTextSecondaryBrush}"
-                           VerticalAlignment="Center"/>
-              </Panel>
-            </Grid>
-          </StackPanel>
-
-        </StackPanel>
-      </ScrollViewer>
-
-      <!-- ── Drawer Footer ── -->
-      <Border Grid.Row="3" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="0,1,0,0" Padding="0,12,0,0" Margin="0,12,0,0">
-        <Grid ColumnDefinitions="*,Auto">
-          <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
-            <TextBlock Text="{Binding SelectedDetailTask.CreatedAt, StringFormat='Created {0:MMM d, yyyy}'}"
-                       FontSize="11"
-                       Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-            <TextBlock Text="{Binding SelectedDetailTask.CompletedAtFormatted}"
-                       IsVisible="{Binding SelectedDetailTask.HasCompletedAt}"
-                       FontSize="11"
-                       Foreground="{DynamicResource AppAccentSuccessBrush}"/>
-          </StackPanel>
-
-          <Button Grid.Column="1"
-                  Classes="danger"
-                  Command="{Binding DeleteTodoCommand}"
-                  CommandParameter="{Binding SelectedDetailTask}"
-                  ToolTip.Tip="Delete task">
-            <StackPanel Orientation="Horizontal" Spacing="6">
-              <PathIcon Data="{StaticResource CloseIconData}" Width="12" Height="12"/>
-              <TextBlock Text="Delete" FontSize="12" FontWeight="SemiBold"/>
-            </StackPanel>
-          </Button>
         </Grid>
-      </Border>
 
-    </Grid>
-  </Border>
+        <!-- ── Drawer Content ScrollViewer ── -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="0,0,4,16">
+          <StackPanel Spacing="16" Margin="0,0,0,16" IsVisible="{Binding SelectedDetailTask, Converter={x:Static ObjectConverters.IsNotNull}}">
+
+            <!-- ── Recurring Task Notice Banner (When viewed in non-recurring views) ── -->
+            <Border Background="{DynamicResource AppSurfaceElevatedBrush}"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Padding="12,10"
+                    IsVisible="{Binding ShowRecurringManageShortcut}">
+              <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10" VerticalAlignment="Center">
+                <Border Grid.Column="0"
+                        Background="{DynamicResource AppAccentTintBrush}"
+                        CornerRadius="8"
+                        Width="32" Height="32"
+                        VerticalAlignment="Center">
+                  <PathIcon Data="{StaticResource RepeatIconData}"
+                            Width="14" Height="14"
+                            Foreground="{DynamicResource AppAccentBrush}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"/>
+                </Border>
+
+                <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                  <TextBlock Text="Repeating Task"
+                             FontSize="12"
+                             FontWeight="Bold"
+                             Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                  <TextBlock Text="Schedule &amp; template are managed in Repeating Tasks."
+                             FontSize="11"
+                             Foreground="{DynamicResource AppTextSecondaryBrush}"
+                             TextWrapping="Wrap"
+                             LineHeight="15"/>
+                </StackPanel>
+
+                <Button Grid.Column="2"
+                        Classes="outline"
+                        Command="{Binding NavigateToRecurringTaskCommand}"
+                        VerticalAlignment="Center"
+                        Padding="10,6"
+                        CornerRadius="8"
+                        MinHeight="30"
+                        ToolTip.Tip="Go to Repeating Tasks to edit template">
+                  <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                    <TextBlock Text="Manage" FontSize="11" FontWeight="SemiBold"/>
+                    <PathIcon Data="{StaticResource ChevronRightIconData}" Width="10" Height="10" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                  </StackPanel>
+                </Button>
+              </Grid>
+            </Border>
+
+            <!-- 1. TITLE & DESCRIPTION SECTION -->
+
+            <!-- View Mode: Read-Only Title & Description -->
+            <StackPanel Spacing="16" IsVisible="{Binding !IsEditingDetailTask}">
+              <StackPanel Spacing="4">
+                <TextBlock Text="TITLE" Classes="micro" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                <TextBlock Text="{Binding SelectedDetailTask.Title}"
+                           FontSize="18"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource AppTextPrimaryBrush}"
+                           TextWrapping="Wrap"/>
+              </StackPanel>
+
+              <StackPanel Spacing="8">
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                  <PathIcon Data="{StaticResource NoteIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                  <TextBlock Text="NOTE &amp; DESCRIPTION" Classes="micro" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                </StackPanel>
+
+                <TextBlock Text="{Binding SelectedDetailTask.Description}"
+                           IsVisible="{Binding SelectedDetailTask.HasDescription}"
+                           FontSize="13"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"
+                           TextWrapping="Wrap"
+                           LineHeight="20"/>
+                <TextBlock Text="No notes or description"
+                           IsVisible="{Binding !SelectedDetailTask.HasDescription}"
+                           FontSize="13"
+                           FontStyle="Italic"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </StackPanel>
+            </StackPanel>
+
+            <!-- Edit Mode: Draft Title & Note Inputs -->
+            <StackPanel Spacing="16" IsVisible="{Binding IsEditingDetailTask}">
+              <StackPanel Spacing="4">
+                <TextBlock Text="EDIT TITLE *" Classes="micro" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                <TextBox Classes="detail-title"
+                         Text="{Binding EditDetailTitle, Mode=TwoWay}"
+                         FontSize="18"
+                         FontWeight="SemiBold"
+                         TextWrapping="Wrap"
+                         PlaceholderText="Task title...">
+                  <TextBox.KeyBindings>
+                    <KeyBinding Gesture="Escape" Command="{Binding CancelDetailTaskEditCommand}"/>
+                  </TextBox.KeyBindings>
+                </TextBox>
+              </StackPanel>
+
+              <StackPanel Spacing="8">
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                  <PathIcon Data="{StaticResource NoteIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                  <TextBlock Text="NOTE &amp; DESCRIPTION" Classes="micro" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                </StackPanel>
+
+                <TextBox Classes="detail-note"
+                         Text="{Binding EditDetailDescription, Mode=TwoWay}"
+                         PlaceholderText="Add optional notes, sub-steps, or links..."
+                         AcceptsReturn="True"
+                         TextWrapping="Wrap"
+                         MinHeight="100"
+                         MaxHeight="260"
+                         FontSize="13"
+                         VerticalContentAlignment="Top"
+                         HorizontalContentAlignment="Left">
+                  <TextBox.KeyBindings>
+                    <KeyBinding Gesture="Escape" Command="{Binding CancelDetailTaskEditCommand}"/>
+                  </TextBox.KeyBindings>
+                </TextBox>
+              </StackPanel>
+            </StackPanel>
+
+            <!-- Divider -->
+            <Separator Classes="divider" Margin="0,4"/>
+
+            <!-- 2. METADATA & SCHEDULE SECTION -->
+            <StackPanel Spacing="16">
+              <TextBlock Text="METADATA &amp; SCHEDULE" Classes="micro" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+
+              <!-- ================= VIEW MODE METADATA ================= -->
+              <StackPanel Spacing="14" IsVisible="{Binding !IsEditingDetailTask}">
+                <!-- Due Date Badge -->
+                <Grid ColumnDefinitions="Auto,*" MinHeight="24">
+                  <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Width="95">
+                    <PathIcon Data="{StaticResource CalendarIconData}" Width="14" Height="14" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                    <TextBlock Text="Due Date" FontSize="13" FontWeight="Medium" VerticalAlignment="Center"/>
+                  </StackPanel>
+                  <Panel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding SelectedDetailTask.DueDateFormatted}"
+                               IsVisible="{Binding SelectedDetailTask.HasDueDate}"
+                               FontSize="13"
+                               Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                    <TextBlock Text="No due date"
+                               IsVisible="{Binding !SelectedDetailTask.HasDueDate}"
+                               FontSize="13"
+                               FontStyle="Italic"
+                               Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                  </Panel>
+                </Grid>
+
+                <!-- Reminder Badge -->
+                <Grid ColumnDefinitions="Auto,*" MinHeight="24">
+                  <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Width="95">
+                    <PathIcon Data="{StaticResource BellIconData}" Width="14" Height="14" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                    <TextBlock Text="Reminder" FontSize="13" FontWeight="Medium" VerticalAlignment="Center"/>
+                  </StackPanel>
+                  <Panel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding SelectedDetailTask.ReminderAtFormatted}"
+                               IsVisible="{Binding SelectedDetailTask.HasReminder}"
+                               FontSize="13"
+                               Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                    <TextBlock Text="No reminder set"
+                               IsVisible="{Binding !SelectedDetailTask.HasReminder}"
+                               FontSize="13"
+                               FontStyle="Italic"
+                               Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                  </Panel>
+                </Grid>
+
+                <!-- Recurrence Badge -->
+                <Grid ColumnDefinitions="Auto,*,Auto" MinHeight="24">
+                  <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Width="95">
+                    <PathIcon Data="{StaticResource RepeatIconData}" Width="14" Height="14" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                    <TextBlock Text="Repeat" FontSize="13" FontWeight="Medium" VerticalAlignment="Center"/>
+                  </StackPanel>
+                  <Panel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding SelectedDetailTask.RecurrenceFormatted}"
+                               IsVisible="{Binding SelectedDetailTask.HasRecurrence}"
+                               FontSize="13"
+                               Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                    <TextBlock Text="Does not repeat"
+                               IsVisible="{Binding !SelectedDetailTask.HasRecurrence}"
+                               FontSize="13"
+                               FontStyle="Italic"
+                               Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                  </Panel>
+                  <Button Grid.Column="2"
+                          Classes="ghost"
+                          Command="{Binding NavigateToRecurringTaskCommand}"
+                          IsVisible="{Binding ShowRecurringManageShortcut}"
+                          Padding="6,2"
+                          VerticalAlignment="Center"
+                          ToolTip.Tip="Go to Repeating Tasks to manage this series">
+                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                      <TextBlock Text="Edit series" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                      <PathIcon Data="{StaticResource ChevronRightIconData}" Width="9" Height="9" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                    </StackPanel>
+                  </Button>
+                </Grid>
+
+                <!-- Tags / Categories -->
+                <Grid ColumnDefinitions="Auto,*" MinHeight="24">
+                  <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top" Height="20" Width="95">
+                    <PathIcon Data="{StaticResource TagIconData}" Width="14" Height="14" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                    <TextBlock Text="Tags" FontSize="13" FontWeight="Medium" VerticalAlignment="Center"/>
+                  </StackPanel>
+
+                  <Panel Grid.Column="1" VerticalAlignment="Top">
+                    <ItemsControl ItemsSource="{Binding SelectedDetailTask.Categories}" IsVisible="{Binding SelectedDetailTask.HasCategories}">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Border Background="{DynamicResource AppTagBackgroundBrush}"
+                                  CornerRadius="4"
+                                  Padding="8,3"
+                                  Margin="0,0,6,6"
+                                  VerticalAlignment="Top">
+                            <TextBlock Text="{Binding}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTagForegroundBrush}" VerticalAlignment="Center"/>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Text="No tags assigned"
+                               IsVisible="{Binding !SelectedDetailTask.HasCategories}"
+                               FontSize="13"
+                               FontStyle="Italic"
+                               Foreground="{DynamicResource AppTextSecondaryBrush}"
+                               VerticalAlignment="Center"/>
+                  </Panel>
+                </Grid>
+              </StackPanel>
+
+              <!-- ================= EDIT MODE METADATA ================= -->
+              <StackPanel Spacing="16" IsVisible="{Binding IsEditingDetailTask}">
+                <!-- 1. Due Date Editor -->
+                <Grid ColumnDefinitions="Auto,*">
+                  <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Width="95">
+                    <PathIcon Data="{StaticResource CalendarIconData}" Width="14" Height="14" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                    <TextBlock Text="Due Date" FontSize="13" FontWeight="Medium" VerticalAlignment="Center"/>
+                  </StackPanel>
+                  <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
+                    <CalendarDatePicker Grid.Column="0"
+                                        SelectedDate="{Binding EditDetailDueDate, Mode=TwoWay}"
+                                        PlaceholderText="Select due date..."
+                                        HorizontalAlignment="Stretch"/>
+                    <Button Grid.Column="1"
+                            Command="{Binding ClearEditDetailDueDateCommand}"
+                            Classes="icon-btn"
+                            Width="28" Height="28" Margin="4,0,0,0"
+                            IsVisible="{Binding HasEditDetailDueDate}"
+                            ToolTip.Tip="Clear due date">
+                      <PathIcon Data="{StaticResource CloseIconData}" Width="10" Height="10"/>
+                    </Button>
+                  </Grid>
+                </Grid>
+
+                <!-- 2. Reminder Editor -->
+                <Grid ColumnDefinitions="Auto,*">
+                  <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Width="95">
+                    <PathIcon Data="{StaticResource BellIconData}" Width="14" Height="14" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                    <TextBlock Text="Reminder" FontSize="13" FontWeight="Medium" VerticalAlignment="Center"/>
+                  </StackPanel>
+                  <Grid Grid.Column="1" ColumnDefinitions="*,*,Auto" ColumnSpacing="6">
+                    <CalendarDatePicker Grid.Column="0"
+                                        SelectedDate="{Binding EditDetailReminderDate, Mode=TwoWay}"
+                                        PlaceholderText="Date..."
+                                        HorizontalAlignment="Stretch"/>
+                    <controls:ClockTimePicker Grid.Column="1"
+                                              SelectedTime="{Binding EditDetailReminderTime, Mode=TwoWay}"
+                                              HorizontalAlignment="Stretch"/>
+                    <Button Grid.Column="2"
+                            Command="{Binding ClearEditDetailReminderCommand}"
+                            Classes="icon-btn"
+                            Width="28" Height="28"
+                            IsVisible="{Binding HasEditDetailReminder}"
+                            ToolTip.Tip="Clear reminder">
+                      <PathIcon Data="{StaticResource CloseIconData}" Width="10" Height="10"/>
+                    </Button>
+                  </Grid>
+                </Grid>
+
+                <!-- 3. Recurrence Editor -->
+                <Grid ColumnDefinitions="Auto,*">
+                  <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top" Height="32" Width="95">
+                    <PathIcon Data="{StaticResource RepeatIconData}" Width="14" Height="14" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                    <TextBlock Text="Repeat" FontSize="13" FontWeight="Medium" VerticalAlignment="Center"/>
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="8">
+                    <ComboBox ItemsSource="{Binding RecurrenceOptions}"
+                              SelectedItem="{Binding EditDetailRecurrenceType, Mode=TwoWay}"
+                              HorizontalAlignment="Stretch"/>
+
+                    <!-- Custom Recurrence Expansion -->
+                    <StackPanel IsVisible="{Binding IsEditDetailCustomRecurrenceVisible}" Spacing="8" Margin="0,2,0,0">
+                      <Grid ColumnDefinitions="*,Auto,*">
+                        <StackPanel Grid.Column="0" Spacing="4">
+                          <TextBlock Text="Every" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                          <NumericUpDown Minimum="1" Maximum="365" Value="{Binding EditDetailCustomInterval, Mode=TwoWay}" FormatString="0" HorizontalAlignment="Stretch"/>
+                        </StackPanel>
+                        <TextBlock Grid.Column="1" Text=" " VerticalAlignment="Bottom" Margin="4,0,4,8"/>
+                        <StackPanel Grid.Column="2" Spacing="4">
+                          <TextBlock Text="Unit" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                          <ComboBox ItemsSource="{Binding CustomUnitOptions}"
+                                    SelectedItem="{Binding EditDetailCustomUnit, Mode=TwoWay}"
+                                    HorizontalAlignment="Stretch"/>
+                        </StackPanel>
+                      </Grid>
+
+                      <!-- Weekly Day Picker -->
+                      <StackPanel IsVisible="{Binding IsEditDetailWeeklyDaysPickerVisible}" Spacing="6" Margin="0,2,0,0">
+                        <TextBlock Text="Select Days" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                        <UniformGrid Columns="7">
+                          <ToggleButton Content="M" IsChecked="{Binding IsEditDetailMondaySelected, Mode=TwoWay}" Padding="0" Height="28" MinWidth="26" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Monday"/>
+                          <ToggleButton Content="T" IsChecked="{Binding IsEditDetailTuesdaySelected, Mode=TwoWay}" Padding="0" Height="28" MinWidth="26" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Tuesday"/>
+                          <ToggleButton Content="W" IsChecked="{Binding IsEditDetailWednesdaySelected, Mode=TwoWay}" Padding="0" Height="28" MinWidth="26" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Wednesday"/>
+                          <ToggleButton Content="T" IsChecked="{Binding IsEditDetailThursdaySelected, Mode=TwoWay}" Padding="0" Height="28" MinWidth="26" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Thursday"/>
+                          <ToggleButton Content="F" IsChecked="{Binding IsEditDetailFridaySelected, Mode=TwoWay}" Padding="0" Height="28" MinWidth="26" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Friday"/>
+                          <ToggleButton Content="S" IsChecked="{Binding IsEditDetailSaturdaySelected, Mode=TwoWay}" Padding="0" Height="28" MinWidth="26" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Saturday"/>
+                          <ToggleButton Content="S" IsChecked="{Binding IsEditDetailSundaySelected, Mode=TwoWay}" Padding="0" Height="28" MinWidth="26" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Sunday"/>
+                        </UniformGrid>
+                      </StackPanel>
+                    </StackPanel>
+                  </StackPanel>
+                </Grid>
+
+                <!-- 4. Tags / Categories Editor -->
+                <Grid ColumnDefinitions="Auto,*">
+                  <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top" Height="24" Width="95">
+                    <PathIcon Data="{StaticResource TagIconData}" Width="14" Height="14" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
+                    <TextBlock Text="Tags" FontSize="13" FontWeight="Medium" VerticalAlignment="Center"/>
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="8">
+                    <!-- Active Tags List with delete (x) button on each tag -->
+                    <ItemsControl ItemsSource="{Binding EditDetailCategories}">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Border Background="{DynamicResource AppTagBackgroundBrush}"
+                                  CornerRadius="4"
+                                  Padding="8,3"
+                                  Margin="0,0,6,6"
+                                  VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                              <TextBlock Text="{Binding}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTagForegroundBrush}" VerticalAlignment="Center"/>
+                              <Button Classes="icon-btn"
+                                      Command="{Binding $parent[UserControl].DataContext.RemoveEditDetailCategoryCommand}"
+                                      CommandParameter="{Binding}"
+                                      Padding="0" Width="14" Height="14"
+                                      VerticalAlignment="Center">
+                                <PathIcon Data="{StaticResource CloseIconData}" Width="8" Height="8" Foreground="{DynamicResource AppTagForegroundBrush}"/>
+                              </Button>
+                            </StackPanel>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Add Tag Input Row -->
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                      <TextBox Grid.Column="0"
+                               Classes="styled"
+                               Text="{Binding EditDetailCategoryInput, Mode=TwoWay}"
+                               PlaceholderText="Add tag..."
+                               MinHeight="32"
+                               Padding="8,4"
+                               FontSize="12">
+                        <TextBox.KeyBindings>
+                          <KeyBinding Gesture="Enter" Command="{Binding AddEditDetailCategoryCommand}"/>
+                        </TextBox.KeyBindings>
+                      </TextBox>
+                      <Button Grid.Column="1"
+                              Classes="icon-btn"
+                              Command="{Binding AddEditDetailCategoryCommand}"
+                              ToolTip.Tip="Add tag"
+                              Width="32" Height="32">
+                        <PathIcon Data="{StaticResource PlusIconData}" Width="12" Height="12"/>
+                      </Button>
+                    </Grid>
+
+                    <!-- Quick Pick from Existing Categories -->
+                    <StackPanel IsVisible="{Binding HasExistingCategories}" Spacing="4" Margin="0,2,0,0">
+                      <TextBlock Text="SUGGESTED TAGS" Classes="micro" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                      <ItemsControl ItemsSource="{Binding ExistingCategories}">
+                        <ItemsControl.ItemsPanel>
+                          <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"/>
+                          </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate>
+                            <Button Classes="ghost"
+                                    Command="{Binding $parent[UserControl].DataContext.AddEditDetailCategoryCommand}"
+                                    CommandParameter="{Binding}"
+                                    Padding="6,3"
+                                    Margin="0,0,4,4"
+                                    CornerRadius="4"
+                                    MinHeight="22">
+                              <TextBlock Text="{Binding StringFormat='+ {0}'}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                            </Button>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
+                  </StackPanel>
+                </Grid>
+              </StackPanel>
+            </StackPanel>
+
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- ── Drawer Footer ── -->
+        <Border Grid.Row="3" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="0,1,0,0" Padding="0,12,0,0" Margin="0,12,0,0">
+          <Panel>
+            <!-- View Mode Footer: Created Date & Delete Button -->
+            <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding !IsEditingDetailTask}">
+              <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                <TextBlock Text="{Binding SelectedDetailTask.CreatedAt, StringFormat='Created {0:MMM d, yyyy}'}"
+                           FontSize="11"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                <TextBlock Text="{Binding SelectedDetailTask.CompletedAtFormatted}"
+                           IsVisible="{Binding SelectedDetailTask.HasCompletedAt}"
+                           FontSize="11"
+                           Foreground="{DynamicResource AppAccentSuccessBrush}"/>
+              </StackPanel>
+
+              <Button Grid.Column="1"
+                      Classes="danger"
+                      Command="{Binding DeleteTodoCommand}"
+                      CommandParameter="{Binding SelectedDetailTask}"
+                      ToolTip.Tip="Delete task">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <PathIcon Data="{StaticResource CloseIconData}" Width="12" Height="12"/>
+                  <TextBlock Text="Delete" FontSize="12" FontWeight="SemiBold"/>
+                </StackPanel>
+              </Button>
+            </Grid>
+
+            <!-- Edit Mode Footer: Action Buttons (Cancel & Save) -->
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" IsVisible="{Binding IsEditingDetailTask}">
+              <Panel Grid.Column="0"/>
+              <Button Grid.Column="1"
+                      Classes="btn-secondary"
+                      Command="{Binding CancelDetailTaskEditCommand}"
+                      Content="Cancel"
+                      Height="34" Padding="16,0"/>
+              <Button Grid.Column="2"
+                      Classes="primary"
+                      Command="{Binding SaveDetailTaskCommand}"
+                      Content="Save Changes"
+                      Height="34" Padding="16,0"/>
+            </Grid>
+          </Panel>
+        </Border>
+
+      </Grid>
+    </Border>
+
+    <!-- ── Recurring Task Edit Scope Prompt Modal Overlay ── -->
+    <Border Background="#90000000"
+            IsVisible="{Binding IsRecurringEditPromptVisible}"
+            ZIndex="200"
+            VerticalAlignment="Stretch"
+            HorizontalAlignment="Stretch">
+      <Border Background="{DynamicResource AppSurfaceElevatedBrush}"
+              BorderBrush="{DynamicResource AppBorderBrush}"
+              BorderThickness="1"
+              CornerRadius="14"
+              Padding="20"
+              Margin="20"
+              MaxWidth="360"
+              VerticalAlignment="Center"
+              HorizontalAlignment="Stretch"
+              BoxShadow="0 12 36 0 #50000000">
+        <StackPanel Spacing="14">
+          <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <PathIcon Data="{StaticResource RepeatIconData}" Width="16" Height="16" Foreground="{DynamicResource AppPrimaryBrush}"/>
+            <TextBlock Text="Repeating Task Schedule" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+          </StackPanel>
+
+          <TextBlock Text="You changed the date on a repeating task. How would you like to apply this change?"
+                     FontSize="13"
+                     Foreground="{DynamicResource AppTextSecondaryBrush}"
+                     TextWrapping="Wrap"
+                     LineHeight="18"/>
+
+          <StackPanel Spacing="8" Margin="0,4,0,0">
+            <Button Classes="primary"
+                    Command="{Binding ConfirmRecurringEditOccurrenceOnlyCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    MinHeight="38">
+              <TextBlock Text="Reschedule This Occurrence Only" FontWeight="SemiBold" FontSize="12"/>
+            </Button>
+
+            <Button Classes="outline"
+                    Command="{Binding ConfirmRecurringEditAllOccurrencesCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    MinHeight="38">
+              <TextBlock Text="Update Entire Series" FontWeight="SemiBold" FontSize="12"/>
+            </Button>
+
+            <Button Classes="ghost"
+                    Command="{Binding CancelRecurringEditPromptCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    MinHeight="32">
+              <TextBlock Text="Cancel" FontSize="12"/>
+            </Button>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </Border>
+  </Grid>
 </UserControl>
