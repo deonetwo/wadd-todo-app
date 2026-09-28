@@ -82,8 +82,8 @@ public class TaskReminderReceiver : BroadcastReceiver
         {
             try
             {
-                var targetLocale = new Java.Util.Locale(settings.Language.StartsWith("id", StringComparison.OrdinalIgnoreCase) ? "id" : "en");
-                var config = new Android.Content.Res.Configuration(context.Resources?.Configuration);
+                var targetLocale = Java.Util.Locale.ForLanguageTag(settings.Language.StartsWith("id", StringComparison.OrdinalIgnoreCase) ? "id" : "en");
+                var config = new global::Android.Content.Res.Configuration(context.Resources?.Configuration);
                 config.SetLocale(targetLocale);
                 localizedContext = context.CreateConfigurationContext(config) ?? context;
             }

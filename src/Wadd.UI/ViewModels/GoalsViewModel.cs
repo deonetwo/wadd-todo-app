@@ -1011,7 +1011,7 @@ public partial class GoalsViewModel : ViewModelBase
         CurrentMilestones.Add(new GoalMilestoneItemViewModel(saved));
         NewMilestoneTitle = string.Empty;
 
-        UpdateSelectedGoalProgress();
+        await UpdateSelectedGoalProgressAsync();
         NotifyDataMutated();
     }
 
@@ -1027,7 +1027,7 @@ public partial class GoalsViewModel : ViewModelBase
         }
 
         await _goalService.SaveMilestoneAsync(milestoneVm.Model);
-        UpdateSelectedGoalProgress();
+        await UpdateSelectedGoalProgressAsync();
         NotifyDataMutated();
     }
 
@@ -1081,11 +1081,11 @@ public partial class GoalsViewModel : ViewModelBase
         await _goalService.DeleteMilestoneAsync(milestoneVm.Id);
         CurrentMilestones.Remove(milestoneVm);
 
-        UpdateSelectedGoalProgress();
+        await UpdateSelectedGoalProgressAsync();
         NotifyDataMutated();
     }
 
-    private void UpdateSelectedGoalProgress()
+    private async Task UpdateSelectedGoalProgressAsync()
     {
         if (SelectedGoal == null) return;
 
@@ -1094,7 +1094,7 @@ public partial class GoalsViewModel : ViewModelBase
         int completed = CurrentMilestones.Count(m => m.IsCompleted);
 
         SelectedGoal.UpdateMilestonesSummary(completed, total);
-        _ = _goalService.SaveGoalAsync(SelectedGoal.Model);
+        await _goalService.SaveGoalAsync(SelectedGoal.Model);
         OnPropertyChanged(nameof(SelectedGoal));
 
         if (!wasAchieved && SelectedGoal.IsAchieved)
@@ -1102,6 +1102,8 @@ public partial class GoalsViewModel : ViewModelBase
             _audioService?.PlayCompletedSound();
         }
     }
+
+    private void UpdateSelectedGoalProgress() => _ = UpdateSelectedGoalProgressAsync();
 
     [RelayCommand]
     private async Task GenerateMilestonesWithAiAsync()
