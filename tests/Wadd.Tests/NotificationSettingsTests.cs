@@ -898,6 +898,108 @@ public class NotificationSettingsTests
         Assert.Null(ex2);
     }
 
+    [Fact]
+    public void NotificationOptions_UpdateWhenLanguageChanges()
+    {
+        var lm = Wadd.UI.Localization.LocalizationManager.Instance;
+        var vm = new MainViewModel();
+
+        try
+        {
+            // Switch to English
+            lm.SetLanguage("en");
+            vm.RefreshLocalizedOptionLists();
+
+            Assert.Equal("Don't repeat (once only)", vm.NotificationRepeatIntervalOptions[0].Name);
+            Assert.Equal("5 minutes before", vm.NotificationLeadTimeOptions[1].Name);
+
+            // Switch to Indonesian
+            lm.SetLanguage("id");
+            vm.RefreshLocalizedOptionLists();
+
+            Assert.Equal("Jangan ulangi (sekali saja)", vm.NotificationRepeatIntervalOptions[0].Name);
+            Assert.Equal("5 menit sebelumnya", vm.NotificationLeadTimeOptions[1].Name);
+        }
+        finally
+        {
+            lm.SetLanguage("en");
+            vm.RefreshLocalizedOptionLists();
+        }
+    }
+
+    [Fact]
+    public void CheckReminders_UsesLocalizedNotificationStrings_InIndonesian()
+    {
+        var lm = Wadd.UI.Localization.LocalizationManager.Instance;
+        var mockService = new MockNotificationService();
+        var vm = new MainViewModel(
+            new Wadd.Services.InMemoryTodoService(),
+            new Wadd.Services.ThemeService(),
+            new Wadd.Services.SyncService(),
+            new Wadd.Services.ExcelExportService(),
+            new Wadd.Services.SQLiteGoalService(),
+            new Wadd.Services.WindowsStartupService(),
+            new Wadd.Services.AiGoalService(new System.Net.Http.HttpClient()),
+            mockService);
+
+        try
+        {
+            lm.SetLanguage("id");
+            vm.EnableNotifications = true;
+            vm.NotifyOnTaskReminder = true;
+
+            var now = DateTime.Now;
+            var singleTask = new TodoItemViewModel(new TodoItem
+            {
+                Id = Guid.NewGuid(),
+                Title = "Tugas Penting",
+                ReminderAt = now.AddHours(-1)
+            });
+
+            vm.TodoItems.Add(singleTask);
+            vm.CheckReminders();
+
+            Assert.Single(mockService.ShownNotifications);
+            var notif = mockService.ShownNotifications[0];
+            Assert.Equal("Pengingat: Tugas Penting", notif.Title);
+        }
+        finally
+        {
+            lm.SetLanguage("en");
+        }
+    }
+
+    [Fact]
+    public async Task SendTestNotification_UsesLocalizedNotificationStrings_InIndonesian()
+    {
+        var lm = Wadd.UI.Localization.LocalizationManager.Instance;
+        var mockService = new MockNotificationService();
+        var vm = new MainViewModel(
+            new Wadd.Services.InMemoryTodoService(),
+            new Wadd.Services.ThemeService(),
+            new Wadd.Services.SyncService(),
+            new Wadd.Services.ExcelExportService(),
+            new Wadd.Services.SQLiteGoalService(),
+            new Wadd.Services.WindowsStartupService(),
+            new Wadd.Services.AiGoalService(new System.Net.Http.HttpClient()),
+            mockService);
+
+        try
+        {
+            lm.SetLanguage("id");
+            await vm.SendTestNotificationAsync();
+
+            Assert.Single(mockService.ShownNotifications);
+            Assert.Equal("Pengingat Wadd (Uji Coba)", mockService.ShownNotifications[0].Title);
+            Assert.Equal("Notifikasi telah aktif dan berfungsi normal.", mockService.ShownNotifications[0].Message);
+            Assert.Contains("Notifikasi uji coba terkirim", vm.TestNotificationFeedback);
+        }
+        finally
+        {
+            lm.SetLanguage("en");
+        }
+    }
+
 #if WINDOWS || NET10_0_WINDOWS10_0_17763_0_OR_GREATER
     [Fact]
     public void WindowsNotificationService_WhenToastDispatchThrows_CallsAlertSoundFallback()

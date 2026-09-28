@@ -340,4 +340,45 @@
   <data name="Dialog_Delete_Tag_Msg" xml:space="preserve"><value>Tag ini akan dihapus dari semua tugas.</value></data>
   <data name="Dialog_Delete_Note_Title" xml:space="preserve"><value>Hapus Catatan?</value></data>
   <data name="Dialog_Delete_Note_Msg" xml:space="preserve"><value>Catatan untuk tanggal ini akan dihapus.</value></data>
+
+  <!-- Notifications & Reminders Runtime -->
+  <data name="Notification_Reminder_Title" xml:space="preserve"><value>Pengingat: {0}</value></data>
+  <data name="Notification_Overdue_Title" xml:space="preserve"><value>Terlambat: {0}</value></data>
+  <data name="Notification_DueToday_Title" xml:space="preserve"><value>Jatuh Tempo Hari Ini: {0}</value></data>
+  <data name="Notification_Summary_Reminders_Title" xml:space="preserve"><value>{0} Pengingat Tugas</value></data>
+  <data name="Notification_Summary_Overdue_Title" xml:space="preserve"><value>{0} Tugas Terlambat</value></data>
+  <data name="Notification_Summary_DueToday_Title" xml:space="preserve"><value>{0} Tugas Jatuh Tempo Hari Ini</value></data>
+  <data name="Notification_Summary_MoreTasks" xml:space="preserve"><value>+ {0} tugas lainnya</value></data>
+  <data name="Notification_Test_Title" xml:space="preserve"><value>Pengingat Wadd (Uji Coba)</value></data>
+  <data name="Notification_Test_Message" xml:space="preserve"><value>Notifikasi telah aktif dan berfungsi normal.</value></data>
+  <data name="Notification_Test_Sent" xml:space="preserve"><value>Notifikasi uji coba terkirim ({0}).</value></data>
+  <data name="Notification_Test_Sent_Bubble" xml:space="preserve"><value>Notifikasi uji coba terkirim.</value></data>
+  <data name="Notification_Test_Failed" xml:space="preserve"><value>Gagal mengirim notifikasi uji coba: {0}</value></data>
+
+  <!-- Notification Settings Options -->
+  <data name="Settings_Notification_Repeat_None" xml:space="preserve"><value>Jangan ulangi (sekali saja)</value></data>
+  <data name="Settings_Notification_Repeat_None_Desc" xml:space="preserve"><value>Ingatkan saya hanya sekali saat pengingat atau tanggal jatuh tempo tiba</value></data>
+  <data name="Settings_Notification_Repeat_30m" xml:space="preserve"><value>Setiap 30 menit</value></data>
+  <data name="Settings_Notification_Repeat_30m_Desc" xml:space="preserve"><value>Ingatkan saya setiap 30 menit sampai selesai</value></data>
+  <data name="Settings_Notification_Repeat_1h" xml:space="preserve"><value>Setiap 1 jam</value></data>
+  <data name="Settings_Notification_Repeat_1h_Desc" xml:space="preserve"><value>Ingatkan saya setiap jam sampai selesai</value></data>
+  <data name="Settings_Notification_Repeat_2h" xml:space="preserve"><value>Setiap 2 jam</value></data>
+  <data name="Settings_Notification_Repeat_2h_Desc" xml:space="preserve"><value>Ingatkan saya setiap 2 jam sampai selesai</value></data>
+  <data name="Settings_Notification_Repeat_3h" xml:space="preserve"><value>Setiap 3 jam</value></data>
+  <data name="Settings_Notification_Repeat_3h_Desc" xml:space="preserve"><value>Ingatkan saya setiap 3 jam sampai selesai</value></data>
+  <data name="Settings_Notification_Repeat_5h" xml:space="preserve"><value>Setiap 5 jam</value></data>
+  <data name="Settings_Notification_Repeat_5h_Desc" xml:space="preserve"><value>Ingatkan saya setiap 5 jam sampai selesai</value></data>
+
+  <data name="Settings_Notification_Lead_0m" xml:space="preserve"><value>Tepat pada waktunya</value></data>
+  <data name="Settings_Notification_Lead_0m_Desc" xml:space="preserve"><value>Ingatkan saya tepat saat waktunya tiba</value></data>
+  <data name="Settings_Notification_Lead_5m" xml:space="preserve"><value>5 menit sebelumnya</value></data>
+  <data name="Settings_Notification_Lead_5m_Desc" xml:space="preserve"><value>Ingatkan saya 5 menit sebelumnya</value></data>
+  <data name="Settings_Notification_Lead_10m" xml:space="preserve"><value>10 menit sebelumnya</value></data>
+  <data name="Settings_Notification_Lead_10m_Desc" xml:space="preserve"><value>Ingatkan saya 10 menit sebelumnya</value></data>
+  <data name="Settings_Notification_Lead_15m" xml:space="preserve"><value>15 menit sebelumnya</value></data>
+  <data name="Settings_Notification_Lead_15m_Desc" xml:space="preserve"><value>Ingatkan saya 15 menit sebelumnya</value></data>
+  <data name="Settings_Notification_Lead_30m" xml:space="preserve"><value>30 menit sebelumnya</value></data>
+  <data name="Settings_Notification_Lead_30m_Desc" xml:space="preserve"><value>Ingatkan saya 30 menit sebelumnya</value></data>
+  <data name="Settings_Notification_Lead_60m" xml:space="preserve"><value>1 jam sebelumnya</value></data>
+  <data name="Settings_Notification_Lead_60m_Desc" xml:space="preserve"><value>Ingatkan saya 1 jam sebelumnya</value></data>
 </root>

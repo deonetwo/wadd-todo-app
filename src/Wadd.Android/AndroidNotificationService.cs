@@ -109,12 +109,24 @@ public class AndroidNotificationService : INotificationService
             {
                 var channelManager = ChannelManagerOverride ?? new AndroidNotificationChannelManagerAdapter(notificationManager, context);
 
-                // Note: Android-native strings intentionally resolve through Android's native resources (values/strings.xml and values-<locale>/strings.xml)
-                // via context.GetString(...) rather than Avalonia's LocalizationManager. Notification channels and background broadcast receivers
-                // run outside the Avalonia view tree where Avalonia/C# runtime state may not be initialized. Android automatically resolves
-                // the correct values-<locale> based on the device locale independently from the app-level C# language picker.
-                string channelName = context.GetString(Resource.String.notification_channel_name) ?? AndroidNotificationChannelHelper.ChannelName;
-                string channelDesc = context.GetString(Resource.String.notification_channel_desc) ?? AndroidNotificationChannelHelper.ChannelDesc;
+                Context localizedContext = context;
+                if (!string.IsNullOrWhiteSpace(settings.Language) && !settings.Language.Equals("system", StringComparison.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+                        var targetLocale = new Java.Util.Locale(settings.Language.StartsWith("id", StringComparison.OrdinalIgnoreCase) ? "id" : "en");
+                        var config = new Android.Content.Res.Configuration(context.Resources?.Configuration);
+                        config.SetLocale(targetLocale);
+                        localizedContext = context.CreateConfigurationContext(config) ?? context;
+                    }
+                    catch
+                    {
+                        localizedContext = context;
+                    }
+                }
+
+                string channelName = localizedContext.GetString(Resource.String.notification_channel_name) ?? AndroidNotificationChannelHelper.ChannelName;
+                string channelDesc = localizedContext.GetString(Resource.String.notification_channel_desc) ?? AndroidNotificationChannelHelper.ChannelDesc;
 
                 AndroidNotificationChannelHelper.SyncChannels(channelManager, settings, channelName, channelDesc);
             }

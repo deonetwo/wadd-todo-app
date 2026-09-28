@@ -602,22 +602,24 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     public async Task SendTestNotificationAsync()
     {
+        var lm = LocalizationManager.Instance;
         try
         {
             if (EnableNotifications)
             {
                 await _notificationService.RequestPermissionAsync();
             }
-            var title = "Wadd Reminder (Test)";
-            var message = "Notifications are enabled and working.";
+            var title = lm["Notification_Test_Title"];
+            var message = lm["Notification_Test_Message"];
             await _notificationService.ShowNotificationAsync(title, message, "test-notification");
-            TestNotificationFeedback = $"Test notification sent ({DateTime.Now:HH:mm:ss}).";
-            ShowStatusBubble("Test notification sent.", NotificationBubbleType.Success);
+            TestNotificationFeedback = string.Format(lm["Notification_Test_Sent"], DateTime.Now.ToString("HH:mm:ss"));
+            ShowStatusBubble(lm["Notification_Test_Sent_Bubble"], NotificationBubbleType.Success);
         }
         catch (Exception ex)
         {
-            TestNotificationFeedback = $"Failed to send test notification: {ex.Message}";
-            ShowStatusBubble($"Failed to send test notification: {ex.Message}", NotificationBubbleType.Error);
+            var failFmt = lm["Notification_Test_Failed"];
+            TestNotificationFeedback = string.Format(failFmt, ex.Message);
+            ShowStatusBubble(string.Format(failFmt, ex.Message), NotificationBubbleType.Error);
         }
     }
 
@@ -698,6 +700,10 @@ public partial class MainViewModel : ViewModelBase
 
         var now = DateTime.Now;
         var today = now.Date;
+        var lm = LocalizationManager.Instance;
+        var reminderFmt = lm["Notification_Reminder_Title"];
+        var overdueFmt = lm["Notification_Overdue_Title"];
+        var dueTodayFmt = lm["Notification_DueToday_Title"];
 
         if (today != _lastDueDateCheckDay)
         {
@@ -737,7 +743,7 @@ public partial class MainViewModel : ViewModelBase
                         var body = item.HasDescription
                             ? $"{item.Title} - {item.DescriptionPreview}"
                             : item.Title;
-                        pendingAlerts.Add((item, TaskNotificationCategory.Reminder, $"Reminder: {item.Title}", body));
+                        pendingAlerts.Add((item, TaskNotificationCategory.Reminder, string.Format(reminderFmt, item.Title), body));
                         continue;
                     }
                     else if (shouldRepeat)
@@ -746,7 +752,7 @@ public partial class MainViewModel : ViewModelBase
                         var body = item.HasDescription
                             ? $"{item.Title} - {item.DescriptionPreview}"
                             : item.Title;
-                        pendingAlerts.Add((item, TaskNotificationCategory.Reminder, $"Reminder: {item.Title}", body));
+                        pendingAlerts.Add((item, TaskNotificationCategory.Reminder, string.Format(reminderFmt, item.Title), body));
                         continue;
                     }
                     else if (!_lastNotifiedTimes.ContainsKey(item.Id))
@@ -771,7 +777,7 @@ public partial class MainViewModel : ViewModelBase
                         var body = item.HasDescription
                             ? $"{item.Title} - {item.DescriptionPreview}"
                             : item.Title;
-                        pendingAlerts.Add((item, TaskNotificationCategory.Overdue, $"Overdue: {item.Title}", body));
+                        pendingAlerts.Add((item, TaskNotificationCategory.Overdue, string.Format(overdueFmt, item.Title), body));
                         continue;
                     }
                     else if (shouldRepeat)
@@ -780,7 +786,7 @@ public partial class MainViewModel : ViewModelBase
                         var body = item.HasDescription
                             ? $"{item.Title} - {item.DescriptionPreview}"
                             : item.Title;
-                        pendingAlerts.Add((item, TaskNotificationCategory.Overdue, $"Overdue: {item.Title}", body));
+                        pendingAlerts.Add((item, TaskNotificationCategory.Overdue, string.Format(overdueFmt, item.Title), body));
                         continue;
                     }
                     else if (!_lastNotifiedTimes.ContainsKey(item.Id))
@@ -800,7 +806,7 @@ public partial class MainViewModel : ViewModelBase
                     var body = item.HasDescription
                         ? $"{item.Title} - {item.DescriptionPreview}"
                         : item.Title;
-                    pendingAlerts.Add((item, TaskNotificationCategory.DueToday, $"Due Today: {item.Title}", body));
+                    pendingAlerts.Add((item, TaskNotificationCategory.DueToday, string.Format(dueTodayFmt, item.Title), body));
                 }
                 else if (shouldRepeat)
                 {
@@ -808,7 +814,7 @@ public partial class MainViewModel : ViewModelBase
                     var body = item.HasDescription
                         ? $"{item.Title} - {item.DescriptionPreview}"
                         : item.Title;
-                    pendingAlerts.Add((item, TaskNotificationCategory.DueToday, $"Due Today: {item.Title}", body));
+                    pendingAlerts.Add((item, TaskNotificationCategory.DueToday, string.Format(dueTodayFmt, item.Title), body));
                 }
                 else if (!_lastNotifiedTimes.ContainsKey(item.Id))
                 {
@@ -840,19 +846,19 @@ public partial class MainViewModel : ViewModelBase
 
         if (allReminders)
         {
-            bundleTitle = $"{totalCount} Task Reminders";
+            bundleTitle = string.Format(lm["Notification_Summary_Reminders_Title"], totalCount);
         }
         else if (allOverdue)
         {
-            bundleTitle = $"{totalCount} Overdue Tasks";
+            bundleTitle = string.Format(lm["Notification_Summary_Overdue_Title"], totalCount);
         }
         else if (allDueToday)
         {
-            bundleTitle = $"{totalCount} Tasks Due Today";
+            bundleTitle = string.Format(lm["Notification_Summary_DueToday_Title"], totalCount);
         }
         else
         {
-            bundleTitle = $"{totalCount} Task Reminders";
+            bundleTitle = string.Format(lm["Notification_Summary_Reminders_Title"], totalCount);
         }
 
         const int maxDisplayItems = 3;
@@ -867,7 +873,7 @@ public partial class MainViewModel : ViewModelBase
         else
         {
             var remaining = totalCount - maxDisplayItems;
-            bundleBody = string.Join("\n", displayLines) + $"\n+ {remaining} more tasks";
+            bundleBody = string.Join("\n", displayLines) + "\n" + string.Format(lm["Notification_Summary_MoreTasks"], remaining);
         }
 
         _ = _notificationService.ShowNotificationAsync(bundleTitle, bundleBody, "tasks-summary");
@@ -5158,10 +5164,74 @@ public partial class MainViewModel
             optSystemLang.Description = lm["Settings_Language_Desc"];
         }
 
+        foreach (var opt in NotificationRepeatIntervalOptions)
+        {
+            switch (opt.Minutes)
+            {
+                case 0:
+                    opt.Name = lm["Settings_Notification_Repeat_None"];
+                    opt.Description = lm["Settings_Notification_Repeat_None_Desc"];
+                    break;
+                case 30:
+                    opt.Name = lm["Settings_Notification_Repeat_30m"];
+                    opt.Description = lm["Settings_Notification_Repeat_30m_Desc"];
+                    break;
+                case 60:
+                    opt.Name = lm["Settings_Notification_Repeat_1h"];
+                    opt.Description = lm["Settings_Notification_Repeat_1h_Desc"];
+                    break;
+                case 120:
+                    opt.Name = lm["Settings_Notification_Repeat_2h"];
+                    opt.Description = lm["Settings_Notification_Repeat_2h_Desc"];
+                    break;
+                case 180:
+                    opt.Name = lm["Settings_Notification_Repeat_3h"];
+                    opt.Description = lm["Settings_Notification_Repeat_3h_Desc"];
+                    break;
+                case 300:
+                    opt.Name = lm["Settings_Notification_Repeat_5h"];
+                    opt.Description = lm["Settings_Notification_Repeat_5h_Desc"];
+                    break;
+            }
+        }
+
+        foreach (var opt in NotificationLeadTimeOptions)
+        {
+            switch (opt.Minutes)
+            {
+                case 0:
+                    opt.Name = lm["Settings_Notification_Lead_0m"];
+                    opt.Description = lm["Settings_Notification_Lead_0m_Desc"];
+                    break;
+                case 5:
+                    opt.Name = lm["Settings_Notification_Lead_5m"];
+                    opt.Description = lm["Settings_Notification_Lead_5m_Desc"];
+                    break;
+                case 10:
+                    opt.Name = lm["Settings_Notification_Lead_10m"];
+                    opt.Description = lm["Settings_Notification_Lead_10m_Desc"];
+                    break;
+                case 15:
+                    opt.Name = lm["Settings_Notification_Lead_15m"];
+                    opt.Description = lm["Settings_Notification_Lead_15m_Desc"];
+                    break;
+                case 30:
+                    opt.Name = lm["Settings_Notification_Lead_30m"];
+                    opt.Description = lm["Settings_Notification_Lead_30m_Desc"];
+                    break;
+                case 60:
+                    opt.Name = lm["Settings_Notification_Lead_60m"];
+                    opt.Description = lm["Settings_Notification_Lead_60m_Desc"];
+                    break;
+            }
+        }
+
         OnPropertyChanged(nameof(UpcomingTasksRangeLabel));
         OnPropertyChanged(nameof(SelectedLanguageOption));
         OnPropertyChanged(nameof(SelectedTasksLayoutOption));
         OnPropertyChanged(nameof(SelectedUpcomingTasksRangeOption));
+        OnPropertyChanged(nameof(SelectedNotificationRepeatIntervalOption));
+        OnPropertyChanged(nameof(SelectedNotificationLeadTimeOption));
     }
 }
 
@@ -5189,18 +5259,18 @@ public class AiProviderOption
     public string DefaultModel { get; set; } = string.Empty;
 }
 
-public class NotificationLeadTimeOption
+public partial class NotificationLeadTimeOption : ObservableObject
 {
     public int Minutes { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
+    [ObservableProperty] private string _name = string.Empty;
+    [ObservableProperty] private string _description = string.Empty;
 }
 
-public class NotificationRepeatIntervalOption
+public partial class NotificationRepeatIntervalOption : ObservableObject
 {
     public int Minutes { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
+    [ObservableProperty] private string _name = string.Empty;
+    [ObservableProperty] private string _description = string.Empty;
 }
 
 public partial class LanguageOption : ObservableObject

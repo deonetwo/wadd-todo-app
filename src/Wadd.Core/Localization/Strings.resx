@@ -340,4 +340,45 @@
   <data name="Dialog_Delete_Tag_Msg" xml:space="preserve"><value>This tag will be removed from all tasks.</value></data>
   <data name="Dialog_Delete_Note_Title" xml:space="preserve"><value>Delete Note?</value></data>
   <data name="Dialog_Delete_Note_Msg" xml:space="preserve"><value>The note for this date will be deleted.</value></data>
+
+  <!-- Notifications & Reminders Runtime -->
+  <data name="Notification_Reminder_Title" xml:space="preserve"><value>Reminder: {0}</value></data>
+  <data name="Notification_Overdue_Title" xml:space="preserve"><value>Overdue: {0}</value></data>
+  <data name="Notification_DueToday_Title" xml:space="preserve"><value>Due Today: {0}</value></data>
+  <data name="Notification_Summary_Reminders_Title" xml:space="preserve"><value>{0} Task Reminders</value></data>
+  <data name="Notification_Summary_Overdue_Title" xml:space="preserve"><value>{0} Overdue Tasks</value></data>
+  <data name="Notification_Summary_DueToday_Title" xml:space="preserve"><value>{0} Tasks Due Today</value></data>
+  <data name="Notification_Summary_MoreTasks" xml:space="preserve"><value>+ {0} more tasks</value></data>
+  <data name="Notification_Test_Title" xml:space="preserve"><value>Wadd Reminder (Test)</value></data>
+  <data name="Notification_Test_Message" xml:space="preserve"><value>Notifications are enabled and working.</value></data>
+  <data name="Notification_Test_Sent" xml:space="preserve"><value>Test notification sent ({0}).</value></data>
+  <data name="Notification_Test_Sent_Bubble" xml:space="preserve"><value>Test notification sent.</value></data>
+  <data name="Notification_Test_Failed" xml:space="preserve"><value>Failed to send test notification: {0}</value></data>
+
+  <!-- Notification Settings Options -->
+  <data name="Settings_Notification_Repeat_None" xml:space="preserve"><value>Don't repeat (once only)</value></data>
+  <data name="Settings_Notification_Repeat_None_Desc" xml:space="preserve"><value>Remind me only once when the reminder or due date arrives</value></data>
+  <data name="Settings_Notification_Repeat_30m" xml:space="preserve"><value>Every 30 minutes</value></data>
+  <data name="Settings_Notification_Repeat_30m_Desc" xml:space="preserve"><value>Remind me every 30 minutes until finished</value></data>
+  <data name="Settings_Notification_Repeat_1h" xml:space="preserve"><value>Every 1 hour</value></data>
+  <data name="Settings_Notification_Repeat_1h_Desc" xml:space="preserve"><value>Remind me every hour until finished</value></data>
+  <data name="Settings_Notification_Repeat_2h" xml:space="preserve"><value>Every 2 hours</value></data>
+  <data name="Settings_Notification_Repeat_2h_Desc" xml:space="preserve"><value>Remind me every 2 hours until finished</value></data>
+  <data name="Settings_Notification_Repeat_3h" xml:space="preserve"><value>Every 3 hours</value></data>
+  <data name="Settings_Notification_Repeat_3h_Desc" xml:space="preserve"><value>Remind me every 3 hours until finished</value></data>
+  <data name="Settings_Notification_Repeat_5h" xml:space="preserve"><value>Every 5 hours</value></data>
+  <data name="Settings_Notification_Repeat_5h_Desc" xml:space="preserve"><value>Remind me every 5 hours until finished</value></data>
+
+  <data name="Settings_Notification_Lead_0m" xml:space="preserve"><value>At time of event</value></data>
+  <data name="Settings_Notification_Lead_0m_Desc" xml:space="preserve"><value>Remind me right when the time arrives</value></data>
+  <data name="Settings_Notification_Lead_5m" xml:space="preserve"><value>5 minutes before</value></data>
+  <data name="Settings_Notification_Lead_5m_Desc" xml:space="preserve"><value>Remind me 5 minutes in advance</value></data>
+  <data name="Settings_Notification_Lead_10m" xml:space="preserve"><value>10 minutes before</value></data>
+  <data name="Settings_Notification_Lead_10m_Desc" xml:space="preserve"><value>Remind me 10 minutes in advance</value></data>
+  <data name="Settings_Notification_Lead_15m" xml:space="preserve"><value>15 minutes before</value></data>
+  <data name="Settings_Notification_Lead_15m_Desc" xml:space="preserve"><value>Remind me 15 minutes in advance</value></data>
+  <data name="Settings_Notification_Lead_30m" xml:space="preserve"><value>30 minutes before</value></data>
+  <data name="Settings_Notification_Lead_30m_Desc" xml:space="preserve"><value>Remind me 30 minutes in advance</value></data>
+  <data name="Settings_Notification_Lead_60m" xml:space="preserve"><value>1 hour before</value></data>
+  <data name="Settings_Notification_Lead_60m_Desc" xml:space="preserve"><value>Remind me 1 hour in advance</value></data>
 </root>
