@@ -43,6 +43,8 @@ public class UpcomingTasksFilterTests
     [InlineData("Next3Days", 4, false)]
     [InlineData("Next7Days", 7, true)]
     [InlineData("Next7Days", 8, false)]
+    [InlineData("Next14Days", 14, true)]
+    [InlineData("Next14Days", 15, false)]
     [InlineData("Next30Days", 30, true)]
     [InlineData("Next30Days", 31, false)]
     [InlineData("All", 100, true)]
@@ -181,5 +183,26 @@ public class UpcomingTasksFilterTests
         Assert.Equal("Task Due Today", vm.TodayTodoItems[1].Title);
         Assert.Equal("Reminder Only Task", vm.TodayTodoItems[2].Title);
         Assert.Equal("Undated Task", vm.TodayTodoItems[3].Title);
+    }
+
+    [Fact]
+    public void UpcomingTasksRangeOptions_HasCorrectOrderAndUniqueNames()
+    {
+        var vm = new MainViewModel();
+        vm.RefreshLocalizedOptionLists();
+
+        var expectedIds = new[] { "Tomorrow", "Next3Days", "ThisWeek", "Next7Days", "Next14Days", "ThisMonth", "Next30Days", "All" };
+        var actualIds = vm.UpcomingTasksRangeOptions.Select(x => x.Id).ToArray();
+        Assert.Equal(expectedIds, actualIds);
+
+        // Verify all names are distinct and non-empty
+        var names = vm.UpcomingTasksRangeOptions.Select(x => x.Name).ToList();
+        Assert.All(names, name => Assert.False(string.IsNullOrWhiteSpace(name)));
+        Assert.Equal(names.Count, names.Distinct().Count());
+
+        // Verify ThisWeek vs Next7Days are different
+        var thisWeek = vm.UpcomingTasksRangeOptions.First(x => x.Id == "ThisWeek");
+        var next7Days = vm.UpcomingTasksRangeOptions.First(x => x.Id == "Next7Days");
+        Assert.NotEqual(thisWeek.Name, next7Days.Name);
     }
 }

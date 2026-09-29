@@ -1211,6 +1211,7 @@ public partial class MainViewModel : ViewModelBase
         new UpcomingTasksRangeOption { Id = "Next3Days", Name = "Next 3 Days", Description = "Tasks due or reminded within the next 3 days" },
         new UpcomingTasksRangeOption { Id = "ThisWeek", Name = "This Week", Description = "Tasks due or reminded by end of this week (Sunday)" },
         new UpcomingTasksRangeOption { Id = "Next7Days", Name = "Next 7 Days", Description = "Tasks due or reminded within the next 7 days" },
+        new UpcomingTasksRangeOption { Id = "Next14Days", Name = "Next 14 Days", Description = "Tasks due or reminded within the next 14 days" },
         new UpcomingTasksRangeOption { Id = "ThisMonth", Name = "This Month", Description = "Tasks due or reminded by end of this calendar month" },
         new UpcomingTasksRangeOption { Id = "Next30Days", Name = "Next 30 Days", Description = "Tasks due or reminded within the next 30 days" },
         new UpcomingTasksRangeOption { Id = "All", Name = "All Upcoming", Description = "All future scheduled tasks without date limit" }
@@ -1231,10 +1232,11 @@ public partial class MainViewModel : ViewModelBase
     {
         "Tomorrow" => LocalizationManager.Instance["Tasks_Upcoming_Tomorrow"],
         "Next3Days" => LocalizationManager.Instance["Tasks_Upcoming_3Days"],
-        "ThisWeek" => LocalizationManager.Instance["Tasks_Upcoming_7Days"],
+        "ThisWeek" => LocalizationManager.Instance["Tasks_Upcoming_ThisWeek"],
         "Next7Days" => LocalizationManager.Instance["Tasks_Upcoming_7Days"],
+        "Next14Days" => LocalizationManager.Instance["Tasks_Upcoming_14Days"],
         "ThisMonth" => LocalizationManager.Instance["Tasks_Upcoming_Month"],
-        "Next30Days" => LocalizationManager.Instance["Tasks_Upcoming_14Days"],
+        "Next30Days" => LocalizationManager.Instance["Tasks_Upcoming_30Days"],
         _ => LocalizationManager.Instance["Tasks_Upcoming_All"]
     };
 
@@ -4983,6 +4985,7 @@ public partial class MainViewModel
             "Next3Days" => targetDate.Value <= today.AddDays(3),
             "ThisWeek" => targetDate.Value <= GetEndOfWeek(today),
             "Next7Days" => targetDate.Value <= today.AddDays(7),
+            "Next14Days" => targetDate.Value <= today.AddDays(14),
             "ThisMonth" => targetDate.Value <= new DateTime(today.Year, today.Month, DateTime.DaysInMonth(today.Year, today.Month)),
             "Next30Days" => targetDate.Value <= today.AddDays(30),
             _ => true // "All"
@@ -5129,14 +5132,20 @@ public partial class MainViewModel
         var optThisWeek = UpcomingTasksRangeOptions.FirstOrDefault(x => x.Id == "ThisWeek");
         if (optThisWeek != null)
         {
-            optThisWeek.Name = lm["Tasks_Upcoming_7Days"];
-            optThisWeek.Description = lm["Tasks_Upcoming_7Days_Desc"];
+            optThisWeek.Name = lm["Tasks_Upcoming_ThisWeek"];
+            optThisWeek.Description = lm["Tasks_Upcoming_ThisWeek_Desc"];
         }
         var optNext7Days = UpcomingTasksRangeOptions.FirstOrDefault(x => x.Id == "Next7Days");
         if (optNext7Days != null)
         {
             optNext7Days.Name = lm["Tasks_Upcoming_7Days"];
             optNext7Days.Description = lm["Tasks_Upcoming_7Days_Desc"];
+        }
+        var optNext14Days = UpcomingTasksRangeOptions.FirstOrDefault(x => x.Id == "Next14Days");
+        if (optNext14Days != null)
+        {
+            optNext14Days.Name = lm["Tasks_Upcoming_14Days"];
+            optNext14Days.Description = lm["Tasks_Upcoming_14Days_Desc"];
         }
         var optThisMonth = UpcomingTasksRangeOptions.FirstOrDefault(x => x.Id == "ThisMonth");
         if (optThisMonth != null)
@@ -5147,8 +5156,8 @@ public partial class MainViewModel
         var optNext30Days = UpcomingTasksRangeOptions.FirstOrDefault(x => x.Id == "Next30Days");
         if (optNext30Days != null)
         {
-            optNext30Days.Name = lm["Tasks_Upcoming_14Days"];
-            optNext30Days.Description = lm["Tasks_Upcoming_14Days_Desc"];
+            optNext30Days.Name = lm["Tasks_Upcoming_30Days"];
+            optNext30Days.Description = lm["Tasks_Upcoming_30Days_Desc"];
         }
         var optAll = UpcomingTasksRangeOptions.FirstOrDefault(x => x.Id == "All");
         if (optAll != null)

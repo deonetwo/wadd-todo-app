@@ -253,12 +253,16 @@
   <data name="Tasks_Upcoming_Tomorrow_Desc" xml:space="preserve"><value>Scheduled tasks due tomorrow</value></data>
   <data name="Tasks_Upcoming_3Days" xml:space="preserve"><value>Next 3 Days</value></data>
   <data name="Tasks_Upcoming_3Days_Desc" xml:space="preserve"><value>Scheduled tasks within the next 3 days</value></data>
+  <data name="Tasks_Upcoming_ThisWeek" xml:space="preserve"><value>This Week</value></data>
+  <data name="Tasks_Upcoming_ThisWeek_Desc" xml:space="preserve"><value>Scheduled tasks due by end of this week (Sunday)</value></data>
   <data name="Tasks_Upcoming_7Days" xml:space="preserve"><value>Next 7 Days</value></data>
   <data name="Tasks_Upcoming_7Days_Desc" xml:space="preserve"><value>Scheduled tasks within the next 7 days</value></data>
   <data name="Tasks_Upcoming_14Days" xml:space="preserve"><value>Next 14 Days</value></data>
   <data name="Tasks_Upcoming_14Days_Desc" xml:space="preserve"><value>Scheduled tasks within the next 14 days</value></data>
   <data name="Tasks_Upcoming_Month" xml:space="preserve"><value>This Month</value></data>
   <data name="Tasks_Upcoming_Month_Desc" xml:space="preserve"><value>Scheduled tasks due through the end of the current month</value></data>
+  <data name="Tasks_Upcoming_30Days" xml:space="preserve"><value>Next 30 Days</value></data>
+  <data name="Tasks_Upcoming_30Days_Desc" xml:space="preserve"><value>Scheduled tasks within the next 30 days</value></data>
   <data name="Tasks_Upcoming_All" xml:space="preserve"><value>All Upcoming</value></data>
   <data name="Tasks_Upcoming_All_Desc" xml:space="preserve"><value>All future scheduled tasks without date limit</value></data>
 

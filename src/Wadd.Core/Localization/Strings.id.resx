@@ -253,12 +253,16 @@
   <data name="Tasks_Upcoming_Tomorrow_Desc" xml:space="preserve"><value>Tugas terjadwal jatuh tempo besok</value></data>
   <data name="Tasks_Upcoming_3Days" xml:space="preserve"><value>3 Hari Ke Depan</value></data>
   <data name="Tasks_Upcoming_3Days_Desc" xml:space="preserve"><value>Tugas terjadwal dalam 3 hari ke depan</value></data>
+  <data name="Tasks_Upcoming_ThisWeek" xml:space="preserve"><value>Minggu Ini</value></data>
+  <data name="Tasks_Upcoming_ThisWeek_Desc" xml:space="preserve"><value>Tugas terjadwal jatuh tempo hingga akhir minggu ini (Minggu)</value></data>
   <data name="Tasks_Upcoming_7Days" xml:space="preserve"><value>7 Hari Ke Depan</value></data>
   <data name="Tasks_Upcoming_7Days_Desc" xml:space="preserve"><value>Tugas terjadwal dalam 7 hari ke depan</value></data>
   <data name="Tasks_Upcoming_14Days" xml:space="preserve"><value>14 Hari Ke Depan</value></data>
   <data name="Tasks_Upcoming_14Days_Desc" xml:space="preserve"><value>Tugas terjadwal dalam 14 hari ke depan</value></data>
   <data name="Tasks_Upcoming_Month" xml:space="preserve"><value>Bulan Ini</value></data>
   <data name="Tasks_Upcoming_Month_Desc" xml:space="preserve"><value>Tugas terjadwal jatuh tempo hingga akhir bulan ini</value></data>
+  <data name="Tasks_Upcoming_30Days" xml:space="preserve"><value>30 Hari Ke Depan</value></data>
+  <data name="Tasks_Upcoming_30Days_Desc" xml:space="preserve"><value>Tugas terjadwal dalam 30 hari ke depan</value></data>
   <data name="Tasks_Upcoming_All" xml:space="preserve"><value>Semua Mendatang</value></data>
   <data name="Tasks_Upcoming_All_Desc" xml:space="preserve"><value>Semua tugas masa depan tanpa batas tanggal</value></data>
 
