@@ -1161,7 +1161,7 @@
             </StackPanel>
 
             <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Localize Settings_Developer}" Classes="small" FontWeight="SemiBold" Margin="0,0,16,6"/>
-            <TextBlock Grid.Row="1" Grid.Column="1" Text="Dewanto (Wadd Software Engineering)" Classes="small" TextWrapping="Wrap" Margin="0,0,0,6"/>
+            <TextBlock Grid.Row="1" Grid.Column="1" Text="Lunoit Labs" Classes="small" TextWrapping="Wrap" Margin="0,0,0,6"/>
 
             <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Localize Settings_Platforms}" Classes="small" FontWeight="SemiBold" Margin="0,0,16,6"/>
             <TextBlock Grid.Row="2" Grid.Column="1" Text="Windows (x64/Arm64) &amp; Android (min API 21+)" Classes="small" TextWrapping="Wrap" Margin="0,0,0,6"/>

@@ -1,0 +1,192 @@
+name: Build and Release Wadd
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      create_release:
+        description: 'Publish as GitHub Release?'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Build Windows (Installer & Portable)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Resolve App Version
+        id: get_version
+        shell: pwsh
+        run: |
+          $propsXml = [xml](Get-Content Directory.Build.props)
+          $version = $propsXml.Project.PropertyGroup.Version
+          if ($env:GITHUB_REF -like "refs/tags/v*") {
+            $version = $env:GITHUB_REF_NAME.TrimStart('v')
+          }
+          if (-not $version) { $version = "1.5.0" }
+          Write-Host "Resolved Version: $version"
+          echo "APP_VERSION=$version" >> $env:GITHUB_ENV
+
+      - name: Run Unit Tests
+        shell: pwsh
+        run: |
+          dotnet test tests/Wadd.Tests/Wadd.Tests.csproj -c Release
+
+      - name: Publish Windows x64 Application
+        shell: pwsh
+        run: |
+          dotnet publish src/Wadd.Desktop/Wadd.Desktop.csproj -c Release -r win-x64 --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:GoogleClientId="${{ secrets.GOOGLE_CLIENT_ID }}" `
+            -p:OAuthProxyUrl="${{ secrets.OAUTH_PROXY_URL }}" `
+            -p:OAuthProxySecret="${{ secrets.OAUTH_PROXY_SECRET }}" `
+            -p:FirebaseApiKey="${{ secrets.FIREBASE_API_KEY }}" `
+            -p:FirebaseProjectId="${{ secrets.FIREBASE_PROJECT_ID }}" `
+            -o ./dist/win-x64
+
+      - name: Create Portable Edition (.zip)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path ./dist/output
+          Compress-Archive -Path ./dist/win-x64/* -DestinationPath ./dist/output/Wadd-v${{ env.APP_VERSION }}-Windows-x64-Portable.zip -Force
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress
+
+      - name: Compile Windows Installer (.exe)
+        shell: pwsh
+        run: |
+          $isccPath = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $isccPath)) {
+            $isccPath = (Get-Command ISCC.exe).Source
+          }
+          & $isccPath /DAppVersion="${{ env.APP_VERSION }}" /DSourceDir="$PWD\dist\win-x64" /DOutputDir="$PWD\dist\output" installer\wadd-setup.iss
+
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wadd-windows
+          path: ./dist/output/*
+          retention-days: 30
+
+  build-android:
+    name: Build Android (.apk)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install Android Workload
+        shell: pwsh
+        run: |
+          dotnet workload install android
+
+      - name: Resolve App Version
+        id: get_version
+        shell: pwsh
+        run: |
+          $propsXml = [xml](Get-Content Directory.Build.props)
+          $version = $propsXml.Project.PropertyGroup.Version
+          if ($env:GITHUB_REF -like "refs/tags/v*") {
+            $version = $env:GITHUB_REF_NAME.TrimStart('v')
+          }
+          if (-not $version) { $version = "1.5.0" }
+          Write-Host "Resolved Version: $version"
+          echo "APP_VERSION=$version" >> $env:GITHUB_ENV
+
+      - name: Publish Android APK
+        shell: pwsh
+        run: |
+          dotnet publish src/Wadd.Android/Wadd.Android.csproj -c Release -f net10.0-android -r android-arm64 `
+            -p:AndroidPackageFormat=apk `
+            -p:GoogleClientId="${{ secrets.GOOGLE_CLIENT_ID }}" `
+            -p:OAuthProxyUrl="${{ secrets.OAUTH_PROXY_URL }}" `
+            -p:OAuthProxySecret="${{ secrets.OAUTH_PROXY_SECRET }}" `
+            -p:FirebaseApiKey="${{ secrets.FIREBASE_API_KEY }}" `
+            -p:FirebaseProjectId="${{ secrets.FIREBASE_PROJECT_ID }}" `
+            -o ./dist/android-arm64
+
+      - name: Prepare Android APK Output
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path ./dist/output
+          $apk = Get-ChildItem -Path ./dist/android-arm64 -Filter "*.apk" | Sort-Object Length -Descending | Select-Object -First 1
+          if (-not $apk) {
+            $apk = Get-ChildItem -Path ./src/Wadd.Android/bin/Release -Filter "*.apk" -Recurse | Sort-Object Length -Descending | Select-Object -First 1
+          }
+          if ($apk) {
+            Write-Host "Found APK: $($apk.FullName)"
+            Copy-Item $apk.FullName "./dist/output/Wadd-v${{ env.APP_VERSION }}-Android-arm64.apk"
+          } else {
+            Write-Error "No APK was produced by dotnet publish."
+            exit 1
+          }
+
+      - name: Upload Android Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wadd-android
+          path: ./dist/output/*
+          retention-days: 30
+
+  release:
+    name: Create GitHub Release
+    needs: [build-windows, build-android]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.create_release == true)
+
+    steps:
+      - name: Download Windows Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wadd-windows
+          path: ./release-assets
+
+      - name: Download Android Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wadd-android
+          path: ./release-assets
+
+      - name: List Release Assets
+        run: |
+          ls -la ./release-assets
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./release-assets/*
+          draft: false
+          prerelease: false
+          generate_release_notes: true

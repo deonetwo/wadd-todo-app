@@ -279,7 +279,7 @@ public class AiGoalService : IAiGoalService
                 }
                 if (targetProvider.Equals("OpenRouter", StringComparison.OrdinalIgnoreCase))
                 {
-                    request.Headers.TryAddWithoutValidation("HTTP-Referer", "https://github.com/dewanto/wadd-todo-app");
+                    request.Headers.TryAddWithoutValidation("HTTP-Referer", "https://github.com/deonetwo/wadd-todo-app");
                     request.Headers.TryAddWithoutValidation("X-Title", "Wadd ToDo");
                 }
 

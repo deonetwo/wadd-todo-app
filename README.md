@@ -90,7 +90,7 @@ sequenceDiagram
 
 The Cloudflare Worker proxy (`serverless/cloudflare-worker/`) isolates the Google Client Secret from client binaries:
 
-- **Base URL**: `https://wadd-oauth-proxy.djpramono-dev.workers.dev`
+- **Base URL**: `https://wadd-oauth-proxy.yourname.workers.dev`
 - **Endpoints**:
   - `POST /api/oauth/exchange`: Exchanges PKCE authorization code and `code_verifier` for Google access and refresh tokens.
   - `POST /api/oauth/refresh`: Uses stored permanent refresh token to obtain fresh access tokens.
@@ -204,7 +204,7 @@ Configuration values can be set via a `.env` file in the project root or system 
 | Variable | Default Value | Description |
 |---|---|---|
 | `GOOGLE_CLIENT_ID` | Built-in Client ID | Google OAuth 2.0 Client ID |
-| `OAUTH_PROXY_URL` | `https://wadd-oauth-proxy.djpramono-dev.workers.dev/api/oauth/exchange` | Cloudflare Worker OAuth exchange endpoint |
+| `OAUTH_PROXY_URL` | `https://wadd-oauth-proxy.yourname.workers.dev/api/oauth/exchange` | Cloudflare Worker OAuth exchange endpoint |
 | `OAUTH_PROXY_SECRET` | *(Optional)* | Header secret for proxy authorization (`X-Proxy-Secret`) |
 | `GEMINI_API_KEY` | *(Optional)* | Google Gemini API key for AI features |
 | `OPENAI_API_KEY` | *(Optional)* | OpenAI API key |
