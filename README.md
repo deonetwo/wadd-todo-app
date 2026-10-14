@@ -241,3 +241,10 @@ cd serverless/cloudflare-worker
 npx wrangler deploy
 npx wrangler secret put GOOGLE_CLIENT_SECRET
 ```
+
+---
+
+## Credits and Attributions
+
+- **Sound Effects**: Audio chimes (`completed.mp3` for task/milestone completion and `notification.mp3` for reminders) are sourced from [Pixabay Sound Effects](https://pixabay.com/sound-effects/) under the [Pixabay Content License](https://pixabay.com/service/license-summary/).
+- **UI Framework & Tokens**: Built with [Avalonia UI](https://avaloniaui.net/) and [Semi.Avalonia](https://github.com/irihist/Semi.Avalonia) design system.

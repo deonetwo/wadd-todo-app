@@ -148,15 +148,30 @@ public class AudioService : IAudioService
 
             // Check source candidates from application directory, Assets folder, and workspace
             var appDir = AppDomain.CurrentDomain.BaseDirectory;
-            string?[] candidates =
-            [
+            var currentDir = Directory.GetCurrentDirectory();
+
+            var candidateList = new List<string?>
+            {
                 Path.Combine(appDir, "Assets", soundFileName),
                 Path.Combine(appDir, soundFileName),
-                Path.Combine(Directory.GetCurrentDirectory(), "src", "Wadd.UI", "Assets", soundFileName),
-                Path.Combine(Directory.GetCurrentDirectory(), soundFileName)
-            ];
+                Path.Combine(currentDir, "src", "Wadd.UI", "Assets", soundFileName),
+                Path.Combine(currentDir, soundFileName)
+            };
 
-            foreach (var candidate in candidates)
+            // Search upward for repo root containing src/Wadd.UI/Assets
+            var searchDir = new DirectoryInfo(appDir);
+            while (searchDir != null)
+            {
+                var candidate = Path.Combine(searchDir.FullName, "src", "Wadd.UI", "Assets", soundFileName);
+                if (File.Exists(candidate))
+                {
+                    candidateList.Add(candidate);
+                    break;
+                }
+                searchDir = searchDir.Parent;
+            }
+
+            foreach (var candidate in candidateList)
             {
                 if (!string.IsNullOrEmpty(candidate) && File.Exists(candidate) && new FileInfo(candidate).Length > 0)
                 {
