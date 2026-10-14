@@ -79,7 +79,7 @@ public class AndroidGoogleAuthService : INativeGoogleAuthService
                 {
                     try
                     {
-                        return global::Android.Gms.Auth.GoogleAuthUtil.GetToken(context, acct, "oauth2:https://www.googleapis.com/auth/drive.file email profile");
+                        return global::Android.Gms.Auth.GoogleAuthUtil.GetToken(context, acct, "oauth2:https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file email profile");
                     }
                     catch (Exception ex)
                     {

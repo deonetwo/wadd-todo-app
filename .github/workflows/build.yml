@@ -39,7 +39,7 @@ jobs:
           if ($env:GITHUB_REF -like "refs/tags/v*") {
             $version = $env:GITHUB_REF_NAME.TrimStart('v')
           }
-          if (-not $version) { $version = "1.5.0" }
+          if (-not $version) { $version = "1.5.1" }
           Write-Host "Resolved Version: $version"
           echo "APP_VERSION=$version" >> $env:GITHUB_ENV
 
@@ -121,13 +121,33 @@ jobs:
           if ($env:GITHUB_REF -like "refs/tags/v*") {
             $version = $env:GITHUB_REF_NAME.TrimStart('v')
           }
-          if (-not $version) { $version = "1.5.0" }
+          if (-not $version) { $version = "1.5.1" }
           Write-Host "Resolved Version: $version"
           echo "APP_VERSION=$version" >> $env:GITHUB_ENV
+
+      - name: Decode Android Keystore
+        if: "${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}"
+        shell: pwsh
+        run: |
+          [IO.File]::WriteAllBytes("$PWD/release.keystore", [Convert]::FromBase64String("${{ secrets.ANDROID_KEYSTORE_BASE64 }}"))
 
       - name: Publish Android APK
         shell: pwsh
         run: |
+          $signArgs = @()
+          if (Test-Path "$PWD/release.keystore") {
+            Write-Host "Signing APK with provided Android keystore..."
+            $signArgs = @(
+              "-p:AndroidKeyStore=true",
+              "-p:AndroidSigningKeyStore=$PWD/release.keystore",
+              "-p:AndroidSigningStorePass=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}",
+              "-p:AndroidSigningKeyAlias=${{ secrets.ANDROID_KEY_ALIAS }}",
+              "-p:AndroidSigningKeyPass=${{ secrets.ANDROID_KEY_PASSWORD }}"
+            )
+          } else {
+            Write-Host "No Android keystore found. Publishing with default signature."
+          }
+
           dotnet publish src/Wadd.Android/Wadd.Android.csproj -c Release -f net10.0-android -r android-arm64 `
             -p:AndroidPackageFormat=apk `
             -p:GoogleClientId="${{ secrets.GOOGLE_CLIENT_ID }}" `
@@ -135,6 +155,7 @@ jobs:
             -p:OAuthProxySecret="${{ secrets.OAUTH_PROXY_SECRET }}" `
             -p:FirebaseApiKey="${{ secrets.FIREBASE_API_KEY }}" `
             -p:FirebaseProjectId="${{ secrets.FIREBASE_PROJECT_ID }}" `
+            $signArgs `
             -o ./dist/android-arm64
 
       - name: Prepare Android APK Output

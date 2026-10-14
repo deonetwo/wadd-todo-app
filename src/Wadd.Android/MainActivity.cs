@@ -218,7 +218,7 @@ public class MainActivity : AvaloniaMainActivity, Wadd.Core.Interfaces.INotifica
                                 accessToken = global::Android.Gms.Auth.GoogleAuthUtil.GetToken(
                                     this,
                                     acct,
-                                    "oauth2:https://www.googleapis.com/auth/drive.file email profile");
+                                    "oauth2:https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file email profile");
                             }
                         }
                         catch (Exception ex)
