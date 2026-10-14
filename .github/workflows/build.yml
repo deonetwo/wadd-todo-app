@@ -126,10 +126,16 @@ jobs:
           echo "APP_VERSION=$version" >> $env:GITHUB_ENV
 
       - name: Decode Android Keystore
-        if: "${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}"
         shell: pwsh
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
-          [IO.File]::WriteAllBytes("$PWD/release.keystore", [Convert]::FromBase64String("${{ secrets.ANDROID_KEYSTORE_BASE64 }}"))
+          if (-not [string]::IsNullOrWhiteSpace($env:KEYSTORE_BASE64)) {
+            Write-Host "Found ANDROID_KEYSTORE_BASE64 secret, decoding to release.keystore..."
+            [IO.File]::WriteAllBytes("$PWD/release.keystore", [Convert]::FromBase64String($env:KEYSTORE_BASE64))
+          } else {
+            Write-Host "No ANDROID_KEYSTORE_BASE64 secret provided. Skipping custom keystore decode."
+          }
 
       - name: Publish Android APK
         shell: pwsh
