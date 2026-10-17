@@ -35,13 +35,14 @@ jobs:
         shell: pwsh
         run: |
           $propsXml = [xml](Get-Content Directory.Build.props)
-          $version = $propsXml.Project.PropertyGroup.Version
+          $version = ($propsXml.Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1)
           if ($env:GITHUB_REF -like "refs/tags/v*") {
             $version = $env:GITHUB_REF_NAME.TrimStart('v')
           }
           if (-not $version) { $version = "1.5.2" }
+          $version = "$version".Trim()
           Write-Host "Resolved Version: $version"
-          echo "APP_VERSION=$version" >> $env:GITHUB_ENV
+          "APP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Run Unit Tests
         shell: pwsh
@@ -65,7 +66,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path ./dist/output
-          Compress-Archive -Path ./dist/win-x64/* -DestinationPath ./dist/output/Wadd-v${{ env.APP_VERSION }}-Windows-x64-Portable.zip -Force
+          Compress-Archive -Path "./dist/win-x64/*" -DestinationPath "./dist/output/Wadd-v${{ env.APP_VERSION }}-Windows-x64-Portable.zip" -Force
 
       - name: Install Inno Setup
         shell: pwsh
@@ -117,13 +118,14 @@ jobs:
         shell: pwsh
         run: |
           $propsXml = [xml](Get-Content Directory.Build.props)
-          $version = $propsXml.Project.PropertyGroup.Version
+          $version = ($propsXml.Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1)
           if ($env:GITHUB_REF -like "refs/tags/v*") {
             $version = $env:GITHUB_REF_NAME.TrimStart('v')
           }
           if (-not $version) { $version = "1.5.2" }
+          $version = "$version".Trim()
           Write-Host "Resolved Version: $version"
-          echo "APP_VERSION=$version" >> $env:GITHUB_ENV
+          "APP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Decode Android Keystore
         shell: pwsh

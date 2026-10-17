@@ -247,4 +247,17 @@ npx wrangler secret put GOOGLE_CLIENT_SECRET
 ## Credits and Attributions
 
 - **Sound Effects**: Audio chimes (`completed.mp3` for task/milestone completion and `notification.mp3` for reminders) are sourced from [Pixabay Sound Effects](https://pixabay.com/sound-effects/) under the [Pixabay Content License](https://pixabay.com/service/license-summary/).
-- **UI Framework & Tokens**: Built with [Avalonia UI](https://avaloniaui.net/) and [Semi.Avalonia](https://github.com/irihist/Semi.Avalonia) design system.
+- **UI Framework & Tokens**: Built with [Avalonia UI](https://avaloniaui.net/) and [Semi.Avalonia](https://github.com/irihist/Semi.Avalonia) design system.
+
+---
+
+## Support the Project
+
+If you find **Wadd** useful and would like to support ongoing development by **Lunoit Labs**, you can contribute via:
+
+- **International (PayPal / Card)**: [Ko-fi (ko-fi.com/lunoit)](https://ko-fi.com/lunoit)
+- **Indonesia (QRIS / GoPay / OVO / DANA / Bank Transfer)**: [Lynk.id (lynk.id/lunoit)](https://lynk.id/lunoit)
+
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20Lunoit%20Labs-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/lunoit)
+[![Lynk.id](https://img.shields.io/badge/Lynk.id-Dukung%20via%20QRIS%20%2F%20ID-10B981?style=for-the-badge)](https://lynk.id/lunoit)
+
