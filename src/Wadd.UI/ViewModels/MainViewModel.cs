@@ -4064,7 +4064,7 @@ public partial class MainViewModel : ViewModelBase
             var notesDict = await _todoService.GetAllDateNotesAsync();
             var customTagsDict = await _todoService.GetCustomTagsAsync();
 
-            await Dispatcher.UIThread.InvokeAsync(() =>
+            Action populateAction = () =>
             {
                 _dateNotes.Clear();
                 foreach (var kvp in notesDict)
@@ -4134,14 +4134,30 @@ public partial class MainViewModel : ViewModelBase
                     _isInitialNotificationSeeded = true;
                     SeedInitialNotificationState();
                 }
-            });
+            };
+
+            if (Avalonia.Application.Current == null || Dispatcher.UIThread.CheckAccess())
+            {
+                populateAction();
+            }
+            else
+            {
+                await Dispatcher.UIThread.InvokeAsync(populateAction);
+            }
         }
         catch (Exception ex)
         {
-            await Dispatcher.UIThread.InvokeAsync(() =>
+            if (Avalonia.Application.Current == null || Dispatcher.UIThread.CheckAccess())
             {
                 StatusMessage = $"Error loading tasks: {ex.Message}";
-            });
+            }
+            else
+            {
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    StatusMessage = $"Error loading tasks: {ex.Message}";
+                });
+            }
         }
     }
 
@@ -4387,6 +4403,11 @@ public partial class MainViewModel : ViewModelBase
 
     public async Task<bool> RequestAccountSwitchConfirmationAsync(string previousEmail, string newEmail)
     {
+        if (Application.Current == null)
+        {
+            return true;
+        }
+
         return await Dispatcher.UIThread.InvokeAsync(async () =>
         {
             if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow != null)
