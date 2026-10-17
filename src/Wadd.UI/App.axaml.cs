@@ -102,6 +102,7 @@ public partial class App : Application
 
         var mainViewModel = Services.GetRequiredService<MainViewModel>();
         MainViewModelInstance = mainViewModel;
+        _ = mainViewModel.LoadTodoItemsAsync();
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {

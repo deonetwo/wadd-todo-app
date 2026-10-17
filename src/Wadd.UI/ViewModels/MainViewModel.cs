@@ -3796,12 +3796,11 @@ public partial class MainViewModel : ViewModelBase
         App.Services?.GetService<IStartupService>() ?? new WindowsStartupService(),
         App.Services?.GetService<IAiGoalService>() ?? new Wadd.Services.AiGoalService(new System.Net.Http.HttpClient()),
         App.Services?.GetService<INotificationService>() ?? new WindowsNotificationService(),
-        App.Services?.GetService<IAudioService>() ?? new Wadd.Services.AudioService(),
-        autoLoad: App.Services != null)
+        App.Services?.GetService<IAudioService>() ?? new Wadd.Services.AudioService())
     {
     }
 
-    public MainViewModel(ITodoService todoService, IThemeService themeService, ISyncService syncService, IExportService exportService, IGoalService goalService, IStartupService startupService, IAiGoalService aiGoalService, INotificationService notificationService, IAudioService? audioService = null, bool autoLoad = true)
+    public MainViewModel(ITodoService todoService, IThemeService themeService, ISyncService syncService, IExportService exportService, IGoalService goalService, IStartupService startupService, IAiGoalService aiGoalService, INotificationService notificationService, IAudioService? audioService = null)
     {
         _todoService = todoService ?? throw new ArgumentNullException(nameof(todoService));
         _themeService = themeService ?? throw new ArgumentNullException(nameof(themeService));
@@ -3890,10 +3889,6 @@ public partial class MainViewModel : ViewModelBase
 
         UpdateGoogleAuthState();
         CheckAndUpdateCurrentDate();
-        if (autoLoad)
-        {
-            _ = LoadTodoItemsAsync();
-        }
 
         WaddDatabaseNotifier.DataChanged += async (_, _) =>
         {
@@ -4060,7 +4055,7 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private async Task LoadTodoItemsAsync()
+    public async Task LoadTodoItemsAsync()
     {
         try
         {
