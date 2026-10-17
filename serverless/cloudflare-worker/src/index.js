@@ -2,18 +2,25 @@
  * Wadd ToDo - Cloudflare Worker OAuth 2.0 Serverless Proxy
  * 
  * Securely holds the Google OAuth Client Secret and handles
- * token exchange and background refresh for the Desktop App.
+ * token exchange and background refresh for the Desktop and Mobile App.
  */
 
 export default {
   async fetch(request, env, ctx) {
-    // Handle CORS Preflight
     if (request.method === "OPTIONS") {
       return handleCors();
     }
 
     const url = new URL(request.url);
-    const path = url.pathname;
+    const path = url.pathname.toLowerCase().replace(/\/+$/, "") || "/";
+
+    if (path === "/" || path === "/health") {
+      return jsonResponse({
+        status: "healthy",
+        service: "wadd-oauth-proxy",
+        timestamp: new Date().toISOString()
+      });
+    }
 
     // Optional App Secret check (if configured in env.APP_PROXY_SECRET)
     if (env.APP_PROXY_SECRET) {
@@ -24,25 +31,14 @@ export default {
     }
 
     try {
-      // 1. Health check route
-      if (path === "/" || path === "/health") {
-        return jsonResponse({
-          status: "healthy",
-          service: "wadd-oauth-proxy",
-          timestamp: new Date().toISOString()
-        });
-      }
-
-      // 2. Exchange Authorization Code for Tokens
-      if (path === "/api/auth/token" || path === "/token") {
+      if (path === "/api/auth/token" || path === "/token" || path === "/api/oauth/exchange") {
         if (request.method !== "POST") {
           return jsonResponse({ error: "method_not_allowed", message: "Use POST for token exchange" }, 405);
         }
         return await handleTokenExchange(request, env);
       }
 
-      // 3. Refresh Access Token using Refresh Token
-      if (path === "/api/auth/refresh" || path === "/refresh") {
+      if (path === "/api/auth/refresh" || path === "/refresh" || path === "/api/oauth/refresh") {
         if (request.method !== "POST") {
           return jsonResponse({ error: "method_not_allowed", message: "Use POST for token refresh" }, 405);
         }
@@ -67,7 +63,15 @@ async function handleTokenExchange(request, env) {
     return jsonResponse({ error: "invalid_json", message: "Request body must be valid JSON" }, 400);
   }
 
-  const { code, code_verifier, redirect_uri, client_id } = body;
+  const { code, code_verifier, redirect_uri, client_id, access_token, id_token } = body;
+
+  if (!code && (access_token || id_token)) {
+    return jsonResponse({
+      access_token: access_token || "",
+      id_token: id_token || "",
+      expires_in: 3600
+    });
+  }
 
   if (!code) {
     return jsonResponse({ error: "missing_parameter", message: "Authorization code is required" }, 400);
@@ -120,7 +124,15 @@ async function handleTokenRefresh(request, env) {
     return jsonResponse({ error: "invalid_json", message: "Request body must be valid JSON" }, 400);
   }
 
-  const { refresh_token, client_id } = body;
+  const { refresh_token, client_id, access_token, id_token } = body;
+
+  if (!refresh_token && (access_token || id_token)) {
+    return jsonResponse({
+      access_token: access_token || "",
+      id_token: id_token || "",
+      expires_in: 3600
+    });
+  }
 
   if (!refresh_token) {
     return jsonResponse({ error: "missing_parameter", message: "refresh_token is required" }, 400);

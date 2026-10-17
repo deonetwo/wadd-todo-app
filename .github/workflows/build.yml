@@ -39,7 +39,7 @@ jobs:
           if ($env:GITHUB_REF -like "refs/tags/v*") {
             $version = $env:GITHUB_REF_NAME.TrimStart('v')
           }
-          if (-not $version) { $version = "1.5.1" }
+          if (-not $version) { $version = "1.5.2" }
           Write-Host "Resolved Version: $version"
           echo "APP_VERSION=$version" >> $env:GITHUB_ENV
 
@@ -121,7 +121,7 @@ jobs:
           if ($env:GITHUB_REF -like "refs/tags/v*") {
             $version = $env:GITHUB_REF_NAME.TrimStart('v')
           }
-          if (-not $version) { $version = "1.5.1" }
+          if (-not $version) { $version = "1.5.2" }
           Write-Host "Resolved Version: $version"
           echo "APP_VERSION=$version" >> $env:GITHUB_ENV
 

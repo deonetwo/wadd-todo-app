@@ -325,9 +325,18 @@ public class GoogleDriveSyncService : ISyncService
         if (_nativeAuthService != null && _nativeAuthService.IsSupported)
         {
             var nativeResult = await _nativeAuthService.SignInAsync(GoogleClientId, cancellationToken);
-            if (nativeResult.IsSuccess && !string.IsNullOrWhiteSpace(nativeResult.IdToken))
+            if (nativeResult.IsSuccess && (!string.IsNullOrWhiteSpace(nativeResult.IdToken) || !string.IsNullOrWhiteSpace(nativeResult.AccessToken)))
             {
-                var fbSession = await ExchangeGoogleIdTokenWithFirebaseAsync(nativeResult.IdToken, nativeResult.AccessToken ?? string.Empty, "http://localhost:5001/", cancellationToken);
+                if (!string.IsNullOrWhiteSpace(OAuthProxyUrl))
+                {
+                    await ValidateNativeSessionWithProxyAsync(
+                        nativeResult.AccessToken ?? string.Empty,
+                        nativeResult.IdToken ?? string.Empty,
+                        "/api/auth/token",
+                        cancellationToken);
+                }
+
+                var fbSession = await ExchangeGoogleIdTokenWithFirebaseAsync(nativeResult.IdToken ?? string.Empty, nativeResult.AccessToken ?? string.Empty, "http://localhost:5001/", cancellationToken);
 
                 _authRecord = new UserAuthRecord
                 {
@@ -336,6 +345,8 @@ public class GoogleDriveSyncService : ISyncService
                     UserName = !string.IsNullOrWhiteSpace(fbSession.DisplayName) ? fbSession.DisplayName : (nativeResult.DisplayName ?? string.Empty),
                     GoogleClientId = GoogleClientId,
                     GoogleClientSecret = GoogleClientSecret,
+                    OAuthProxyUrl = OAuthProxyUrl,
+                    OAuthProxySecret = OAuthProxySecret,
                     FirebaseApiKey = FirebaseApiKey,
                     FirebaseProjectId = FirebaseProjectId,
                     AccessToken = !string.IsNullOrWhiteSpace(nativeResult.AccessToken) ? nativeResult.AccessToken : fbSession.OAuthAccessToken,
@@ -557,6 +568,75 @@ public class GoogleDriveSyncService : ISyncService
             .Replace('/', '_');
     }
 
+    internal static string ExtractProxyErrorMessage(string proxyJson, string fallbackPrefix)
+    {
+        if (!string.IsNullOrWhiteSpace(proxyJson))
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(proxyJson);
+                var root = doc.RootElement;
+                if (root.ValueKind == JsonValueKind.Object)
+                {
+                    if (root.TryGetProperty("message", out var msgProp) && msgProp.ValueKind == JsonValueKind.String)
+                    {
+                        var msg = msgProp.GetString();
+                        if (!string.IsNullOrWhiteSpace(msg)) return msg;
+                    }
+                    if (root.TryGetProperty("error_description", out var descProp) && descProp.ValueKind == JsonValueKind.String)
+                    {
+                        var desc = descProp.GetString();
+                        if (!string.IsNullOrWhiteSpace(desc)) return desc;
+                    }
+                }
+            }
+            catch { }
+        }
+
+        return $"{fallbackPrefix}: {proxyJson}";
+    }
+
+    private async Task ValidateNativeSessionWithProxyAsync(
+        string accessToken,
+        string idToken,
+        string endpointPath,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(OAuthProxyUrl)) return;
+
+        var proxyUrl = $"{OAuthProxyUrl}{endpointPath}";
+        var payload = new
+        {
+            access_token = accessToken,
+            id_token = idToken,
+            client_id = GoogleClientId
+        };
+
+        using var proxyReq = new HttpRequestMessage(HttpMethod.Post, proxyUrl)
+        {
+            Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json")
+        };
+
+        if (!string.IsNullOrWhiteSpace(OAuthProxySecret))
+        {
+            proxyReq.Headers.Add("x-app-secret", OAuthProxySecret);
+        }
+
+        var proxyResp = await _httpClient.SendAsync(proxyReq, cancellationToken);
+        var proxyJson = await proxyResp.Content.ReadAsStringAsync(cancellationToken);
+
+        if (!proxyResp.IsSuccessStatusCode)
+        {
+            var errMsg = ExtractProxyErrorMessage(proxyJson, "OAuth proxy session verification failed");
+            Wadd.Core.Logging.AppLogger.LogError("GoogleDriveSyncService", $"OAuth proxy session verification failed ({proxyResp.StatusCode}): {proxyJson}");
+            if (proxyResp.StatusCode == HttpStatusCode.Forbidden || proxyResp.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                throw new UnauthorizedAccessException(errMsg);
+            }
+            throw new InvalidOperationException(errMsg);
+        }
+    }
+
     private async Task<(string AccessToken, string RefreshToken, string IdToken, int ExpiresIn)> ExchangeAuthorizationCodeAsync(
         string code,
         string codeVerifier,
@@ -590,8 +670,9 @@ public class GoogleDriveSyncService : ISyncService
 
             if (!proxyResp.IsSuccessStatusCode)
             {
+                var errMsg = ExtractProxyErrorMessage(proxyJson, "OAuth proxy code exchange failed");
                 Wadd.Core.Logging.AppLogger.LogError("GoogleDriveSyncService", $"OAuth proxy code exchange failed ({proxyResp.StatusCode}): {proxyJson}");
-                throw new InvalidOperationException($"OAuth proxy code exchange failed: {proxyJson}");
+                throw new InvalidOperationException(errMsg);
             }
 
             using var proxyDoc = JsonDocument.Parse(proxyJson);
@@ -836,12 +917,33 @@ public class GoogleDriveSyncService : ISyncService
                 var nativeResult = await _nativeAuthService.TrySilentSignInAsync(GoogleClientId, cancellationToken);
                 if (nativeResult.IsSuccess && !string.IsNullOrWhiteSpace(nativeResult.AccessToken))
                 {
+                    if (!string.IsNullOrWhiteSpace(OAuthProxyUrl))
+                    {
+                        await ValidateNativeSessionWithProxyAsync(
+                            nativeResult.AccessToken,
+                            nativeResult.IdToken ?? string.Empty,
+                            "/api/auth/refresh",
+                            cancellationToken);
+                    }
+
                     _authRecord ??= new UserAuthRecord();
                     _authRecord.AccessToken = nativeResult.AccessToken;
                     _authRecord.TokenExpiresAtUtc = DateTime.UtcNow.AddMinutes(50);
                     SaveAuthRecord();
                     return true;
                 }
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Wadd.Core.Logging.AppLogger.LogWarning("GoogleDriveSyncService", "Native session revoked by OAuth proxy", ex);
+                if (_authRecord != null)
+                {
+                    _authRecord.IsSignedIn = false;
+                    _authRecord.AccessToken = string.Empty;
+                    SaveAuthRecord();
+                    NotifyAuthStateChanged();
+                }
+                return false;
             }
             catch (Exception ex)
             {
@@ -898,6 +1000,15 @@ public class GoogleDriveSyncService : ISyncService
                     else
                     {
                         Wadd.Core.Logging.AppLogger.LogWarning("GoogleDriveSyncService", $"OAuth proxy token refresh failed ({proxyResp.StatusCode}): {proxyJson}");
+                        if (proxyResp.StatusCode == HttpStatusCode.Forbidden || proxyResp.StatusCode == HttpStatusCode.Unauthorized)
+                        {
+                            _authRecord.IsSignedIn = false;
+                            _authRecord.AccessToken = string.Empty;
+                            _authRecord.RefreshToken = string.Empty;
+                            SaveAuthRecord();
+                            NotifyAuthStateChanged();
+                            return false;
+                        }
                     }
                 }
                 else

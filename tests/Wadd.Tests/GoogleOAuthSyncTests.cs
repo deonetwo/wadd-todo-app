@@ -145,4 +145,86 @@ public class GoogleOAuthSyncTests
         Assert.Equal(item.Category, deserializedTask.Category);
         Assert.Equal(item.ReminderAt, deserializedTask.ReminderAt);
     }
+
+    [Fact]
+    public void ExtractProxyErrorMessage_ParsesMessageAndErrorDescriptionCleanly()
+    {
+        var jsonWithMsg = "{\"error\":\"access_denied\",\"message\":\"Access denied. The email address is not authorized for cloud sync.\"}";
+        var extractedMsg = GoogleDriveSyncService.ExtractProxyErrorMessage(jsonWithMsg, "OAuth proxy failed");
+        Assert.Equal("Access denied. The email address is not authorized for cloud sync.", extractedMsg);
+
+        var jsonWithDesc = "{\"error\":\"unauthorized\",\"error_description\":\"Invalid application proxy secret\"}";
+        var extractedDesc = GoogleDriveSyncService.ExtractProxyErrorMessage(jsonWithDesc, "OAuth proxy failed");
+        Assert.Equal("Invalid application proxy secret", extractedDesc);
+    }
+
+    [Fact]
+    public async Task GoogleDriveSyncService_NativeSignIn_RejectsWhenOAuthProxyReturnsForbidden()
+    {
+        var inMemoryTodo = new InMemoryTodoService();
+        var handler = new FakeHttpMessageHandler((req, _) =>
+        {
+            var resp = new System.Net.Http.HttpResponseMessage(System.Net.HttpStatusCode.Forbidden)
+            {
+                Content = new System.Net.Http.StringContent(
+                    "{\"error\":\"access_denied\",\"message\":\"Access denied. Not authorized for cloud sync.\"}",
+                    System.Text.Encoding.UTF8,
+                    "application/json")
+            };
+            return Task.FromResult(resp);
+        });
+        var httpClient = new System.Net.Http.HttpClient(handler);
+        var fakeNativeAuth = new FakeNativeGoogleAuthService();
+
+        var syncService = new GoogleDriveSyncService(
+            inMemoryTodo,
+            httpClient: httpClient,
+            nativeAuthService: fakeNativeAuth);
+
+        syncService.GoogleClientId = "test-client-id.apps.googleusercontent.com";
+        syncService.OAuthProxyUrl = "https://wadd-oauth-proxy.workers.dev";
+
+        var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => syncService.SignInAsync());
+        Assert.Equal("Access denied. Not authorized for cloud sync.", ex.Message);
+        Assert.False(syncService.IsSignedIn);
+    }
+
+    private sealed class FakeNativeGoogleAuthService : INativeGoogleAuthService
+    {
+        public bool IsSupported => true;
+
+        public Task<NativeAuthResult> SignInAsync(string googleClientId, System.Threading.CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(new NativeAuthResult
+            {
+                IsSuccess = true,
+                IdToken = "fake-id-token",
+                AccessToken = "fake-access-token",
+                Email = "blocked@example.com",
+                DisplayName = "Blocked User"
+            });
+        }
+
+        public Task<NativeAuthResult> TrySilentSignInAsync(string googleClientId, System.Threading.CancellationToken cancellationToken = default)
+        {
+            return SignInAsync(googleClientId, cancellationToken);
+        }
+    }
+
+    private sealed class FakeHttpMessageHandler : System.Net.Http.HttpMessageHandler
+    {
+        private readonly Func<System.Net.Http.HttpRequestMessage, System.Threading.CancellationToken, Task<System.Net.Http.HttpResponseMessage>> _responder;
+
+        public FakeHttpMessageHandler(Func<System.Net.Http.HttpRequestMessage, System.Threading.CancellationToken, Task<System.Net.Http.HttpResponseMessage>> responder)
+        {
+            _responder = responder;
+        }
+
+        protected override Task<System.Net.Http.HttpResponseMessage> SendAsync(
+            System.Net.Http.HttpRequestMessage request,
+            System.Threading.CancellationToken cancellationToken)
+        {
+            return _responder(request, cancellationToken);
+        }
+    }
 }
