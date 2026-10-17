@@ -31,9 +31,13 @@ public class GoogleDriveSyncService : ISyncService
 
     public bool IsSignedIn => _authRecord?.IsSignedIn ?? false;
     public string? UserEmail => _authRecord?.UserEmail;
+    public string? LastSyncedUserEmail => !string.IsNullOrWhiteSpace(_authRecord?.LastSyncedUserEmail)
+        ? _authRecord.LastSyncedUserEmail
+        : (!string.IsNullOrWhiteSpace(_authRecord?.UserEmail) ? _authRecord.UserEmail : null);
     public string? UserName => _authRecord?.UserName;
     public bool MigratedToManifests => _authRecord?.MigratedToManifests ?? false;
     public event EventHandler? AuthStateChanged;
+    public Func<string, string, Task<bool>>? ConfirmAccountSwitchAsync { get; set; }
 
     internal void SetAuthRecordForTesting(UserAuthRecord record) => _authRecord = record;
 
@@ -202,7 +206,8 @@ public class GoogleDriveSyncService : ISyncService
         IDeviceService? deviceService = null,
         ConflictResolutionEngine? conflictEngine = null,
         INativeGoogleAuthService? nativeAuthService = null,
-        IGoalService? goalService = null)
+        IGoalService? goalService = null,
+        string? authFilePath = null)
     {
         _todoService = todoService ?? throw new ArgumentNullException(nameof(todoService));
         _httpClient = httpClient ?? CreateOptimizedHttpClient();
@@ -226,7 +231,7 @@ public class GoogleDriveSyncService : ISyncService
         _conflictEngine = conflictEngine ?? new ConflictResolutionEngine();
 
         LoadEnvFile();
-        _authFilePath = Wadd.Core.Helpers.AppDataHelper.GetWaddFilePath("google_user_auth.json");
+        _authFilePath = authFilePath ?? Wadd.Core.Helpers.AppDataHelper.GetWaddFilePath("google_user_auth.json");
         LoadAuthRecord();
         _ = RefreshConflictCountAsync();
     }
@@ -293,6 +298,10 @@ public class GoogleDriveSyncService : ISyncService
             {
                 var json = File.ReadAllText(_authFilePath);
                 _authRecord = JsonSerializer.Deserialize<UserAuthRecord>(json, JsonOptions);
+                if (_authRecord != null && string.IsNullOrWhiteSpace(_authRecord.LastSyncedUserEmail) && !string.IsNullOrWhiteSpace(_authRecord.UserEmail))
+                {
+                    _authRecord.LastSyncedUserEmail = _authRecord.UserEmail;
+                }
                 if (_authRecord?.LastSyncTimestampUtc.HasValue == true)
                 {
                     _lastSyncTimestampUtc = _authRecord.LastSyncTimestampUtc.Value;
@@ -315,12 +324,80 @@ public class GoogleDriveSyncService : ISyncService
         catch { }
     }
 
+    internal async Task<bool> HandleAccountSwitchIfNeededAsync(
+        string? previousEmail,
+        string? newEmail,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(previousEmail) || string.IsNullOrWhiteSpace(newEmail))
+        {
+            return false;
+        }
+
+        if (string.Equals(previousEmail.Trim(), newEmail.Trim(), StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (ConfirmAccountSwitchAsync != null)
+        {
+            var confirmed = await ConfirmAccountSwitchAsync(previousEmail.Trim(), newEmail.Trim());
+            if (!confirmed)
+            {
+                Wadd.Core.Logging.AppLogger.LogInfo(
+                    "GoogleDriveSyncService",
+                    $"Account switch ({previousEmail} -> {newEmail}) cancelled by user.");
+                throw new OperationCanceledException("Account switch was cancelled by user.");
+            }
+        }
+
+        Wadd.Core.Logging.AppLogger.LogInfo(
+            "GoogleDriveSyncService",
+            $"Account switch detected ({previousEmail} -> {newEmail}). Resetting local data before syncing new account.");
+
+        _debounceTimer?.Dispose();
+        _debounceTimer = null;
+        lock (_pendingPushQueue)
+        {
+            _pendingPushQueue.Clear();
+        }
+        _lastSyncTimestampUtc = DateTime.MinValue;
+
+        await _todoService.ClearAllLocalDataAsync(cancellationToken);
+        if (_goalService != null)
+        {
+            await _goalService.ClearAllLocalDataAsync(cancellationToken);
+        }
+        if (_syncLogRepository != null)
+        {
+            await _syncLogRepository.ClearAllLogsAsync(cancellationToken);
+        }
+        if (_conflictRepository != null)
+        {
+            await _conflictRepository.ClearAllConflictsAsync(cancellationToken);
+        }
+
+        if (UnresolvedConflictCount != 0)
+        {
+            UnresolvedConflictCount = 0;
+            ConflictCountChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        HasChangesApplied = true;
+        return true;
+    }
+
     public async Task<bool> SignInAsync(CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(GoogleClientId))
         {
             throw new InvalidOperationException("Google Client ID is missing. Please set GOOGLE_CLIENT_ID environment variable or paste it in Settings.");
         }
+
+        var previousEmail = LastSyncedUserEmail;
+        var previousLastSyncUtc = _authRecord?.LastSyncTimestampUtc;
+        var previousMigrated = _authRecord?.MigratedToManifests ?? false;
+        var previousRefreshToken = _authRecord?.RefreshToken ?? string.Empty;
 
         if (_nativeAuthService != null && _nativeAuthService.IsSupported)
         {
@@ -337,11 +414,14 @@ public class GoogleDriveSyncService : ISyncService
                 }
 
                 var fbSession = await ExchangeGoogleIdTokenWithFirebaseAsync(nativeResult.IdToken ?? string.Empty, nativeResult.AccessToken ?? string.Empty, "http://localhost:5001/", cancellationToken);
+                var resolvedEmail = !string.IsNullOrWhiteSpace(fbSession.Email) ? fbSession.Email : (nativeResult.Email ?? string.Empty);
+                var switchedAccount = await HandleAccountSwitchIfNeededAsync(previousEmail, resolvedEmail, cancellationToken);
 
                 _authRecord = new UserAuthRecord
                 {
                     IsSignedIn = true,
-                    UserEmail = !string.IsNullOrWhiteSpace(fbSession.Email) ? fbSession.Email : (nativeResult.Email ?? string.Empty),
+                    UserEmail = resolvedEmail,
+                    LastSyncedUserEmail = !string.IsNullOrWhiteSpace(resolvedEmail) ? resolvedEmail : (previousEmail ?? string.Empty),
                     UserName = !string.IsNullOrWhiteSpace(fbSession.DisplayName) ? fbSession.DisplayName : (nativeResult.DisplayName ?? string.Empty),
                     GoogleClientId = GoogleClientId,
                     GoogleClientSecret = GoogleClientSecret,
@@ -355,7 +435,9 @@ public class GoogleDriveSyncService : ISyncService
                     FirebaseRefreshToken = fbSession.FirebaseRefreshToken,
                     FirebaseLocalId = fbSession.LocalId,
                     AuthenticatedAt = DateTime.UtcNow,
-                    TokenExpiresAtUtc = DateTime.UtcNow.AddMinutes(50)
+                    TokenExpiresAtUtc = DateTime.UtcNow.AddMinutes(50),
+                    LastSyncTimestampUtc = switchedAccount ? null : previousLastSyncUtc,
+                    MigratedToManifests = !switchedAccount && previousMigrated
                 };
 
                 SaveAuthRecord();
@@ -518,10 +600,14 @@ public class GoogleDriveSyncService : ISyncService
                 ? await ExchangeGoogleIdTokenWithFirebaseAsync(googleIdToken, googleAccessToken, redirectUri, cancellationToken)
                 : (FirebaseIdToken: string.Empty, FirebaseRefreshToken: string.Empty, LocalId: string.Empty, Email: userInfo.Email, DisplayName: userInfo.Name, OAuthAccessToken: googleAccessToken);
 
+            var resolvedEmail = !string.IsNullOrWhiteSpace(userInfo.Email) ? userInfo.Email : fbSession.Email;
+            var switchedAccount = await HandleAccountSwitchIfNeededAsync(previousEmail, resolvedEmail, cancellationToken);
+
             _authRecord = new UserAuthRecord
             {
                 IsSignedIn = true,
-                UserEmail = !string.IsNullOrWhiteSpace(userInfo.Email) ? userInfo.Email : fbSession.Email,
+                UserEmail = resolvedEmail,
+                LastSyncedUserEmail = !string.IsNullOrWhiteSpace(resolvedEmail) ? resolvedEmail : (previousEmail ?? string.Empty),
                 UserName = !string.IsNullOrWhiteSpace(userInfo.Name) ? userInfo.Name : fbSession.DisplayName,
                 GoogleClientId = GoogleClientId,
                 GoogleClientSecret = GoogleClientSecret,
@@ -530,12 +616,14 @@ public class GoogleDriveSyncService : ISyncService
                 FirebaseApiKey = FirebaseApiKey,
                 FirebaseProjectId = FirebaseProjectId,
                 AccessToken = googleAccessToken,
-                RefreshToken = !string.IsNullOrWhiteSpace(googleRefreshToken) ? googleRefreshToken : (_authRecord?.RefreshToken ?? string.Empty),
+                RefreshToken = !string.IsNullOrWhiteSpace(googleRefreshToken) ? googleRefreshToken : (switchedAccount ? string.Empty : previousRefreshToken),
                 FirebaseIdToken = fbSession.FirebaseIdToken,
                 FirebaseRefreshToken = fbSession.FirebaseRefreshToken,
                 FirebaseLocalId = fbSession.LocalId,
                 AuthenticatedAt = DateTime.UtcNow,
-                TokenExpiresAtUtc = DateTime.UtcNow.AddSeconds(Math.Max(300, expiresInSeconds - 60))
+                TokenExpiresAtUtc = DateTime.UtcNow.AddSeconds(Math.Max(300, expiresInSeconds - 60)),
+                LastSyncTimestampUtc = switchedAccount ? null : previousLastSyncUtc,
+                MigratedToManifests = !switchedAccount && previousMigrated
             };
 
             SaveAuthRecord();
@@ -631,6 +719,10 @@ public class GoogleDriveSyncService : ISyncService
             Wadd.Core.Logging.AppLogger.LogError("GoogleDriveSyncService", $"OAuth proxy session verification failed ({proxyResp.StatusCode}): {proxyJson}");
             if (proxyResp.StatusCode == HttpStatusCode.Forbidden || proxyResp.StatusCode == HttpStatusCode.Unauthorized)
             {
+                if (_authRecord != null)
+                {
+                    _authRecord.IsSignedIn = false;
+                }
                 throw new UnauthorizedAccessException(errMsg);
             }
             throw new InvalidOperationException(errMsg);
@@ -1200,11 +1292,36 @@ public class GoogleDriveSyncService : ISyncService
     public async Task SignOutAsync(CancellationToken cancellationToken = default)
     {
         await Task.Delay(50, cancellationToken);
-        _authRecord = null;
-        _lastSyncTimestampUtc = DateTime.MinValue;
-        if (File.Exists(_authFilePath))
+        _debounceTimer?.Dispose();
+        _debounceTimer = null;
+        lock (_pendingPushQueue)
         {
-            try { File.Delete(_authFilePath); } catch { }
+            _pendingPushQueue.Clear();
+        }
+
+        var preservedEmail = LastSyncedUserEmail ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(preservedEmail) && _authRecord != null)
+        {
+            _authRecord.IsSignedIn = false;
+            _authRecord.UserEmail = string.Empty;
+            _authRecord.UserName = string.Empty;
+            _authRecord.LastSyncedUserEmail = preservedEmail;
+            _authRecord.AccessToken = string.Empty;
+            _authRecord.RefreshToken = string.Empty;
+            _authRecord.FirebaseIdToken = string.Empty;
+            _authRecord.FirebaseRefreshToken = string.Empty;
+            _authRecord.FirebaseLocalId = string.Empty;
+            _authRecord.TokenExpiresAtUtc = null;
+            SaveAuthRecord();
+        }
+        else
+        {
+            _authRecord = null;
+            _lastSyncTimestampUtc = DateTime.MinValue;
+            if (File.Exists(_authFilePath))
+            {
+                try { File.Delete(_authFilePath); } catch { }
+            }
         }
         NotifyAuthStateChanged();
     }
@@ -2849,6 +2966,7 @@ public class UserAuthRecord
 {
     public bool IsSignedIn { get; set; }
     public string UserEmail { get; set; } = string.Empty;
+    public string LastSyncedUserEmail { get; set; } = string.Empty;
     public string UserName { get; set; } = string.Empty;
     public string GoogleClientId { get; set; } = string.Empty;
     public string GoogleClientSecret { get; set; } = string.Empty;

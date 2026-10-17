@@ -89,4 +89,10 @@ public class SQLiteSyncLogRepository : ISyncLogRepository
 
         return maxEntity?.Revision ?? 0;
     }
+
+    public async Task ClearAllLogsAsync(CancellationToken cancellationToken = default)
+    {
+        await EnsureInitializedAsync();
+        await _database.DeleteAllAsync<SyncLogEntity>();
+    }
 }

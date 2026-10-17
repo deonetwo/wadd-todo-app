@@ -100,19 +100,27 @@ public class GoogleOAuthSyncTests
     [Fact]
     public async Task GoogleDriveSyncService_SignOutAsync_FiresAuthStateChanged()
     {
-        var inMemoryTodo = new InMemoryTodoService();
-        var syncService = new GoogleDriveSyncService(inMemoryTodo);
-
-        bool authStateChangedFired = false;
-        syncService.AuthStateChanged += (_, _) =>
+        var authPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"wadd_auth_{Guid.NewGuid():N}.json");
+        try
         {
-            authStateChangedFired = true;
-        };
+            var inMemoryTodo = new InMemoryTodoService();
+            var syncService = new GoogleDriveSyncService(inMemoryTodo, authFilePath: authPath);
 
-        await syncService.SignOutAsync();
+            bool authStateChangedFired = false;
+            syncService.AuthStateChanged += (_, _) =>
+            {
+                authStateChangedFired = true;
+            };
 
-        Assert.True(authStateChangedFired);
-        Assert.False(syncService.IsSignedIn);
+            await syncService.SignOutAsync();
+
+            Assert.True(authStateChangedFired);
+            Assert.False(syncService.IsSignedIn);
+        }
+        finally
+        {
+            try { if (System.IO.File.Exists(authPath)) System.IO.File.Delete(authPath); } catch { }
+        }
     }
 
     [Fact]
@@ -161,36 +169,262 @@ public class GoogleOAuthSyncTests
     [Fact]
     public async Task GoogleDriveSyncService_NativeSignIn_RejectsWhenOAuthProxyReturnsForbidden()
     {
-        var inMemoryTodo = new InMemoryTodoService();
-        var handler = new FakeHttpMessageHandler((req, _) =>
+        var authPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"wadd_auth_{Guid.NewGuid():N}.json");
+        try
         {
-            var resp = new System.Net.Http.HttpResponseMessage(System.Net.HttpStatusCode.Forbidden)
+            var inMemoryTodo = new InMemoryTodoService();
+            var handler = new FakeHttpMessageHandler((req, _) =>
             {
-                Content = new System.Net.Http.StringContent(
-                    "{\"error\":\"access_denied\",\"message\":\"Access denied. Not authorized for cloud sync.\"}",
-                    System.Text.Encoding.UTF8,
-                    "application/json")
+                var resp = new System.Net.Http.HttpResponseMessage(System.Net.HttpStatusCode.Forbidden)
+                {
+                    Content = new System.Net.Http.StringContent(
+                        "{\"error\":\"access_denied\",\"message\":\"Access denied. Not authorized for cloud sync.\"}",
+                        System.Text.Encoding.UTF8,
+                        "application/json")
+                };
+                return Task.FromResult(resp);
+            });
+            var httpClient = new System.Net.Http.HttpClient(handler);
+            var fakeNativeAuth = new FakeNativeGoogleAuthService();
+
+            var syncService = new GoogleDriveSyncService(
+                inMemoryTodo,
+                httpClient: httpClient,
+                nativeAuthService: fakeNativeAuth,
+                authFilePath: authPath);
+
+            syncService.GoogleClientId = "test-client-id.apps.googleusercontent.com";
+            syncService.OAuthProxyUrl = "https://wadd-oauth-proxy.workers.dev";
+
+            var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => syncService.SignInAsync());
+            Assert.Equal("Access denied. Not authorized for cloud sync.", ex.Message);
+            Assert.False(syncService.IsSignedIn);
+        }
+        finally
+        {
+            try { if (System.IO.File.Exists(authPath)) System.IO.File.Delete(authPath); } catch { }
+        }
+    }
+
+    [Fact]
+    public async Task GoogleDriveSyncService_SignOut_PreservesLastSyncedEmailAndKeepsLocalData()
+    {
+        var dbPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"wadd_acct_signout_{Guid.NewGuid():N}.db");
+        var authPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"wadd_auth_{Guid.NewGuid():N}.json");
+        try
+        {
+            var todoService = new SQLiteTodoService(dbPath);
+            var goalService = new SQLiteGoalService(todoService.DatabaseConnection);
+            var syncService = new GoogleDriveSyncService(todoService, goalService: goalService, authFilePath: authPath);
+
+            await todoService.CreateAsync(new TodoItem { Title = "User A Task" });
+            await goalService.SaveGoalAsync(new LifeGoal { Title = "User A Goal" });
+
+            syncService.SetAuthRecordForTesting(new UserAuthRecord
+            {
+                IsSignedIn = true,
+                UserEmail = "userA@gmail.com",
+                LastSyncedUserEmail = "userA@gmail.com",
+                AccessToken = "token-a"
+            });
+
+            await syncService.SignOutAsync();
+
+            Assert.False(syncService.IsSignedIn);
+            Assert.Equal("userA@gmail.com", syncService.LastSyncedUserEmail);
+            Assert.Single(await todoService.GetAllAsync());
+            Assert.Single(await goalService.GetGoalsAsync());
+        }
+        finally
+        {
+            try { if (System.IO.File.Exists(dbPath)) System.IO.File.Delete(dbPath); } catch { }
+            try { if (System.IO.File.Exists(authPath)) System.IO.File.Delete(authPath); } catch { }
+        }
+    }
+
+    [Fact]
+    public async Task GoogleDriveSyncService_SignInWithSameOrFirstEmail_PreservesLocalData()
+    {
+        var dbPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"wadd_acct_same_{Guid.NewGuid():N}.db");
+        var authPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"wadd_auth_{Guid.NewGuid():N}.json");
+        try
+        {
+            var okHandler = new FakeHttpMessageHandler((_, _) => Task.FromResult(new System.Net.Http.HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new System.Net.Http.StringContent("{\"access_token\":\"ok\",\"expires_in\":3600}", System.Text.Encoding.UTF8, "application/json")
+            }));
+            var todoService = new SQLiteTodoService(dbPath);
+            var goalService = new SQLiteGoalService(todoService.DatabaseConnection);
+            var fakeNativeAuth = new FakeNativeGoogleAuthService("userA@gmail.com");
+            var syncService = new GoogleDriveSyncService(
+                todoService,
+                httpClient: new System.Net.Http.HttpClient(okHandler),
+                nativeAuthService: fakeNativeAuth,
+                goalService: goalService,
+                authFilePath: authPath);
+
+            await todoService.CreateAsync(new TodoItem { Title = "Offline Task" });
+            await goalService.SaveGoalAsync(new LifeGoal { Title = "Offline Goal" });
+
+            // 1. First-time login (no previous LastSyncedUserEmail): keeps local data
+            syncService.SetAuthRecordForTesting(new UserAuthRecord
+            {
+                GoogleClientId = "test-client-id.apps.googleusercontent.com"
+            });
+            var signedInFirst = await syncService.SignInAsync();
+            Assert.True(signedInFirst);
+            Assert.Single(await todoService.GetAllAsync());
+            Assert.Single(await goalService.GetGoalsAsync());
+
+            // 2. Sign out and re-login with the SAME email (userA@gmail.com): keeps local data
+            await syncService.SignOutAsync();
+            syncService.GoogleClientId = "test-client-id.apps.googleusercontent.com";
+            var signedInAgain = await syncService.SignInAsync();
+            Assert.True(signedInAgain);
+            Assert.Equal("userA@gmail.com", syncService.UserEmail);
+            Assert.Single(await todoService.GetAllAsync());
+            Assert.Single(await goalService.GetGoalsAsync());
+        }
+        finally
+        {
+            try { if (System.IO.File.Exists(dbPath)) System.IO.File.Delete(dbPath); } catch { }
+            try { if (System.IO.File.Exists(authPath)) System.IO.File.Delete(authPath); } catch { }
+        }
+    }
+
+    [Fact]
+    public async Task GoogleDriveSyncService_SignInWithDifferentEmail_ClearsPreviousAccountLocalData()
+    {
+        var dbPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"wadd_acct_switch_{Guid.NewGuid():N}.db");
+        var authPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"wadd_auth_{Guid.NewGuid():N}.json");
+        try
+        {
+            var okHandler = new FakeHttpMessageHandler((_, _) => Task.FromResult(new System.Net.Http.HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new System.Net.Http.StringContent("{\"access_token\":\"ok\",\"expires_in\":3600}", System.Text.Encoding.UTF8, "application/json")
+            }));
+            var todoService = new SQLiteTodoService(dbPath);
+            var goalService = new SQLiteGoalService(todoService.DatabaseConnection);
+            var fakeNativeAuth = new FakeNativeGoogleAuthService("userB@gmail.com");
+            var syncService = new GoogleDriveSyncService(
+                todoService,
+                httpClient: new System.Net.Http.HttpClient(okHandler),
+                nativeAuthService: fakeNativeAuth,
+                goalService: goalService,
+                authFilePath: authPath);
+
+            // Populate User A's local data
+            await todoService.CreateAsync(new TodoItem { Title = "User A Private Task" });
+            await todoService.SaveDateNoteAsync(DateTime.Today, "User A Note");
+            await todoService.SaveCustomTagAsync("UserATag");
+            var goalA = await goalService.SaveGoalAsync(new LifeGoal { Title = "User A Goal" });
+            await goalService.SaveMilestoneAsync(new GoalMilestone { GoalId = goalA.Id, Title = "User A Milestone" });
+            await goalService.SaveJournalEntryAsync(new JournalEntry { GoalId = goalA.Id, Title = "User A Journal", Content = "Secret" });
+
+            syncService.SetAuthRecordForTesting(new UserAuthRecord
+            {
+                IsSignedIn = true,
+                UserEmail = "userA@gmail.com",
+                LastSyncedUserEmail = "userA@gmail.com",
+                GoogleClientId = "test-client-id.apps.googleusercontent.com",
+                LastSyncTimestampUtc = DateTime.UtcNow,
+                MigratedToManifests = true
+            });
+
+            // Sign out from User A, then sign in as User B
+            await syncService.SignOutAsync();
+            Assert.Equal("userA@gmail.com", syncService.LastSyncedUserEmail);
+
+            var signedInB = await syncService.SignInAsync();
+            Assert.True(signedInB);
+            Assert.Equal("userB@gmail.com", syncService.UserEmail);
+            Assert.Equal("userB@gmail.com", syncService.LastSyncedUserEmail);
+            Assert.False(syncService.MigratedToManifests);
+
+            // Verify all of User A's local data and pending sync logs were cleared before User B's sync
+            Assert.Empty(await todoService.GetAllRawAsync());
+            Assert.Empty(await todoService.GetAllDateNotesRawAsync());
+            Assert.Empty(await todoService.GetCustomTagsAsync());
+            Assert.Empty(await goalService.GetAllGoalsRawAsync());
+            Assert.Empty(await goalService.GetAllMilestonesRawAsync());
+            Assert.Empty(await goalService.GetAllJournalEntriesRawAsync());
+            Assert.Empty(await todoService.SyncLogRepository.GetPendingLogsAsync());
+        }
+        finally
+        {
+            try { if (System.IO.File.Exists(dbPath)) System.IO.File.Delete(dbPath); } catch { }
+            try { if (System.IO.File.Exists(authPath)) System.IO.File.Delete(authPath); } catch { }
+        }
+    }
+
+    [Fact]
+    public async Task GoogleDriveSyncService_SignInWithDifferentEmail_WhenCancelledByUser_KeepsPreviousAccountLocalData()
+    {
+        var dbPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"wadd_acct_cancel_{Guid.NewGuid():N}.db");
+        var authPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"wadd_auth_{Guid.NewGuid():N}.json");
+        try
+        {
+            var okHandler = new FakeHttpMessageHandler((_, _) => Task.FromResult(new System.Net.Http.HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new System.Net.Http.StringContent("{\"access_token\":\"ok\",\"expires_in\":3600}", System.Text.Encoding.UTF8, "application/json")
+            }));
+            var todoService = new SQLiteTodoService(dbPath);
+            var goalService = new SQLiteGoalService(todoService.DatabaseConnection);
+            var fakeNativeAuth = new FakeNativeGoogleAuthService("userB@gmail.com");
+            var syncService = new GoogleDriveSyncService(
+                todoService,
+                httpClient: new System.Net.Http.HttpClient(okHandler),
+                nativeAuthService: fakeNativeAuth,
+                goalService: goalService,
+                authFilePath: authPath);
+
+            await todoService.CreateAsync(new TodoItem { Title = "User A Private Task" });
+            await goalService.SaveGoalAsync(new LifeGoal { Title = "User A Goal" });
+
+            syncService.SetAuthRecordForTesting(new UserAuthRecord
+            {
+                IsSignedIn = true,
+                UserEmail = "userA@gmail.com",
+                LastSyncedUserEmail = "userA@gmail.com",
+                GoogleClientId = "test-client-id.apps.googleusercontent.com"
+            });
+
+            await syncService.SignOutAsync();
+
+            string? promptedPrevEmail = null;
+            string? promptedNewEmail = null;
+            syncService.ConfirmAccountSwitchAsync = (prev, next) =>
+            {
+                promptedPrevEmail = prev;
+                promptedNewEmail = next;
+                return Task.FromResult(false);
             };
-            return Task.FromResult(resp);
-        });
-        var httpClient = new System.Net.Http.HttpClient(handler);
-        var fakeNativeAuth = new FakeNativeGoogleAuthService();
 
-        var syncService = new GoogleDriveSyncService(
-            inMemoryTodo,
-            httpClient: httpClient,
-            nativeAuthService: fakeNativeAuth);
+            await Assert.ThrowsAsync<OperationCanceledException>(() => syncService.SignInAsync());
 
-        syncService.GoogleClientId = "test-client-id.apps.googleusercontent.com";
-        syncService.OAuthProxyUrl = "https://wadd-oauth-proxy.workers.dev";
-
-        var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => syncService.SignInAsync());
-        Assert.Equal("Access denied. Not authorized for cloud sync.", ex.Message);
-        Assert.False(syncService.IsSignedIn);
+            Assert.Equal("userA@gmail.com", promptedPrevEmail);
+            Assert.Equal("userB@gmail.com", promptedNewEmail);
+            Assert.False(syncService.IsSignedIn);
+            Assert.Equal("userA@gmail.com", syncService.LastSyncedUserEmail);
+            Assert.Single(await todoService.GetAllAsync());
+            Assert.Single(await goalService.GetGoalsAsync());
+        }
+        finally
+        {
+            try { if (System.IO.File.Exists(dbPath)) System.IO.File.Delete(dbPath); } catch { }
+            try { if (System.IO.File.Exists(authPath)) System.IO.File.Delete(authPath); } catch { }
+        }
     }
 
     private sealed class FakeNativeGoogleAuthService : INativeGoogleAuthService
     {
+        private readonly string _email;
+
+        public FakeNativeGoogleAuthService(string email = "blocked@example.com")
+        {
+            _email = email;
+        }
+
         public bool IsSupported => true;
 
         public Task<NativeAuthResult> SignInAsync(string googleClientId, System.Threading.CancellationToken cancellationToken = default)
@@ -200,8 +434,8 @@ public class GoogleOAuthSyncTests
                 IsSuccess = true,
                 IdToken = "fake-id-token",
                 AccessToken = "fake-access-token",
-                Email = "blocked@example.com",
-                DisplayName = "Blocked User"
+                Email = _email,
+                DisplayName = "Test User"
             });
         }
 

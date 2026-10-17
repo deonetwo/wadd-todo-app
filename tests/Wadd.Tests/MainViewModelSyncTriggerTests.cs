@@ -28,6 +28,7 @@ public class MockSyncService : ISyncService
         remove { }
     }
     public event EventHandler? AuthStateChanged;
+    public Func<string, string, Task<bool>>? ConfirmAccountSwitchAsync { get; set; }
 
     public int SignInCallCount { get; private set; }
     public int SignOutCallCount { get; private set; }

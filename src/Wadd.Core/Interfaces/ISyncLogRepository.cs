@@ -8,4 +8,5 @@ public interface ISyncLogRepository
     Task<IEnumerable<SyncLog>> GetPendingLogsAsync(CancellationToken cancellationToken = default);
     Task MarkLogsAsSyncedAsync(IEnumerable<Guid> logIds, CancellationToken cancellationToken = default);
     Task<long> GetHighestRevisionAsync(CancellationToken cancellationToken = default);
+    Task ClearAllLogsAsync(CancellationToken cancellationToken = default);
 }

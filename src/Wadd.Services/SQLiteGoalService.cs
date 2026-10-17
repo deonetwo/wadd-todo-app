@@ -334,5 +334,14 @@ public class SQLiteGoalService : IGoalService
         });
     }
 
+    public async Task ClearAllLocalDataAsync(CancellationToken cancellationToken = default)
+    {
+        await EnsureInitializedAsync();
+        await _database.DeleteAllAsync<LifeGoalEntity>();
+        await _database.DeleteAllAsync<GoalMilestoneEntity>();
+        await _database.DeleteAllAsync<JournalEntryEntity>();
+        WaddDatabaseNotifier.NotifyDataChanged();
+    }
+
     #endregion
 }

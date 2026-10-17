@@ -392,4 +392,12 @@ public class InMemoryTodoService : ITodoService
         }
         return Task.CompletedTask;
     }
+
+    public Task ClearAllLocalDataAsync(CancellationToken cancellationToken = default)
+    {
+        _items.Clear();
+        _dateNotes.Clear();
+        _customTags.Clear();
+        return Task.CompletedTask;
+    }
 }

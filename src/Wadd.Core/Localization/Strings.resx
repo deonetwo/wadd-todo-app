@@ -344,6 +344,9 @@
   <data name="Dialog_Delete_Tag_Msg" xml:space="preserve"><value>This tag will be removed from all tasks.</value></data>
   <data name="Dialog_Delete_Note_Title" xml:space="preserve"><value>Delete Note?</value></data>
   <data name="Dialog_Delete_Note_Msg" xml:space="preserve"><value>The note for this date will be deleted.</value></data>
+  <data name="Dialog_AccountSwitch_Title" xml:space="preserve"><value>Switch Account?</value></data>
+  <data name="Dialog_AccountSwitch_Msg" xml:space="preserve"><value>Local data on this device will be replaced with cloud data from the new account.</value></data>
+  <data name="Dialog_AccountSwitch_Confirm" xml:space="preserve"><value>Switch</value></data>
 
   <!-- Notifications & Reminders Runtime -->
   <data name="Notification_Reminder_Title" xml:space="preserve"><value>Reminder: {0}</value></data>
