@@ -73,21 +73,21 @@ public class CompletedTasksFilterTests
         {
             Title = "Task Completed Today",
             IsCompleted = true,
-            CompletedAt = DateTime.UtcNow
+            CompletedAt = today.AddHours(12)
         });
 
         var taskYesterday = new TodoItemViewModel(new TodoItem
         {
             Title = "Task Completed Yesterday",
             IsCompleted = true,
-            CompletedAt = DateTime.UtcNow.AddDays(-1)
+            CompletedAt = today.AddDays(-1).AddHours(12)
         });
 
         var taskOld = new TodoItemViewModel(new TodoItem
         {
             Title = "Task Completed 10 Days Ago",
             IsCompleted = true,
-            CompletedAt = DateTime.UtcNow.AddDays(-10)
+            CompletedAt = today.AddDays(-10).AddHours(12)
         });
 
         vm.TodoItems.Clear();
