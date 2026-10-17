@@ -81,4 +81,10 @@ public class SQLiteConflictRepository : IConflictRepository
             await _database.UpdateAsync(entity);
         }
     }
+
+    public async Task ClearAllConflictsAsync(CancellationToken cancellationToken = default)
+    {
+        await EnsureInitializedAsync();
+        await _database.DeleteAllAsync<SyncConflictEntity>();
+    }
 }

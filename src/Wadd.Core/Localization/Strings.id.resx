@@ -344,6 +344,9 @@
   <data name="Dialog_Delete_Tag_Msg" xml:space="preserve"><value>Tag ini akan dihapus dari semua tugas.</value></data>
   <data name="Dialog_Delete_Note_Title" xml:space="preserve"><value>Hapus Catatan?</value></data>
   <data name="Dialog_Delete_Note_Msg" xml:space="preserve"><value>Catatan untuk tanggal ini akan dihapus.</value></data>
+  <data name="Dialog_AccountSwitch_Title" xml:space="preserve"><value>Ganti Akun?</value></data>
+  <data name="Dialog_AccountSwitch_Msg" xml:space="preserve"><value>Data lokal di perangkat ini akan diganti dengan data cloud dari akun baru.</value></data>
+  <data name="Dialog_AccountSwitch_Confirm" xml:space="preserve"><value>Ganti</value></data>
 
   <!-- Notifications & Reminders Runtime -->
   <data name="Notification_Reminder_Title" xml:space="preserve"><value>Pengingat: {0}</value></data>

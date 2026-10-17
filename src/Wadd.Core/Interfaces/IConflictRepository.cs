@@ -8,4 +8,5 @@ public interface IConflictRepository
     Task<IEnumerable<SyncConflict>> GetUnresolvedConflictsAsync(CancellationToken cancellationToken = default);
     Task<IEnumerable<SyncConflict>> GetConflictHistoryAsync(CancellationToken cancellationToken = default);
     Task ResolveConflictAsync(Guid conflictId, ConflictResolutionType resolutionType, string resolvedVersionJson, CancellationToken cancellationToken = default);
+    Task ClearAllConflictsAsync(CancellationToken cancellationToken = default);
 }

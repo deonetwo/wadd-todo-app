@@ -691,4 +691,15 @@ public class SQLiteTodoService : ITodoService
             await SaveCustomTagAsync(newTag, DateTime.UtcNow, cancellationToken);
         }
     }
+
+    public async Task ClearAllLocalDataAsync(CancellationToken cancellationToken = default)
+    {
+        await EnsureInitializedAsync();
+        await _database.DeleteAllAsync<TodoItemEntity>();
+        await _database.DeleteAllAsync<DateNoteEntity>();
+        await _database.DeleteAllAsync<CustomTagEntity>();
+        await _database.DeleteAllAsync<SyncLogEntity>();
+        await _database.DeleteAllAsync<SyncConflictEntity>();
+        WaddDatabaseNotifier.NotifyDataChanged();
+    }
 }

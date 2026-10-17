@@ -35,4 +35,7 @@ public interface ITodoService
     Task SaveCustomTagAsync(string name, DateTime? createdAt = null, CancellationToken cancellationToken = default);
     Task DeleteCustomTagAsync(string name, CancellationToken cancellationToken = default);
     Task RenameCustomTagAsync(string oldName, string newName, CancellationToken cancellationToken = default);
+
+    // Account Switch Reset
+    Task ClearAllLocalDataAsync(CancellationToken cancellationToken = default);
 }

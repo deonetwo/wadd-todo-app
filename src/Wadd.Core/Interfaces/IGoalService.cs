@@ -35,4 +35,5 @@ public interface IGoalService
     Task BatchDirectUpsertGoalsAsync(IEnumerable<LifeGoal> goals, CancellationToken cancellationToken = default);
     Task BatchDirectUpsertMilestonesAsync(IEnumerable<GoalMilestone> milestones, CancellationToken cancellationToken = default);
     Task BatchDirectUpsertJournalEntriesAsync(IEnumerable<JournalEntry> entries, CancellationToken cancellationToken = default);
+    Task ClearAllLocalDataAsync(CancellationToken cancellationToken = default);
 }

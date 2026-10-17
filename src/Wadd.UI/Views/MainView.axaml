@@ -2104,7 +2104,7 @@
       </Grid>
     </Border>
 
-    <!-- Delete Confirmation Warning Modal Overlay (Clean & Minimal) -->
+    <!-- Delete / Account Switch Confirmation Modal Overlay (Clean & Minimal) -->
     <Border x:Name="DeleteConfirmationOverlay"
             IsVisible="{Binding IsDeleteConfirmationOpen}"
             ZIndex="3000"
@@ -2124,7 +2124,7 @@
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Center"
                 BoxShadow="0 12 36 0 #50000000">
-          <StackPanel Spacing="10">
+          <StackPanel Spacing="12">
 
             <!-- Title -->
             <TextBlock Text="{Binding DeleteConfirmationTitle}"
@@ -2132,25 +2132,59 @@
                        FontWeight="SemiBold"
                        Foreground="{DynamicResource AppTextPrimaryBrush}"/>
 
-            <!-- Target Item Name -->
-            <TextBlock Text="{Binding DeleteConfirmationItemName}"
-                       FontSize="13"
-                       FontWeight="Medium"
-                       Foreground="{DynamicResource AppTextPrimaryBrush}"
-                       TextWrapping="Wrap"
-                       MaxLines="2"
-                       TextTrimming="CharacterEllipsis"
-                       IsVisible="{Binding DeleteConfirmationItemName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+            <!-- Standard Delete Target Item Name -->
+            <Panel IsVisible="{Binding !IsAccountSwitchConfirmation}">
+              <TextBlock Text="{Binding DeleteConfirmationItemName}"
+                         FontSize="13"
+                         FontWeight="Medium"
+                         Foreground="{DynamicResource AppTextPrimaryBrush}"
+                         TextWrapping="Wrap"
+                         MaxLines="2"
+                         TextTrimming="CharacterEllipsis"
+                         IsVisible="{Binding DeleteConfirmationItemName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+            </Panel>
 
-            <!-- Warning Explanatory Text -->
+            <!-- Account Switch Transition Card (Previous Email -> New Email) -->
+            <Border IsVisible="{Binding IsAccountSwitchConfirmation}"
+                    Background="{DynamicResource AppSurfaceSubtleBrush}"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="12,10">
+              <StackPanel Spacing="6">
+                <TextBlock Text="{Binding DeleteConfirmationItemName}"
+                           FontSize="12"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"
+                           TextTrimming="CharacterEllipsis"
+                           MaxLines="1"/>
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+                  <TextBlock Grid.Column="0"
+                             Text="↓"
+                             FontSize="12"
+                             FontWeight="Bold"
+                             Foreground="{DynamicResource AppPrimaryBrush}"
+                             VerticalAlignment="Center"/>
+                  <TextBlock Grid.Column="1"
+                             Text="{Binding DeleteConfirmationItemDetails}"
+                             FontSize="12.5"
+                             FontWeight="SemiBold"
+                             Foreground="{DynamicResource AppTextPrimaryBrush}"
+                             TextTrimming="CharacterEllipsis"
+                             MaxLines="1"
+                             VerticalAlignment="Center"/>
+                </Grid>
+              </StackPanel>
+            </Border>
+
+            <!-- Explanatory Text -->
             <TextBlock Text="{Binding DeleteConfirmationMessage}"
                        FontSize="12"
                        Foreground="{DynamicResource AppTextSecondaryBrush}"
                        TextWrapping="Wrap"
-                       LineHeight="16"/>
+                       LineHeight="17"/>
 
-            <!-- Action Buttons: Cancel and Delete -->
-            <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,8,0,0">
+            <!-- Action Buttons: Cancel and Confirm -->
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,4,0,0">
               <!-- Cancel Button -->
               <Button Grid.Column="0"
                       Classes="outline"
@@ -2166,7 +2200,7 @@
                            Foreground="{DynamicResource AppTextPrimaryBrush}"/>
               </Button>
 
-              <!-- Confirm Delete Button -->
+              <!-- Confirm Action Button -->
               <Button Grid.Column="1"
                       Classes="btn-danger-solid"
                       Command="{Binding ConfirmDeleteCommand}"
@@ -2175,7 +2209,7 @@
                       HorizontalAlignment="Stretch"
                       HorizontalContentAlignment="Center"
                       VerticalContentAlignment="Center">
-                <TextBlock Text="{loc:Localize Common_Delete}"
+                <TextBlock Text="{Binding DeleteConfirmationConfirmText}"
                            FontSize="13"
                            FontWeight="SemiBold"
                            Foreground="#FFFFFF"/>

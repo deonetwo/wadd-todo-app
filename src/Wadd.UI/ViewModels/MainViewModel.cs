@@ -904,10 +904,12 @@ public partial class MainViewModel : ViewModelBase
     private bool _isConflictDialogVisible;
 
     [ObservableProperty] private bool _isDeleteConfirmationOpen;
+    [ObservableProperty] private bool _isAccountSwitchConfirmation;
     [ObservableProperty] private string _deleteConfirmationTitle = string.Empty;
     [ObservableProperty] private string _deleteConfirmationMessage = string.Empty;
     [ObservableProperty] private string _deleteConfirmationItemName = string.Empty;
     [ObservableProperty] private string _deleteConfirmationItemDetails = string.Empty;
+    [ObservableProperty] private string _deleteConfirmationConfirmText = string.Empty;
     private TaskCompletionSource<bool>? _deleteConfirmationTcs;
 
     [ObservableProperty]
@@ -3869,6 +3871,8 @@ public partial class MainViewModel : ViewModelBase
             });
         };
 
+        _syncService.ConfirmAccountSwitchAsync = RequestAccountSwitchConfirmationAsync;
+
         _currentThemeMode = _themeService.CurrentTheme;
         UpdateThemeLabel();
 
@@ -4068,6 +4072,7 @@ public partial class MainViewModel : ViewModelBase
                     _dateNotes[kvp.Key] = kvp.Value;
                 }
 
+                _tagCreatedTimes.Clear();
                 _customEmptyTags.Clear();
                 foreach (var kvp in customTagsDict)
                 {
@@ -4076,6 +4081,13 @@ public partial class MainViewModel : ViewModelBase
                         _customEmptyTags.Add(kvp.Key);
                     }
                     _tagCreatedTimes[kvp.Key] = kvp.Value;
+                }
+
+                if (SelectedDetailTask != null && !itemsList.Any(x => x.Id == SelectedDetailTask.Id))
+                {
+                    SelectedDetailTask = null;
+                    IsDetailDrawerOpen = false;
+                    IsEditingDetailTask = false;
                 }
 
                 var existingDict = TodoItems.GroupBy(vm => vm.Id).ToDictionary(g => g.Key, g => g.First());
@@ -4356,17 +4368,54 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
-    public Task<bool> RequestDeleteConfirmationAsync(string title, string message, string itemName, string itemDetails = "")
+    public Task<bool> RequestDeleteConfirmationAsync(string title, string message, string itemName, string itemDetails = "", string? confirmButtonText = null)
     {
         _deleteConfirmationTcs?.TrySetResult(false);
         var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        IsAccountSwitchConfirmation = false;
         DeleteConfirmationTitle = title;
         DeleteConfirmationMessage = message;
         DeleteConfirmationItemName = itemName;
         DeleteConfirmationItemDetails = itemDetails;
+        DeleteConfirmationConfirmText = !string.IsNullOrWhiteSpace(confirmButtonText)
+            ? confirmButtonText
+            : LocalizationManager.Instance["Common_Delete"];
         _deleteConfirmationTcs = tcs;
         IsDeleteConfirmationOpen = true;
         return tcs.Task;
+    }
+
+    public async Task<bool> RequestAccountSwitchConfirmationAsync(string previousEmail, string newEmail)
+    {
+        return await Dispatcher.UIThread.InvokeAsync(async () =>
+        {
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow != null)
+            {
+                if (desktop.MainWindow.WindowState == WindowState.Minimized)
+                {
+                    desktop.MainWindow.WindowState = WindowState.Normal;
+                }
+                desktop.MainWindow.Show();
+                desktop.MainWindow.Activate();
+            }
+
+            var lm = LocalizationManager.Instance;
+            var title = lm["Dialog_AccountSwitch_Title"];
+            var msg = lm["Dialog_AccountSwitch_Msg"];
+            var confirmText = lm["Dialog_AccountSwitch_Confirm"];
+
+            _deleteConfirmationTcs?.TrySetResult(false);
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            IsAccountSwitchConfirmation = true;
+            DeleteConfirmationTitle = title;
+            DeleteConfirmationMessage = msg;
+            DeleteConfirmationItemName = previousEmail;
+            DeleteConfirmationItemDetails = newEmail;
+            DeleteConfirmationConfirmText = confirmText;
+            _deleteConfirmationTcs = tcs;
+            IsDeleteConfirmationOpen = true;
+            return await tcs.Task;
+        });
     }
 
     [RelayCommand]
@@ -4432,6 +4481,8 @@ public partial class MainViewModel : ViewModelBase
             UpdateGoogleAuthState();
             if (success)
             {
+                await LoadTodoItemsAsync();
+                await GoalsVM.LoadAllGoalsAsync();
                 var template = LocalizationManager.Instance["Main_SignedInSuccess"] ?? "Signed in as {0}. Connected to Google Drive.";
                 StatusMessage = string.Format(template, GoogleUserEmail);
                 AppLogger.LogInfo("GoogleAuth", "Triggering post-sign-in auto-sync.");
