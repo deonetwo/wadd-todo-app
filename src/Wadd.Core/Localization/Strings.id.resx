@@ -388,4 +388,13 @@
   <data name="Settings_Notification_Lead_30m_Desc" xml:space="preserve"><value>Ingatkan saya 30 menit sebelumnya</value></data>
   <data name="Settings_Notification_Lead_60m" xml:space="preserve"><value>1 jam sebelumnya</value></data>
   <data name="Settings_Notification_Lead_60m_Desc" xml:space="preserve"><value>Ingatkan saya 1 jam sebelumnya</value></data>
+
+  <!-- Cloud Sync Trial & Subscription Status -->
+  <data name="Settings_TrialExpired_Badge" xml:space="preserve"><value>Trial Habis</value></data>
+  <data name="Settings_SubscriptionExpired_Badge" xml:space="preserve"><value>Masa Aktif Habis</value></data>
+  <data name="Settings_TrialRemaining_Badge" xml:space="preserve"><value>Trial · Sisa {0}h</value></data>
+  <data name="Settings_Plan_Pro" xml:space="preserve"><value>Pro</value></data>
+  <data name="Settings_Plan_Lifetime" xml:space="preserve"><value>Lifetime</value></data>
+  <data name="Settings_TrialExpired_Notice" xml:space="preserve"><value>Masa trial Cloud Sync telah berakhir. Auto-sync dijeda. Klik Sinkronkan atau Upgrade untuk melanjutkan.</value></data>
+  <data name="Settings_Upgrade_Button" xml:space="preserve"><value>Upgrade</value></data>
 </root>

@@ -21,6 +21,11 @@ public class MockSyncService : ISyncService
     public string FirebaseProjectId { get; set; } = string.Empty;
     public bool HasChangesApplied { get; set; }
     public int UnresolvedConflictCount { get; set; }
+    public bool IsSubscriptionExpired { get; set; }
+    public string? SubscriptionPlan { get; set; }
+    public int? SubscriptionDaysRemaining { get; set; }
+    public string SubscriptionUpgradeUrl { get; set; } = "https://lunoit.biz.id/wadd";
+    public int OpenUpgradePageCallCount { get; private set; }
 
     public event EventHandler? ConflictCountChanged
     {
@@ -37,6 +42,11 @@ public class MockSyncService : ISyncService
     public TaskCompletionSource<bool>? SignInDelayTcs;
 
     public TaskCompletionSource<bool> SyncCalledTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    public void OpenUpgradePage()
+    {
+        OpenUpgradePageCallCount++;
+    }
 
     public async Task<bool> SignInAsync(CancellationToken cancellationToken = default)
     {
@@ -62,6 +72,10 @@ public class MockSyncService : ISyncService
     public Task<bool> SyncAsync(CancellationToken cancellationToken = default)
     {
         SyncCallCount++;
+        if (IsSubscriptionExpired)
+        {
+            throw new InvalidOperationException("Your 14-day cloud sync trial has expired.");
+        }
         SyncCalledTcs.TrySetResult(true);
         return Task.FromResult(true);
     }

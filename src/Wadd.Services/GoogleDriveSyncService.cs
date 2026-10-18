@@ -29,7 +29,20 @@ public class GoogleDriveSyncService : ISyncService
         WriteIndented = false
     };
 
+    private bool _lastProxyCallSubscriptionExpired;
+    private string _lastProxyPlan = string.Empty;
+    private int? _lastProxyDaysRemaining;
+    private string _lastProxyUpgradeUrl = "https://lunoit.biz.id/wadd";
+
     public bool IsSignedIn => _authRecord?.IsSignedIn ?? false;
+    public bool IsSubscriptionExpired => _authRecord?.IsSubscriptionExpired ?? _lastProxyCallSubscriptionExpired;
+    public string? SubscriptionPlan => !string.IsNullOrWhiteSpace(_authRecord?.SubscriptionPlan)
+        ? _authRecord.SubscriptionPlan
+        : (!string.IsNullOrWhiteSpace(_lastProxyPlan) ? _lastProxyPlan : null);
+    public int? SubscriptionDaysRemaining => _authRecord?.SubscriptionDaysRemaining ?? _lastProxyDaysRemaining;
+    public string? SubscriptionUpgradeUrl => !string.IsNullOrWhiteSpace(_authRecord?.SubscriptionUpgradeUrl)
+        ? _authRecord.SubscriptionUpgradeUrl
+        : _lastProxyUpgradeUrl;
     public string? UserEmail => _authRecord?.UserEmail;
     public string? LastSyncedUserEmail => !string.IsNullOrWhiteSpace(_authRecord?.LastSyncedUserEmail)
         ? _authRecord.LastSyncedUserEmail
@@ -38,6 +51,14 @@ public class GoogleDriveSyncService : ISyncService
     public bool MigratedToManifests => _authRecord?.MigratedToManifests ?? false;
     public event EventHandler? AuthStateChanged;
     public Func<string, string, Task<bool>>? ConfirmAccountSwitchAsync { get; set; }
+
+    public void OpenUpgradePage()
+    {
+        var baseUrl = !string.IsNullOrWhiteSpace(SubscriptionUpgradeUrl)
+            ? SubscriptionUpgradeUrl!.Trim()
+            : "https://lunoit.biz.id/wadd";
+        OpenBrowserUrl(baseUrl);
+    }
 
     internal void SetAuthRecordForTesting(UserAuthRecord record) => _authRecord = record;
 
@@ -394,6 +415,10 @@ public class GoogleDriveSyncService : ISyncService
             throw new InvalidOperationException("Google Client ID is missing. Please set GOOGLE_CLIENT_ID environment variable or paste it in Settings.");
         }
 
+        _lastProxyCallSubscriptionExpired = false;
+        _lastProxyPlan = string.Empty;
+        _lastProxyDaysRemaining = null;
+
         var previousEmail = LastSyncedUserEmail;
         var previousLastSyncUtc = _authRecord?.LastSyncTimestampUtc;
         var previousMigrated = _authRecord?.MigratedToManifests ?? false;
@@ -437,7 +462,11 @@ public class GoogleDriveSyncService : ISyncService
                     AuthenticatedAt = DateTime.UtcNow,
                     TokenExpiresAtUtc = DateTime.UtcNow.AddMinutes(50),
                     LastSyncTimestampUtc = switchedAccount ? null : previousLastSyncUtc,
-                    MigratedToManifests = !switchedAccount && previousMigrated
+                    MigratedToManifests = !switchedAccount && previousMigrated,
+                    IsSubscriptionExpired = false,
+                    SubscriptionPlan = _lastProxyPlan,
+                    SubscriptionDaysRemaining = _lastProxyDaysRemaining,
+                    SubscriptionUpgradeUrl = _lastProxyUpgradeUrl
                 };
 
                 SaveAuthRecord();
@@ -623,7 +652,11 @@ public class GoogleDriveSyncService : ISyncService
                 AuthenticatedAt = DateTime.UtcNow,
                 TokenExpiresAtUtc = DateTime.UtcNow.AddSeconds(Math.Max(300, expiresInSeconds - 60)),
                 LastSyncTimestampUtc = switchedAccount ? null : previousLastSyncUtc,
-                MigratedToManifests = !switchedAccount && previousMigrated
+                MigratedToManifests = !switchedAccount && previousMigrated,
+                IsSubscriptionExpired = false,
+                SubscriptionPlan = _lastProxyPlan,
+                SubscriptionDaysRemaining = _lastProxyDaysRemaining,
+                SubscriptionUpgradeUrl = _lastProxyUpgradeUrl
             };
 
             SaveAuthRecord();
@@ -654,6 +687,112 @@ public class GoogleDriveSyncService : ISyncService
             .TrimEnd('=')
             .Replace('+', '-')
             .Replace('/', '_');
+    }
+
+    private void ApplyProxySubscriptionInfo(JsonElement root)
+    {
+        _lastProxyCallSubscriptionExpired = false;
+        if (root.ValueKind == JsonValueKind.Object &&
+            root.TryGetProperty("subscription", out var subEl) &&
+            subEl.ValueKind == JsonValueKind.Object)
+        {
+            var plan = subEl.TryGetProperty("plan", out var planProp) && planProp.ValueKind == JsonValueKind.String
+                ? planProp.GetString() ?? string.Empty
+                : string.Empty;
+            int? daysRemaining = null;
+            if (subEl.TryGetProperty("days_remaining", out var daysProp) && daysProp.ValueKind == JsonValueKind.Number && daysProp.TryGetInt32(out var parsedDays))
+            {
+                daysRemaining = parsedDays;
+            }
+
+            _lastProxyPlan = plan;
+            _lastProxyDaysRemaining = daysRemaining;
+
+            if (_authRecord != null)
+            {
+                _authRecord.IsSubscriptionExpired = false;
+                _authRecord.SubscriptionPlan = plan;
+                _authRecord.SubscriptionDaysRemaining = daysRemaining;
+            }
+        }
+        else if (_authRecord != null)
+        {
+            _authRecord.IsSubscriptionExpired = false;
+        }
+    }
+
+    private bool TryHandleSubscriptionExpiredResponse(HttpStatusCode statusCode, string proxyJson)
+    {
+        if (statusCode != HttpStatusCode.Forbidden && statusCode != HttpStatusCode.PaymentRequired)
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(proxyJson))
+        {
+            return false;
+        }
+
+        try
+        {
+            using var doc = JsonDocument.Parse(proxyJson);
+            var root = doc.RootElement;
+            if (root.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            var errorCode = root.TryGetProperty("error", out var errProp) && errProp.ValueKind == JsonValueKind.String
+                ? errProp.GetString() ?? string.Empty
+                : string.Empty;
+            var upgradeUrl = root.TryGetProperty("upgrade_url", out var urlProp) && urlProp.ValueKind == JsonValueKind.String
+                ? urlProp.GetString() ?? string.Empty
+                : string.Empty;
+            var plan = root.TryGetProperty("plan", out var planProp) && planProp.ValueKind == JsonValueKind.String
+                ? planProp.GetString() ?? "trial"
+                : "trial";
+
+            var isSubscriptionError =
+                string.Equals(errorCode, "subscription_expired", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(errorCode, "subscription_revoked", StringComparison.OrdinalIgnoreCase) ||
+                !string.IsNullOrWhiteSpace(upgradeUrl);
+
+            if (!isSubscriptionError)
+            {
+                return false;
+            }
+
+            _lastProxyCallSubscriptionExpired = true;
+            _lastProxyPlan = plan;
+            _lastProxyDaysRemaining = 0;
+            if (!string.IsNullOrWhiteSpace(upgradeUrl))
+            {
+                _lastProxyUpgradeUrl = upgradeUrl;
+            }
+
+            _debounceTimer?.Dispose();
+            _debounceTimer = null;
+
+            if (_authRecord != null)
+            {
+                _authRecord.IsSubscriptionExpired = true;
+                _authRecord.SubscriptionPlan = plan;
+                _authRecord.SubscriptionDaysRemaining = 0;
+                if (!string.IsNullOrWhiteSpace(upgradeUrl))
+                {
+                    _authRecord.SubscriptionUpgradeUrl = upgradeUrl;
+                }
+                _authRecord.AccessToken = string.Empty;
+                SaveAuthRecord();
+                NotifyAuthStateChanged();
+            }
+
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     internal static string ExtractProxyErrorMessage(string proxyJson, string fallbackPrefix)
@@ -717,6 +856,10 @@ public class GoogleDriveSyncService : ISyncService
         {
             var errMsg = ExtractProxyErrorMessage(proxyJson, "OAuth proxy session verification failed");
             Wadd.Core.Logging.AppLogger.LogError("GoogleDriveSyncService", $"OAuth proxy session verification failed ({proxyResp.StatusCode}): {proxyJson}");
+            if (TryHandleSubscriptionExpiredResponse(proxyResp.StatusCode, proxyJson))
+            {
+                throw new UnauthorizedAccessException(errMsg);
+            }
             if (proxyResp.StatusCode == HttpStatusCode.Forbidden || proxyResp.StatusCode == HttpStatusCode.Unauthorized)
             {
                 if (_authRecord != null)
@@ -727,6 +870,13 @@ public class GoogleDriveSyncService : ISyncService
             }
             throw new InvalidOperationException(errMsg);
         }
+
+        try
+        {
+            using var proxyDoc = JsonDocument.Parse(proxyJson);
+            ApplyProxySubscriptionInfo(proxyDoc.RootElement);
+        }
+        catch { }
     }
 
     private async Task<(string AccessToken, string RefreshToken, string IdToken, int ExpiresIn)> ExchangeAuthorizationCodeAsync(
@@ -764,11 +914,13 @@ public class GoogleDriveSyncService : ISyncService
             {
                 var errMsg = ExtractProxyErrorMessage(proxyJson, "OAuth proxy code exchange failed");
                 Wadd.Core.Logging.AppLogger.LogError("GoogleDriveSyncService", $"OAuth proxy code exchange failed ({proxyResp.StatusCode}): {proxyJson}");
+                TryHandleSubscriptionExpiredResponse(proxyResp.StatusCode, proxyJson);
                 throw new InvalidOperationException(errMsg);
             }
 
             using var proxyDoc = JsonDocument.Parse(proxyJson);
             var proxyRoot = proxyDoc.RootElement;
+            ApplyProxySubscriptionInfo(proxyRoot);
             var proxyAccessToken = proxyRoot.TryGetProperty("access_token", out var pat) ? pat.GetString() ?? "" : "";
             var proxyRefreshToken = proxyRoot.TryGetProperty("refresh_token", out var prt) ? prt.GetString() ?? "" : "";
             var proxyIdToken = proxyRoot.TryGetProperty("id_token", out var pit) ? pit.GetString() ?? "" : "";
@@ -1021,14 +1173,16 @@ public class GoogleDriveSyncService : ISyncService
                     _authRecord ??= new UserAuthRecord();
                     _authRecord.AccessToken = nativeResult.AccessToken;
                     _authRecord.TokenExpiresAtUtc = DateTime.UtcNow.AddMinutes(50);
+                    _authRecord.IsSubscriptionExpired = false;
                     SaveAuthRecord();
+                    NotifyAuthStateChanged();
                     return true;
                 }
             }
             catch (UnauthorizedAccessException ex)
             {
                 Wadd.Core.Logging.AppLogger.LogWarning("GoogleDriveSyncService", "Native session revoked by OAuth proxy", ex);
-                if (_authRecord != null)
+                if (_authRecord != null && !IsSubscriptionExpired)
                 {
                     _authRecord.IsSignedIn = false;
                     _authRecord.AccessToken = string.Empty;
@@ -1040,6 +1194,10 @@ public class GoogleDriveSyncService : ISyncService
             catch (Exception ex)
             {
                 Wadd.Core.Logging.AppLogger.LogWarning("GoogleDriveSyncService", "Silent native token refresh failed", ex);
+                if (IsSubscriptionExpired)
+                {
+                    return false;
+                }
             }
         }
 
@@ -1076,6 +1234,7 @@ public class GoogleDriveSyncService : ISyncService
                     {
                         using var doc = JsonDocument.Parse(proxyJson);
                         var root = doc.RootElement;
+                        ApplyProxySubscriptionInfo(root);
                         if (root.TryGetProperty("access_token", out var atProp))
                         {
                             _authRecord.AccessToken = atProp.GetString() ?? string.Empty;
@@ -1085,13 +1244,19 @@ public class GoogleDriveSyncService : ISyncService
                             }
                             var expSec = root.TryGetProperty("expires_in", out var exp) ? exp.GetInt32() : 3600;
                             _authRecord.TokenExpiresAtUtc = DateTime.UtcNow.AddSeconds(Math.Max(300, expSec - 60));
+                            _authRecord.IsSubscriptionExpired = false;
                             SaveAuthRecord();
+                            NotifyAuthStateChanged();
                             return true;
                         }
                     }
                     else
                     {
                         Wadd.Core.Logging.AppLogger.LogWarning("GoogleDriveSyncService", $"OAuth proxy token refresh failed ({proxyResp.StatusCode}): {proxyJson}");
+                        if (TryHandleSubscriptionExpiredResponse(proxyResp.StatusCode, proxyJson))
+                        {
+                            return false;
+                        }
                         if (proxyResp.StatusCode == HttpStatusCode.Forbidden || proxyResp.StatusCode == HttpStatusCode.Unauthorized)
                         {
                             _authRecord.IsSignedIn = false;
@@ -1299,6 +1464,10 @@ public class GoogleDriveSyncService : ISyncService
             _pendingPushQueue.Clear();
         }
 
+        _lastProxyCallSubscriptionExpired = false;
+        _lastProxyPlan = string.Empty;
+        _lastProxyDaysRemaining = null;
+
         var preservedEmail = LastSyncedUserEmail ?? string.Empty;
         if (!string.IsNullOrWhiteSpace(preservedEmail) && _authRecord != null)
         {
@@ -1312,6 +1481,9 @@ public class GoogleDriveSyncService : ISyncService
             _authRecord.FirebaseRefreshToken = string.Empty;
             _authRecord.FirebaseLocalId = string.Empty;
             _authRecord.TokenExpiresAtUtc = null;
+            _authRecord.IsSubscriptionExpired = false;
+            _authRecord.SubscriptionPlan = string.Empty;
+            _authRecord.SubscriptionDaysRemaining = null;
             SaveAuthRecord();
         }
         else
@@ -1357,6 +1529,11 @@ public class GoogleDriveSyncService : ISyncService
             _pendingPushQueue.Add(taskId);
         }
         _debounceTimer?.Dispose();
+        if (IsSubscriptionExpired)
+        {
+            _debounceTimer = null;
+            return;
+        }
         _debounceTimer = new Timer(_ =>
         {
             _ = Task.Run(async () =>
@@ -1373,17 +1550,28 @@ public class GoogleDriveSyncService : ISyncService
             throw new InvalidOperationException("Please sign in with Google in Settings to synchronize your data.");
         }
 
-        // Proactive token refresh if token is expired or close to expiring (within 2 minutes)
-        if (_authRecord.TokenExpiresAtUtc.HasValue && DateTime.UtcNow >= _authRecord.TokenExpiresAtUtc.Value.AddMinutes(-2))
+        // Proactive token refresh if token is expired, close to expiring, or subscription was previously marked expired (to check if user renewed)
+        var refreshedProactively = false;
+        if (_authRecord.IsSubscriptionExpired ||
+            (_authRecord.TokenExpiresAtUtc.HasValue && DateTime.UtcNow >= _authRecord.TokenExpiresAtUtc.Value.AddMinutes(-2)))
         {
+            refreshedProactively = true;
             await TryRefreshTokenAsync(cancellationToken);
         }
 
         if (string.IsNullOrWhiteSpace(_authRecord.AccessToken))
         {
-            if (!string.IsNullOrWhiteSpace(_authRecord.RefreshToken))
+            if (!refreshedProactively && !string.IsNullOrWhiteSpace(_authRecord.RefreshToken))
             {
                 await TryRefreshTokenAsync(cancellationToken);
+            }
+
+            if (_authRecord.IsSubscriptionExpired)
+            {
+                var expiredMsg = Wadd.Core.Localization.Strings.ResourceManager.GetString(
+                    "Settings_TrialExpired_Notice",
+                    Wadd.Core.Localization.Strings.Culture) ?? "Your 14-day cloud sync trial has expired.";
+                throw new InvalidOperationException(expiredMsg);
             }
 
             if (string.IsNullOrWhiteSpace(_authRecord.AccessToken))
@@ -2983,4 +3171,8 @@ public class UserAuthRecord
     public DateTime? TokenExpiresAtUtc { get; set; }
     public DateTime? LastSyncTimestampUtc { get; set; }
     public bool MigratedToManifests { get; set; }
+    public bool IsSubscriptionExpired { get; set; }
+    public string SubscriptionPlan { get; set; } = string.Empty;
+    public int? SubscriptionDaysRemaining { get; set; }
+    public string SubscriptionUpgradeUrl { get; set; } = "https://lunoit.biz.id/wadd";
 }

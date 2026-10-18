@@ -204,6 +204,11 @@
             <!-- Status indicator dot -->
             <Ellipse Width="6" Height="6"
                      HorizontalAlignment="Center"
+                     Fill="{DynamicResource AppAccentDangerBrush}"
+                     IsVisible="{Binding IsSubscriptionExpired}"
+                     ToolTip.Tip="{Binding StorageStatusText}"/>
+            <Ellipse Width="6" Height="6"
+                     HorizontalAlignment="Center"
                      Fill="{DynamicResource AppAccentSuccessBrush}"
                      IsVisible="{Binding !IsSyncing}"
                      ToolTip.Tip="{Binding StorageStatusText}"/>
@@ -228,7 +233,8 @@
                   <TextBlock Text="{loc:Localize Main_StorageAndSync}" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
                   <TextBlock Text="{loc:Localize Main_SavedOnDevice}" IsVisible="{Binding !IsGoogleSignedIn}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
                   <TextBlock Text="{Binding GoogleUserEmail}" IsVisible="{Binding IsGoogleSignedIn}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource AppTextPrimaryBrush}" TextTrimming="CharacterEllipsis"/>
-                  <TextBlock Text="{Binding LastUpdatedFormatted}" FontSize="10" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                  <TextBlock Text="{Binding SubscriptionBadgeText}" IsVisible="{Binding IsSubscriptionExpired}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AppAccentDangerBrush}"/>
+                  <TextBlock Text="{Binding LastUpdatedFormatted}" IsVisible="{Binding !IsSubscriptionExpired}" FontSize="10" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
                 </StackPanel>
                 <Button Grid.Column="1"
                         Classes="icon-btn"

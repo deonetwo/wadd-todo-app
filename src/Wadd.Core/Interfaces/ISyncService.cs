@@ -14,6 +14,10 @@ public interface ISyncService
     string FirebaseProjectId { get; set; }
 
     bool HasChangesApplied { get; }
+    bool IsSubscriptionExpired { get; }
+    string? SubscriptionPlan { get; }
+    int? SubscriptionDaysRemaining { get; }
+    string? SubscriptionUpgradeUrl { get; }
 
     int UnresolvedConflictCount { get; }
     event EventHandler? ConflictCountChanged;
@@ -24,4 +28,5 @@ public interface ISyncService
     Task SignOutAsync(CancellationToken cancellationToken = default);
     Task<bool> SyncAsync(CancellationToken cancellationToken = default);
     Task RefreshConflictCountAsync(CancellationToken cancellationToken = default);
+    void OpenUpgradePage();
 }

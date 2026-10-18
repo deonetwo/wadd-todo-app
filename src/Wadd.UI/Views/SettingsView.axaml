@@ -101,6 +101,34 @@
             </Grid>
           </StackPanel>
 
+          <!-- Trial / Subscription Expired Notice Banner (Visible whether signed in or signed out when expired) -->
+          <Border IsVisible="{Binding IsSubscriptionExpired}"
+                  Background="{DynamicResource AppAccentDangerSubtleBrush}"
+                  BorderBrush="{DynamicResource AppAccentDangerBrush}"
+                  BorderThickness="1"
+                  CornerRadius="8"
+                  Padding="12,10">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+              <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                <TextBlock Text="{Binding SubscriptionBadgeText}"
+                           FontSize="12"
+                           FontWeight="Bold"
+                           Foreground="{DynamicResource AppAccentDangerBrush}"/>
+                <TextBlock Text="{loc:Localize Settings_TrialExpired_Notice}"
+                           FontSize="11.5"
+                           Foreground="{DynamicResource AppTextPrimaryBrush}"
+                           TextWrapping="Wrap"/>
+              </StackPanel>
+              <Button Grid.Column="1"
+                      Classes="primary"
+                      Command="{Binding OpenSubscriptionUpgradeCommand}"
+                      VerticalAlignment="Center"
+                      Padding="12,6">
+                <TextBlock Text="{loc:Localize Settings_Upgrade_Button}" FontSize="12" FontWeight="SemiBold"/>
+              </Button>
+            </Grid>
+          </Border>
+
           <!-- Signed In State -->
           <StackPanel IsVisible="{Binding IsGoogleSignedIn}" Spacing="16">
             <Border Background="{DynamicResource AppSurfaceElevatedBrush}"
@@ -129,8 +157,30 @@
                     <Border Background="{DynamicResource AppAccentTintBrush}"
                             CornerRadius="4"
                             Padding="6,2"
-                            VerticalAlignment="Center">
+                            Margin="0,0,6,0"
+                            VerticalAlignment="Center"
+                            IsVisible="{Binding !IsSubscriptionExpired}">
                       <TextBlock Text="{loc:Localize Settings_Connected}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                    </Border>
+                    <Border Background="{DynamicResource AppSurfaceSubtleBrush}"
+                            BorderBrush="{DynamicResource AppBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="4"
+                            Padding="6,2"
+                            VerticalAlignment="Center"
+                            IsVisible="{Binding HasSubscriptionPlanBadge}">
+                      <Panel>
+                        <TextBlock Text="{Binding SubscriptionBadgeText}"
+                                   FontSize="10"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                   IsVisible="{Binding !IsSubscriptionExpired}"/>
+                        <TextBlock Text="{Binding SubscriptionBadgeText}"
+                                   FontSize="10"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource AppAccentDangerBrush}"
+                                   IsVisible="{Binding IsSubscriptionExpired}"/>
+                      </Panel>
                     </Border>
                   </WrapPanel>
                 </StackPanel>
@@ -144,13 +194,19 @@
               </Grid>
             </Border>
 
-            <Button Classes="primary" Command="{Binding SyncCommand}" IsEnabled="{Binding !IsSyncing}" HorizontalAlignment="Left">
-              <StackPanel Orientation="Horizontal" Spacing="6">
-                <PathIcon Data="{StaticResource SyncIconData}" Width="13" Height="13"/>
-                <TextBlock Text="{loc:Localize Settings_SyncNow_Button}" IsVisible="{Binding !IsSyncing}"/>
-                <TextBlock Text="{loc:Localize Main_Syncing}" IsVisible="{Binding IsSyncing}"/>
-              </StackPanel>
-            </Button>
+            <WrapPanel Orientation="Horizontal">
+              <Button Classes="primary"
+                      Command="{Binding SyncCommand}"
+                      IsEnabled="{Binding !IsSyncing}"
+                      HorizontalAlignment="Left"
+                      Margin="0,0,10,0">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <PathIcon Data="{StaticResource SyncIconData}" Width="13" Height="13"/>
+                  <TextBlock Text="{loc:Localize Settings_SyncNow_Button}" IsVisible="{Binding !IsSyncing}"/>
+                  <TextBlock Text="{loc:Localize Main_Syncing}" IsVisible="{Binding IsSyncing}"/>
+                </StackPanel>
+              </Button>
+            </WrapPanel>
           </StackPanel>
 
         </StackPanel>
@@ -1157,7 +1213,7 @@
                    Width="40" Height="40" Margin="0,0,16,12" VerticalAlignment="Center"/>
             <StackPanel Grid.Row="0" Grid.Column="1" VerticalAlignment="Center">
               <TextBlock Text="Wadd ToDo" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
-              <TextBlock Text="Version 1.5.2 (.NET 10 + Avalonia UI 12)" Classes="small" TextWrapping="Wrap" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              <TextBlock Text="Version 1.6.0 (.NET 10 + Avalonia UI 12)" Classes="small" TextWrapping="Wrap" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
             </StackPanel>
 
             <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Localize Settings_Developer}" Classes="small" FontWeight="SemiBold" Margin="0,0,16,6"/>

@@ -388,4 +388,13 @@
   <data name="Settings_Notification_Lead_30m_Desc" xml:space="preserve"><value>Remind me 30 minutes in advance</value></data>
   <data name="Settings_Notification_Lead_60m" xml:space="preserve"><value>1 hour before</value></data>
   <data name="Settings_Notification_Lead_60m_Desc" xml:space="preserve"><value>Remind me 1 hour in advance</value></data>
+
+  <!-- Cloud Sync Trial & Subscription Status -->
+  <data name="Settings_TrialExpired_Badge" xml:space="preserve"><value>Trial Expired</value></data>
+  <data name="Settings_SubscriptionExpired_Badge" xml:space="preserve"><value>Subscription Expired</value></data>
+  <data name="Settings_TrialRemaining_Badge" xml:space="preserve"><value>Trial · {0}d left</value></data>
+  <data name="Settings_Plan_Pro" xml:space="preserve"><value>Pro</value></data>
+  <data name="Settings_Plan_Lifetime" xml:space="preserve"><value>Lifetime</value></data>
+  <data name="Settings_TrialExpired_Notice" xml:space="preserve"><value>Cloud Sync trial has ended. Auto-sync is paused. Click Sync or Upgrade to continue.</value></data>
+  <data name="Settings_Upgrade_Button" xml:space="preserve"><value>Upgrade</value></data>
 </root>

@@ -207,6 +207,48 @@ public class GoogleOAuthSyncTests
     }
 
     [Fact]
+    public async Task GoogleDriveSyncService_NativeSignIn_SetsSubscriptionExpiredWhenTrialExpired()
+    {
+        var authPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"wadd_auth_{Guid.NewGuid():N}.json");
+        try
+        {
+            var inMemoryTodo = new InMemoryTodoService();
+            var handler = new FakeHttpMessageHandler((req, _) =>
+            {
+                var resp = new System.Net.Http.HttpResponseMessage(System.Net.HttpStatusCode.Forbidden)
+                {
+                    Content = new System.Net.Http.StringContent(
+                        "{\"error\":\"subscription_expired\",\"plan\":\"trial\",\"upgrade_url\":\"https://lunoit.biz.id/wadd\",\"message\":\"Your 14-day cloud sync trial has expired.\"}",
+                        System.Text.Encoding.UTF8,
+                        "application/json")
+                };
+                return Task.FromResult(resp);
+            });
+            var httpClient = new System.Net.Http.HttpClient(handler);
+            var fakeNativeAuth = new FakeNativeGoogleAuthService();
+
+            var syncService = new GoogleDriveSyncService(
+                inMemoryTodo,
+                httpClient: httpClient,
+                nativeAuthService: fakeNativeAuth,
+                authFilePath: authPath);
+
+            syncService.GoogleClientId = "test-client-id.apps.googleusercontent.com";
+            syncService.OAuthProxyUrl = "https://wadd-oauth-proxy.workers.dev";
+
+            var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => syncService.SignInAsync());
+            Assert.Contains("expired", ex.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.True(syncService.IsSubscriptionExpired);
+            Assert.Equal("trial", syncService.SubscriptionPlan);
+            Assert.Equal("https://lunoit.biz.id/wadd", syncService.SubscriptionUpgradeUrl);
+        }
+        finally
+        {
+            try { if (System.IO.File.Exists(authPath)) System.IO.File.Delete(authPath); } catch { }
+        }
+    }
+
+    [Fact]
     public async Task GoogleDriveSyncService_SignOut_PreservesLastSyncedEmailAndKeepsLocalData()
     {
         var dbPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"wadd_acct_signout_{Guid.NewGuid():N}.db");

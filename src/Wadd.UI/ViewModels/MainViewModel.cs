@@ -2804,6 +2804,57 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(StorageStatusText))]
+    [NotifyPropertyChangedFor(nameof(HasSubscriptionPlanBadge))]
+    [NotifyPropertyChangedFor(nameof(SubscriptionBadgeText))]
+    private bool _isSubscriptionExpired;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSubscriptionPlanBadge))]
+    [NotifyPropertyChangedFor(nameof(SubscriptionBadgeText))]
+    private string _subscriptionPlan = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSubscriptionPlanBadge))]
+    [NotifyPropertyChangedFor(nameof(SubscriptionBadgeText))]
+    private int? _subscriptionDaysRemaining;
+
+    public bool HasSubscriptionPlanBadge => IsSubscriptionExpired || !string.IsNullOrWhiteSpace(SubscriptionPlan);
+
+    public string SubscriptionBadgeText
+    {
+        get
+        {
+            var lm = LocalizationManager.Instance;
+            if (IsSubscriptionExpired)
+            {
+                return string.Equals(SubscriptionPlan, "pro", StringComparison.OrdinalIgnoreCase)
+                    ? lm["Settings_SubscriptionExpired_Badge"]
+                    : lm["Settings_TrialExpired_Badge"];
+            }
+
+            if (string.Equals(SubscriptionPlan, "trial", StringComparison.OrdinalIgnoreCase))
+            {
+                return SubscriptionDaysRemaining.HasValue
+                    ? string.Format(lm["Settings_TrialRemaining_Badge"], SubscriptionDaysRemaining.Value)
+                    : "Trial";
+            }
+
+            if (string.Equals(SubscriptionPlan, "pro", StringComparison.OrdinalIgnoreCase))
+            {
+                return lm["Settings_Plan_Pro"];
+            }
+
+            if (string.Equals(SubscriptionPlan, "lifetime", StringComparison.OrdinalIgnoreCase))
+            {
+                return lm["Settings_Plan_Lifetime"];
+            }
+
+            return string.Empty;
+        }
+    }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(StorageStatusText))]
     [NotifyPropertyChangedFor(nameof(IsSyncingOrSigningIn))]
     private bool _isGoogleSigningIn;
 
@@ -2815,6 +2866,7 @@ public partial class MainViewModel : ViewModelBase
         {
             if (IsGoogleSigningIn) return LocalizationManager.Instance["Main_SigningInGoogle"] ?? "Signing in with Google Account...";
             if (IsSyncing) return "Syncing with cloud…";
+            if (IsSubscriptionExpired) return SubscriptionBadgeText;
             if (IsGoogleSignedIn) return "Synced with Google Drive";
             return "Saved on device";
         }
@@ -3914,7 +3966,7 @@ public partial class MainViewModel : ViewModelBase
             if (_periodicSyncTicks >= 20) // Every 5 minutes (20 * 15s)
             {
                 _periodicSyncTicks = 0;
-                if (IsGoogleSignedIn && !IsSyncing)
+                if (IsGoogleSignedIn && !IsSubscriptionExpired && !IsSyncing)
                 {
                     _ = TriggerAutoSyncAsync();
                 }
@@ -3922,7 +3974,7 @@ public partial class MainViewModel : ViewModelBase
         };
         timer.Start();
 
-        if (IsGoogleSignedIn)
+        if (IsGoogleSignedIn && !IsSubscriptionExpired)
         {
             ScheduleStartupAutoSync();
         }
@@ -3930,14 +3982,14 @@ public partial class MainViewModel : ViewModelBase
 
     public void ScheduleStartupAutoSync(int delayMs = 1800)
     {
-        if (!IsGoogleSignedIn) return;
+        if (!IsGoogleSignedIn || IsSubscriptionExpired) return;
         _ = Task.Run(async () =>
         {
             if (delayMs > 0)
             {
                 await Task.Delay(delayMs);
             }
-            if (IsGoogleSignedIn && !IsSyncing)
+            if (IsGoogleSignedIn && !IsSubscriptionExpired && !IsSyncing)
             {
                 AppLogger.LogInfo("Sync", "Startup auto-sync triggered on app launch.");
                 await TriggerAutoSyncAsync();
@@ -4047,6 +4099,9 @@ public partial class MainViewModel : ViewModelBase
     private void UpdateGoogleAuthState()
     {
         IsGoogleSignedIn = _syncService.IsSignedIn;
+        IsSubscriptionExpired = _syncService.IsSubscriptionExpired;
+        SubscriptionPlan = _syncService.SubscriptionPlan ?? string.Empty;
+        SubscriptionDaysRemaining = _syncService.SubscriptionDaysRemaining;
         GoogleUserEmail = _syncService.UserEmail ?? string.Empty;
         GoogleUserName = _syncService.UserName ?? "Google Account User";
         GoogleClientId = _syncService.GoogleClientId ?? string.Empty;
@@ -4516,7 +4571,12 @@ public partial class MainViewModel : ViewModelBase
         catch (Exception ex)
         {
             AppLogger.LogError("GoogleAuth", $"Sign-in failed: {ex.Message}", ex);
+            UpdateGoogleAuthState();
             StatusMessage = $"Sign-in failed: {ex.Message}";
+            if (_syncService.IsSubscriptionExpired)
+            {
+                _syncService.OpenUpgradePage();
+            }
         }
         finally
         {
@@ -4547,9 +4607,22 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void OpenSubscriptionUpgrade()
+    {
+        _syncService.OpenUpgradePage();
+    }
+
+    [RelayCommand]
     private async Task SyncNowAsync()
     {
         if (IsSyncing) return;
+
+        if (!IsGoogleSignedIn && IsSubscriptionExpired)
+        {
+            _syncService.OpenUpgradePage();
+            return;
+        }
+
         try
         {
             _autoSyncDebounceTimer?.Stop();
@@ -4562,6 +4635,7 @@ public partial class MainViewModel : ViewModelBase
             IsSyncing = true;
             StatusMessage = "Syncing with Google Drive...";
             var success = await _syncService.SyncAsync();
+            UpdateGoogleAuthState();
             if (success)
             {
                 LastUpdatedAt = DateTime.Now;
@@ -4593,6 +4667,10 @@ public partial class MainViewModel : ViewModelBase
             AppLogger.LogError("Sync", $"Manual sync failed: {ex.Message}", ex);
             UpdateGoogleAuthState();
             StatusMessage = $"Sync failed: {ex.Message}";
+            if (_syncService.IsSubscriptionExpired)
+            {
+                _syncService.OpenUpgradePage();
+            }
         }
         finally
         {
@@ -4605,7 +4683,7 @@ public partial class MainViewModel : ViewModelBase
 
     private void RequestDebouncedAutoSync()
     {
-        if (!IsGoogleSignedIn) return;
+        if (!IsGoogleSignedIn || IsSubscriptionExpired) return;
 
         if (_autoSyncDebounceTimer == null)
         {
@@ -4613,7 +4691,7 @@ public partial class MainViewModel : ViewModelBase
             _autoSyncDebounceTimer.Tick += async (_, _) =>
             {
                 _autoSyncDebounceTimer?.Stop();
-                if (IsGoogleSignedIn && !IsSyncing)
+                if (IsGoogleSignedIn && !IsSubscriptionExpired && !IsSyncing)
                 {
                     await TriggerAutoSyncAsync();
                 }
@@ -4625,7 +4703,7 @@ public partial class MainViewModel : ViewModelBase
 
     internal async Task TriggerAutoSyncAsync()
     {
-        if (IsSyncing || !IsGoogleSignedIn) return;
+        if (IsSyncing || !IsGoogleSignedIn || IsSubscriptionExpired) return;
         _autoSyncDebounceTimer?.Stop();
         AppLogger.LogInfo("Sync", "Triggering auto-sync (Foreground)...");
         try
@@ -4637,6 +4715,7 @@ public partial class MainViewModel : ViewModelBase
 
             IsSyncing = true;
             var success = await _syncService.SyncAsync();
+            UpdateGoogleAuthState();
             if (success)
             {
                 LastUpdatedAt = DateTime.Now;
@@ -4655,6 +4734,7 @@ public partial class MainViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            UpdateGoogleAuthState();
             AppLogger.LogWarning("Sync", $"Auto sync background failed: {ex.Message}");
         }
         finally
@@ -5308,6 +5388,8 @@ public partial class MainViewModel
 
         OnPropertyChanged(nameof(UpcomingTasksRangeLabel));
         OnPropertyChanged(nameof(SelectedLanguageOption));
+        OnPropertyChanged(nameof(SubscriptionBadgeText));
+        OnPropertyChanged(nameof(StorageStatusText));
         OnPropertyChanged(nameof(SelectedTasksLayoutOption));
         OnPropertyChanged(nameof(SelectedUpcomingTasksRangeOption));
         OnPropertyChanged(nameof(SelectedNotificationRepeatIntervalOption));
