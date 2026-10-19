@@ -57,6 +57,14 @@ public class GoogleDriveSyncService : ISyncService
         var baseUrl = !string.IsNullOrWhiteSpace(SubscriptionUpgradeUrl)
             ? SubscriptionUpgradeUrl!.Trim()
             : "https://lunoit.biz.id/wadd";
+
+        var email = UserEmail ?? _authRecord?.UserEmail ?? _authRecord?.LastSyncedUserEmail;
+        if (!string.IsNullOrWhiteSpace(email) && !baseUrl.Contains("customer_email=", StringComparison.OrdinalIgnoreCase))
+        {
+            var separator = baseUrl.Contains("?") ? "&" : "?";
+            baseUrl = $"{baseUrl}{separator}customer_email={Uri.EscapeDataString(email.Trim())}";
+        }
+
         OpenBrowserUrl(baseUrl);
     }
 
@@ -705,14 +713,26 @@ public class GoogleDriveSyncService : ISyncService
                 daysRemaining = parsedDays;
             }
 
+            var upgradeUrl = subEl.TryGetProperty("upgrade_url", out var urlProp) && urlProp.ValueKind == JsonValueKind.String
+                ? urlProp.GetString() ?? string.Empty
+                : string.Empty;
+
             _lastProxyPlan = plan;
             _lastProxyDaysRemaining = daysRemaining;
+            if (!string.IsNullOrWhiteSpace(upgradeUrl))
+            {
+                _lastProxyUpgradeUrl = upgradeUrl;
+            }
 
             if (_authRecord != null)
             {
                 _authRecord.IsSubscriptionExpired = false;
                 _authRecord.SubscriptionPlan = plan;
                 _authRecord.SubscriptionDaysRemaining = daysRemaining;
+                if (!string.IsNullOrWhiteSpace(upgradeUrl))
+                {
+                    _authRecord.SubscriptionUpgradeUrl = upgradeUrl;
+                }
             }
         }
         else if (_authRecord != null)

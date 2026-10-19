@@ -2800,17 +2800,20 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(StorageStatusText))]
+    [NotifyPropertyChangedFor(nameof(CanUpgradeSubscription))]
     private bool _isGoogleSignedIn;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(StorageStatusText))]
     [NotifyPropertyChangedFor(nameof(HasSubscriptionPlanBadge))]
     [NotifyPropertyChangedFor(nameof(SubscriptionBadgeText))]
+    [NotifyPropertyChangedFor(nameof(CanUpgradeSubscription))]
     private bool _isSubscriptionExpired;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSubscriptionPlanBadge))]
     [NotifyPropertyChangedFor(nameof(SubscriptionBadgeText))]
+    [NotifyPropertyChangedFor(nameof(CanUpgradeSubscription))]
     private string _subscriptionPlan = string.Empty;
 
     [ObservableProperty]
@@ -2819,6 +2822,10 @@ public partial class MainViewModel : ViewModelBase
     private int? _subscriptionDaysRemaining;
 
     public bool HasSubscriptionPlanBadge => IsSubscriptionExpired || !string.IsNullOrWhiteSpace(SubscriptionPlan);
+
+    public bool CanUpgradeSubscription =>
+        IsSubscriptionExpired ||
+        (IsGoogleSignedIn && string.Equals(SubscriptionPlan, "trial", StringComparison.OrdinalIgnoreCase));
 
     public string SubscriptionBadgeText
     {

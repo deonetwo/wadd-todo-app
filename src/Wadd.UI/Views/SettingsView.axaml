@@ -206,6 +206,17 @@
                   <TextBlock Text="{loc:Localize Main_Syncing}" IsVisible="{Binding IsSyncing}"/>
                 </StackPanel>
               </Button>
+              <Button Classes="outline"
+                      Command="{Binding OpenSubscriptionUpgradeCommand}"
+                      IsVisible="{Binding CanUpgradeSubscription}"
+                      HorizontalAlignment="Left"
+                      Margin="0,0,10,0"
+                      ToolTip.Tip="{loc:Localize Settings_Upgrade_Button}">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <PathIcon Data="{StaticResource CheckIconData}" Width="12" Height="12" Foreground="{DynamicResource AppPrimaryBrush}"/>
+                  <TextBlock Text="{loc:Localize Settings_Upgrade_Button}" FontWeight="SemiBold"/>
+                </StackPanel>
+              </Button>
             </WrapPanel>
           </StackPanel>
 
