@@ -1413,7 +1413,12 @@ public partial class MainViewModel : ViewModelBase
         tag = tag.Trim();
         if (!EditDetailCategories.Contains(tag, StringComparer.OrdinalIgnoreCase))
         {
-            EditDetailCategories.Add(tag);
+            int insertIndex = 0;
+            while (insertIndex < EditDetailCategories.Count && string.Compare(EditDetailCategories[insertIndex], tag, StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                insertIndex++;
+            }
+            EditDetailCategories.Insert(insertIndex, tag);
             EditDetailCategoryInput = string.Empty;
             OnPropertyChanged(nameof(HasEditDetailCategories));
         }
@@ -1699,7 +1704,7 @@ public partial class MainViewModel : ViewModelBase
             reminderAt = baseDate.Date + EditDetailReminderTime.Value;
         }
 
-        string categoryString = string.Join(", ", EditDetailCategories);
+        string categoryString = string.Join(", ", EditDetailCategories.OrderBy(c => c, StringComparer.OrdinalIgnoreCase));
 
         if (rescheduleOccurrenceOnly)
         {
@@ -1794,7 +1799,12 @@ public partial class MainViewModel : ViewModelBase
         tag = tag.Trim();
         if (!NewTaskCategories.Contains(tag, StringComparer.OrdinalIgnoreCase))
         {
-            NewTaskCategories.Add(tag);
+            int insertIndex = 0;
+            while (insertIndex < NewTaskCategories.Count && string.Compare(NewTaskCategories[insertIndex], tag, StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                insertIndex++;
+            }
+            NewTaskCategories.Insert(insertIndex, tag);
             NewTaskCategoryInput = string.Empty;
             OnPropertyChanged(nameof(HasNewTaskCategories));
         }
@@ -4312,8 +4322,12 @@ public partial class MainViewModel : ViewModelBase
         {
             var initialDueDate = NewTaskDueDate?.Date ?? DateTime.Today;
             var cat = NewTaskCategories.Count > 0
-                ? string.Join(", ", NewTaskCategories)
-                : (string.IsNullOrWhiteSpace(NewTaskCategoryInput) ? null : NewTaskCategoryInput.Trim());
+                ? string.Join(", ", NewTaskCategories.OrderBy(c => c, StringComparer.OrdinalIgnoreCase))
+                : (string.IsNullOrWhiteSpace(NewTaskCategoryInput)
+                    ? null
+                    : string.Join(", ", NewTaskCategoryInput.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                                                             .Distinct(StringComparer.OrdinalIgnoreCase)
+                                                             .OrderBy(c => c, StringComparer.OrdinalIgnoreCase)));
 
             var newItem = new TodoItem
             {

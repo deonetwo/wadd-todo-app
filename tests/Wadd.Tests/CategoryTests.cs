@@ -15,11 +15,21 @@ public class CategoryTests
     }
 
     [Fact]
-    public void CategoriesList_MultipleCommaSeparatedCategories_SplitsAndTrimsDistinct()
+    public void CategoriesList_MultipleCommaSeparatedCategories_SplitsAndTrimsDistinctAndSorted()
     {
         var item = new TodoItem { Category = "Work, Personal, Shopping, work" };
 
-        Assert.Equal(new List<string> { "Work", "Personal", "Shopping" }, item.CategoriesList);
+        Assert.Equal(new List<string> { "Personal", "Shopping", "Work" }, item.CategoriesList);
+    }
+
+    [Fact]
+    public void CategoriesList_OutOfOrderCategories_ReturnsSortedAlphabetically()
+    {
+        var item1 = new TodoItem { Category = "CS2, Games, HSR" };
+        var item2 = new TodoItem { Category = "HSR, Games, CS2" };
+
+        Assert.Equal(new List<string> { "CS2", "Games", "HSR" }, item1.CategoriesList);
+        Assert.Equal(new List<string> { "CS2", "Games", "HSR" }, item2.CategoriesList);
     }
 
     [Fact]

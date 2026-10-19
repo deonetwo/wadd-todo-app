@@ -48,5 +48,6 @@ public class TodoItem
         ? new List<string>()
         : Category.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                   .Distinct(StringComparer.OrdinalIgnoreCase)
+                  .OrderBy(c => c, StringComparer.OrdinalIgnoreCase)
                   .ToList();
 }
