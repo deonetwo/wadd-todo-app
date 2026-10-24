@@ -395,4 +395,15 @@
   <data name="Settings_Plan_Lifetime" xml:space="preserve"><value>Lifetime</value></data>
   <data name="Settings_TrialExpired_Notice" xml:space="preserve"><value>Cloud Sync trial has ended. Auto-sync is paused. Click Sync or Upgrade to continue.</value></data>
   <data name="Settings_Upgrade_Button" xml:space="preserve"><value>Upgrade</value></data>
+
+  <!-- Repeating Tasks Notification Time -->
+  <data name="Settings_RepeatingTaskNotificationTime" xml:space="preserve"><value>Repeating Tasks Notification Time</value></data>
+  <data name="Settings_RepeatingTaskNotificationTime_Desc" xml:space="preserve"><value>Choose the time of day when notifications pop up for repeating tasks on their scheduled day (Default: 7:00 AM).</value></data>
+  <data name="Settings_Notification_Time_Default_Desc" xml:space="preserve"><value>Morning start (Default)</value></data>
+  <data name="Settings_Notification_Time_EarlyMorning_Desc" xml:space="preserve"><value>Early morning</value></data>
+  <data name="Settings_Notification_Time_Morning_Desc" xml:space="preserve"><value>Morning</value></data>
+  <data name="Settings_Notification_Time_Midday_Desc" xml:space="preserve"><value>Midday</value></data>
+  <data name="Settings_Notification_Time_Afternoon_Desc" xml:space="preserve"><value>Afternoon</value></data>
+  <data name="Settings_Notification_Time_Evening_Desc" xml:space="preserve"><value>Evening</value></data>
+  <data name="Settings_Notification_Time_Night_Desc" xml:space="preserve"><value>Night</value></data>
 </root>

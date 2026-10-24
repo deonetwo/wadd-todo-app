@@ -549,6 +549,49 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [ObservableProperty]
+    private TimeSpan _repeatingTaskNotificationTime = new TimeSpan(7, 0, 0);
+
+    partial void OnRepeatingTaskNotificationTimeChanged(TimeSpan value)
+    {
+        SelectedRepeatingTaskNotificationTimeOption = RepeatingTaskNotificationTimeOptions.FirstOrDefault(x => x.Time == value)
+            ?? new RepeatingTaskNotificationTimeOption { Time = value, Name = DateTime.Today.Add(value).ToString("hh:mm tt"), Description = string.Empty };
+        SaveUserSettings();
+    }
+
+    public List<RepeatingTaskNotificationTimeOption> RepeatingTaskNotificationTimeOptions { get; } = new()
+    {
+        new RepeatingTaskNotificationTimeOption { Time = new TimeSpan(5, 0, 0), Name = "05:00 AM", Description = "Early morning" },
+        new RepeatingTaskNotificationTimeOption { Time = new TimeSpan(6, 0, 0), Name = "06:00 AM", Description = "Early morning" },
+        new RepeatingTaskNotificationTimeOption { Time = new TimeSpan(7, 0, 0), Name = "07:00 AM", Description = "Morning start (Default)" },
+        new RepeatingTaskNotificationTimeOption { Time = new TimeSpan(8, 0, 0), Name = "08:00 AM", Description = "Morning" },
+        new RepeatingTaskNotificationTimeOption { Time = new TimeSpan(9, 0, 0), Name = "09:00 AM", Description = "Morning" },
+        new RepeatingTaskNotificationTimeOption { Time = new TimeSpan(10, 0, 0), Name = "10:00 AM", Description = "Midday" },
+        new RepeatingTaskNotificationTimeOption { Time = new TimeSpan(11, 0, 0), Name = "11:00 AM", Description = "Midday" },
+        new RepeatingTaskNotificationTimeOption { Time = new TimeSpan(12, 0, 0), Name = "12:00 PM", Description = "Noon" },
+        new RepeatingTaskNotificationTimeOption { Time = new TimeSpan(13, 0, 0), Name = "01:00 PM", Description = "Afternoon" },
+        new RepeatingTaskNotificationTimeOption { Time = new TimeSpan(14, 0, 0), Name = "02:00 PM", Description = "Afternoon" },
+        new RepeatingTaskNotificationTimeOption { Time = new TimeSpan(15, 0, 0), Name = "03:00 PM", Description = "Afternoon" },
+        new RepeatingTaskNotificationTimeOption { Time = new TimeSpan(16, 0, 0), Name = "04:00 PM", Description = "Afternoon" },
+        new RepeatingTaskNotificationTimeOption { Time = new TimeSpan(17, 0, 0), Name = "05:00 PM", Description = "Afternoon" },
+        new RepeatingTaskNotificationTimeOption { Time = new TimeSpan(18, 0, 0), Name = "06:00 PM", Description = "Evening" },
+        new RepeatingTaskNotificationTimeOption { Time = new TimeSpan(19, 0, 0), Name = "07:00 PM", Description = "Evening" },
+        new RepeatingTaskNotificationTimeOption { Time = new TimeSpan(20, 0, 0), Name = "08:00 PM", Description = "Night" },
+        new RepeatingTaskNotificationTimeOption { Time = new TimeSpan(21, 0, 0), Name = "09:00 PM", Description = "Night" },
+        new RepeatingTaskNotificationTimeOption { Time = new TimeSpan(22, 0, 0), Name = "10:00 PM", Description = "Night" }
+    };
+
+    [ObservableProperty]
+    private RepeatingTaskNotificationTimeOption? _selectedRepeatingTaskNotificationTimeOption;
+
+    partial void OnSelectedRepeatingTaskNotificationTimeOptionChanged(RepeatingTaskNotificationTimeOption? value)
+    {
+        if (value != null && value.Time != RepeatingTaskNotificationTime)
+        {
+            RepeatingTaskNotificationTime = value.Time;
+        }
+    }
+
+    [ObservableProperty]
     private bool _playNotificationSound = true;
 
     partial void OnPlayNotificationSoundChanged(bool value)
@@ -678,10 +721,18 @@ public partial class MainViewModel : ViewModelBase
 
             if (item.DueDate.HasValue && item.DueDate.Value.Date == today)
             {
-                _notifiedDueDateIds.Add(item.Id);
-                if (!_lastNotifiedTimes.ContainsKey(item.Id))
+                if (item.HasRecurrence && now.TimeOfDay < RepeatingTaskNotificationTime)
                 {
-                    _lastNotifiedTimes[item.Id] = now;
+                    // Repeating task notification is scheduled for RepeatingTaskNotificationTime today (default 7:00 AM).
+                    // Do not mark as notified yet so it will pop up when the time arrives.
+                }
+                else
+                {
+                    _notifiedDueDateIds.Add(item.Id);
+                    if (!_lastNotifiedTimes.ContainsKey(item.Id))
+                    {
+                        _lastNotifiedTimes[item.Id] = now;
+                    }
                 }
             }
         }
@@ -733,7 +784,12 @@ public partial class MainViewModel : ViewModelBase
             // 1. Check Scheduled Task Reminders for today
             if (NotifyOnTaskReminder && item.ReminderAt.HasValue)
             {
-                var triggerTime = item.ReminderAt.Value.AddMinutes(-NotificationLeadTimeMinutes);
+                var reminderTime = item.ReminderAt.Value;
+                if (item.HasRecurrence && reminderTime.TimeOfDay == TimeSpan.Zero)
+                {
+                    reminderTime = reminderTime.Date.Add(RepeatingTaskNotificationTime);
+                }
+                var triggerTime = reminderTime.AddMinutes(-NotificationLeadTimeMinutes);
                 if (triggerTime <= now)
                 {
                     if (!_notifiedReminderIds.Contains(item.Id))
@@ -799,6 +855,11 @@ public partial class MainViewModel : ViewModelBase
             // 3. Check Due Date Today Alerts
             if (NotifyOnTaskDueDate && item.DueDate.HasValue && item.DueDate.Value.Date == today)
             {
+                if (item.HasRecurrence && now.TimeOfDay < RepeatingTaskNotificationTime)
+                {
+                    continue;
+                }
+
                 if (!_notifiedDueDateIds.Contains(item.Id))
                 {
                     _notifiedDueDateIds.Add(item.Id);
@@ -4351,6 +4412,12 @@ public partial class MainViewModel : ViewModelBase
 
             await _todoService.AddTodoAsync(newItem);
 
+            if (newItem.DueDate.HasValue && newItem.DueDate.Value.Date == DateTime.Today)
+            {
+                _notifiedDueDateIds.Add(newItem.Id);
+                _lastNotifiedTimes[newItem.Id] = DateTime.Now;
+            }
+
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 NewTaskTitle = string.Empty;
@@ -5102,6 +5169,9 @@ public partial class MainViewModel
         SelectedNotificationLeadTimeOption = NotificationLeadTimeOptions.FirstOrDefault(x => x.Minutes == settings.NotificationLeadTimeMinutes) ?? NotificationLeadTimeOptions[0];
         NotificationRepeatIntervalMinutes = settings.NotificationRepeatIntervalMinutes;
         SelectedNotificationRepeatIntervalOption = NotificationRepeatIntervalOptions.FirstOrDefault(x => x.Minutes == settings.NotificationRepeatIntervalMinutes) ?? NotificationRepeatIntervalOptions[0];
+        RepeatingTaskNotificationTime = settings.GetRepeatingTaskNotificationTime();
+        SelectedRepeatingTaskNotificationTimeOption = RepeatingTaskNotificationTimeOptions.FirstOrDefault(x => x.Time == RepeatingTaskNotificationTime)
+            ?? new RepeatingTaskNotificationTimeOption { Time = RepeatingTaskNotificationTime, Name = DateTime.Today.Add(RepeatingTaskNotificationTime).ToString("hh:mm tt"), Description = string.Empty };
         PlayNotificationSound = settings.PlayNotificationSound;
         PlayTaskCompletedSound = settings.PlayTaskCompletedSound;
         WindowsToastNotifications = true; // Always on
@@ -5131,6 +5201,7 @@ public partial class MainViewModel
         settings.NotifyOnTaskDueDate = NotifyOnTaskDueDate;
         settings.NotificationLeadTimeMinutes = NotificationLeadTimeMinutes;
         settings.NotificationRepeatIntervalMinutes = NotificationRepeatIntervalMinutes;
+        settings.RepeatingTaskNotificationTime = RepeatingTaskNotificationTime.ToString(@"hh\:mm");
         settings.PlayNotificationSound = PlayNotificationSound;
         settings.PlayTaskCompletedSound = PlayTaskCompletedSound;
         settings.WindowsToastNotifications = true; // Always on
@@ -5407,6 +5478,38 @@ public partial class MainViewModel
             }
         }
 
+        foreach (var opt in RepeatingTaskNotificationTimeOptions)
+        {
+            if (opt.Time == new TimeSpan(7, 0, 0))
+            {
+                opt.Description = lm["Settings_Notification_Time_Default_Desc"];
+            }
+            else if (opt.Time.Hours < 7)
+            {
+                opt.Description = lm["Settings_Notification_Time_EarlyMorning_Desc"];
+            }
+            else if (opt.Time.Hours < 10)
+            {
+                opt.Description = lm["Settings_Notification_Time_Morning_Desc"];
+            }
+            else if (opt.Time.Hours < 12)
+            {
+                opt.Description = lm["Settings_Notification_Time_Midday_Desc"];
+            }
+            else if (opt.Time.Hours < 18)
+            {
+                opt.Description = lm["Settings_Notification_Time_Afternoon_Desc"];
+            }
+            else if (opt.Time.Hours < 20)
+            {
+                opt.Description = lm["Settings_Notification_Time_Evening_Desc"];
+            }
+            else
+            {
+                opt.Description = lm["Settings_Notification_Time_Night_Desc"];
+            }
+        }
+
         OnPropertyChanged(nameof(UpcomingTasksRangeLabel));
         OnPropertyChanged(nameof(SelectedLanguageOption));
         OnPropertyChanged(nameof(SubscriptionBadgeText));
@@ -5415,6 +5518,7 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(SelectedUpcomingTasksRangeOption));
         OnPropertyChanged(nameof(SelectedNotificationRepeatIntervalOption));
         OnPropertyChanged(nameof(SelectedNotificationLeadTimeOption));
+        OnPropertyChanged(nameof(SelectedRepeatingTaskNotificationTimeOption));
     }
 }
 
@@ -5452,6 +5556,13 @@ public partial class NotificationLeadTimeOption : ObservableObject
 public partial class NotificationRepeatIntervalOption : ObservableObject
 {
     public int Minutes { get; set; }
+    [ObservableProperty] private string _name = string.Empty;
+    [ObservableProperty] private string _description = string.Empty;
+}
+
+public partial class RepeatingTaskNotificationTimeOption : ObservableObject
+{
+    public TimeSpan Time { get; set; }
     [ObservableProperty] private string _name = string.Empty;
     [ObservableProperty] private string _description = string.Empty;
 }

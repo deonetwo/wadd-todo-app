@@ -118,7 +118,13 @@ public class TaskReminderReceiver : BroadcastReceiver
             // 1. Scheduled Task Reminders
             if (settings.NotifyOnTaskReminder && task.ReminderAt.HasValue)
             {
-                var triggerTime = task.ReminderAt.Value.AddMinutes(-leadMinutes);
+                var reminderTime = task.ReminderAt.Value;
+                bool isRepeating = task.IsRecurring || (task.SeriesId.HasValue && task.SeriesId.Value != Guid.Empty) || (!string.IsNullOrWhiteSpace(task.RecurrenceType) && !string.Equals(task.RecurrenceType, "None", StringComparison.OrdinalIgnoreCase));
+                if (isRepeating && reminderTime.TimeOfDay == TimeSpan.Zero)
+                {
+                    reminderTime = reminderTime.Date.Add(settings.GetRepeatingTaskNotificationTime());
+                }
+                var triggerTime = reminderTime.AddMinutes(-leadMinutes);
                 if (triggerTime <= now)
                 {
                     hasActiveUncompletedTasks = true;
@@ -159,6 +165,13 @@ public class TaskReminderReceiver : BroadcastReceiver
             // 3. Due Date Today Tasks
             if (settings.NotifyOnTaskDueDate && task.DueDate.HasValue && task.DueDate.Value.Date == today)
             {
+                bool isRepeating = task.IsRecurring || (task.SeriesId.HasValue && task.SeriesId.Value != Guid.Empty) || (!string.IsNullOrWhiteSpace(task.RecurrenceType) && !string.Equals(task.RecurrenceType, "None", StringComparison.OrdinalIgnoreCase));
+                var repeatingTime = settings.GetRepeatingTaskNotificationTime();
+                if (isRepeating && now.TimeOfDay < repeatingTime)
+                {
+                    continue;
+                }
+
                 hasActiveUncompletedTasks = true;
                 if (isFirstNotification || shouldRepeat)
                 {

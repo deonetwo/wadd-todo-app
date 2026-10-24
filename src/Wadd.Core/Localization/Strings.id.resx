@@ -395,4 +395,15 @@
   <data name="Settings_Plan_Lifetime" xml:space="preserve"><value>Lifetime</value></data>
   <data name="Settings_TrialExpired_Notice" xml:space="preserve"><value>Masa trial Cloud Sync telah berakhir. Auto-sync dijeda. Klik Sinkronkan atau Upgrade untuk melanjutkan.</value></data>
   <data name="Settings_Upgrade_Button" xml:space="preserve"><value>Upgrade</value></data>
+
+  <!-- Repeating Tasks Notification Time -->
+  <data name="Settings_RepeatingTaskNotificationTime" xml:space="preserve"><value>Waktu Notifikasi Tugas Berulang</value></data>
+  <data name="Settings_RepeatingTaskNotificationTime_Desc" xml:space="preserve"><value>Pilih jam munculnya notifikasi untuk tugas berulang pada hari yang dijadwalkan (Bawaan: 07:00).</value></data>
+  <data name="Settings_Notification_Time_Default_Desc" xml:space="preserve"><value>Awal pagi (Bawaan)</value></data>
+  <data name="Settings_Notification_Time_EarlyMorning_Desc" xml:space="preserve"><value>Pagi buta</value></data>
+  <data name="Settings_Notification_Time_Morning_Desc" xml:space="preserve"><value>Pagi hari</value></data>
+  <data name="Settings_Notification_Time_Midday_Desc" xml:space="preserve"><value>Tengah hari</value></data>
+  <data name="Settings_Notification_Time_Afternoon_Desc" xml:space="preserve"><value>Siang / Sore hari</value></data>
+  <data name="Settings_Notification_Time_Evening_Desc" xml:space="preserve"><value>Malam hari</value></data>
+  <data name="Settings_Notification_Time_Night_Desc" xml:space="preserve"><value>Larut malam</value></data>
 </root>

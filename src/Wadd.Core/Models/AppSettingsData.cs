@@ -26,6 +26,16 @@ public class AppSettingsData
     public int NotificationRepeatIntervalMinutes { get; set; } = 0;
     public bool PlayNotificationSound { get; set; } = true;
     public bool PlayTaskCompletedSound { get; set; } = true;
+    public string RepeatingTaskNotificationTime { get; set; } = "07:00";
+
+    public TimeSpan GetRepeatingTaskNotificationTime()
+    {
+        if (TimeSpan.TryParse(RepeatingTaskNotificationTime, out var ts))
+        {
+            return ts;
+        }
+        return new TimeSpan(7, 0, 0);
+    }
 
     // Windows Desktop Notification Settings
     public bool WindowsToastNotifications { get; set; } = true;

@@ -26,6 +26,8 @@ public class NotificationSettingsTests
         Assert.Equal(0, settings.NotificationLeadTimeMinutes);
         Assert.Equal(0, settings.NotificationRepeatIntervalMinutes);
         Assert.True(settings.PlayNotificationSound);
+        Assert.Equal("07:00", settings.RepeatingTaskNotificationTime);
+        Assert.Equal(new TimeSpan(7, 0, 0), settings.GetRepeatingTaskNotificationTime());
 
         // Windows defaults
         Assert.True(settings.WindowsToastNotifications);
@@ -52,6 +54,7 @@ public class NotificationSettingsTests
                 NotifyOnTaskDueDate = true,
                 NotificationLeadTimeMinutes = 15,
                 NotificationRepeatIntervalMinutes = 60,
+                RepeatingTaskNotificationTime = "08:30",
                 PlayNotificationSound = false,
                 WindowsToastNotifications = false,
                 AndroidVibration = false,
@@ -69,6 +72,8 @@ public class NotificationSettingsTests
             Assert.True(loaded.NotifyOnTaskDueDate);
             Assert.Equal(15, loaded.NotificationLeadTimeMinutes);
             Assert.Equal(60, loaded.NotificationRepeatIntervalMinutes);
+            Assert.Equal("08:30", loaded.RepeatingTaskNotificationTime);
+            Assert.Equal(new TimeSpan(8, 30, 0), loaded.GetRepeatingTaskNotificationTime());
             Assert.False(loaded.PlayNotificationSound);
 
             Assert.False(loaded.WindowsToastNotifications);
@@ -98,6 +103,7 @@ public class NotificationSettingsTests
             NotifyOnTaskDueDate = false,
             NotificationLeadTimeMinutes = 30,
             NotificationRepeatIntervalMinutes = 120,
+            RepeatingTaskNotificationTime = "09:00",
             PlayNotificationSound = true,
             WindowsToastNotifications = true,
             AndroidVibration = true,
@@ -115,6 +121,8 @@ public class NotificationSettingsTests
         Assert.False(deserialized.NotifyOnTaskDueDate);
         Assert.Equal(30, deserialized.NotificationLeadTimeMinutes);
         Assert.Equal(120, deserialized.NotificationRepeatIntervalMinutes);
+        Assert.Equal("09:00", deserialized.RepeatingTaskNotificationTime);
+        Assert.Equal(new TimeSpan(9, 0, 0), deserialized.GetRepeatingTaskNotificationTime());
         Assert.True(deserialized.PlayNotificationSound);
         Assert.True(deserialized.WindowsToastNotifications);
         Assert.True(deserialized.AndroidVibration);
@@ -997,6 +1005,185 @@ public class NotificationSettingsTests
         finally
         {
             lm.SetLanguage("en");
+        }
+    }
+
+    [Fact]
+    public void CheckReminders_RepeatingTaskDueToday_BeforeNotificationTime_DoesNotTriggerNotification()
+    {
+        var tempPath = Path.Combine(Path.GetTempPath(), "WaddNotificationTest_" + Guid.NewGuid().ToString("N"));
+        Environment.SetEnvironmentVariable("WADD_DATA_DIR", tempPath);
+
+        try
+        {
+            var mockService = new MockNotificationService();
+            var vm = new MainViewModel(
+                new Wadd.Services.InMemoryTodoService(),
+                new Wadd.Services.ThemeService(),
+                new Wadd.Services.SyncService(),
+                new Wadd.Services.ExcelExportService(),
+                new Wadd.Services.SQLiteGoalService(),
+                new Wadd.Services.WindowsStartupService(),
+                new Wadd.Services.AiGoalService(new System.Net.Http.HttpClient()),
+                mockService);
+
+            vm.EnableNotifications = true;
+            vm.NotifyOnTaskDueDate = true;
+            // Set repeating task notification time far in the future today (e.g. 23:59) so current time is strictly before it
+            vm.RepeatingTaskNotificationTime = new TimeSpan(23, 59, 0);
+
+            var task = new TodoItemViewModel(new TodoItem
+            {
+                Id = Guid.NewGuid(),
+                Title = "Daily Habit",
+                DueDate = DateTime.Today,
+                IsRecurring = true,
+                RecurrenceType = "Daily"
+            });
+
+            vm.TodoItems.Add(task);
+            vm.CheckReminders();
+
+            Assert.Empty(mockService.ShownNotifications);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("WADD_DATA_DIR", null);
+            if (Directory.Exists(tempPath)) { try { Directory.Delete(tempPath, true); } catch { } }
+        }
+    }
+
+    [Fact]
+    public void CheckReminders_RepeatingTaskDueToday_AtOrAfterNotificationTime_TriggersNotification()
+    {
+        var tempPath = Path.Combine(Path.GetTempPath(), "WaddNotificationTest_" + Guid.NewGuid().ToString("N"));
+        Environment.SetEnvironmentVariable("WADD_DATA_DIR", tempPath);
+
+        try
+        {
+            var mockService = new MockNotificationService();
+            var vm = new MainViewModel(
+                new Wadd.Services.InMemoryTodoService(),
+                new Wadd.Services.ThemeService(),
+                new Wadd.Services.SyncService(),
+                new Wadd.Services.ExcelExportService(),
+                new Wadd.Services.SQLiteGoalService(),
+                new Wadd.Services.WindowsStartupService(),
+                new Wadd.Services.AiGoalService(new System.Net.Http.HttpClient()),
+                mockService);
+
+            vm.EnableNotifications = true;
+            vm.NotifyOnTaskDueDate = true;
+            // Set repeating task notification time in the past today (e.g. 00:00 midnight) so current time is strictly after it
+            vm.RepeatingTaskNotificationTime = TimeSpan.Zero;
+
+            var task = new TodoItemViewModel(new TodoItem
+            {
+                Id = Guid.NewGuid(),
+                Title = "Daily Habit Completed",
+                DueDate = DateTime.Today,
+                IsRecurring = true,
+                RecurrenceType = "Daily"
+            });
+
+            vm.TodoItems.Add(task);
+            vm.CheckReminders();
+
+            Assert.Single(mockService.ShownNotifications);
+            Assert.Equal("Daily Habit Completed", mockService.ShownNotifications[0].Message);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("WADD_DATA_DIR", null);
+            if (Directory.Exists(tempPath)) { try { Directory.Delete(tempPath, true); } catch { } }
+        }
+    }
+
+    [Fact]
+    public void SeedInitialNotificationState_RepeatingTask_BeforeNotificationTime_DoesNotMarkAsNotified()
+    {
+        var tempPath = Path.Combine(Path.GetTempPath(), "WaddNotificationTest_" + Guid.NewGuid().ToString("N"));
+        Environment.SetEnvironmentVariable("WADD_DATA_DIR", tempPath);
+
+        try
+        {
+            var mockService = new MockNotificationService();
+            var vm = new MainViewModel(
+                new Wadd.Services.InMemoryTodoService(),
+                new Wadd.Services.ThemeService(),
+                new Wadd.Services.SyncService(),
+                new Wadd.Services.ExcelExportService(),
+                new Wadd.Services.SQLiteGoalService(),
+                new Wadd.Services.WindowsStartupService(),
+                new Wadd.Services.AiGoalService(new System.Net.Http.HttpClient()),
+                mockService);
+
+            vm.EnableNotifications = true;
+            vm.NotifyOnTaskDueDate = true;
+            vm.RepeatingTaskNotificationTime = new TimeSpan(23, 59, 0);
+
+            var task = new TodoItemViewModel(new TodoItem
+            {
+                Id = Guid.NewGuid(),
+                Title = "Morning Routine",
+                DueDate = DateTime.Today,
+                IsRecurring = true,
+                RecurrenceType = "Daily"
+            });
+
+            vm.TodoItems.Add(task);
+            vm.SeedInitialNotificationState();
+
+            // While time is still before 23:59, CheckReminders still doesn't alert
+            vm.CheckReminders();
+            Assert.Empty(mockService.ShownNotifications);
+
+            // Once the notification time arrives, CheckReminders triggers the notification because it wasn't swallowed by seed
+            vm.RepeatingTaskNotificationTime = TimeSpan.Zero;
+            vm.CheckReminders();
+            Assert.Single(mockService.ShownNotifications);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("WADD_DATA_DIR", null);
+            if (Directory.Exists(tempPath)) { try { Directory.Delete(tempPath, true); } catch { } }
+        }
+    }
+
+    [Fact]
+    public void MainViewModel_RepeatingTaskNotificationTimeOptions_HasDefault7AMAndUpdatesProperty()
+    {
+        var tempPath = Path.Combine(Path.GetTempPath(), "WaddNotificationTest_" + Guid.NewGuid().ToString("N"));
+        Environment.SetEnvironmentVariable("WADD_DATA_DIR", tempPath);
+
+        try
+        {
+            var mockService = new MockNotificationService();
+            var vm = new MainViewModel(
+                new Wadd.Services.InMemoryTodoService(),
+                new Wadd.Services.ThemeService(),
+                new Wadd.Services.SyncService(),
+                new Wadd.Services.ExcelExportService(),
+                new Wadd.Services.SQLiteGoalService(),
+                new Wadd.Services.WindowsStartupService(),
+                new Wadd.Services.AiGoalService(new System.Net.Http.HttpClient()),
+                mockService);
+
+            Assert.Equal(new TimeSpan(7, 0, 0), vm.RepeatingTaskNotificationTime);
+            Assert.NotNull(vm.SelectedRepeatingTaskNotificationTimeOption);
+            Assert.Equal(new TimeSpan(7, 0, 0), vm.SelectedRepeatingTaskNotificationTimeOption.Time);
+
+            // Change selection
+            var eightAmOption = vm.RepeatingTaskNotificationTimeOptions.FirstOrDefault(x => x.Time == new TimeSpan(8, 0, 0));
+            Assert.NotNull(eightAmOption);
+
+            vm.SelectedRepeatingTaskNotificationTimeOption = eightAmOption;
+            Assert.Equal(new TimeSpan(8, 0, 0), vm.RepeatingTaskNotificationTime);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("WADD_DATA_DIR", null);
+            if (Directory.Exists(tempPath)) { try { Directory.Delete(tempPath, true); } catch { } }
         }
     }
 

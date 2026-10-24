@@ -166,15 +166,23 @@ public static class TaskAlarmScheduler
                     }
 
                     DateTime? targetAlarmTime = null;
+                    var repeatingTime = settings.GetRepeatingTaskNotificationTime();
 
                     if (settings.NotifyOnTaskReminder && task.ReminderAt.HasValue)
                     {
-                        targetAlarmTime = task.ReminderAt.Value.AddMinutes(-leadMinutes);
+                        var reminderTime = task.ReminderAt.Value;
+                        if ((task.IsRecurring || task.SeriesId != null) && reminderTime.TimeOfDay == TimeSpan.Zero)
+                        {
+                            reminderTime = reminderTime.Date.Add(repeatingTime);
+                        }
+                        targetAlarmTime = reminderTime.AddMinutes(-leadMinutes);
                     }
                     else if (settings.NotifyOnTaskDueDate && task.DueDate.HasValue)
                     {
                         var dueDate = task.DueDate.Value;
-                        targetAlarmTime = dueDate.TimeOfDay == TimeSpan.Zero ? dueDate.Date.AddHours(9) : dueDate;
+                        bool isRepeating = task.IsRecurring || task.SeriesId != null || (!string.IsNullOrWhiteSpace(task.RecurrenceType) && !string.Equals(task.RecurrenceType, "None", StringComparison.OrdinalIgnoreCase));
+                        TimeSpan defaultTime = isRepeating ? repeatingTime : new TimeSpan(7, 0, 0);
+                        targetAlarmTime = dueDate.TimeOfDay == TimeSpan.Zero ? dueDate.Date.Add(defaultTime) : dueDate;
                     }
 
                     if (targetAlarmTime.HasValue && targetAlarmTime.Value > now)

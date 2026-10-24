@@ -372,7 +372,38 @@
 
             <Separator Classes="divider" Margin="0,4"/>
 
-            <!-- 7. Notification Sound (Desktop only; Android uses OS default notification sound) -->
+            <!-- 7. Repeating Tasks Notification Time -->
+            <StackPanel Spacing="10" Margin="0,4,0,0">
+              <StackPanel Spacing="4">
+                <TextBlock Text="{loc:Localize Settings_RepeatingTaskNotificationTime}" Classes="heading"/>
+                <TextBlock Text="{loc:Localize Settings_RepeatingTaskNotificationTime_Desc}"
+                           Classes="small"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+              </StackPanel>
+
+              <ComboBox ItemsSource="{Binding RepeatingTaskNotificationTimeOptions}"
+                        SelectedItem="{Binding SelectedRepeatingTaskNotificationTimeOption, Mode=TwoWay}"
+                        HorizontalAlignment="Left"
+                        MinWidth="320"
+                        MaxWidth="440"
+                        Margin="0,2,0,0">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="vm:RepeatingTaskNotificationTimeOption">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,2">
+                      <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                        <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                      </StackPanel>
+                    </Grid>
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+            </StackPanel>
+
+            <Separator Classes="divider" Margin="0,4"/>
+
+            <!-- 8. Notification Sound (Desktop only; Android uses OS default notification sound) -->
             <StackPanel IsVisible="{Binding IsDesktopPlatform}">
               <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
                 <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,16,0">
