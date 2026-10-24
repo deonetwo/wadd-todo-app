@@ -46,7 +46,7 @@ public class SQLiteGoalService : IGoalService
             {
                 await _database.CreateTableAsync<LifeGoalEntity>();
                 await _database.CreateTableAsync<GoalMilestoneEntity>();
-                await _database.CreateTableAsync<JournalEntryEntity>();
+                await _database.ExecuteAsync("DROP TABLE IF EXISTS JournalEntries");
                 _isInitialized = true;
             }
         }
@@ -193,59 +193,6 @@ public class SQLiteGoalService : IGoalService
 
     #endregion
 
-    #region Journal Entries CRUD
-
-    public async Task<IEnumerable<JournalEntry>> GetJournalEntriesAsync(string? goalId = null, CancellationToken cancellationToken = default)
-    {
-        await EnsureInitializedAsync();
-
-        List<JournalEntryEntity> entities;
-        if (string.IsNullOrWhiteSpace(goalId))
-        {
-            entities = await _database.Table<JournalEntryEntity>()
-                .Where(x => !x.IsDeleted)
-                .OrderByDescending(x => x.EntryDate)
-                .ToListAsync();
-        }
-        else
-        {
-            entities = await _database.Table<JournalEntryEntity>()
-                .Where(x => x.GoalId == goalId && !x.IsDeleted)
-                .OrderByDescending(x => x.EntryDate)
-                .ToListAsync();
-        }
-        return entities.Select(e => e.ToDomain());
-    }
-
-    public async Task<JournalEntry> SaveJournalEntryAsync(JournalEntry entry, CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(entry);
-        await EnsureInitializedAsync();
-
-        entry.UpdatedAt = DateTime.UtcNow;
-        var entity = JournalEntryEntity.FromDomain(entry);
-        await _database.InsertOrReplaceAsync(entity);
-        return entity.ToDomain();
-    }
-
-    public async Task<bool> DeleteJournalEntryAsync(string id, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrWhiteSpace(id)) return false;
-        await EnsureInitializedAsync();
-
-        var entity = await _database.Table<JournalEntryEntity>()
-            .FirstOrDefaultAsync(x => x.Id == id);
-        if (entity == null) return false;
-
-        entity.IsDeleted = true;
-        entity.DeletedAt = DateTime.UtcNow;
-        entity.UpdatedAt = DateTime.UtcNow;
-        await _database.UpdateAsync(entity);
-        return true;
-    }
-
-    #endregion
-
     #region Progress Calculation Logic
 
     public double CalculateGoalProgress(IEnumerable<GoalMilestone> milestones)
@@ -273,13 +220,6 @@ public class SQLiteGoalService : IGoalService
     {
         await EnsureInitializedAsync();
         var entities = await _database.Table<GoalMilestoneEntity>().ToListAsync();
-        return entities.Select(e => e.ToDomain());
-    }
-
-    public async Task<IEnumerable<JournalEntry>> GetAllJournalEntriesRawAsync(CancellationToken cancellationToken = default)
-    {
-        await EnsureInitializedAsync();
-        var entities = await _database.Table<JournalEntryEntity>().ToListAsync();
         return entities.Select(e => e.ToDomain());
     }
 
@@ -317,29 +257,11 @@ public class SQLiteGoalService : IGoalService
         });
     }
 
-    public async Task BatchDirectUpsertJournalEntriesAsync(IEnumerable<JournalEntry> entries, CancellationToken cancellationToken = default)
-    {
-        if (entries == null) return;
-        await EnsureInitializedAsync();
-
-        var entities = entries.Select(JournalEntryEntity.FromDomain).ToList();
-        if (entities.Count == 0) return;
-
-        await _database.RunInTransactionAsync(conn =>
-        {
-            foreach (var entity in entities)
-            {
-                conn.InsertOrReplace(entity);
-            }
-        });
-    }
-
     public async Task ClearAllLocalDataAsync(CancellationToken cancellationToken = default)
     {
         await EnsureInitializedAsync();
         await _database.DeleteAllAsync<LifeGoalEntity>();
         await _database.DeleteAllAsync<GoalMilestoneEntity>();
-        await _database.DeleteAllAsync<JournalEntryEntity>();
         WaddDatabaseNotifier.NotifyDataChanged();
     }
 

@@ -100,18 +100,6 @@
       <Setter Property="Opacity" Value="0"/>
     </Style>
 
-    <!-- Journal Item Clean List Row with instant hover (No animation/transition) -->
-    <Style Selector="Border.journal-item">
-      <Setter Property="Background" Value="Transparent"/>
-      <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}"/>
-      <Setter Property="BorderThickness" Value="0,0,0,1"/>
-      <Setter Property="CornerRadius" Value="6"/>
-      <Setter Property="Padding" Value="12,10"/>
-      <Setter Property="Margin" Value="0,0,0,4"/>
-    </Style>
-    <Style Selector="Border.journal-item:pointerover">
-      <Setter Property="Background" Value="{DynamicResource AppHoverBrush}"/>
-    </Style>
 
     <Style Selector="TextBlock.milestone-title">
       <Setter Property="FontSize" Value="14"/>
@@ -307,7 +295,7 @@
         </Grid>
       </Border>
 
-      <!-- DESKTOP RIGHT COLUMN: FOCUSED GOAL DETAILS & JOURNAL TIMELINE -->
+      <!-- DESKTOP RIGHT COLUMN: FOCUSED GOAL DETAILS & MILESTONES -->
       <Border Grid.Row="1" Grid.Column="1"
               Classes="card"
               Padding="24,20,12,20"
@@ -646,123 +634,6 @@
               </ItemsControl>
             </StackPanel>
 
-            <!-- SECTION 2: REFLECTIVE JOURNAL TIMELINE (OPEN SECTION) -->
-            <StackPanel Spacing="12">
-              <!-- Section Header Row with Title on Left and Action Buttons on Right -->
-              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                <Grid Grid.Column="0" ColumnDefinitions="Auto,*" ColumnSpacing="8" VerticalAlignment="Center">
-                  <PathIcon Grid.Column="0" Data="{StaticResource BookIconData}" Width="16" Height="16" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
-                  <TextBlock Grid.Column="1" Text="Reflective Journal" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                </Grid>
-
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                  <!-- AI Draft Reflection -->
-                  <Button Command="{Binding GenerateJournalDraftWithAiCommand}"
-                          Classes="btn-secondary"
-                          IsEnabled="{Binding !IsAiGeneratingJournal}"
-                          Height="28" Padding="8,0"
-                          VerticalAlignment="Center"
-                          ToolTip.Tip="Generate an inspiring reflection draft based on goal progress">
-                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                      <PathIcon Data="{StaticResource SparkleIconData}" Width="11" Height="11" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                      <TextBlock Text="AI Draft" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                    </StackPanel>
-                  </Button>
-
-                  <!-- Secondary Tier Action: + Write Entry -->
-                  <Button Command="{Binding OpenCreateJournalFormCommand}"
-                          Classes="btn-secondary"
-                          Height="28" Padding="10,0"
-                          VerticalAlignment="Center">
-                    <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
-                      <PathIcon Data="{StaticResource PlusIconData}" Width="11" Height="11" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
-                      <TextBlock Text="Write Entry" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                    </StackPanel>
-                  </Button>
-                </StackPanel>
-              </Grid>
-
-              <!-- 1px Subtle Section Divider -->
-              <Separator Classes="divider"/>
-              <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsAiGeneratingJournal}" Height="2" CornerRadius="1" Foreground="{DynamicResource AppPrimaryBrush}" Margin="0,-6,0,0"/>
-
-              <!-- FLATTENED INLINE COMPOSE FORM (No surrounding box or background fill) -->
-              <StackPanel Spacing="10" Margin="0,4,0,10" IsVisible="{Binding IsCreatingJournal}">
-                <TextBlock Text="WRITE NEW ENTRY" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-
-                <!-- Borderless Underlined Input for Title with Left Padding for Text & Placeholder -->
-                <TextBox Text="{Binding NewJournalTitle}"
-                         Classes="styled"
-                         PlaceholderText="Entry title (e.g. Today's win)..."
-                         Background="Transparent"
-                         BorderBrush="{DynamicResource AppBorderBrush}"
-                         BorderThickness="0,0,0,1"
-                         CornerRadius="0"
-                         Padding="10,8"
-                         MinHeight="38"
-                         MaxLength="100"
-                         VerticalContentAlignment="Center"/>
-
-                <!-- Borderless Underlined Textarea for Body with Left Padding for Text & Placeholder -->
-                <TextBox Text="{Binding NewJournalContent}"
-                         Classes="styled"
-                         PlaceholderText="What went well or what did you learn today?..."
-                         Background="Transparent"
-                         BorderBrush="{DynamicResource AppBorderBrush}"
-                         BorderThickness="0,0,0,1"
-                         CornerRadius="0"
-                         Padding="10,8"
-                         AcceptsReturn="True"
-                         TextWrapping="Wrap"
-                         MaxLength="2000"
-                         MinHeight="80"
-                         VerticalContentAlignment="Top"
-                         HorizontalContentAlignment="Left"/>
-
-                <!-- Action Buttons: Cancel (Text-only ghost) + Save Reflection (Primary solid teal) -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,4,0,0">
-                  <Button Command="{Binding CancelCreateJournalCommand}"
-                          Classes="btn-text"
-                          Content="Cancel"
-                          Height="32" Padding="12,0"
-                          VerticalAlignment="Center"/>
-                  <Button Command="{Binding SaveJournalEntryCommand}"
-                          Classes="btn-primary"
-                          Height="32" Padding="16,0"
-                          VerticalAlignment="Center">
-                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                      <PathIcon Data="{StaticResource CheckIconData}" Width="12" Height="12" Foreground="White" VerticalAlignment="Center"/>
-                      <TextBlock Text="Save Reflection" FontSize="12" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
-                    </StackPanel>
-                  </Button>
-                </StackPanel>
-              </StackPanel>
-
-              <!-- Journal Entries List (Clean List Rows with Hover) -->
-              <ItemsControl ItemsSource="{Binding CurrentJournalEntries}" HorizontalAlignment="Stretch">
-                <ItemsControl.Styles>
-                  <Style Selector="ContentPresenter">
-                    <Setter Property="HorizontalAlignment" Value="Stretch"/>
-                  </Style>
-                </ItemsControl.Styles>
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate x:DataType="vm:JournalEntryItemViewModel">
-                    <Border Classes="journal-item" HorizontalAlignment="Stretch">
-                      <Grid RowDefinitions="Auto,Auto,Auto">
-                        <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
-                          <TextBlock Grid.Column="0" Text="{Binding FormattedEntryDate}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center"/>
-                          <Button Grid.Column="1" Command="{Binding $parent[UserControl].((vm:GoalsViewModel)DataContext).DeleteJournalEntryCommand}" CommandParameter="{Binding}" Classes="danger" MinHeight="26" MinWidth="26" Padding="4" VerticalAlignment="Center">
-                            <PathIcon Data="{StaticResource TrashIconData}" Width="12" Height="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                          </Button>
-                        </Grid>
-                        <TextBlock Grid.Row="1" Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" Margin="0,4,0,2" TextWrapping="Wrap"/>
-                        <TextBlock Grid.Row="2" Text="{Binding Content}" FontSize="13" Foreground="{DynamicResource AppTextSecondaryBrush}" TextWrapping="Wrap"/>
-                      </Grid>
-                    </Border>
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
-            </StackPanel>
 
           </StackPanel>
         </ScrollViewer>
@@ -1248,69 +1119,6 @@
               </ItemsControl>
             </StackPanel>
 
-            <!-- Collapsible Reflection Journal Timeline (Open Section) -->
-            <StackPanel Spacing="10">
-              <Grid ColumnDefinitions="*,Auto,Auto,Auto">
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,0,4,0">
-                  <PathIcon Data="{StaticResource BookIconData}" Width="16" Height="16" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
-                  <TextBlock Text="Reflection" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
-                </StackPanel>
-
-                <Button Grid.Column="1"
-                        Command="{Binding GenerateJournalDraftWithAiCommand}"
-                        Classes="btn-secondary"
-                        IsEnabled="{Binding !IsAiGeneratingJournal}"
-                        Height="30" Padding="8,0" Margin="0,0,4,0">
-                  <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                    <PathIcon Data="{StaticResource SparkleIconData}" Width="10" Height="10" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                    <TextBlock Text="AI Draft" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                  </StackPanel>
-                </Button>
-
-                <Button Grid.Column="2"
-                        Command="{Binding OpenJournalBottomSheetCommand}"
-                        Classes="btn-secondary"
-                        Height="30" Padding="10,0" Margin="0,0,4,0">
-                  <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                    <PathIcon Data="{StaticResource PlusIconData}" Width="11" Height="11" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                    <TextBlock Text="Write" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppPrimaryBrush}"/>
-                  </StackPanel>
-                </Button>
-
-                <Button Grid.Column="3"
-                        Command="{Binding ToggleJournalCollapsibleCommand}"
-                        Classes="icon-btn"
-                        MinHeight="32" MinWidth="32" Padding="6">
-                  <PathIcon Data="{StaticResource ChevronDownIconData}" Width="14" Height="14" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
-                </Button>
-              </Grid>
-              <Separator Classes="divider"/>
-
-              <!-- Scrollable timeline entry rows when expanded -->
-              <ItemsControl ItemsSource="{Binding CurrentJournalEntries}" IsVisible="{Binding IsJournalCollapsibleExpanded}" HorizontalAlignment="Stretch">
-                <ItemsControl.Styles>
-                  <Style Selector="ContentPresenter">
-                    <Setter Property="HorizontalAlignment" Value="Stretch"/>
-                  </Style>
-                </ItemsControl.Styles>
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate x:DataType="vm:JournalEntryItemViewModel">
-                    <Border Classes="journal-item" HorizontalAlignment="Stretch">
-                      <Grid RowDefinitions="Auto,Auto,Auto">
-                        <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
-                          <TextBlock Grid.Column="0" Text="{Binding FormattedEntryDate}" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}" VerticalAlignment="Center"/>
-            <Button Grid.Column="1" Command="{Binding $parent[UserControl].((vm:GoalsViewModel)DataContext).DeleteJournalEntryCommand}" CommandParameter="{Binding}" Classes="danger" MinHeight="26" MinWidth="26" Padding="4">
-                            <PathIcon Data="{StaticResource TrashIconData}" Width="12" Height="12"/>
-                          </Button>
-                        </Grid>
-                        <TextBlock Grid.Row="1" Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}" Margin="0,4,0,2" TextWrapping="Wrap"/>
-                        <TextBlock Grid.Row="2" Text="{Binding Content}" FontSize="13" Foreground="{DynamicResource AppTextSecondaryBrush}" TextWrapping="Wrap"/>
-                      </Grid>
-                    </Border>
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
-            </StackPanel>
 
           </StackPanel>
         </ScrollViewer>
@@ -1318,48 +1126,6 @@
       </Grid>
     </Grid>
 
-    <!-- ═══════════════════════════════════════════════════════════════
-         REFLECTION JOURNAL BOTTOM SHEET / MODAL
-    ═══════════════════════════════════════════════════════════════ -->
-    <Panel IsVisible="{Binding IsJournalBottomSheetOpen}" ZIndex="2000" Background="#90000000">
-      <Border VerticalAlignment="Center"
-              HorizontalAlignment="Center"
-              MaxWidth="500"
-              MaxHeight="580"
-              Margin="16,24"
-              Background="{DynamicResource AppSurfaceBrush}"
-              BorderBrush="{DynamicResource AppBorderBrush}"
-              BorderThickness="1"
-              CornerRadius="16"
-              Padding="0"
-              BoxShadow="0 10 25 0 #80000000">
-        <Grid RowDefinitions="Auto,*,Auto">
-          <!-- Header -->
-          <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="20,18,20,12">
-            <TextBlock Grid.Column="0" Text="Write Reflection Entry" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}" VerticalAlignment="Center"/>
-            <Button Grid.Column="1" Command="{Binding CloseJournalBottomSheetCommand}" Classes="icon-btn" Padding="6" Height="30" Width="30">
-              <PathIcon Data="{StaticResource CloseIconData}" Width="12" Height="12"/>
-            </Button>
-          </Grid>
-
-          <!-- Scrollable Body -->
-          <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="20,0,20,12">
-            <StackPanel Spacing="14">
-              <TextBox Text="{Binding NewJournalTitle}" Classes="styled" PlaceholderText="Entry title (e.g. Today's win)..." Padding="12,8" MinHeight="42" MaxLength="100" CornerRadius="6" VerticalContentAlignment="Center"/>
-              <TextBox Text="{Binding NewJournalContent}" Classes="styled" PlaceholderText="What went well or what did you learn today?..." Padding="12,8" AcceptsReturn="True" TextWrapping="Wrap" MaxLength="2000" MinHeight="140" CornerRadius="6" VerticalContentAlignment="Top" HorizontalContentAlignment="Left"/>
-            </StackPanel>
-          </ScrollViewer>
-
-          <!-- Footer -->
-          <Border Grid.Row="2" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="0,1,0,0" Padding="20,12" Background="{DynamicResource AppSurfaceSubtleBrush}" CornerRadius="0,0,16,16">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
-              <Button Command="{Binding CloseJournalBottomSheetCommand}" Classes="btn-text" Content="Cancel" MinHeight="38" Padding="16,0"/>
-              <Button Command="{Binding SaveJournalEntryCommand}" Classes="btn-primary" Content="Save Entry" Height="38" Padding="20,0"/>
-            </StackPanel>
-          </Border>
-        </Grid>
-      </Border>
-    </Panel>
 
     <!-- ═══════════════════════════════════════════════════════════════
          CREATE NEW GOAL OVERLAY DIALOG (Shared Desktop/Mobile)

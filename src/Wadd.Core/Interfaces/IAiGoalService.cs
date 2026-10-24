@@ -30,17 +30,6 @@ public interface IAiGoalService
         string? newMilestoneDraft = null,
         IReadOnlyList<string>? availableTags = null);
 
-    Task<JournalDraftResult> GenerateJournalPromptAsync(
-        string goalTitle,
-        int completedSteps,
-        int totalSteps,
-        string? recentMilestone = null,
-        string? category = null,
-        string? description = null,
-        IReadOnlyList<string>? allMilestones = null,
-        string? currentJournalDraft = null,
-        IReadOnlyList<string>? availableTags = null);
-
     Task<IReadOnlyList<AiModelOption>> GetAvailableModelsAsync(string? provider = null, string? apiKey = null, string? customBaseUrl = null);
 
     Task<(bool Success, string Message, string? ModelName)> TestConnectionAsync(string? provider = null, string? apiKey = null, string? model = null, string? customBaseUrl = null);

@@ -80,24 +80,6 @@ public class GoalServiceTests : IDisposable
         Assert.True(milestones[0].IsCompleted);
     }
 
-    [Fact]
-    public async Task SaveJournalEntry_CreatesAndFetchesByGoalId()
-    {
-        var goal = await _goalService.SaveGoalAsync(new LifeGoal { Title = "Financial Freedom" });
-        var entry = new JournalEntry
-        {
-            GoalId = goal.Id,
-            Title = "Monthly Savings Review",
-            Content = "Saved 20% of income this month."
-        };
-
-        var saved = await _goalService.SaveJournalEntryAsync(entry);
-        Assert.NotNull(saved.Id);
-
-        var entries = (await _goalService.GetJournalEntriesAsync(goal.Id)).ToList();
-        Assert.Single(entries);
-        Assert.Equal("Monthly Savings Review", entries[0].Title);
-    }
 
     [Fact]
     public async Task DeleteGoalAsync_PerformsSoftDeleteOnGoalAndMilestones()
@@ -342,10 +324,6 @@ public class GoalServiceTests : IDisposable
         Assert.True(vm.HandleBackNavigation());
         Assert.False(vm.IsCreatingGoal);
 
-        // 3. Journal bottom sheet
-        vm.IsJournalBottomSheetOpen = true;
-        Assert.True(vm.HandleBackNavigation());
-        Assert.False(vm.IsJournalBottomSheetOpen);
 
         // 4. Milestone AI Choice modal
         vm.IsMilestoneAiChoiceModalOpen = true;

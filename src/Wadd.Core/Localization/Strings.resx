@@ -312,8 +312,8 @@
   <data name="Tasks_ViewAllRecurring" xml:space="preserve"><value>View All Recurring Tasks</value></data>
   <data name="Tasks_ViewAllRecurring_Desc" xml:space="preserve"><value>Manage all repeating task patterns and habits</value></data>
   <data name="Tasks_AddTask" xml:space="preserve"><value>Add task</value></data>
-  <data name="Goals_Title" xml:space="preserve"><value>Life Goals &amp; Reflection Journal</value></data>
-  <data name="Goals_Description" xml:space="preserve"><value>Organize long-term vision targets, milestone checklists, and daily reflective journal entries.</value></data>
+  <data name="Goals_Title" xml:space="preserve"><value>Life Goals</value></data>
+  <data name="Goals_Description" xml:space="preserve"><value>Organize long-term vision targets and milestone checklists.</value></data>
   <data name="Goals_NewGoal" xml:space="preserve"><value>New Life Goal</value></data>
   <data name="Goals_Categories" xml:space="preserve"><value>CATEGORIES</value></data>
   <data name="Goals_OverallProgress" xml:space="preserve"><value>Overall Goal Progress</value></data>
@@ -323,7 +323,7 @@
   <data name="Goals_ReopenGoal" xml:space="preserve"><value>Reopen Goal</value></data>
   <data name="Goals_MarkAchieved" xml:space="preserve"><value>Mark Achieved</value></data>
   <data name="Goals_SelectGoal" xml:space="preserve"><value>Select a Life Goal</value></data>
-  <data name="Goals_SelectGoal_Desc" xml:space="preserve"><value>Choose a goal from the left to view milestones and journal timeline.</value></data>
+  <data name="Goals_SelectGoal_Desc" xml:space="preserve"><value>Choose a goal from the left to view its milestone checklist.</value></data>
   <data name="Goals_NoSteps" xml:space="preserve"><value>No steps</value></data>
   <data name="Goals_AiSuggest" xml:space="preserve"><value>AI Suggest</value></data>
   <data name="Goals_CreateGoal" xml:space="preserve"><value>Create Goal</value></data>
@@ -338,8 +338,6 @@
   <data name="Dialog_Delete_Goal_Msg" xml:space="preserve"><value>This will delete this goal and all its milestones.</value></data>
   <data name="Dialog_Delete_Milestone_Title" xml:space="preserve"><value>Delete Step?</value></data>
   <data name="Dialog_Delete_Milestone_Msg" xml:space="preserve"><value>This step will be removed from your goal.</value></data>
-  <data name="Dialog_Delete_Journal_Title" xml:space="preserve"><value>Delete Journal Entry?</value></data>
-  <data name="Dialog_Delete_Journal_Msg" xml:space="preserve"><value>This reflection entry will be deleted.</value></data>
   <data name="Dialog_Delete_Tag_Title" xml:space="preserve"><value>Delete Tag?</value></data>
   <data name="Dialog_Delete_Tag_Msg" xml:space="preserve"><value>This tag will be removed from all tasks.</value></data>
   <data name="Dialog_Delete_Note_Title" xml:space="preserve"><value>Delete Note?</value></data>

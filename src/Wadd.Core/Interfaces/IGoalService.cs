@@ -3,7 +3,7 @@ using Wadd.Core.Models;
 namespace Wadd.Core.Interfaces;
 
 /// <summary>
-/// Service interface for managing Life Goals, Milestones, and Reflection Journal entries.
+/// Service interface for managing Life Goals and Milestones.
 /// </summary>
 public interface IGoalService
 {
@@ -20,20 +20,13 @@ public interface IGoalService
     Task<bool> DeleteMilestoneAsync(string id, CancellationToken cancellationToken = default);
     Task ReorderMilestonesAsync(IEnumerable<GoalMilestone> milestones, CancellationToken cancellationToken = default);
 
-    // Journal Entries
-    Task<IEnumerable<JournalEntry>> GetJournalEntriesAsync(string? goalId = null, CancellationToken cancellationToken = default);
-    Task<JournalEntry> SaveJournalEntryAsync(JournalEntry entry, CancellationToken cancellationToken = default);
-    Task<bool> DeleteJournalEntryAsync(string id, CancellationToken cancellationToken = default);
-
     // Dynamic Calculation Logic
     double CalculateGoalProgress(IEnumerable<GoalMilestone> milestones);
 
     // Sync Support (Raw Queries & Direct Batch Upserts)
     Task<IEnumerable<LifeGoal>> GetAllGoalsRawAsync(CancellationToken cancellationToken = default);
     Task<IEnumerable<GoalMilestone>> GetAllMilestonesRawAsync(CancellationToken cancellationToken = default);
-    Task<IEnumerable<JournalEntry>> GetAllJournalEntriesRawAsync(CancellationToken cancellationToken = default);
     Task BatchDirectUpsertGoalsAsync(IEnumerable<LifeGoal> goals, CancellationToken cancellationToken = default);
     Task BatchDirectUpsertMilestonesAsync(IEnumerable<GoalMilestone> milestones, CancellationToken cancellationToken = default);
-    Task BatchDirectUpsertJournalEntriesAsync(IEnumerable<JournalEntry> entries, CancellationToken cancellationToken = default);
     Task ClearAllLocalDataAsync(CancellationToken cancellationToken = default);
 }

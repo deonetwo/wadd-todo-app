@@ -162,7 +162,7 @@
               </Grid>
             </ListBoxItem>
 
-            <!-- Index 6: Life Goals & Journal -->
+            <!-- Index 6: Life Goals -->
             <ListBoxItem Classes="nav-unified-item" ToolTip.Tip="{loc:Localize Nav_Goals}">
               <Grid ColumnDefinitions="56,*" Height="44">
                 <PathIcon Grid.Column="0" Data="{StaticResource TargetIconData}" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -327,7 +327,7 @@
           </ContentControl>
         </Panel>
 
-        <!-- ═══ TAB 6: GOALS & JOURNAL VIEW ═══ -->
+        <!-- ═══ TAB 6: LIFE GOALS VIEW ═══ -->
         <Panel IsVisible="{Binding IsGoalsView}">
           <ContentControl IsVisible="{Binding HasLoadedGoalsView}">
             <views:GoalsView DataContext="{Binding GoalsVM}"/>
@@ -505,7 +505,7 @@
           </ContentControl>
         </Panel>
 
-        <!-- Compact Goals & Journal View -->
+        <!-- Compact Life Goals View -->
         <Panel IsVisible="{Binding IsGoalsView}">
           <ContentControl IsVisible="{Binding HasLoadedGoalsView}">
             <views:GoalsView DataContext="{Binding GoalsVM}"/>
@@ -1438,7 +1438,7 @@
                 </Grid>
               </Button>
 
-              <!-- Life Goals & Journal -->
+              <!-- Life Goals -->
               <Button Classes="outline"
                       Command="{Binding OpenGoalsViewCommand}"
                       HorizontalAlignment="Stretch"
@@ -1448,8 +1448,8 @@
                 <Grid ColumnDefinitions="Auto,*">
                   <PathIcon Grid.Column="0" Data="{StaticResource TargetIconData}" Width="18" Height="18" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/>
                   <StackPanel Grid.Column="1" Spacing="2" Margin="12,0,0,0" VerticalAlignment="Center">
-                    <TextBlock Text="Goals &amp; Journal" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
-                    <TextBlock Text="Long-term vision targets and reflective journal" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
+                    <TextBlock Text="Life Goals" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimaryBrush}"/>
+                    <TextBlock Text="Long-term vision targets and milestones" FontSize="11" Foreground="{DynamicResource AppTextSecondaryBrush}"/>
                   </StackPanel>
                 </Grid>
               </Button>

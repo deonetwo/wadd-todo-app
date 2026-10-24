@@ -312,8 +312,8 @@
   <data name="Tasks_ViewAllRecurring" xml:space="preserve"><value>Lihat Semua Tugas Berulang</value></data>
   <data name="Tasks_ViewAllRecurring_Desc" xml:space="preserve"><value>Kelola semua pola tugas berulang dan kebiasaan</value></data>
   <data name="Tasks_AddTask" xml:space="preserve"><value>Tambah tugas</value></data>
-  <data name="Goals_Title" xml:space="preserve"><value>Target Hidup &amp; Jurnal Refleksi</value></data>
-  <data name="Goals_Description" xml:space="preserve"><value>Atur sasaran visi jangka panjang, daftar pencapaian, dan catatan jurnal harian.</value></data>
+  <data name="Goals_Title" xml:space="preserve"><value>Target Hidup</value></data>
+  <data name="Goals_Description" xml:space="preserve"><value>Atur sasaran visi jangka panjang dan daftar pencapaian.</value></data>
   <data name="Goals_NewGoal" xml:space="preserve"><value>Target Hidup Baru</value></data>
   <data name="Goals_Categories" xml:space="preserve"><value>KATEGORI</value></data>
   <data name="Goals_OverallProgress" xml:space="preserve"><value>Progres Sasaran Keseluruhan</value></data>
@@ -323,7 +323,7 @@
   <data name="Goals_ReopenGoal" xml:space="preserve"><value>Buka Kembali Target</value></data>
   <data name="Goals_MarkAchieved" xml:space="preserve"><value>Tandai Tercapai</value></data>
   <data name="Goals_SelectGoal" xml:space="preserve"><value>Pilih Target Hidup</value></data>
-  <data name="Goals_SelectGoal_Desc" xml:space="preserve"><value>Pilih target dari sebelah kiri untuk melihat pencapaian dan linimasa jurnal.</value></data>
+  <data name="Goals_SelectGoal_Desc" xml:space="preserve"><value>Pilih target dari sebelah kiri untuk melihat daftar pencapaian.</value></data>
   <data name="Goals_NoSteps" xml:space="preserve"><value>Belum ada langkah</value></data>
   <data name="Goals_AiSuggest" xml:space="preserve"><value>Saran AI</value></data>
   <data name="Goals_CreateGoal" xml:space="preserve"><value>Buat Target</value></data>
@@ -338,8 +338,6 @@
   <data name="Dialog_Delete_Goal_Msg" xml:space="preserve"><value>Sasaran ini beserta semua langkahnya akan dihapus.</value></data>
   <data name="Dialog_Delete_Milestone_Title" xml:space="preserve"><value>Hapus Langkah?</value></data>
   <data name="Dialog_Delete_Milestone_Msg" xml:space="preserve"><value>Langkah ini akan dihapus dari sasaran Anda.</value></data>
-  <data name="Dialog_Delete_Journal_Title" xml:space="preserve"><value>Hapus Catatan Jurnal?</value></data>
-  <data name="Dialog_Delete_Journal_Msg" xml:space="preserve"><value>Catatan refleksi jurnal ini akan dihapus.</value></data>
   <data name="Dialog_Delete_Tag_Title" xml:space="preserve"><value>Hapus Tag?</value></data>
   <data name="Dialog_Delete_Tag_Msg" xml:space="preserve"><value>Tag ini akan dihapus dari semua tugas.</value></data>
   <data name="Dialog_Delete_Note_Title" xml:space="preserve"><value>Hapus Catatan?</value></data>

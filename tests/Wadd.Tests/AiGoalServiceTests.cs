@@ -61,38 +61,6 @@ public class AiGoalServiceTests
         }
     }
 
-    [Fact]
-    public async Task GenerateJournalPromptAsync_ZeroProgress_ReturnsBeginningJournal()
-    {
-        var draft = await _aiGoalService.GenerateJournalPromptAsync("Master Guitar", 0, 4);
-
-        Assert.NotNull(draft);
-        Assert.False(string.IsNullOrWhiteSpace(draft.Title));
-        Assert.Contains("Setting Intentions", draft.Title);
-        Assert.Contains("Master Guitar", draft.Title);
-        Assert.False(string.IsNullOrWhiteSpace(draft.Content));
-    }
-
-    [Fact]
-    public async Task GenerateJournalPromptAsync_HalfwayProgress_ReturnsMomentumJournal()
-    {
-        var draft = await _aiGoalService.GenerateJournalPromptAsync("Master Guitar", 2, 4);
-
-        Assert.NotNull(draft);
-        Assert.False(string.IsNullOrWhiteSpace(draft.Title));
-        Assert.Contains("Momentum", draft.Title);
-        Assert.Contains("50%", draft.Content);
-    }
-
-    [Fact]
-    public async Task GenerateJournalPromptAsync_CompletedProgress_ReturnsCelebrationJournal()
-    {
-        var draft = await _aiGoalService.GenerateJournalPromptAsync("Master Guitar", 4, 4);
-
-        Assert.NotNull(draft);
-        Assert.False(string.IsNullOrWhiteSpace(draft.Title));
-        Assert.Contains("Achieved", draft.Title);
-    }
 
     [Fact]
     public void GeminiApiKey_GetAndSet_UpdatesPropertyCorrectly()
@@ -201,29 +169,6 @@ public class AiGoalServiceTests
         Assert.Contains("Create landing page", context);
     }
 
-    [Fact]
-    public void BuildJournalPromptContext_IncludesAllNonBlankFields()
-    {
-        var allMilestones = new List<string> { "[Completed] Step 1", "[Pending] Step 2" };
-
-        var context = AiGoalService.BuildJournalPromptContext(
-            goalTitle: "Learn Spanish",
-            completedSteps: 1,
-            totalSteps: 2,
-            recentMilestone: "Finish A1 Course",
-            category: "Learning & Skills",
-            description: "Conversational fluency in 6 months",
-            allMilestones: allMilestones,
-            currentJournalDraft: "Feeling confident about vocabulary today.");
-
-        Assert.Contains("Learn Spanish", context);
-        Assert.Contains("1/2 milestone steps completed", context);
-        Assert.Contains("Finish A1 Course", context);
-        Assert.Contains("Learning & Skills", context);
-        Assert.Contains("Conversational fluency", context);
-        Assert.Contains("[Completed] Step 1", context);
-        Assert.Contains("Feeling confident about vocabulary", context);
-    }
 
     [Fact]
     public async Task GenerateGoalDetailsAsync_WithAllNonBlankFields_PreservesAndIncorporatesCustomFields()
@@ -279,23 +224,6 @@ public class AiGoalServiceTests
         Assert.Contains("Available User Tags / Categories: Frontend, UI/UX", context);
     }
 
-    [Fact]
-    public void BuildJournalPromptContext_IncludesAvailableTags()
-    {
-        var tags = new List<string> { "Habits", "Fitness" };
-        var context = AiGoalService.BuildJournalPromptContext(
-            goalTitle: "Morning Routine",
-            completedSteps: 2,
-            totalSteps: 5,
-            recentMilestone: "Wake up at 6am",
-            category: "Health & Fitness",
-            description: "Build consistency",
-            allMilestones: null,
-            currentJournalDraft: "Great day!",
-            availableTags: tags);
-
-        Assert.Contains("Available User Tags / Categories: Habits, Fitness", context);
-    }
 
     [Fact]
     public async Task GenerateGoalDetailsAsync_WithMatchingAvailableTag_PicksAvailableTagAsCategory()

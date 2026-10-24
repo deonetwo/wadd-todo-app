@@ -14,13 +14,6 @@ public class GoalGenerationResult
     public string SourceLabel { get; set; } = "Smart Offline Engine";
 }
 
-public class JournalDraftResult
-{
-    public string Title { get; set; } = string.Empty;
-    public string Content { get; set; } = string.Empty;
-    public bool IsLiveAi { get; set; }
-    public string SourceLabel { get; set; } = "Smart Offline Engine";
-}
 
 public class AiModelOption
 {

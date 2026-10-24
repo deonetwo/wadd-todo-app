@@ -137,47 +137,7 @@ public class AiGoalService : IAiGoalService
         return GenerateMilestonesSmartOffline(title, category, description, existingMilestones, targetDate, newMilestoneDraft, availableTags);
     }
 
-    public async Task<JournalDraftResult> GenerateJournalPromptAsync(
-        string goalTitle,
-        int completedSteps,
-        int totalSteps,
-        string? recentMilestone = null,
-        string? category = null,
-        string? description = null,
-        IReadOnlyList<string>? allMilestones = null,
-        string? currentJournalDraft = null,
-        IReadOnlyList<string>? availableTags = null)
-    {
-        var title = !string.IsNullOrWhiteSpace(goalTitle) ? goalTitle.Trim() : "My Goal";
 
-        if (IsLiveAiAvailable())
-        {
-            try
-            {
-                var liveJournal = IsGeminiProvider()
-                    ? await GenerateJournalWithGeminiAsync(title, completedSteps, totalSteps, recentMilestone, category, description, allMilestones, currentJournalDraft, availableTags)
-                    : await GenerateJournalWithOpenAiAsync(title, completedSteps, totalSteps, recentMilestone, category, description, allMilestones, currentJournalDraft, availableTags);
-
-                if (liveJournal != null)
-                {
-                    liveJournal.IsLiveAi = true;
-                    liveJournal.SourceLabel = IsGeminiProvider()
-                        ? $"Google Gemini ({(!string.IsNullOrWhiteSpace(CustomModel) ? CustomModel : "gemini-2.0-flash")})"
-                        : $"{Provider} ({(!string.IsNullOrWhiteSpace(CustomModel) ? CustomModel : GetDefaultModelForProvider(Provider))})";
-                    return liveJournal;
-                }
-            }
-            catch (Exception ex)
-            {
-                Wadd.Core.Logging.AppLogger.LogWarning("AiGoalService", "Live AI journal call failed, falling back to smart heuristic", ex);
-            }
-        }
-
-        var offline = GenerateJournalSmartOffline(title, completedSteps, totalSteps, recentMilestone, category, description, allMilestones, currentJournalDraft);
-        offline.IsLiveAi = false;
-        offline.SourceLabel = "Smart Offline Engine";
-        return offline;
-    }
 
     public async Task<IReadOnlyList<AiModelOption>> GetAvailableModelsAsync(string? provider = null, string? apiKey = null, string? customBaseUrl = null)
     {
@@ -526,63 +486,6 @@ public class AiGoalService : IAiGoalService
         return sb.ToString().TrimEnd();
     }
 
-    public static string BuildJournalPromptContext(
-        string goalTitle,
-        int completedSteps,
-        int totalSteps,
-        string? recentMilestone,
-        string? category,
-        string? description,
-        IReadOnlyList<string>? allMilestones,
-        string? currentJournalDraft,
-        IReadOnlyList<string>? availableTags = null)
-    {
-        var sb = new StringBuilder();
-        sb.AppendLine($"- Goal: \"{goalTitle.Trim()}\"");
-        sb.AppendLine($"- Progress: {completedSteps}/{totalSteps} milestone steps completed ({((totalSteps > 0 ? (int)Math.Round((double)completedSteps / totalSteps * 100) : 0))}%).");
-
-        if (!string.IsNullOrWhiteSpace(category))
-        {
-            sb.AppendLine($"- Category: \"{category.Trim()}\"");
-        }
-
-        var cleanTags = availableTags?
-            .Where(t => !string.IsNullOrWhiteSpace(t))
-            .Select(t => t.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        if (cleanTags != null && cleanTags.Count > 0)
-        {
-            sb.AppendLine($"- Available User Tags / Categories: {string.Join(", ", cleanTags)}");
-        }
-
-        if (!string.IsNullOrWhiteSpace(description))
-        {
-            sb.AppendLine($"- Goal Vision & Description: \"{description.Trim()}\"");
-        }
-
-        if (!string.IsNullOrWhiteSpace(recentMilestone))
-        {
-            sb.AppendLine($"- Most Recently Completed Milestone: \"{recentMilestone.Trim()}\"");
-        }
-
-        if (allMilestones != null && allMilestones.Count > 0)
-        {
-            sb.AppendLine("- All Milestone Steps in Goal:");
-            for (int i = 0; i < allMilestones.Count; i++)
-            {
-                sb.AppendLine($"  {i + 1}. {allMilestones[i]}");
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(currentJournalDraft))
-        {
-            sb.AppendLine($"- User's Initial Notes / Thoughts: \"{currentJournalDraft.Trim()}\"");
-        }
-
-        return sb.ToString().TrimEnd();
-    }
 
     #endregion
 
@@ -722,70 +625,6 @@ Return strictly valid JSON only: {{ ""milestones"": [""Step 1..."", ""Step 2..."
         return ParseMilestonesJson(text);
     }
 
-    private async Task<JournalDraftResult?> GenerateJournalWithGeminiAsync(
-        string goalTitle,
-        int completedSteps,
-        int totalSteps,
-        string? recentMilestone,
-        string? category = null,
-        string? description = null,
-        IReadOnlyList<string>? allMilestones = null,
-        string? currentJournalDraft = null,
-        IReadOnlyList<string>? availableTags = null)
-    {
-        var systemPrompt = @"You are an encouraging, insightful reflection coach.
-Given a user's goal progress and detailed context, generate a reflective journal entry draft with:
-- title: engaging reflection title (e.g. 'Finding Momentum', 'Lessons from Step 2', 'Weekly Check-in')
-- content: a 2-3 paragraph inspiring reflection asking 1-2 thought-provoking questions, acknowledging progress made, and encouraging next steps.
-
-Return strictly valid JSON only: { ""title"": ""..."", ""content"": ""..."" }";
-
-        var context = BuildJournalPromptContext(goalTitle, completedSteps, totalSteps, recentMilestone, category, description, allMilestones, currentJournalDraft, availableTags);
-
-        var requestBody = new
-        {
-            contents = new[]
-            {
-                new
-                {
-                    parts = new[]
-                    {
-                        new { text = $"{systemPrompt}\n\nGoal & Progress Context:\n{context}" }
-                    }
-                }
-            },
-            generationConfig = new
-            {
-                temperature = 0.6,
-                responseMimeType = "application/json"
-            }
-        };
-
-        var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={Uri.EscapeDataString(ApiKey)}";
-        var jsonContent = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
-
-        var response = await _httpClient.PostAsync(url, jsonContent);
-        if (!response.IsSuccessStatusCode)
-        {
-            url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={Uri.EscapeDataString(ApiKey)}";
-            response = await _httpClient.PostAsync(url, jsonContent);
-        }
-
-        if (!response.IsSuccessStatusCode) return null;
-
-        var responseJson = await response.Content.ReadAsStringAsync();
-        using var doc = JsonDocument.Parse(responseJson);
-        var text = doc.RootElement
-            .GetProperty("candidates")[0]
-            .GetProperty("content")
-            .GetProperty("parts")[0]
-            .GetProperty("text")
-            .GetString();
-
-        if (string.IsNullOrWhiteSpace(text)) return null;
-
-        return ParseJournalJson(text);
-    }
 
     #endregion
 
@@ -954,31 +793,6 @@ Return strictly valid JSON only: { ""milestones"": [""Step 1..."", ""Step 2...""
         return ParseMilestonesJson(text);
     }
 
-    private async Task<JournalDraftResult?> GenerateJournalWithOpenAiAsync(
-        string goalTitle,
-        int completedSteps,
-        int totalSteps,
-        string? recentMilestone,
-        string? category = null,
-        string? description = null,
-        IReadOnlyList<string>? allMilestones = null,
-        string? currentJournalDraft = null,
-        IReadOnlyList<string>? availableTags = null)
-    {
-        var systemPrompt = @"You are an encouraging, insightful reflection coach.
-Given a user's goal progress and context, generate a reflective journal entry draft with:
-- title: engaging reflection title (e.g. 'Finding Momentum', 'Lessons from Step 2', 'Weekly Check-in')
-- content: a 2-3 paragraph inspiring reflection asking 1-2 thought-provoking questions, acknowledging progress made, and encouraging next steps.
-
-Return strictly valid JSON only: { ""title"": ""..."", ""content"": ""..."" }";
-
-        var context = BuildJournalPromptContext(goalTitle, completedSteps, totalSteps, recentMilestone, category, description, allMilestones, currentJournalDraft, availableTags);
-
-        var text = await SendOpenAiChatRequestAsync(systemPrompt, $"Goal & Progress Context:\n{context}");
-        if (string.IsNullOrWhiteSpace(text)) return null;
-
-        return ParseJournalJson(text);
-    }
 
     #endregion
 
@@ -1067,18 +881,6 @@ Return strictly valid JSON only: { ""title"": ""..."", ""content"": ""..."" }";
         return null;
     }
 
-    private static JournalDraftResult ParseJournalJson(string text)
-    {
-        var cleanJson = CleanJsonString(text);
-        using var parsed = JsonDocument.Parse(cleanJson);
-        var root = parsed.RootElement;
-
-        return new JournalDraftResult
-        {
-            Title = root.TryGetProperty("title", out var t) ? t.GetString() ?? "Progress Reflection" : "Progress Reflection",
-            Content = root.TryGetProperty("content", out var c) ? c.GetString() ?? string.Empty : string.Empty
-        };
-    }
 
     private static string CleanJsonString(string raw)
     {
@@ -1345,58 +1147,6 @@ Return strictly valid JSON only: { ""title"": ""..."", ""content"": ""..."" }";
         return result;
     }
 
-    private static JournalDraftResult GenerateJournalSmartOffline(
-        string title,
-        int completedSteps,
-        int totalSteps,
-        string? recentMilestone,
-        string? category = null,
-        string? description = null,
-        IReadOnlyList<string>? allMilestones = null,
-        string? currentJournalDraft = null)
-    {
-        double pct = totalSteps > 0 ? (double)completedSteps / totalSteps * 100.0 : 0;
-        string journalTitle;
-        string content;
-
-        if (!string.IsNullOrWhiteSpace(currentJournalDraft))
-        {
-            journalTitle = $"Reflections on {title}";
-            content = $"{currentJournalDraft.Trim()}\n\nProgress update: {completedSteps}/{totalSteps} milestone steps completed ({pct:0}%). Keep pushing forward!";
-        }
-        else if (pct >= 100)
-        {
-            journalTitle = $"Goal Achieved: Celebrating {title}!";
-            content = $"Today marks a major milestone—completing '{title}'! Looking back at where this journey started, every small step and consistent effort has compounded into success.\n\nKey Reflections:\n• What was the most rewarding breakthrough along the way?\n• How has this achievement elevated confidence for the next chapter?";
-        }
-        else if (pct >= 50)
-        {
-            journalTitle = $"Halfway Check-in: Building Momentum on {title}";
-            content = $"Progress check-in on '{title}' ({completedSteps}/{totalSteps} steps completed - {pct:0}% done)." +
-                      (!string.IsNullOrWhiteSpace(recentMilestone) ? $"\nRecent milestone completed: \"{recentMilestone.Trim()}\"" : "") +
-                      $"\n\nReflections for today:\n• The momentum is palpable. What routine or mindset shift has made the biggest difference?\n• What is one obstacle to anticipate in the next phase, and how can it be proactively addressed?";
-        }
-        else if (completedSteps > 0)
-        {
-            journalTitle = $"First Steps & Early Wins: {title}";
-            content = $"Taking the initial steps toward '{title}'. Completing {completedSteps} step(s) has laid the initial groundwork." +
-                      (!string.IsNullOrWhiteSpace(recentMilestone) ? $"\nRecent milestone completed: \"{recentMilestone.Trim()}\"" : "") +
-                      $"\n\nReflections for today:\n• The hardest part of any journey is starting. How did taking action feel today?\n• What is the single next milestone step to tackle tomorrow?";
-        }
-        else
-        {
-            journalTitle = $"Setting Intentions for {title}";
-            content = $"Beginning the journey toward '{title}'. Clear vision and daily discipline will turn this aspiration into reality." +
-                      (!string.IsNullOrWhiteSpace(description) ? $"\n\nVision: {description.Trim()}" : "") +
-                      $"\n\nReflections for today:\n• Why is this goal deeply meaningful to me right now?\n• What is one small action I can take within the next 24 hours to create immediate momentum?";
-        }
-
-        return new JournalDraftResult
-        {
-            Title = journalTitle,
-            Content = content
-        };
-    }
 
     private static bool ContainsAny(string text, params string[] keywords)
     {

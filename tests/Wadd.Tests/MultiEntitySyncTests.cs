@@ -172,34 +172,6 @@ public class MultiEntitySyncTests : IDisposable
         Assert.True(merged.IsDeleted);
     }
 
-    [Fact]
-    public void MergeJournalEntry_LwwAndTombstone()
-    {
-        var local = new JournalEntry
-        {
-            Id = "j-1",
-            Title = "Local Reflections",
-            Content = "Local content",
-            UpdatedAt = DateTime.UtcNow.AddMinutes(10)
-        };
-        var cloud = new JournalEntry
-        {
-            Id = "j-1",
-            Title = "Cloud Reflections",
-            Content = "Cloud content",
-            UpdatedAt = DateTime.UtcNow.AddMinutes(5)
-        };
-
-        var merged = ConflictResolutionEngine.MergeJournalEntry(local, cloud);
-        Assert.Equal("Local Reflections", merged.Title);
-        Assert.Equal("Local content", merged.Content);
-
-        // Tombstone test
-        cloud.IsDeleted = true;
-        cloud.DeletedAt = DateTime.UtcNow;
-        var tombstoneMerged = ConflictResolutionEngine.MergeJournalEntry(local, cloud);
-        Assert.True(tombstoneMerged.IsDeleted);
-    }
 
     [Fact]
     public void MergeDateNote_LwwAndTombstone()
@@ -305,36 +277,6 @@ public class MultiEntitySyncTests : IDisposable
         Assert.Equal("Step A", activeMilestones[0].Title);
     }
 
-    [Fact]
-    public async Task SQLiteGoalService_BatchDirectUpsertJournalEntries_AndRawQuery()
-    {
-        var j1 = new JournalEntry
-        {
-            Id = "j-sync-1",
-            Title = "Journal 1",
-            Content = "Reflections on progress",
-            EntryDate = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-        var j2 = new JournalEntry
-        {
-            Id = "j-sync-2",
-            Title = "Journal 2 (deleted)",
-            Content = "Old thoughts",
-            IsDeleted = true,
-            DeletedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _goalService.BatchDirectUpsertJournalEntriesAsync(new[] { j1, j2 });
-
-        var rawEntries = (await _goalService.GetAllJournalEntriesRawAsync()).ToList();
-        Assert.Equal(2, rawEntries.Count);
-
-        var activeEntries = (await _goalService.GetJournalEntriesAsync()).ToList();
-        Assert.Single(activeEntries);
-        Assert.Equal("Journal 1", activeEntries[0].Title);
-    }
 
     #endregion
 
@@ -429,7 +371,6 @@ public class MultiEntitySyncTests : IDisposable
         Assert.Equal("tasks.json", GoogleDriveSyncService.TasksManifestFilename);
         Assert.Equal("goals.json", GoogleDriveSyncService.GoalsManifestFilename);
         Assert.Equal("milestones.json", GoogleDriveSyncService.MilestonesManifestFilename);
-        Assert.Equal("journals.json", GoogleDriveSyncService.JournalsManifestFilename);
         Assert.Equal("datenotes.json", GoogleDriveSyncService.DateNotesManifestFilename);
     }
 
@@ -558,7 +499,7 @@ public class MultiEntitySyncTests : IDisposable
     }
 
     [Fact]
-    public async Task EnsureManifestMigrationAsync_With55LegacyFiles_CompletesConcurrently_DeletesAll_UploadsManifests()
+    public async Task EnsureManifestMigrationAsync_With45LegacyFiles_CompletesConcurrently_DeletesAll_UploadsManifests()
     {
         var fakeHandler = new FakeDriveHttpMessageHandler();
         var remoteFiles = new List<GoogleDriveSyncService.DriveFileItem>();
@@ -610,28 +551,13 @@ public class MultiEntitySyncTests : IDisposable
             fileIdMap[fileName] = fileId;
         }
 
-        // 4. 10 Journals
+        // 4. 10 Date Notes
         for (int i = 0; i < 10; i++)
         {
-            string id = $"journal-{Guid.NewGuid():N}";
-            string fileName = $"journal_{id}.json";
-            string fileId = $"legacy-journal-{i}";
-            var item = new JournalEntry { Id = id, Title = $"Legacy Journal {i}", Content = "Content", EntryDate = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
-            string json = JsonSerializer.Serialize(item);
-            fakeHandler.DriveFiles[fileId] = (fileName, json, DateTime.UtcNow);
-            var driveItem = new GoogleDriveSyncService.DriveFileItem(fileId, fileName, DateTime.UtcNow);
-            remoteFiles.Add(driveItem);
-            remoteFileMap[fileName] = driveItem;
-            fileIdMap[fileName] = fileId;
-        }
-
-        // 5. 10 Date Notes
-        for (int i = 1; i <= 10; i++)
-        {
-            string dateKey = $"2026-09-{i:D2}";
+            string dateKey = $"2026-10-{i + 1:D2}";
             string fileName = $"datenote_{dateKey}.json";
             string fileId = $"legacy-datenote-{i}";
-            var item = new CalendarDateNote { DateKey = dateKey, NoteText = $"Note {i}", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+            var item = new CalendarDateNote { DateKey = dateKey, NoteText = $"Legacy Note {i}", UpdatedAt = DateTime.UtcNow };
             string json = JsonSerializer.Serialize(item);
             fakeHandler.DriveFiles[fileId] = (fileName, json, DateTime.UtcNow);
             var driveItem = new GoogleDriveSyncService.DriveFileItem(fileId, fileName, DateTime.UtcNow);
@@ -640,7 +566,7 @@ public class MultiEntitySyncTests : IDisposable
             fileIdMap[fileName] = fileId;
         }
 
-        Assert.Equal(55, remoteFiles.Count);
+        Assert.Equal(45, remoteFiles.Count);
 
         using var httpClient = new HttpClient(fakeHandler);
         var syncService = new GoogleDriveSyncService(_todoService, httpClient: httpClient, goalService: _goalService);
@@ -649,26 +575,23 @@ public class MultiEntitySyncTests : IDisposable
         // (a) Runs under real concurrency (16 semaphore) without throwing
         await syncService.EnsureManifestMigrationAsync("test-token", remoteFiles, remoteFileMap, fileIdMap, CancellationToken.None);
 
-        // (b) All 55 legacy files are deleted
-        Assert.Equal(55, fakeHandler.DeletedFileIds.Count);
+        // (b) All 45 legacy files are deleted
+        Assert.Equal(45, fakeHandler.DeletedFileIds.Count);
 
         // (c) Each manifest file is uploaded with the correct merged content
         Assert.True(fakeHandler.UploadedManifests.ContainsKey("tasks.json"));
         Assert.True(fakeHandler.UploadedManifests.ContainsKey("goals.json"));
         Assert.True(fakeHandler.UploadedManifests.ContainsKey("milestones.json"));
-        Assert.True(fakeHandler.UploadedManifests.ContainsKey("journals.json"));
         Assert.True(fakeHandler.UploadedManifests.ContainsKey("datenotes.json"));
 
         var uploadedTasks = JsonSerializer.Deserialize<List<TodoItem>>(fakeHandler.UploadedManifests["tasks.json"]);
         var uploadedGoals = JsonSerializer.Deserialize<List<LifeGoal>>(fakeHandler.UploadedManifests["goals.json"]);
         var uploadedMilestones = JsonSerializer.Deserialize<List<GoalMilestone>>(fakeHandler.UploadedManifests["milestones.json"]);
-        var uploadedJournals = JsonSerializer.Deserialize<List<JournalEntry>>(fakeHandler.UploadedManifests["journals.json"]);
         var uploadedDateNotes = JsonSerializer.Deserialize<List<CalendarDateNote>>(fakeHandler.UploadedManifests["datenotes.json"]);
 
         Assert.Equal(15, uploadedTasks!.Count);
         Assert.Equal(10, uploadedGoals!.Count);
         Assert.Equal(10, uploadedMilestones!.Count);
-        Assert.Equal(10, uploadedJournals!.Count);
         Assert.Equal(10, uploadedDateNotes!.Count);
 
         // (d) MigratedToManifests is true

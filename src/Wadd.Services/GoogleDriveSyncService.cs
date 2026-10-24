@@ -1527,7 +1527,6 @@ public class GoogleDriveSyncService : ISyncService
     public const string TasksManifestFilename = "tasks.json";
     public const string GoalsManifestFilename = "goals.json";
     public const string MilestonesManifestFilename = "milestones.json";
-    public const string JournalsManifestFilename = "journals.json";
     public const string DateNotesManifestFilename = "datenotes.json";
 
     private static readonly object _sharedBackoffLock = new();
@@ -1615,7 +1614,7 @@ public class GoogleDriveSyncService : ISyncService
             // 2. High-speed Early-Exit Short-Circuit (Op 2)
             if (_lastSyncTimestampUtc > DateTime.MinValue)
             {
-                var manifestNames = new[] { TasksManifestFilename, GoalsManifestFilename, MilestonesManifestFilename, JournalsManifestFilename, DateNotesManifestFilename };
+                var manifestNames = new[] { TasksManifestFilename, GoalsManifestFilename, MilestonesManifestFilename, DateNotesManifestFilename };
                 bool hasRemoteChanges = _authRecord?.MigratedToManifests == true
                     ? remoteFiles.Any(f => manifestNames.Contains(f.Name, StringComparer.OrdinalIgnoreCase) && f.ModifiedTime.HasValue && f.ModifiedTime.Value > _lastSyncTimestampUtc)
                     : remoteFiles.Any(f => f.ModifiedTime.HasValue && f.ModifiedTime.Value > _lastSyncTimestampUtc);
@@ -1648,14 +1647,6 @@ public class GoogleDriveSyncService : ISyncService
                             if (localMilestones.Any(m => EnsureUtc(m.UpdatedAt ?? DateTime.MinValue) > _lastSyncTimestampUtc))
                             {
                                 hasLocalEntityChanges = true;
-                            }
-                            else
-                            {
-                                var localJournals = await _goalService.GetAllJournalEntriesRawAsync(cancellationToken);
-                                if (localJournals.Any(j => EnsureUtc(j.UpdatedAt ?? j.EntryDate) > _lastSyncTimestampUtc))
-                                {
-                                    hasLocalEntityChanges = true;
-                                }
                             }
                         }
                     }
@@ -1715,7 +1706,6 @@ public class GoogleDriveSyncService : ISyncService
                 SyncTasksAsync(token, remoteFileMap, fileIdMap, pendingLocalTaskIds, cancellationToken),
                 SyncGoalsAsync(token, remoteFileMap, fileIdMap, cancellationToken),
                 SyncMilestonesAsync(token, remoteFileMap, fileIdMap, cancellationToken),
-                SyncJournalEntriesAsync(token, remoteFileMap, fileIdMap, cancellationToken),
                 SyncDateNotesAsync(token, remoteFileMap, fileIdMap, cancellationToken)
             };
 
@@ -1758,7 +1748,6 @@ public class GoogleDriveSyncService : ISyncService
             (f.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase) && Guid.TryParse(f.Name[..^5], out _)) ||
             f.Name.StartsWith("goal_", StringComparison.OrdinalIgnoreCase) ||
             f.Name.StartsWith("milestone_", StringComparison.OrdinalIgnoreCase) ||
-            f.Name.StartsWith("journal_", StringComparison.OrdinalIgnoreCase) ||
             f.Name.StartsWith("datenote_", StringComparison.OrdinalIgnoreCase)
         ).ToList();
 
@@ -1779,7 +1768,6 @@ public class GoogleDriveSyncService : ISyncService
         var downloadedTasks = new ConcurrentBag<TodoItem>();
         var downloadedGoals = new ConcurrentBag<LifeGoal>();
         var downloadedMilestones = new ConcurrentBag<GoalMilestone>();
-        var downloadedJournals = new ConcurrentBag<JournalEntry>();
         var downloadedDateNotes = new ConcurrentBag<CalendarDateNote>();
 
         var downloadTasks = legacyFiles.Select(async file =>
@@ -1799,11 +1787,6 @@ public class GoogleDriveSyncService : ISyncService
                 {
                     var m = JsonSerializer.Deserialize<GoalMilestone>(content, JsonOptions);
                     if (m != null) downloadedMilestones.Add(m);
-                }
-                else if (file.Name.StartsWith("journal_", StringComparison.OrdinalIgnoreCase))
-                {
-                    var j = JsonSerializer.Deserialize<JournalEntry>(content, JsonOptions);
-                    if (j != null) downloadedJournals.Add(j);
                 }
                 else if (file.Name.StartsWith("datenote_", StringComparison.OrdinalIgnoreCase))
                 {
@@ -1878,17 +1861,6 @@ public class GoogleDriveSyncService : ISyncService
                         return ConflictResolutionEngine.MergeMilestone(local, dm);
                     }).ToList();
                     await _goalService.BatchDirectUpsertMilestonesAsync(mergedMilestones, cancellationToken);
-                }
-
-                if (downloadedJournals.Count > 0)
-                {
-                    var localJournals = (await _goalService.GetAllJournalEntriesRawAsync(cancellationToken)).ToDictionary(j => j.Id);
-                    var mergedJournals = downloadedJournals.Select(dj =>
-                    {
-                        localJournals.TryGetValue(dj.Id, out var local);
-                        return ConflictResolutionEngine.MergeJournalEntry(local, dj);
-                    }).ToList();
-                    await _goalService.BatchDirectUpsertJournalEntriesAsync(mergedJournals, cancellationToken);
                 }
             }
 
@@ -1972,16 +1944,6 @@ public class GoogleDriveSyncService : ISyncService
             if (fileIdMap.TryGetValue(MilestonesManifestFilename, out var mFileId))
             {
                 remoteFileMap[MilestonesManifestFilename] = new DriveFileItem(mFileId, MilestonesManifestFilename, DateTime.UtcNow);
-            }
-
-            var allJournals = (await _goalService.GetAllJournalEntriesRawAsync(cancellationToken)).ToList();
-            var journalsToUpload = allJournals
-                .Where(j => !j.IsDeleted || (j.DeletedAt.HasValue && j.DeletedAt.Value >= cutoff))
-                .ToList();
-            await UploadJsonFileToAppDataFolderAsync(token, JournalsManifestFilename, JsonSerializer.Serialize(journalsToUpload, JsonOptions), fileIdMap, "Journals Manifest", cancellationToken);
-            if (fileIdMap.TryGetValue(JournalsManifestFilename, out var jFileId))
-            {
-                remoteFileMap[JournalsManifestFilename] = new DriveFileItem(jFileId, JournalsManifestFilename, DateTime.UtcNow);
             }
         }
 
@@ -2265,7 +2227,6 @@ public class GoogleDriveSyncService : ISyncService
             TasksManifestFilename,
             GoalsManifestFilename,
             MilestonesManifestFilename,
-            JournalsManifestFilename,
             DateNotesManifestFilename
         };
 
@@ -2351,14 +2312,6 @@ public class GoogleDriveSyncService : ISyncService
                     if (milestones != null && milestones.Count > 0)
                     {
                         await _goalService.BatchDirectUpsertMilestonesAsync(milestones, cancellationToken);
-                    }
-                }
-                else if (string.Equals(manifestName, JournalsManifestFilename, StringComparison.OrdinalIgnoreCase))
-                {
-                    var journals = JsonSerializer.Deserialize<List<JournalEntry>>(content, JsonOptions);
-                    if (journals != null && journals.Count > 0)
-                    {
-                        await _goalService.BatchDirectUpsertJournalEntriesAsync(journals, cancellationToken);
                     }
                 }
             }
@@ -2462,29 +2415,6 @@ public class GoogleDriveSyncService : ISyncService
                                     .ToList();
                                 await UploadJsonFileToAppDataFolderAsync(token, MilestonesManifestFilename, JsonSerializer.Serialize(pruned, JsonOptions), fileIdMap, "Milestones Manifest (Tombstone Pruning)", cancellationToken);
                                 Wadd.Core.Logging.AppLogger.LogInfo("GoogleDriveSyncService", $"Pruned expired tombstones from {MilestonesManifestFilename} manifest.");
-                            }
-                        }
-                        catch { }
-                    }
-                }
-
-                var localJournals = await _goalService.GetAllJournalEntriesRawAsync(cancellationToken);
-                bool hasExpiredJournals = localJournals.Any(j => j.IsDeleted && j.DeletedAt.HasValue && j.DeletedAt.Value < cutoff);
-                if (hasExpiredJournals && remoteFileMap.TryGetValue(JournalsManifestFilename, out var journalsFile))
-                {
-                    var content = await DownloadAppDataFileAsync(token, journalsFile.Id, cancellationToken);
-                    if (!string.IsNullOrWhiteSpace(content))
-                    {
-                        try
-                        {
-                            var remoteList = JsonSerializer.Deserialize<List<JournalEntry>>(content, JsonOptions) ?? new();
-                            if (remoteList.Any(j => j.IsDeleted && j.DeletedAt.HasValue && j.DeletedAt.Value < cutoff))
-                            {
-                                var pruned = remoteList
-                                    .Where(j => !j.IsDeleted || (j.DeletedAt.HasValue && j.DeletedAt.Value >= cutoff))
-                                    .ToList();
-                                await UploadJsonFileToAppDataFolderAsync(token, JournalsManifestFilename, JsonSerializer.Serialize(pruned, JsonOptions), fileIdMap, "Journals Manifest (Tombstone Pruning)", cancellationToken);
-                                Wadd.Core.Logging.AppLogger.LogInfo("GoogleDriveSyncService", $"Pruned expired tombstones from {JournalsManifestFilename} manifest.");
                             }
                         }
                         catch { }
@@ -2821,108 +2751,6 @@ public class GoogleDriveSyncService : ISyncService
         return hasChanges;
     }
 
-    private async Task<bool> SyncJournalEntriesAsync(string token, Dictionary<string, DriveFileItem> remoteFileMap, IDictionary<string, string> fileIdMap, CancellationToken cancellationToken)
-    {
-        if (_goalService == null) return false;
-        bool hasChanges = false;
-        var localEntriesList = (await _goalService.GetAllJournalEntriesRawAsync(cancellationToken)).ToList();
-        var localEntriesMap = localEntriesList.GroupBy(x => x.Id).ToDictionary(g => g.Key, g => g.First());
-
-        remoteFileMap.TryGetValue(JournalsManifestFilename, out var remoteManifestFile);
-
-        bool remoteChanged = remoteManifestFile != null &&
-                             remoteManifestFile.ModifiedTime.HasValue &&
-                             remoteManifestFile.ModifiedTime.Value > _lastSyncTimestampUtc;
-
-        bool localChanged = _lastSyncTimestampUtc == DateTime.MinValue ||
-                            localEntriesList.Any(j => EnsureUtc(j.UpdatedAt ?? j.EntryDate) > _lastSyncTimestampUtc);
-
-        if (remoteManifestFile == null)
-        {
-            if (localEntriesMap.Count > 0)
-            {
-                var cutoff = DateTime.UtcNow - TombstoneRetentionWindow;
-                var toUpload = localEntriesMap.Values
-                    .Where(j => !j.IsDeleted || (j.DeletedAt.HasValue && j.DeletedAt.Value >= cutoff))
-                    .ToList();
-
-                await UploadJsonFileToAppDataFolderAsync(token, JournalsManifestFilename, JsonSerializer.Serialize(toUpload, JsonOptions), fileIdMap, "Journals Manifest", cancellationToken);
-                hasChanges = true;
-            }
-            return hasChanges;
-        }
-
-        if (!remoteChanged && !localChanged) return false;
-
-        List<JournalEntry> remoteEntries = new();
-        var remoteContent = await DownloadAppDataFileAsync(token, remoteManifestFile.Id, cancellationToken);
-        if (!string.IsNullOrWhiteSpace(remoteContent))
-        {
-            try { remoteEntries = JsonSerializer.Deserialize<List<JournalEntry>>(remoteContent, JsonOptions) ?? new(); } catch { }
-        }
-
-        var remoteEntriesMap = remoteEntries.GroupBy(j => j.Id).ToDictionary(g => g.Key, g => g.First());
-        var allIds = localEntriesMap.Keys.Union(remoteEntriesMap.Keys).ToList();
-
-        var mergedEntries = new List<JournalEntry>();
-        var localUpserts = new List<JournalEntry>();
-        bool remoteNeedsUpload = localChanged;
-
-        foreach (var id in allIds)
-        {
-            localEntriesMap.TryGetValue(id, out var local);
-            remoteEntriesMap.TryGetValue(id, out var remote);
-
-            var merged = ConflictResolutionEngine.MergeJournalEntry(local, remote);
-            mergedEntries.Add(merged);
-
-            if (local == null)
-            {
-                localUpserts.Add(merged);
-            }
-            else if (remote != null)
-            {
-                long localTicks = EnsureUtc(local.UpdatedAt ?? local.EntryDate).Ticks;
-                long remoteTicks = EnsureUtc(remote.UpdatedAt ?? remote.EntryDate).Ticks;
-                if (remoteTicks > localTicks || (local.IsDeleted != remote.IsDeleted && remote.IsDeleted))
-                {
-                    localUpserts.Add(merged);
-                }
-                else if (localTicks > remoteTicks || (local.IsDeleted != remote.IsDeleted && local.IsDeleted))
-                {
-                    remoteNeedsUpload = true;
-                }
-            }
-            else
-            {
-                remoteNeedsUpload = true;
-            }
-        }
-
-        if (localUpserts.Count > 0)
-        {
-            hasChanges = true;
-            await _dbWriteLock.WaitAsync(cancellationToken);
-            try
-            {
-                await _goalService.BatchDirectUpsertJournalEntriesAsync(localUpserts, cancellationToken);
-            }
-            finally { _dbWriteLock.Release(); }
-        }
-
-        if (remoteNeedsUpload)
-        {
-            hasChanges = true;
-            var cutoff = DateTime.UtcNow - TombstoneRetentionWindow;
-            var toUpload = mergedEntries
-                .Where(j => !j.IsDeleted || (j.DeletedAt.HasValue && j.DeletedAt.Value >= cutoff))
-                .ToList();
-
-            await UploadJsonFileToAppDataFolderAsync(token, JournalsManifestFilename, JsonSerializer.Serialize(toUpload, JsonOptions), fileIdMap, "Journals Manifest", cancellationToken);
-        }
-
-        return hasChanges;
-    }
 
     private async Task<bool> SyncDateNotesAsync(string token, Dictionary<string, DriveFileItem> remoteFileMap, IDictionary<string, string> fileIdMap, CancellationToken cancellationToken)
     {

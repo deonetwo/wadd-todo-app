@@ -27,8 +27,8 @@
 
 ## Key Features
 
-- **Life Goals and Reflection Journal**: Organize long-term vision targets into categories (Health, Career, Finance, Personal) with sequential milestone checklists and record daily reflective journal entries with mood tags. Features dynamic progress calculation `(completed / total) * 100`, soft-deletion tombstones (`IsDeleted`, `DeletedAt`, `UpdatedAt`), and cross-platform desktop/mobile support.
-- **AI Goal Coaching and Milestone Breakdown**: Interactive AI assistant powered by `AiGoalService` supporting Google Gemini, OpenAI, Anthropic, OpenRouter, and Custom API endpoints to generate milestone checklists and reflective journal drafts with automatic heuristic fallback.
+- **Life Goals and Milestone Checklists**: Organize long-term vision targets into categories (Health, Career, Finance, Personal) with sequential milestone checklists. Features dynamic progress calculation `(completed / total) * 100`, soft-deletion tombstones (`IsDeleted`, `DeletedAt`, `UpdatedAt`), and cross-platform desktop/mobile support.
+- **AI Goal Coaching and Milestone Breakdown**: Interactive AI assistant powered by `AiGoalService` supporting Google Gemini, OpenAI, Anthropic, OpenRouter, and Custom API endpoints to generate milestone checklists with automatic heuristic fallback.
 - **Task Categories and Tags Management**: Assign multi-tag category badges to tasks, filter views dynamically via toolbar category dropdowns, and manage tags globally (create, inline rename, delete) via a dedicated **Tags Management** view.
 - **Calendar and Timeline View**: Interactive 42-cell month grid with status indicators, recurring habit occurrence calculations (`RecurrenceEvaluator`), overflow badges (`+X more`), and a toggleable right detail sidebar panel.
 - **Google Drive Cloud Sync with Cloudflare OAuth Proxy**: Isolated data synchronization using Google Drive's hidden `appDataFolder` space. Client secrets are secured through a serverless Cloudflare Worker proxy with PKCE code exchange and background token refresh.
@@ -50,7 +50,6 @@ All application state is locally persisted in an embedded SQLite database (`wadd
 | `TodoItem` | `Id` (`Guid`) | `Title`, `Description`, `Category`, `IsCompleted`, `Priority`, `DueDate`, `ReminderAt`, `IsRecurring`, `RecurrenceType`, `Version`, `IsDeleted` | Main task item with priority and recurrence |
 | `LifeGoal` | `Id` (`string`) | `Title`, `Description`, `Category`, `TargetDate`, `IsAchieved`, `CreatedAt`, `UpdatedAt`, `IsDeleted` | Long-term life vision targets |
 | `GoalMilestone` | `Id` (`string`) | `GoalId`, `Title`, `IsCompleted`, `OrderIndex`, `UpdatedAt`, `IsDeleted` | Sequential milestone sub-tasks for goals |
-| `JournalEntry` | `Id` (`string`) | `GoalId`, `Title`, `Content`, `Mood`, `EntryDate`, `UpdatedAt`, `IsDeleted` | Daily reflective thoughts and mood history |
 | `SyncLog` | `Id` (`Guid`) | `TableName`, `RecordId`, `Operation`, `PayloadJson`, `Timestamp`, `DeviceId`, `Synced`, `Revision` | Local mutation history for cloud replication |
 | `SyncConflict` | `Id` (`Guid`) | `TableName`, `RecordId`, `LocalVersionJson`, `CloudVersionJson`, `ConflictingFieldsJson`, `Status`, `ResolutionType` | Unresolved data collision records |
 
@@ -108,9 +107,9 @@ Tasks are stored in Google Drive's hidden `appDataFolder` space (`drive.appdata`
 
 ---
 
-## AI Goal Coaching and Reflection Engine
+## AI Goal Coaching Engine
 
-The `AiGoalService` provides AI assistance for goal breakdown and journaling:
+The `AiGoalService` provides AI assistance for goal breakdown:
 
 - **Supported Providers**:
   - Google Gemini (Default)
@@ -121,7 +120,6 @@ The `AiGoalService` provides AI assistance for goal breakdown and journaling:
 - **Features**:
   - **Auto-Fill Goal**: Generates comprehensive goal descriptions and target timelines from short titles.
   - **Milestone Generation**: Breaks goals into actionable sequential checklists.
-  - **Journal Drafts**: Generates structured reflection drafts based on goal progress and mood tags.
   - **Smart Fallback**: Built-in deterministic heuristic fallback ensures features work offline even without API keys.
 
 ---
@@ -159,7 +157,7 @@ wadd-todo-app/
 ├── src/
 │   ├── Wadd.Core/                     # Domain Layer (Class Library)
 │   │   ├── Enums/                     # TodoPriority, ThemeMode, RecurrenceType
-│   │   ├── Models/                    # TodoItem, LifeGoal, GoalMilestone, JournalEntry
+│   │   ├── Models/                    # TodoItem, LifeGoal, GoalMilestone
 │   │   ├── Logging/                   # AppLogger structured logging engine
 │   │   ├── Helpers/                   # AppDataHelper, AppSettingsHelper, RecurrenceEvaluator
 │   │   └── Interfaces/                # ITodoService, ISyncService, IAiGoalService, etc.
@@ -191,7 +189,7 @@ wadd-todo-app/
     └── Wadd.Tests/                    # Unit Tests (xUnit + FluentAssertions)
         ├── SQLiteTodoServiceTests.cs
         ├── GoogleOAuthSyncTests.cs
-        ├── GoalsAndJournalTests.cs
+        ├── GoalServiceTests.cs
         └── RecurrenceEvaluatorTests.cs
 ```
 

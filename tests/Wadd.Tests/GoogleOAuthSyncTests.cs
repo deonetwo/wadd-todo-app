@@ -361,7 +361,6 @@ public class GoogleOAuthSyncTests
             await todoService.SaveCustomTagAsync("UserATag");
             var goalA = await goalService.SaveGoalAsync(new LifeGoal { Title = "User A Goal" });
             await goalService.SaveMilestoneAsync(new GoalMilestone { GoalId = goalA.Id, Title = "User A Milestone" });
-            await goalService.SaveJournalEntryAsync(new JournalEntry { GoalId = goalA.Id, Title = "User A Journal", Content = "Secret" });
 
             syncService.SetAuthRecordForTesting(new UserAuthRecord
             {
@@ -389,7 +388,6 @@ public class GoogleOAuthSyncTests
             Assert.Empty(await todoService.GetCustomTagsAsync());
             Assert.Empty(await goalService.GetAllGoalsRawAsync());
             Assert.Empty(await goalService.GetAllMilestonesRawAsync());
-            Assert.Empty(await goalService.GetAllJournalEntriesRawAsync());
             Assert.Empty(await todoService.SyncLogRepository.GetPendingLogsAsync());
         }
         finally

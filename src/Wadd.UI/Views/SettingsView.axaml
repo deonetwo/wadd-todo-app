@@ -1234,7 +1234,7 @@
             <TextBlock Grid.Row="2" Grid.Column="1" Text="Windows (x64/Arm64) &amp; Android (min API 21+)" Classes="small" TextWrapping="Wrap" Margin="0,0,0,6"/>
 
             <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Localize Settings_Copyright}" Classes="small" FontWeight="SemiBold" Margin="0,0,16,0"/>
-            <TextBlock Grid.Row="3" Grid.Column="1" Text="© 2026 Wadd Application. All rights reserved." Classes="small" TextWrapping="Wrap"/>
+            <TextBlock Grid.Row="3" Grid.Column="1" Text="© 2026 Lunoit Labs. All rights reserved." Classes="small" TextWrapping="Wrap"/>
           </Grid>
         </StackPanel>
       </Border>

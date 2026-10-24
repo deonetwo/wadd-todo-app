@@ -305,63 +305,6 @@ public class ConflictResolutionEngine
         };
     }
 
-    public static JournalEntry MergeJournalEntry(JournalEntry? local, JournalEntry? remote)
-    {
-        if (local == null && remote == null)
-            throw new ArgumentException("Both local and remote journal entries cannot be null.");
-        if (local == null) return CloneJournalEntry(remote!);
-        if (remote == null) return CloneJournalEntry(local!);
-
-        DateTime localUpdated = local.UpdatedAt ?? local.EntryDate;
-        DateTime remoteUpdated = remote.UpdatedAt ?? remote.EntryDate;
-
-        long localTicks = EnsureUtc(localUpdated).Ticks;
-        long remoteTicks = EnsureUtc(remoteUpdated).Ticks;
-
-        // Tombstone wins to prevent resurrection
-        if (local.IsDeleted || remote.IsDeleted)
-        {
-            var baseEntry = remoteTicks > localTicks ? CloneJournalEntry(remote) : CloneJournalEntry(local);
-            baseEntry.IsDeleted = true;
-            baseEntry.DeletedAt = (local.IsDeleted ? local.DeletedAt : remote.DeletedAt) ?? local.DeletedAt ?? remote.DeletedAt ?? DateTime.UtcNow;
-            baseEntry.UpdatedAt = new DateTime(Math.Max(localTicks, remoteTicks), DateTimeKind.Utc);
-            return baseEntry;
-        }
-
-        if (remoteTicks > localTicks)
-        {
-            return CloneJournalEntry(remote);
-        }
-        else if (localTicks > remoteTicks)
-        {
-            return CloneJournalEntry(local);
-        }
-        else
-        {
-            string localKey = local.Title + (local.Content ?? "");
-            string remoteKey = remote.Title + (remote.Content ?? "");
-            return string.Compare(localKey, remoteKey, StringComparison.Ordinal) >= 0
-                ? CloneJournalEntry(local)
-                : CloneJournalEntry(remote);
-        }
-    }
-
-    public static JournalEntry CloneJournalEntry(JournalEntry entry)
-    {
-        ArgumentNullException.ThrowIfNull(entry);
-        return new JournalEntry
-        {
-            Id = entry.Id,
-            GoalId = entry.GoalId,
-            Title = entry.Title,
-            Content = entry.Content,
-            EntryDate = entry.EntryDate,
-            UpdatedAt = entry.UpdatedAt,
-            IsDeleted = entry.IsDeleted,
-            DeletedAt = entry.DeletedAt
-        };
-    }
-
     public static CalendarDateNote MergeDateNote(CalendarDateNote? local, CalendarDateNote? remote)
     {
         if (local == null && remote == null)

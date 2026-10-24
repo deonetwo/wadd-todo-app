@@ -105,12 +105,6 @@ public partial class GoalsViewModel : ViewModelBase
             return true;
         }
 
-        if (IsJournalBottomSheetOpen)
-        {
-            CloseJournalBottomSheet();
-            return true;
-        }
-
         if (IsEditingGoal)
         {
             CancelEditGoal();
@@ -120,12 +114,6 @@ public partial class GoalsViewModel : ViewModelBase
         if (IsCreatingGoal)
         {
             CancelCreateGoal();
-            return true;
-        }
-
-        if (IsCreatingJournal)
-        {
-            CancelCreateJournal();
             return true;
         }
 
@@ -141,8 +129,6 @@ public partial class GoalsViewModel : ViewModelBase
     public ObservableCollection<LifeGoalItemViewModel> Goals { get; } = new();
     public ObservableCollection<LifeGoalItemViewModel> FilteredGoals { get; } = new();
     public ObservableCollection<GoalMilestoneItemViewModel> CurrentMilestones { get; } = new();
-    public ObservableCollection<JournalEntryItemViewModel> CurrentJournalEntries { get; } = new();
-    public ObservableCollection<JournalEntryItemViewModel> AllJournalEntries { get; } = new();
     public ObservableCollection<CategoryFilterItemViewModel> Categories { get; } = new();
     public ObservableCollection<string> PendingAiMilestones { get; } = new();
 
@@ -153,9 +139,6 @@ public partial class GoalsViewModel : ViewModelBase
 
     [ObservableProperty]
     private bool _isAiGeneratingMilestones;
-
-    [ObservableProperty]
-    private bool _isAiGeneratingJournal;
 
     [ObservableProperty]
     private string _aiStatusMessage = string.Empty;
@@ -175,7 +158,7 @@ public partial class GoalsViewModel : ViewModelBase
                 g.IsSelected = (value != null && g.Id == value.Id);
             }
         }
-        _ = LoadMilestonesAndJournalForSelectedGoalAsync();
+        _ = LoadMilestonesForSelectedGoalAsync();
         OnPropertyChanged(nameof(HasSelectedGoal));
     }
 
@@ -194,25 +177,16 @@ public partial class GoalsViewModel : ViewModelBase
     private bool _isCreatingGoal;
 
     [ObservableProperty]
-    private bool _isCreatingJournal;
-
-    [ObservableProperty]
     private bool _isCompact = OperatingSystem.IsAndroid();
-
-    [ObservableProperty]
-    private bool _isJournalCollapsibleExpanded = true;
 
     [ObservableProperty]
     private bool _isMilestoneAiChoiceModalOpen;
 
     [ObservableProperty]
-    private bool _isJournalBottomSheetOpen;
-
-    [ObservableProperty]
     private bool _isMobileDetailViewOpen;
 
     [ObservableProperty]
-    private int _mobileSelectedTab; // 0 = Overview, 1 = Checklist, 2 = Journal
+    private int _mobileSelectedTab; // 0 = Overview, 1 = Checklist
 
     // New Goal Form Properties
     [ObservableProperty]
@@ -272,13 +246,6 @@ public partial class GoalsViewModel : ViewModelBase
     // New Milestone Form Property
     [ObservableProperty]
     private string _newMilestoneTitle = string.Empty;
-
-    // New Journal Form Properties
-    [ObservableProperty]
-    private string _newJournalTitle = string.Empty;
-
-    [ObservableProperty]
-    private string _newJournalContent = string.Empty;
 
     public GoalsViewModel(IGoalService goalService)
         : this(goalService, new Wadd.Services.AiGoalService(new System.Net.Http.HttpClient()), null)
@@ -390,8 +357,6 @@ public partial class GoalsViewModel : ViewModelBase
 
         UpdateCategories();
         ApplyCategoryFilter(previousSelectedId);
-
-        await LoadAllJournalEntriesAsync();
     }
 
     private void ApplyCategoryFilter(string? preferredSelectedId = null)
@@ -950,20 +915,18 @@ public partial class GoalsViewModel : ViewModelBase
 
     private int _loadMilestonesVersion;
 
-    private async Task LoadMilestonesAndJournalForSelectedGoalAsync()
+    private async Task LoadMilestonesForSelectedGoalAsync()
     {
         var targetGoal = SelectedGoal;
         if (targetGoal == null)
         {
             CurrentMilestones.Clear();
-            CurrentJournalEntries.Clear();
             return;
         }
 
         int currentVersion = Interlocked.Increment(ref _loadMilestonesVersion);
 
         var milestones = (await _goalService.GetMilestonesForGoalAsync(targetGoal.Id)).ToList();
-        var journalEntries = (await _goalService.GetJournalEntriesAsync(targetGoal.Id)).ToList();
 
         if (currentVersion != _loadMilestonesVersion || SelectedGoal?.Id != targetGoal.Id)
         {
@@ -971,7 +934,6 @@ public partial class GoalsViewModel : ViewModelBase
         }
 
         CurrentMilestones.Clear();
-        CurrentJournalEntries.Clear();
 
         int completed = 0;
         int total = 0;
@@ -984,11 +946,6 @@ public partial class GoalsViewModel : ViewModelBase
         }
 
         targetGoal.UpdateMilestonesSummary(completed, total);
-
-        foreach (var j in journalEntries)
-        {
-            CurrentJournalEntries.Add(new JournalEntryItemViewModel(j, targetGoal.Title));
-        }
     }
 
     [RelayCommand]
@@ -1247,164 +1204,6 @@ public partial class GoalsViewModel : ViewModelBase
         {
             IsAiGeneratingMilestones = false;
         }
-    }
-
-    #endregion
-
-    #region Reflection Journal Commands
-
-    public async Task LoadAllJournalEntriesAsync()
-    {
-        AllJournalEntries.Clear();
-        var rawEntries = await _goalService.GetJournalEntriesAsync();
-
-        var goalsMap = Goals
-            .Where(g => g != null && !string.IsNullOrEmpty(g.Id))
-            .GroupBy(g => g.Id)
-            .ToDictionary(g => g.Key, g => g.First().Title ?? string.Empty);
-
-        foreach (var entry in rawEntries)
-        {
-            if (entry == null) continue;
-            string? goalTitle = !string.IsNullOrEmpty(entry.GoalId) && goalsMap.TryGetValue(entry.GoalId, out var t) ? t : null;
-            AllJournalEntries.Add(new JournalEntryItemViewModel(entry, goalTitle));
-        }
-    }
-
-    [RelayCommand]
-    private void OpenCreateJournalForm()
-    {
-        NewJournalTitle = string.Empty;
-        NewJournalContent = string.Empty;
-        IsCreatingJournal = true;
-        if (IsCompact)
-        {
-            IsJournalBottomSheetOpen = true;
-        }
-    }
-
-    [RelayCommand]
-    private async Task GenerateJournalDraftWithAiAsync()
-    {
-        if (SelectedGoal == null || IsAiGeneratingJournal) return;
-
-        try
-        {
-            IsAiGeneratingJournal = true;
-            int completed = CurrentMilestones.Count(m => m.IsCompleted);
-            int total = CurrentMilestones.Count;
-            var recentMilestone = CurrentMilestones.LastOrDefault(m => m.IsCompleted)?.Title;
-            var allMilestonesList = CurrentMilestones.Select(m => $"[{(m.IsCompleted ? "Completed" : "Pending")}] {m.Title}").ToList();
-            var draftUserContent = !string.IsNullOrWhiteSpace(NewJournalContent) ? NewJournalContent : NewJournalTitle;
-
-            var draft = await _aiGoalService.GenerateJournalPromptAsync(
-                goalTitle: SelectedGoal.Title,
-                completedSteps: completed,
-                totalSteps: total,
-                recentMilestone: recentMilestone,
-                category: SelectedGoal.Category,
-                description: SelectedGoal.Description,
-                allMilestones: allMilestonesList,
-                currentJournalDraft: draftUserContent,
-                availableTags: GetAvailableTags());
-
-            if (draft != null)
-            {
-                NewJournalTitle = draft.Title;
-                NewJournalContent = draft.Content;
-                IsCreatingJournal = true;
-                if (IsCompact)
-                {
-                    IsJournalBottomSheetOpen = true;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Wadd.Core.Logging.AppLogger.LogError("GoalsViewModel", "GenerateJournalDraftWithAi error", ex);
-        }
-        finally
-        {
-            IsAiGeneratingJournal = false;
-        }
-    }
-
-    [RelayCommand]
-    private void OpenJournalBottomSheet()
-    {
-        OpenCreateJournalForm();
-    }
-
-    [RelayCommand]
-    private void CloseJournalBottomSheet()
-    {
-        IsCreatingJournal = false;
-        IsJournalBottomSheetOpen = false;
-    }
-
-    [RelayCommand]
-    private void ToggleJournalCollapsible()
-    {
-        IsJournalCollapsibleExpanded = !IsJournalCollapsibleExpanded;
-    }
-
-    [RelayCommand]
-    private void CancelCreateJournal()
-    {
-        IsCreatingJournal = false;
-        IsJournalBottomSheetOpen = false;
-    }
-
-    [RelayCommand]
-    private async Task SaveJournalEntryAsync()
-    {
-        if (string.IsNullOrWhiteSpace(NewJournalTitle) && string.IsNullOrWhiteSpace(NewJournalContent)) return;
-
-        var title = string.IsNullOrWhiteSpace(NewJournalTitle) ? "Reflection" : NewJournalTitle.Trim();
-        if (title.Length > 100) title = title.Substring(0, 100).Trim();
-
-        var content = NewJournalContent.Trim();
-        if (content.Length > 2000) content = content.Substring(0, 2000).Trim();
-
-        var entry = new JournalEntry
-        {
-            GoalId = SelectedGoal?.Id,
-            Title = title,
-            Content = content,
-            EntryDate = DateTime.UtcNow
-        };
-
-        var saved = await _goalService.SaveJournalEntryAsync(entry);
-
-        var vm = new JournalEntryItemViewModel(saved, SelectedGoal?.Title);
-        CurrentJournalEntries.Insert(0, vm);
-        AllJournalEntries.Insert(0, vm);
-
-        IsCreatingJournal = false;
-        IsJournalBottomSheetOpen = false;
-        NotifyDataMutated();
-    }
-
-    [RelayCommand]
-    private async Task DeleteJournalEntryAsync(JournalEntryItemViewModel? entryVm)
-    {
-        if (entryVm == null) return;
-
-        var lm = Wadd.UI.Localization.LocalizationManager.Instance;
-        var title = lm["Dialog_Delete_Journal_Title"];
-        var msg = lm["Dialog_Delete_Journal_Msg"];
-        var itemName = entryVm.EntryDate.ToString("D");
-        var itemDetails = !string.IsNullOrWhiteSpace(entryVm.Content)
-            ? (entryVm.Content.Length > 80 ? entryVm.Content.Substring(0, 80) + "..." : entryVm.Content)
-            : string.Empty;
-
-        var confirmed = await PromptDeleteConfirmationAsync(title, msg, itemName, itemDetails);
-        if (!confirmed) return;
-
-        await _goalService.DeleteJournalEntryAsync(entryVm.Id);
-        CurrentJournalEntries.Remove(entryVm);
-        AllJournalEntries.Remove(entryVm);
-        NotifyDataMutated();
     }
 
     #endregion
