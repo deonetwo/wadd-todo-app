@@ -180,13 +180,14 @@ public class GoogleDriveSyncService : ISyncService
             var envVal = Environment.GetEnvironmentVariable("OAUTH_PROXY_URL");
             if (!string.IsNullOrWhiteSpace(envVal)) return envVal.Trim().TrimEnd('/');
 
-            if (!string.IsNullOrWhiteSpace(_authRecord?.OAuthProxyUrl))
+            if (!string.IsNullOrWhiteSpace(_authRecord?.OAuthProxyUrl) && !_authRecord.OAuthProxyUrl.Contains("workers.dev"))
                 return _authRecord.OAuthProxyUrl.TrimEnd('/');
 
             var compiledVal = GetAssemblyMetadata("OAuthProxyUrl");
-            if (!string.IsNullOrWhiteSpace(compiledVal)) return compiledVal.Trim().TrimEnd('/');
+            if (!string.IsNullOrWhiteSpace(compiledVal) && !compiledVal.Contains("workers.dev"))
+                return compiledVal.Trim().TrimEnd('/');
 
-            return string.Empty;
+            return "https://wadd.lunoit.biz.id";
         }
         set
         {
@@ -284,12 +285,28 @@ public class GoogleDriveSyncService : ISyncService
     {
         try
         {
-            var pathsToTry = new[]
+            var pathsToTry = new List<string>
             {
                 Path.Combine(Directory.GetCurrentDirectory(), ".env"),
                 Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".env"),
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Wadd", ".env")
             };
+
+            // Search upwards from BaseDirectory and CurrentDirectory to find project root .env in dev/testing
+            foreach (var startDir in new[] { AppDomain.CurrentDomain.BaseDirectory, Directory.GetCurrentDirectory() })
+            {
+                if (string.IsNullOrWhiteSpace(startDir)) continue;
+                var dir = new DirectoryInfo(startDir);
+                for (int i = 0; i < 6 && dir != null; i++)
+                {
+                    var envCandidate = Path.Combine(dir.FullName, ".env");
+                    if (!pathsToTry.Contains(envCandidate, StringComparer.OrdinalIgnoreCase))
+                    {
+                        pathsToTry.Add(envCandidate);
+                    }
+                    dir = dir.Parent;
+                }
+            }
 
             foreach (var path in pathsToTry)
             {
@@ -1562,16 +1579,20 @@ public class GoogleDriveSyncService : ISyncService
         }, null, 4000, Timeout.Infinite);
     }
 
-    public async Task<bool> SyncAsync(CancellationToken cancellationToken = default)
+    public Task<bool> SyncAsync(CancellationToken cancellationToken = default)
+        => SyncAsync(forceRefreshSubscription: false, cancellationToken);
+
+    public async Task<bool> SyncAsync(bool forceRefreshSubscription, CancellationToken cancellationToken = default)
     {
         if (!IsSignedIn || _authRecord == null)
         {
             throw new InvalidOperationException("Please sign in with Google in Settings to synchronize your data.");
         }
 
-        // Proactive token refresh if token is expired, close to expiring, or subscription was previously marked expired (to check if user renewed)
+        // Proactive token refresh if forced (e.g. manual sync), subscription was previously marked expired (to check if user renewed), or token is expired/close to expiring
         var refreshedProactively = false;
-        if (_authRecord.IsSubscriptionExpired ||
+        if (forceRefreshSubscription ||
+            _authRecord.IsSubscriptionExpired ||
             (_authRecord.TokenExpiresAtUtc.HasValue && DateTime.UtcNow >= _authRecord.TokenExpiresAtUtc.Value.AddMinutes(-2)))
         {
             refreshedProactively = true;

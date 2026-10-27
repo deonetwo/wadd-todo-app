@@ -3,9 +3,9 @@
     <Company>Lunoit Labs</Company>
     <Authors>Lunoit Labs</Authors>
     <Copyright>Copyright © 2026 Lunoit Labs</Copyright>
-    <Version>1.6.0</Version>
-    <AssemblyVersion>1.6.0.0</AssemblyVersion>
-    <FileVersion>1.6.0.0</FileVersion>
+    <Version>1.6.1</Version>
+    <AssemblyVersion>1.6.1.0</AssemblyVersion>
+    <FileVersion>1.6.1.0</FileVersion>
 
     <GoogleClientId Condition="'$(GoogleClientId)' == ''">$(GOOGLE_CLIENT_ID)</GoogleClientId>
     <GoogleClientSecret Condition="'$(GoogleClientSecret)' == ''">$(GOOGLE_CLIENT_SECRET)</GoogleClientSecret>

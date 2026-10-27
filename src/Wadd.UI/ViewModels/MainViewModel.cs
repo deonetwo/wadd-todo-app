@@ -4722,7 +4722,7 @@ public partial class MainViewModel : ViewModelBase
 
             IsSyncing = true;
             StatusMessage = "Syncing with Google Drive...";
-            var success = await _syncService.SyncAsync();
+            var success = await _syncService.SyncAsync(forceRefreshSubscription: true);
             UpdateGoogleAuthState();
             if (success)
             {

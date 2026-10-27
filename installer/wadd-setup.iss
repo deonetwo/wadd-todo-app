@@ -2,7 +2,7 @@
 ; Generates Windows x64 Installer executable
 
 #ifndef AppVersion
-#define AppVersion "1.6.0"
+#define AppVersion "1.6.1"
 #endif
 
 #ifndef SourceDir

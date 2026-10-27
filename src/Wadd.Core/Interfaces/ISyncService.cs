@@ -27,6 +27,7 @@ public interface ISyncService
     Task<bool> SignInAsync(CancellationToken cancellationToken = default);
     Task SignOutAsync(CancellationToken cancellationToken = default);
     Task<bool> SyncAsync(CancellationToken cancellationToken = default);
+    Task<bool> SyncAsync(bool forceRefreshSubscription, CancellationToken cancellationToken = default);
     Task RefreshConflictCountAsync(CancellationToken cancellationToken = default);
     void OpenUpgradePage();
 }

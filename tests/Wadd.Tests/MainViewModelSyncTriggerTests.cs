@@ -38,6 +38,7 @@ public class MockSyncService : ISyncService
     public int SignInCallCount { get; private set; }
     public int SignOutCallCount { get; private set; }
     public int SyncCallCount { get; private set; }
+    public bool LastForceRefreshSubscriptionValue { get; private set; }
     public bool SignInResult { get; set; } = true;
     public TaskCompletionSource<bool>? SignInDelayTcs;
 
@@ -70,8 +71,12 @@ public class MockSyncService : ISyncService
     }
 
     public Task<bool> SyncAsync(CancellationToken cancellationToken = default)
+        => SyncAsync(forceRefreshSubscription: false, cancellationToken);
+
+    public Task<bool> SyncAsync(bool forceRefreshSubscription, CancellationToken cancellationToken = default)
     {
         SyncCallCount++;
+        LastForceRefreshSubscriptionValue = forceRefreshSubscription;
         if (IsSubscriptionExpired)
         {
             throw new InvalidOperationException("Your 14-day cloud sync trial has expired.");
@@ -282,5 +287,22 @@ public class MainViewModelSyncTriggerTests : IDisposable
 
         vm.IsGoogleSigningIn = false;
         Assert.False(vm.IsSyncingOrSigningIn);
+    }
+
+    [Fact]
+    public async Task ManualSync_ForcesSubscriptionRefresh()
+    {
+        var mockSync = new MockSyncService
+        {
+            IsSignedIn = true,
+            SubscriptionPlan = "trial"
+        };
+        var vm = CreateViewModel(mockSync);
+
+        Assert.False(mockSync.LastForceRefreshSubscriptionValue);
+
+        await vm.SyncCommand.ExecuteAsync(null);
+
+        Assert.True(mockSync.LastForceRefreshSubscriptionValue);
     }
 }
