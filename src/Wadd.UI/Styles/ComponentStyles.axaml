@@ -613,12 +613,6 @@
     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
     <Setter Property="VerticalContentAlignment"   Value="Center"/>
     <Setter Property="Cursor"                  Value="Hand"/>
-    <Setter Property="Transitions">
-      <Transitions>
-        <BrushTransition Property="Background" Duration="0:0:0.12"/>
-        <BrushTransition Property="Foreground" Duration="0:0:0.12"/>
-      </Transitions>
-    </Setter>
   </Style>
   <Style Selector="ListBoxItem.nav-unified-item:pointerover /template/ ContentPresenter, ListBoxItem.nav-rail-item:pointerover /template/ ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource AppHoverBrush}"/>
@@ -709,12 +703,6 @@
     <Setter Property="Margin"          Value="0,2"/>
     <Setter Property="BorderThickness" Value="0"/>
     <Setter Property="CornerRadius"    Value="10"/>
-    <Setter Property="Transitions">
-      <Transitions>
-        <BrushTransition Property="Background" Duration="0:0:0.12"/>
-        <DoubleTransition Property="Opacity" Duration="0:0:0.20" Easing="0.1,0.9,0.2,1.0"/>
-      </Transitions>
-    </Setter>
   </Style>
   <Style Selector="Border.task-row:pointerover, Border.task-card:pointerover">
     <Setter Property="Background" Value="{DynamicResource AppHoverBrush}"/>
@@ -859,14 +847,7 @@
                     Foreground="#F0FDFA"
                     Opacity="0"
                     HorizontalAlignment="Center"
-                    VerticalAlignment="Center">
-            <PathIcon.Transitions>
-              <Transitions>
-                <DoubleTransition Property="Opacity" Duration="0:0:0.15"/>
-                <BrushTransition Property="Foreground" Duration="0:0:0.15"/>
-              </Transitions>
-            </PathIcon.Transitions>
-          </PathIcon>
+                    VerticalAlignment="Center"/>
         </Border>
       </ControlTemplate>
     </Setter>
@@ -902,11 +883,6 @@
   <!-- Hover-only Delete Button reveal in task row -->
   <Style Selector="Border.task-row Button.danger">
     <Setter Property="Opacity" Value="0"/>
-    <Setter Property="Transitions">
-      <Transitions>
-        <DoubleTransition Property="Opacity" Duration="0:0:0.15"/>
-      </Transitions>
-    </Setter>
   </Style>
   <Style Selector="Border.task-row:pointerover Button.danger">
     <Setter Property="Opacity" Value="1"/>
