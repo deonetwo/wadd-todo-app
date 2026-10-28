@@ -12,6 +12,10 @@ on:
         required: false
         type: boolean
         default: false
+      release_tag:
+        description: 'Release tag (e.g. v1.6.1; defaults to version in Directory.Build.props)'
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -20,6 +24,8 @@ jobs:
   build-windows:
     name: Build Windows (Installer & Portable)
     runs-on: windows-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
 
     steps:
       - name: Checkout Code
@@ -43,6 +49,7 @@ jobs:
           $version = "$version".Trim()
           Write-Host "Resolved Version: $version"
           "APP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - name: Run Unit Tests
         shell: pwsh
@@ -196,6 +203,24 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.create_release == true)
 
     steps:
+      - name: Determine Release Tag and Title
+        id: release_meta
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            TAG="${{ github.ref_name }}"
+          elif [[ -n "${{ inputs.release_tag }}" ]]; then
+            TAG="${{ inputs.release_tag }}"
+          else
+            TAG="v${{ needs.build-windows.outputs.version }}"
+          fi
+          if [[ -z "$TAG" || "$TAG" == "v" ]]; then
+            TAG="v1.6.1"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "title=Wadd $TAG" >> "$GITHUB_OUTPUT"
+          echo "Release Tag: $TAG"
+          echo "Release Title: Wadd $TAG"
+
       - name: Download Windows Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -215,6 +240,8 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.release_meta.outputs.tag }}
+          name: ${{ steps.release_meta.outputs.title }}
           files: ./release-assets/*
           draft: false
           prerelease: false
