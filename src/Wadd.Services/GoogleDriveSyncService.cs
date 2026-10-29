@@ -32,7 +32,9 @@ public class GoogleDriveSyncService : ISyncService
     private bool _lastProxyCallSubscriptionExpired;
     private string _lastProxyPlan = string.Empty;
     private int? _lastProxyDaysRemaining;
-    private string _lastProxyUpgradeUrl = "https://lunoit.biz.id/wadd";
+    private string _lastProxyUpgradeUrl = Environment.GetEnvironmentVariable("UPGRADE_URL")?.Trim() is { Length: > 0 } envUrl
+        ? envUrl
+        : "https://lunoit.biz.id/wadd";
 
     public bool IsSignedIn => _authRecord?.IsSignedIn ?? false;
     public bool IsSubscriptionExpired => _authRecord?.IsSubscriptionExpired ?? _lastProxyCallSubscriptionExpired;

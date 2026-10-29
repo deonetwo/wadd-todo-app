@@ -10,8 +10,13 @@ namespace Wadd.Desktop;
 
 internal static class Program
 {
+#if DEBUG
+    private const string MutexName = @"Local\Wadd_Desktop_SingleInstance_Mutex_98a72b_Dev";
+    private const string EventName = @"Local\Wadd_Desktop_BringToFront_Event_98a72b_Dev";
+#else
     private const string MutexName = @"Local\Wadd_Desktop_SingleInstance_Mutex_98a72b";
     private const string EventName = @"Local\Wadd_Desktop_BringToFront_Event_98a72b";
+#endif
 
     private static Mutex? _singleInstanceMutex;
     private static EventWaitHandle? _singleInstanceEvent;

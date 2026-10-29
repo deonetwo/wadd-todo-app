@@ -11,7 +11,13 @@ public static class AppDataHelper
             return overrideDir;
         }
 
-        var defaultDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Wadd");
+#if DEBUG
+        var folderName = "Wadd-Dev";
+#else
+        var folderName = "Wadd";
+#endif
+
+        var defaultDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), folderName);
         Directory.CreateDirectory(defaultDir);
         return defaultDir;
     }
